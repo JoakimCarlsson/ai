@@ -4,11 +4,11 @@ go 1.24.2
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.10.1
-	github.com/anthropics/anthropic-sdk-go v1.4.0
+	github.com/anthropics/anthropic-sdk-go v1.6.2
 	github.com/google/uuid v1.6.0
-	github.com/mark3labs/mcp-go v0.32.0
-	github.com/openai/openai-go v1.5.0
-	google.golang.org/genai v1.11.1
+	github.com/mark3labs/mcp-go v0.34.0
+	github.com/openai/openai-go v1.11.0
+	google.golang.org/genai v1.16.0
 )
 
 require (
