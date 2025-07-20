@@ -138,10 +138,8 @@ func NewLLM(llmProvider model.ModelProvider, opts ...LLMClientOption) (LLM, erro
 			options: clientOptions,
 			client:  newOpenAIClient(clientOptions),
 		}, nil
-
-	case model.ProviderMock:
-		panic("not implemented")
 	}
+
 	return nil, fmt.Errorf("llm provider not supported: %s", llmProvider)
 }
 
