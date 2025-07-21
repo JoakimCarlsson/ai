@@ -459,11 +459,88 @@ func (o *openaiClient) sendWithStructuredOutput(ctx context.Context, messages []
 }
 
 func (o *openaiClient) streamWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent {
-	errChan := make(chan LLMEvent, 1)
-	errChan <- LLMEvent{
-		Type:  types.EventTypeError,
-		Error: errors.New("structured output streaming not yet implemented for OpenAI - use non-streaming method"),
+	params := o.preparedParams(o.convertMessages(messages), o.convertTools(tools))
+
+	schemaMap := map[string]any{
+		"type":                 "object",
+		"properties":           outputSchema.Parameters,
+		"required":             outputSchema.Required,
+		"additionalProperties": false,
 	}
-	close(errChan)
-	return errChan
+
+	params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
+		OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
+			JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
+				Name:   outputSchema.Name,
+				Schema: schemaMap,
+				Strict: openai.Bool(true),
+			},
+		},
+	}
+
+	params.StreamOptions = openai.ChatCompletionStreamOptionsParam{
+		IncludeUsage: openai.Bool(true),
+	}
+
+	if o.providerOptions.timeout != nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, *o.providerOptions.timeout)
+		defer cancel()
+	}
+
+	eventChan := make(chan LLMEvent)
+
+	go func() {
+		defer close(eventChan)
+
+		ExecuteStreamWithRetry(ctx, OpenAIRetryConfig(), func() error {
+			openaiStream := o.client.Chat.Completions.NewStreaming(ctx, params)
+
+			acc := openai.ChatCompletionAccumulator{}
+			currentContent := ""
+			toolCalls := make([]message.ToolCall, 0)
+
+			for openaiStream.Next() {
+				chunk := openaiStream.Current()
+				acc.AddChunk(chunk)
+
+				for _, choice := range chunk.Choices {
+					if choice.Delta.Content != "" {
+						eventChan <- LLMEvent{
+							Type:    types.EventContentDelta,
+							Content: choice.Delta.Content,
+						}
+						currentContent += choice.Delta.Content
+					}
+				}
+			}
+
+			err := openaiStream.Err()
+			if err == nil || errors.Is(err, io.EOF) {
+				finishReason := o.finishReason(string(acc.ChatCompletion.Choices[0].FinishReason))
+				if len(acc.ChatCompletion.Choices[0].Message.ToolCalls) > 0 {
+					toolCalls = append(toolCalls, o.toolCalls(acc.ChatCompletion)...)
+				}
+				if len(toolCalls) > 0 {
+					finishReason = message.FinishReasonToolUse
+				}
+
+				eventChan <- LLMEvent{
+					Type: types.EventComplete,
+					Response: &LLMResponse{
+						Content:                    currentContent,
+						ToolCalls:                  toolCalls,
+						Usage:                      o.usage(acc.ChatCompletion),
+						FinishReason:               finishReason,
+						StructuredOutput:           &currentContent,
+						UsedNativeStructuredOutput: true,
+					},
+				}
+				return nil
+			}
+			return err
+		}, eventChan)
+	}()
+
+	return eventChan
 }
