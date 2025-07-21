@@ -22,11 +22,11 @@ type TokenUsage struct {
 }
 
 type LLMResponse struct {
-	Content                string
-	ToolCalls              []message.ToolCall
-	Usage                  TokenUsage
-	FinishReason           message.FinishReason
-	StructuredOutput       *string
+	Content                    string
+	ToolCalls                  []message.ToolCall
+	Usage                      TokenUsage
+	FinishReason               message.FinishReason
+	StructuredOutput           *string
 	UsedNativeStructuredOutput bool
 }
 
@@ -42,15 +42,15 @@ type LLMEvent struct {
 
 type LLM interface {
 	SendMessages(ctx context.Context, messages []message.Message, tools []tool.BaseTool) (*LLMResponse, error)
-	
+
 	SendMessagesWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (*LLMResponse, error)
 
 	StreamResponse(ctx context.Context, messages []message.Message, tools []tool.BaseTool) <-chan LLMEvent
-	
+
 	StreamResponseWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent
 
 	Model() model.Model
-	
+
 	SupportsStructuredOutput() bool
 }
 
@@ -180,7 +180,7 @@ func (p *baseLLM[C]) SendMessagesWithStructuredOutput(ctx context.Context, messa
 	if !p.client.supportsStructuredOutput() {
 		return nil, fmt.Errorf("structured output not supported by provider: %s", p.options.model.Provider)
 	}
-	
+
 	messages = p.cleanMessages(messages)
 	response, err := p.client.sendWithStructuredOutput(ctx, messages, tools, outputSchema)
 
@@ -214,7 +214,7 @@ func (p *baseLLM[C]) StreamResponseWithStructuredOutput(ctx context.Context, mes
 		close(errChan)
 		return errChan
 	}
-	
+
 	messages = p.cleanMessages(messages)
 	return p.client.streamWithStructuredOutput(ctx, messages, tools, outputSchema)
 }
