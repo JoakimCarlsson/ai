@@ -7,6 +7,7 @@ import (
 
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
 	"github.com/openai/openai-go"
@@ -396,4 +397,73 @@ func WithOpenAISeed(seed int64) OpenAIOption {
 	return func(options *openaiOptions) {
 		options.seed = &seed
 	}
+}
+
+func (o *openaiClient) supportsStructuredOutput() bool {
+	return true
+}
+
+func (o *openaiClient) sendWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (response *LLMResponse, err error) {
+	params := o.preparedParams(o.convertMessages(messages), o.convertTools(tools))
+
+	schemaMap := map[string]any{
+		"type":                 "object",
+		"properties":           outputSchema.Parameters,
+		"required":             outputSchema.Required,
+		"additionalProperties": false,
+	}
+
+	params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
+		OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
+			JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
+				Name:   outputSchema.Name,
+				Schema: schemaMap,
+				Strict: openai.Bool(true),
+			},
+		},
+	}
+
+	if o.providerOptions.timeout != nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, *o.providerOptions.timeout)
+		defer cancel()
+	}
+
+	return ExecuteWithRetry(ctx, OpenAIRetryConfig(), func() (*LLMResponse, error) {
+		openaiResponse, err := o.client.Chat.Completions.New(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+
+		content := ""
+		if openaiResponse.Choices[0].Message.Content != "" {
+			content = openaiResponse.Choices[0].Message.Content
+		}
+
+		toolCalls := o.toolCalls(*openaiResponse)
+		finishReason := o.finishReason(string(openaiResponse.Choices[0].FinishReason))
+
+		if len(toolCalls) > 0 {
+			finishReason = message.FinishReasonToolUse
+		}
+
+		return &LLMResponse{
+			Content:                    content,
+			ToolCalls:                  toolCalls,
+			Usage:                      o.usage(*openaiResponse),
+			FinishReason:               finishReason,
+			StructuredOutput:           &content,
+			UsedNativeStructuredOutput: true,
+		}, nil
+	})
+}
+
+func (o *openaiClient) streamWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent {
+	errChan := make(chan LLMEvent, 1)
+	errChan <- LLMEvent{
+		Type:  types.EventTypeError,
+		Error: errors.New("structured output streaming not yet implemented for OpenAI - use non-streaming method"),
+	}
+	close(errChan)
+	return errChan
 }

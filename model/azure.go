@@ -28,7 +28,8 @@ var AzureModels = map[ModelID]Model{
 		CostPer1MOutCached:  OpenAIModels[GPT41].CostPer1MOutCached,
 		ContextWindow:       OpenAIModels[GPT41].ContextWindow,
 		DefaultMaxTokens:    OpenAIModels[GPT41].DefaultMaxTokens,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 	AzureGPT41Mini: {
 		ID:                  AzureGPT41Mini,
@@ -41,7 +42,8 @@ var AzureModels = map[ModelID]Model{
 		CostPer1MOutCached:  OpenAIModels[GPT41Mini].CostPer1MOutCached,
 		ContextWindow:       OpenAIModels[GPT41Mini].ContextWindow,
 		DefaultMaxTokens:    OpenAIModels[GPT41Mini].DefaultMaxTokens,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 	AzureGPT41Nano: {
 		ID:                  AzureGPT41Nano,
@@ -54,7 +56,8 @@ var AzureModels = map[ModelID]Model{
 		CostPer1MOutCached:  OpenAIModels[GPT41Nano].CostPer1MOutCached,
 		ContextWindow:       OpenAIModels[GPT41Nano].ContextWindow,
 		DefaultMaxTokens:    OpenAIModels[GPT41Nano].DefaultMaxTokens,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 	AzureGPT45Preview: {
 		ID:                  AzureGPT45Preview,
@@ -67,7 +70,8 @@ var AzureModels = map[ModelID]Model{
 		CostPer1MOutCached:  OpenAIModels[GPT45Preview].CostPer1MOutCached,
 		ContextWindow:       OpenAIModels[GPT45Preview].ContextWindow,
 		DefaultMaxTokens:    OpenAIModels[GPT45Preview].DefaultMaxTokens,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 	AzureGPT4o: {
 		ID:                  AzureGPT4o,
@@ -80,7 +84,8 @@ var AzureModels = map[ModelID]Model{
 		CostPer1MOutCached:  OpenAIModels[GPT4o].CostPer1MOutCached,
 		ContextWindow:       OpenAIModels[GPT4o].ContextWindow,
 		DefaultMaxTokens:    OpenAIModels[GPT4o].DefaultMaxTokens,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 	AzureGPT4oMini: {
 		ID:                  AzureGPT4oMini,
@@ -93,7 +98,8 @@ var AzureModels = map[ModelID]Model{
 		CostPer1MOutCached:  OpenAIModels[GPT4oMini].CostPer1MOutCached,
 		ContextWindow:       OpenAIModels[GPT4oMini].ContextWindow,
 		DefaultMaxTokens:    OpenAIModels[GPT4oMini].DefaultMaxTokens,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 	AzureO1: {
 		ID:                  AzureO1,
@@ -107,7 +113,8 @@ var AzureModels = map[ModelID]Model{
 		ContextWindow:       OpenAIModels[O1].ContextWindow,
 		DefaultMaxTokens:    OpenAIModels[O1].DefaultMaxTokens,
 		CanReason:           OpenAIModels[O1].CanReason,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 	AzureO1Mini: {
 		ID:                  AzureO1Mini,
@@ -121,7 +128,8 @@ var AzureModels = map[ModelID]Model{
 		ContextWindow:       OpenAIModels[O1Mini].ContextWindow,
 		DefaultMaxTokens:    OpenAIModels[O1Mini].DefaultMaxTokens,
 		CanReason:           OpenAIModels[O1Mini].CanReason,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 	AzureO3: {
 		ID:                  AzureO3,
@@ -135,7 +143,8 @@ var AzureModels = map[ModelID]Model{
 		ContextWindow:       OpenAIModels[O3].ContextWindow,
 		DefaultMaxTokens:    OpenAIModels[O3].DefaultMaxTokens,
 		CanReason:           OpenAIModels[O3].CanReason,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 	AzureO3Mini: {
 		ID:                  AzureO3Mini,
@@ -149,7 +158,8 @@ var AzureModels = map[ModelID]Model{
 		ContextWindow:       OpenAIModels[O3Mini].ContextWindow,
 		DefaultMaxTokens:    OpenAIModels[O3Mini].DefaultMaxTokens,
 		CanReason:           OpenAIModels[O3Mini].CanReason,
-		SupportsAttachments: false,
+		SupportsAttachments:   false,
+		SupportsStructuredOut: true,
 	},
 	AzureO4Mini: {
 		ID:                  AzureO4Mini,
@@ -163,6 +173,7 @@ var AzureModels = map[ModelID]Model{
 		ContextWindow:       OpenAIModels[O4Mini].ContextWindow,
 		DefaultMaxTokens:    OpenAIModels[O4Mini].DefaultMaxTokens,
 		CanReason:           OpenAIModels[O4Mini].CanReason,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 }

@@ -35,7 +35,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOut:       OpenAIModels[GPT41].CostPer1MOut,
 		CostPer1MOutCached: OpenAIModels[GPT41].CostPer1MOutCached,
 		ContextWindow:      OpenAIModels[GPT41].ContextWindow,
-		DefaultMaxTokens:   OpenAIModels[GPT41].DefaultMaxTokens,
+		DefaultMaxTokens:      OpenAIModels[GPT41].DefaultMaxTokens,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterGPT41Mini: {
 		ID:                 OpenRouterGPT41Mini,
@@ -47,7 +48,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOut:       OpenAIModels[GPT41Mini].CostPer1MOut,
 		CostPer1MOutCached: OpenAIModels[GPT41Mini].CostPer1MOutCached,
 		ContextWindow:      OpenAIModels[GPT41Mini].ContextWindow,
-		DefaultMaxTokens:   OpenAIModels[GPT41Mini].DefaultMaxTokens,
+		DefaultMaxTokens:      OpenAIModels[GPT41Mini].DefaultMaxTokens,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterGPT41Nano: {
 		ID:                 OpenRouterGPT41Nano,
@@ -59,7 +61,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOut:       OpenAIModels[GPT41Nano].CostPer1MOut,
 		CostPer1MOutCached: OpenAIModels[GPT41Nano].CostPer1MOutCached,
 		ContextWindow:      OpenAIModels[GPT41Nano].ContextWindow,
-		DefaultMaxTokens:   OpenAIModels[GPT41Nano].DefaultMaxTokens,
+		DefaultMaxTokens:      OpenAIModels[GPT41Nano].DefaultMaxTokens,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterGPT45Preview: {
 		ID:                 OpenRouterGPT45Preview,
@@ -71,7 +74,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOut:       OpenAIModels[GPT45Preview].CostPer1MOut,
 		CostPer1MOutCached: OpenAIModels[GPT45Preview].CostPer1MOutCached,
 		ContextWindow:      OpenAIModels[GPT45Preview].ContextWindow,
-		DefaultMaxTokens:   OpenAIModels[GPT45Preview].DefaultMaxTokens,
+		DefaultMaxTokens:      OpenAIModels[GPT45Preview].DefaultMaxTokens,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterGPT4o: {
 		ID:                 OpenRouterGPT4o,
@@ -83,7 +87,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOut:       OpenAIModels[GPT4o].CostPer1MOut,
 		CostPer1MOutCached: OpenAIModels[GPT4o].CostPer1MOutCached,
 		ContextWindow:      OpenAIModels[GPT4o].ContextWindow,
-		DefaultMaxTokens:   OpenAIModels[GPT4o].DefaultMaxTokens,
+		DefaultMaxTokens:      OpenAIModels[GPT4o].DefaultMaxTokens,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterGPT4oMini: {
 		ID:                 OpenRouterGPT4oMini,
@@ -94,7 +99,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MInCached:  OpenAIModels[GPT4oMini].CostPer1MInCached,
 		CostPer1MOut:       OpenAIModels[GPT4oMini].CostPer1MOut,
 		CostPer1MOutCached: OpenAIModels[GPT4oMini].CostPer1MOutCached,
-		ContextWindow:      OpenAIModels[GPT4oMini].ContextWindow,
+		ContextWindow:         OpenAIModels[GPT4oMini].ContextWindow,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterO1: {
 		ID:                 OpenRouterO1,
@@ -107,7 +113,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOutCached: OpenAIModels[O1].CostPer1MOutCached,
 		ContextWindow:      OpenAIModels[O1].ContextWindow,
 		DefaultMaxTokens:   OpenAIModels[O1].DefaultMaxTokens,
-		CanReason:          OpenAIModels[O1].CanReason,
+		CanReason:             OpenAIModels[O1].CanReason,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterO1Pro: {
 		ID:                 OpenRouterO1Pro,
@@ -120,7 +127,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOutCached: OpenAIModels[O1Pro].CostPer1MOutCached,
 		ContextWindow:      OpenAIModels[O1Pro].ContextWindow,
 		DefaultMaxTokens:   OpenAIModels[O1Pro].DefaultMaxTokens,
-		CanReason:          OpenAIModels[O1Pro].CanReason,
+		CanReason:             OpenAIModels[O1Pro].CanReason,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterO1Mini: {
 		ID:                 OpenRouterO1Mini,
@@ -133,7 +141,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOutCached: OpenAIModels[O1Mini].CostPer1MOutCached,
 		ContextWindow:      OpenAIModels[O1Mini].ContextWindow,
 		DefaultMaxTokens:   OpenAIModels[O1Mini].DefaultMaxTokens,
-		CanReason:          OpenAIModels[O1Mini].CanReason,
+		CanReason:             OpenAIModels[O1Mini].CanReason,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterO3: {
 		ID:                 OpenRouterO3,
@@ -146,7 +155,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOutCached: OpenAIModels[O3].CostPer1MOutCached,
 		ContextWindow:      OpenAIModels[O3].ContextWindow,
 		DefaultMaxTokens:   OpenAIModels[O3].DefaultMaxTokens,
-		CanReason:          OpenAIModels[O3].CanReason,
+		CanReason:             OpenAIModels[O3].CanReason,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterO3Mini: {
 		ID:                 OpenRouterO3Mini,
@@ -159,7 +169,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOutCached: OpenAIModels[O3Mini].CostPer1MOutCached,
 		ContextWindow:      OpenAIModels[O3Mini].ContextWindow,
 		DefaultMaxTokens:   OpenAIModels[O3Mini].DefaultMaxTokens,
-		CanReason:          OpenAIModels[O3Mini].CanReason,
+		CanReason:             OpenAIModels[O3Mini].CanReason,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterO4Mini: {
 		ID:                 OpenRouterO4Mini,
@@ -172,7 +183,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOutCached: OpenAIModels[O4Mini].CostPer1MOutCached,
 		ContextWindow:      OpenAIModels[O4Mini].ContextWindow,
 		DefaultMaxTokens:   OpenAIModels[O4Mini].DefaultMaxTokens,
-		CanReason:          OpenAIModels[O4Mini].CanReason,
+		CanReason:             OpenAIModels[O4Mini].CanReason,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterGemini25Flash: {
 		ID:                 OpenRouterGemini25Flash,
@@ -184,7 +196,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOut:       GeminiModels[Gemini25Flash].CostPer1MOut,
 		CostPer1MOutCached: GeminiModels[Gemini25Flash].CostPer1MOutCached,
 		ContextWindow:      GeminiModels[Gemini25Flash].ContextWindow,
-		DefaultMaxTokens:   GeminiModels[Gemini25Flash].DefaultMaxTokens,
+		DefaultMaxTokens:      GeminiModels[Gemini25Flash].DefaultMaxTokens,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterGemini25: {
 		ID:                 OpenRouterGemini25,
@@ -196,7 +209,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOut:       GeminiModels[Gemini25].CostPer1MOut,
 		CostPer1MOutCached: GeminiModels[Gemini25].CostPer1MOutCached,
 		ContextWindow:      GeminiModels[Gemini25].ContextWindow,
-		DefaultMaxTokens:   GeminiModels[Gemini25].DefaultMaxTokens,
+		DefaultMaxTokens:      GeminiModels[Gemini25].DefaultMaxTokens,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterClaude35Sonnet: {
 		ID:                 OpenRouterClaude35Sonnet,
@@ -208,7 +222,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOut:       AnthropicModels[Claude35Sonnet].CostPer1MOut,
 		CostPer1MOutCached: AnthropicModels[Claude35Sonnet].CostPer1MOutCached,
 		ContextWindow:      AnthropicModels[Claude35Sonnet].ContextWindow,
-		DefaultMaxTokens:   AnthropicModels[Claude35Sonnet].DefaultMaxTokens,
+		DefaultMaxTokens:      AnthropicModels[Claude35Sonnet].DefaultMaxTokens,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterClaude3Haiku: {
 		ID:                 OpenRouterClaude3Haiku,
@@ -220,7 +235,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOut:       AnthropicModels[Claude3Haiku].CostPer1MOut,
 		CostPer1MOutCached: AnthropicModels[Claude3Haiku].CostPer1MOutCached,
 		ContextWindow:      AnthropicModels[Claude3Haiku].ContextWindow,
-		DefaultMaxTokens:   AnthropicModels[Claude3Haiku].DefaultMaxTokens,
+		DefaultMaxTokens:      AnthropicModels[Claude3Haiku].DefaultMaxTokens,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterClaude37Sonnet: {
 		ID:                 OpenRouterClaude37Sonnet,
@@ -233,7 +249,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOutCached: AnthropicModels[Claude37Sonnet].CostPer1MOutCached,
 		ContextWindow:      AnthropicModels[Claude37Sonnet].ContextWindow,
 		DefaultMaxTokens:   AnthropicModels[Claude37Sonnet].DefaultMaxTokens,
-		CanReason:          AnthropicModels[Claude37Sonnet].CanReason,
+		CanReason:             AnthropicModels[Claude37Sonnet].CanReason,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterClaude35Haiku: {
 		ID:                 OpenRouterClaude35Haiku,
@@ -245,7 +262,8 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOut:       AnthropicModels[Claude35Haiku].CostPer1MOut,
 		CostPer1MOutCached: AnthropicModels[Claude35Haiku].CostPer1MOutCached,
 		ContextWindow:      AnthropicModels[Claude35Haiku].ContextWindow,
-		DefaultMaxTokens:   AnthropicModels[Claude35Haiku].DefaultMaxTokens,
+		DefaultMaxTokens:      AnthropicModels[Claude35Haiku].DefaultMaxTokens,
+		SupportsStructuredOut: false,
 	},
 	OpenRouterClaude3Opus: {
 		ID:                 OpenRouterClaude3Opus,
@@ -257,6 +275,7 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOut:       AnthropicModels[Claude3Opus].CostPer1MOut,
 		CostPer1MOutCached: AnthropicModels[Claude3Opus].CostPer1MOutCached,
 		ContextWindow:      AnthropicModels[Claude3Opus].ContextWindow,
-		DefaultMaxTokens:   AnthropicModels[Claude3Opus].DefaultMaxTokens,
+		DefaultMaxTokens:      AnthropicModels[Claude3Opus].DefaultMaxTokens,
+		SupportsStructuredOut: false,
 	},
 }

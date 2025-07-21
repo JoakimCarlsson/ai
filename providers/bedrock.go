@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
 )
@@ -89,4 +90,35 @@ func (b *bedrockClient) stream(ctx context.Context, messages []message.Message, 
 	}
 
 	return b.childProvider.stream(ctx, messages, tools)
+}
+
+// supportsStructuredOutput checks if the provider supports structured output
+func (b *bedrockClient) supportsStructuredOutput() bool {
+	if b.childProvider != nil {
+		return b.childProvider.supportsStructuredOutput()
+	}
+	return false
+}
+
+// SendMessagesWithStructuredOutput sends messages with a structured output schema
+func (b *bedrockClient) sendWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (*LLMResponse, error) {
+	if b.childProvider != nil {
+		return b.childProvider.sendWithStructuredOutput(ctx, messages, tools, outputSchema)
+	}
+	return nil, errors.New("structured output not supported by this Bedrock model")
+}
+
+// StreamWithStructuredOutput streams messages with a structured output schema
+func (b *bedrockClient) streamWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent {
+	if b.childProvider != nil {
+		return b.childProvider.streamWithStructuredOutput(ctx, messages, tools, outputSchema)
+	}
+
+	errChan := make(chan LLMEvent, 1)
+	errChan <- LLMEvent{
+		Type:  types.EventError,
+		Error: errors.New("structured output not supported by this Bedrock model"),
+	}
+	close(errChan)
+	return errChan
 }

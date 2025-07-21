@@ -23,8 +23,9 @@ var GroqModels = map[ModelID]Model{
 		CostPer1MOut:        0.39,
 		ContextWindow:       128_000,
 		DefaultMaxTokens:    50000,
-		CanReason:           false,
-		SupportsAttachments: false,
+		CanReason:             false,
+		SupportsAttachments:   false,
+		SupportsStructuredOut: false,
 	},
 
 	Llama4Scout: {
@@ -37,7 +38,8 @@ var GroqModels = map[ModelID]Model{
 		CostPer1MOutCached:  0,
 		CostPer1MOut:        0.34,
 		ContextWindow:       128_000,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 
 	Llama4Maverick: {
@@ -50,7 +52,8 @@ var GroqModels = map[ModelID]Model{
 		CostPer1MOutCached:  0,
 		CostPer1MOut:        0.20,
 		ContextWindow:       128_000,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 
 	Llama3_3_70BVersatile: {
@@ -63,7 +66,8 @@ var GroqModels = map[ModelID]Model{
 		CostPer1MOutCached:  0,
 		CostPer1MOut:        0.79,
 		ContextWindow:       128_000,
-		SupportsAttachments: false,
+		SupportsAttachments:   false,
+		SupportsStructuredOut: false,
 	},
 
 	DeepseekR1DistillLlama70b: {
@@ -76,7 +80,8 @@ var GroqModels = map[ModelID]Model{
 		CostPer1MOutCached:  0,
 		CostPer1MOut:        0.99,
 		ContextWindow:       128_000,
-		CanReason:           true,
-		SupportsAttachments: false,
+		CanReason:             true,
+		SupportsAttachments:   false,
+		SupportsStructuredOut: false,
 	},
 }

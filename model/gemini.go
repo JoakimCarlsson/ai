@@ -21,7 +21,8 @@ var GeminiModels = map[ModelID]Model{
 		CostPer1MOut:        0.60,
 		ContextWindow:       1000000,
 		DefaultMaxTokens:    50000,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 	Gemini25: {
 		ID:                  Gemini25,
@@ -34,7 +35,8 @@ var GeminiModels = map[ModelID]Model{
 		CostPer1MOut:        10,
 		ContextWindow:       1000000,
 		DefaultMaxTokens:    50000,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 
 	Gemini20Flash: {
@@ -48,7 +50,8 @@ var GeminiModels = map[ModelID]Model{
 		CostPer1MOut:        0.40,
 		ContextWindow:       1000000,
 		DefaultMaxTokens:    6000,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 	Gemini20FlashLite: {
 		ID:                  Gemini20FlashLite,
@@ -61,6 +64,7 @@ var GeminiModels = map[ModelID]Model{
 		CostPer1MOut:        0.30,
 		ContextWindow:       1000000,
 		DefaultMaxTokens:    6000,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 }

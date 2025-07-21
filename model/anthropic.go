@@ -24,7 +24,8 @@ var AnthropicModels = map[ModelID]Model{
 		CostPer1MOut:        15.0,
 		ContextWindow:       200000,
 		DefaultMaxTokens:    5000,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: false,
 	},
 	Claude3Haiku: {
 		ID:                  Claude3Haiku,
@@ -37,7 +38,8 @@ var AnthropicModels = map[ModelID]Model{
 		CostPer1MOut:        1.25,
 		ContextWindow:       200000,
 		DefaultMaxTokens:    4096,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: false,
 	},
 	Claude37Sonnet: {
 		ID:                  Claude37Sonnet,
@@ -51,7 +53,8 @@ var AnthropicModels = map[ModelID]Model{
 		ContextWindow:       200000,
 		DefaultMaxTokens:    50000,
 		CanReason:           true,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: false,
 	},
 	Claude35Haiku: {
 		ID:                  Claude35Haiku,
@@ -64,7 +67,8 @@ var AnthropicModels = map[ModelID]Model{
 		CostPer1MOut:        4.0,
 		ContextWindow:       200000,
 		DefaultMaxTokens:    4096,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: false,
 	},
 	Claude3Opus: {
 		ID:                  Claude3Opus,
@@ -77,7 +81,8 @@ var AnthropicModels = map[ModelID]Model{
 		CostPer1MOut:        75.0,
 		ContextWindow:       200000,
 		DefaultMaxTokens:    4096,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: false,
 	},
 	Claude4Sonnet: {
 		ID:                  Claude4Sonnet,
@@ -91,7 +96,8 @@ var AnthropicModels = map[ModelID]Model{
 		ContextWindow:       200000,
 		DefaultMaxTokens:    50000,
 		CanReason:           true,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: false,
 	},
 	Claude4Opus: {
 		ID:                  Claude4Opus,
@@ -104,6 +110,7 @@ var AnthropicModels = map[ModelID]Model{
 		CostPer1MOut:        75.0,
 		ContextWindow:       200000,
 		DefaultMaxTokens:    4096,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: false,
 	},
 }

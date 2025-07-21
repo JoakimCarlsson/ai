@@ -3,10 +3,12 @@ package llm
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
 	"google.golang.org/genai"
@@ -524,4 +526,183 @@ func mapJSONTypeToGenAI(jsonType string) genai.Type {
 	default:
 		return genai.TypeString
 	}
+}
+
+func (g *geminiClient) supportsStructuredOutput() bool {
+	return true
+}
+
+func (g *geminiClient) sendWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (*LLMResponse, error) {
+	geminiMessages, systemMessages := g.convertMessages(messages)
+
+	if g.providerOptions.timeout != nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, *g.providerOptions.timeout)
+		defer cancel()
+	}
+
+	history := geminiMessages[:len(geminiMessages)-1]
+	lastMsg := geminiMessages[len(geminiMessages)-1]
+	config := &genai.GenerateContentConfig{
+		MaxOutputTokens: int32(g.providerOptions.maxTokens),
+	}
+	
+	responseSchema := g.convertSchemaToGenai(outputSchema.Parameters, outputSchema.Required)
+	config.ResponseSchema = responseSchema
+
+	if g.providerOptions.temperature != nil {
+		temp := float32(*g.providerOptions.temperature)
+		config.Temperature = &temp
+	}
+
+	if g.providerOptions.topP != nil {
+		topP := float32(*g.providerOptions.topP)
+		config.TopP = &topP
+	}
+
+	if g.providerOptions.topK != nil {
+		topK := float32(*g.providerOptions.topK)
+		config.TopK = &topK
+	}
+
+	if g.options.frequencyPenalty != nil {
+		penalty := float32(*g.options.frequencyPenalty)
+		config.FrequencyPenalty = &penalty
+	}
+
+	if g.options.presencePenalty != nil {
+		penalty := float32(*g.options.presencePenalty)
+		config.PresencePenalty = &penalty
+	}
+
+	if g.options.seed != nil {
+		seed := int32(*g.options.seed)
+		config.Seed = &seed
+	}
+
+	geminiTools := g.convertTools(tools)
+	if len(geminiTools) > 0 {
+		config.Tools = geminiTools
+	}
+
+	if len(systemMessages) > 0 {
+		config.SystemInstruction = &genai.Content{
+			Parts: []*genai.Part{{Text: strings.Join(systemMessages, "\n\n")}},
+		}
+	}
+	
+	chat, _ := g.client.Chats.Create(ctx, g.providerOptions.model.APIModel, config, history)
+
+	return ExecuteWithRetry(ctx, GeminiRetryConfig(), func() (*LLMResponse, error) {
+		response, err := chat.Send(ctx, lastMsg.Parts[0])
+		if err != nil {
+			return nil, err
+		}
+
+		content := ""
+		for _, candidate := range response.Candidates {
+			for _, part := range candidate.Content.Parts {
+				if part.Text != "" {
+					content += string(part.Text)
+				}
+			}
+		}
+
+		toolCalls := []message.ToolCall{}
+		for _, candidate := range response.Candidates {
+			for _, part := range candidate.Content.Parts {
+				if part.FunctionCall != nil {
+					input, _ := json.Marshal(part.FunctionCall.Args)
+					toolCalls = append(toolCalls, message.ToolCall{
+						ID:    part.FunctionCall.Name,
+						Name:  part.FunctionCall.Name,
+						Input: string(input),
+						Type:  "function",
+					})
+				}
+			}
+		}
+
+		finishReason := message.FinishReasonEndTurn
+		if len(response.Candidates) > 0 {
+			finishReason = g.finishReason(response.Candidates[0].FinishReason)
+		}
+
+		if len(toolCalls) > 0 {
+			finishReason = message.FinishReasonToolUse
+		}
+
+		return &LLMResponse{
+			Content:                content,
+			ToolCalls:              toolCalls,
+			Usage:                  g.usage(response),
+			FinishReason:           finishReason,
+			StructuredOutput:       &content,
+			UsedNativeStructuredOutput: true,
+		}, nil
+	})
+}
+
+func (g *geminiClient) streamWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent {
+	errChan := make(chan LLMEvent, 1)
+	errChan <- LLMEvent{
+		Type:  types.EventTypeError,
+		Error: errors.New("structured output streaming not yet implemented for Gemini - use non-streaming method"),
+	}
+	close(errChan)
+	return errChan
+}
+
+func (g *geminiClient) convertSchemaToGenai(parameters map[string]any, required []string) *genai.Schema {
+	schema := &genai.Schema{
+		Type:       genai.TypeObject,
+		Properties: make(map[string]*genai.Schema),
+		Required:   required,
+	}
+	
+	for name, prop := range parameters {
+		if propMap, ok := prop.(map[string]any); ok {
+			propSchema := &genai.Schema{}
+			
+			if typeVal, ok := propMap["type"].(string); ok {
+				propSchema.Type = mapJSONTypeToGenAI(typeVal)
+			}
+			
+			if desc, ok := propMap["description"].(string); ok {
+				propSchema.Description = desc
+			}
+			
+			if items, ok := propMap["items"].(map[string]any); ok {
+				propSchema.Items = g.convertPropertyToGenai(items)
+			}
+			
+			if enum, ok := propMap["enum"].([]any); ok {
+				enumStrings := make([]string, len(enum))
+				for i, v := range enum {
+					if str, ok := v.(string); ok {
+						enumStrings[i] = str
+					}
+				}
+				propSchema.Enum = enumStrings
+			}
+			
+			schema.Properties[name] = propSchema
+		}
+	}
+	
+	return schema
+}
+
+func (g *geminiClient) convertPropertyToGenai(propMap map[string]any) *genai.Schema {
+	schema := &genai.Schema{}
+	
+	if typeVal, ok := propMap["type"].(string); ok {
+		schema.Type = mapJSONTypeToGenAI(typeVal)
+	}
+	
+	if desc, ok := propMap["description"].(string); ok {
+		schema.Description = desc
+	}
+	
+	return schema
 }

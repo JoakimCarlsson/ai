@@ -13,6 +13,7 @@ import (
 	"github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
 )
@@ -424,4 +425,25 @@ func WithAnthropicShouldThinkFn(fn func(string) bool) AnthropicOption {
 	return func(options *anthropicOptions) {
 		options.shouldThink = fn
 	}
+}
+
+// SupportsStructuredOutput checks if the provider supports structured output
+func (a *anthropicClient) supportsStructuredOutput() bool {
+	return false
+}
+
+// SendMessagesWithStructuredOutput sends messages with a structured output schema
+func (a *anthropicClient) sendWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (*LLMResponse, error) {
+	return nil, errors.New("structured output not supported by Anthropic Claude - use tool-based approach instead")
+}
+
+// StreamWithStructuredOutput streams messages with a structured output schema
+func (a *anthropicClient) streamWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent {
+	errChan := make(chan LLMEvent, 1)
+	errChan <- LLMEvent{
+		Type:  types.EventError,
+		Error: errors.New("structured output not supported by Anthropic Claude - use tool-based approach instead"),
+	}
+	close(errChan)
+	return errChan
 }

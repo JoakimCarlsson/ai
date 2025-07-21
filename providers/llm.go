@@ -7,6 +7,7 @@ import (
 
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
 )
@@ -21,10 +22,12 @@ type TokenUsage struct {
 }
 
 type LLMResponse struct {
-	Content      string
-	ToolCalls    []message.ToolCall
-	Usage        TokenUsage
-	FinishReason message.FinishReason
+	Content                string
+	ToolCalls              []message.ToolCall
+	Usage                  TokenUsage
+	FinishReason           message.FinishReason
+	StructuredOutput       *string
+	UsedNativeStructuredOutput bool
 }
 
 type LLMEvent struct {
@@ -39,10 +42,16 @@ type LLMEvent struct {
 
 type LLM interface {
 	SendMessages(ctx context.Context, messages []message.Message, tools []tool.BaseTool) (*LLMResponse, error)
+	
+	SendMessagesWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (*LLMResponse, error)
 
 	StreamResponse(ctx context.Context, messages []message.Message, tools []tool.BaseTool) <-chan LLMEvent
+	
+	StreamResponseWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent
 
 	Model() model.Model
+	
+	SupportsStructuredOutput() bool
 }
 
 type llmClientOptions struct {
@@ -65,7 +74,10 @@ type LLMClientOption func(*llmClientOptions)
 
 type LLMClient interface {
 	send(ctx context.Context, messages []message.Message, tools []tool.BaseTool) (*LLMResponse, error)
+	sendWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (*LLMResponse, error)
 	stream(ctx context.Context, messages []message.Message, tools []tool.BaseTool) <-chan LLMEvent
+	streamWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent
+	supportsStructuredOutput() bool
 }
 
 type baseLLM[C LLMClient] struct {
@@ -164,13 +176,47 @@ func (p *baseLLM[C]) SendMessages(ctx context.Context, messages []message.Messag
 	return response, nil
 }
 
+func (p *baseLLM[C]) SendMessagesWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (*LLMResponse, error) {
+	if !p.client.supportsStructuredOutput() {
+		return nil, fmt.Errorf("structured output not supported by provider: %s", p.options.model.Provider)
+	}
+	
+	messages = p.cleanMessages(messages)
+	response, err := p.client.sendWithStructuredOutput(ctx, messages, tools, outputSchema)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
 func (p *baseLLM[C]) Model() model.Model {
 	return p.options.model
+}
+
+func (p *baseLLM[C]) SupportsStructuredOutput() bool {
+	return p.client.supportsStructuredOutput()
 }
 
 func (p *baseLLM[C]) StreamResponse(ctx context.Context, messages []message.Message, tools []tool.BaseTool) <-chan LLMEvent {
 	messages = p.cleanMessages(messages)
 	return p.client.stream(ctx, messages, tools)
+}
+
+func (p *baseLLM[C]) StreamResponseWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent {
+	if !p.client.supportsStructuredOutput() {
+		errChan := make(chan LLMEvent, 1)
+		errChan <- LLMEvent{
+			Type:  types.EventError,
+			Error: fmt.Errorf("structured output not supported by provider: %s", p.options.model.Provider),
+		}
+		close(errChan)
+		return errChan
+	}
+	
+	messages = p.cleanMessages(messages)
+	return p.client.streamWithStructuredOutput(ctx, messages, tools, outputSchema)
 }
 
 // WithAPIKey sets the API key for authenticating with the LLM provider

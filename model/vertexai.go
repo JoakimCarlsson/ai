@@ -19,7 +19,8 @@ var VertexAIGeminiModels = map[ModelID]Model{
 		CostPer1MOutCached:  GeminiModels[Gemini25Flash].CostPer1MOutCached,
 		ContextWindow:       GeminiModels[Gemini25Flash].ContextWindow,
 		DefaultMaxTokens:    GeminiModels[Gemini25Flash].DefaultMaxTokens,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 	VertexAIGemini25: {
 		ID:                  VertexAIGemini25,
@@ -32,6 +33,7 @@ var VertexAIGeminiModels = map[ModelID]Model{
 		CostPer1MOutCached:  GeminiModels[Gemini25].CostPer1MOutCached,
 		ContextWindow:       GeminiModels[Gemini25].ContextWindow,
 		DefaultMaxTokens:    GeminiModels[Gemini25].DefaultMaxTokens,
-		SupportsAttachments: true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 }
