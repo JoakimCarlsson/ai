@@ -3,6 +3,7 @@ package llm
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/joakimcarlsson/ai/message"
@@ -222,6 +223,10 @@ func (o *openaiClient) send(ctx context.Context, messages []message.Message, too
 			return nil, err
 		}
 
+		if len(openaiResponse.Choices) == 0 {
+			return nil, fmt.Errorf("no response choices returned from OpenAI")
+		}
+
 		content := ""
 		if openaiResponse.Choices[0].Message.Content != "" {
 			content = openaiResponse.Choices[0].Message.Content
@@ -281,6 +286,10 @@ func (o *openaiClient) stream(ctx context.Context, messages []message.Message, t
 
 			err := openaiStream.Err()
 			if err == nil || errors.Is(err, io.EOF) {
+				if len(acc.ChatCompletion.Choices) == 0 {
+					eventChan <- LLMEvent{Type: types.EventError, Error: errors.New("no response choices in stream")}
+					return errors.New("no response choices in stream")
+				}
 				finishReason := o.finishReason(string(acc.ChatCompletion.Choices[0].FinishReason))
 				if len(acc.ChatCompletion.Choices[0].Message.ToolCalls) > 0 {
 					toolCalls = append(toolCalls, o.toolCalls(acc.ChatCompletion)...)
@@ -426,6 +435,10 @@ func (o *openaiClient) sendWithStructuredOutput(ctx context.Context, messages []
 			return nil, err
 		}
 
+		if len(openaiResponse.Choices) == 0 {
+			return nil, fmt.Errorf("no response choices returned from OpenAI")
+		}
+
 		content := ""
 		if openaiResponse.Choices[0].Message.Content != "" {
 			content = openaiResponse.Choices[0].Message.Content
@@ -505,6 +518,10 @@ func (o *openaiClient) streamWithStructuredOutput(ctx context.Context, messages 
 
 			err := openaiStream.Err()
 			if err == nil || errors.Is(err, io.EOF) {
+				if len(acc.ChatCompletion.Choices) == 0 {
+					eventChan <- LLMEvent{Type: types.EventError, Error: errors.New("no response choices in stream")}
+					return errors.New("no response choices in stream")
+				}
 				finishReason := o.finishReason(string(acc.ChatCompletion.Choices[0].FinishReason))
 				if len(acc.ChatCompletion.Choices[0].Message.ToolCalls) > 0 {
 					toolCalls = append(toolCalls, o.toolCalls(acc.ChatCompletion)...)
