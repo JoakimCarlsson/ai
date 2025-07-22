@@ -213,11 +213,8 @@ func (o *openaiClient) preparedParams(messages []openai.ChatCompletionMessagePar
 func (o *openaiClient) send(ctx context.Context, messages []message.Message, tools []tool.BaseTool) (response *LLMResponse, err error) {
 	params := o.preparedParams(o.convertMessages(messages), o.convertTools(tools))
 
-	if o.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *o.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, o.providerOptions.timeout)
+	defer cancel()
 
 	return ExecuteWithRetry(ctx, OpenAIRetryConfig(), func() (*LLMResponse, error) {
 		openaiResponse, err := o.client.Chat.Completions.New(ctx, params)
@@ -252,11 +249,8 @@ func (o *openaiClient) stream(ctx context.Context, messages []message.Message, t
 		IncludeUsage: openai.Bool(true),
 	}
 
-	if o.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *o.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, o.providerOptions.timeout)
+	defer cancel()
 
 	eventChan := make(chan LLMEvent)
 
@@ -423,11 +417,8 @@ func (o *openaiClient) sendWithStructuredOutput(ctx context.Context, messages []
 		},
 	}
 
-	if o.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *o.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, o.providerOptions.timeout)
+	defer cancel()
 
 	return ExecuteWithRetry(ctx, OpenAIRetryConfig(), func() (*LLMResponse, error) {
 		openaiResponse, err := o.client.Chat.Completions.New(ctx, params)
@@ -482,11 +473,8 @@ func (o *openaiClient) streamWithStructuredOutput(ctx context.Context, messages 
 		IncludeUsage: openai.Bool(true),
 	}
 
-	if o.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *o.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, o.providerOptions.timeout)
+	defer cancel()
 
 	eventChan := make(chan LLMEvent)
 

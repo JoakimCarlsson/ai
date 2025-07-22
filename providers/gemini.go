@@ -156,11 +156,8 @@ func (g *geminiClient) finishReason(reason genai.FinishReason) message.FinishRea
 func (g *geminiClient) send(ctx context.Context, messages []message.Message, tools []tool.BaseTool) (*LLMResponse, error) {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
-	if g.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *g.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
+	defer cancel()
 
 	history := geminiMessages[:len(geminiMessages)-1]
 	lastMsg := geminiMessages[len(geminiMessages)-1]
@@ -265,11 +262,8 @@ func (g *geminiClient) send(ctx context.Context, messages []message.Message, too
 func (g *geminiClient) stream(ctx context.Context, messages []message.Message, tools []tool.BaseTool) <-chan LLMEvent {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
-	if g.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *g.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
+	defer cancel()
 
 	history := geminiMessages[:len(geminiMessages)-1]
 	lastMsg := geminiMessages[len(geminiMessages)-1]
@@ -534,11 +528,8 @@ func (g *geminiClient) supportsStructuredOutput() bool {
 func (g *geminiClient) sendWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (*LLMResponse, error) {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
-	if g.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *g.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
+	defer cancel()
 
 	history := geminiMessages[:len(geminiMessages)-1]
 	lastMsg := geminiMessages[len(geminiMessages)-1]
@@ -645,11 +636,8 @@ func (g *geminiClient) sendWithStructuredOutput(ctx context.Context, messages []
 func (g *geminiClient) streamWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
-	if g.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *g.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
+	defer cancel()
 
 	history := geminiMessages[:len(geminiMessages)-1]
 	lastMsg := geminiMessages[len(geminiMessages)-1]

@@ -234,11 +234,8 @@ func (a *anthropicClient) send(ctx context.Context, messages []message.Message, 
 	anthropicMessages, systemMessages := a.convertMessages(messages)
 	preparedMessages := a.preparedMessages(anthropicMessages, a.convertTools(tools), systemMessages)
 
-	if a.llmOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *a.llmOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, a.llmOptions.timeout)
+	defer cancel()
 
 	return ExecuteWithRetry(ctx, AnthropicRetryConfig(), func() (*LLMResponse, error) {
 		anthropicResponse, err := a.client.Messages.New(ctx, preparedMessages)
@@ -267,11 +264,8 @@ func (a *anthropicClient) stream(ctx context.Context, messages []message.Message
 	preparedMessages := a.preparedMessages(anthropicMessages, a.convertTools(tools), systemMessages)
 	eventChan := make(chan LLMEvent)
 
-	if a.llmOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *a.llmOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, a.llmOptions.timeout)
+	defer cancel()
 
 	go func() {
 		defer close(eventChan)
