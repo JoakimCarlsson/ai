@@ -68,6 +68,7 @@ type llmClientOptions struct {
 	openaiOptions    []OpenAIOption
 	geminiOptions    []GeminiOption
 	bedrockOptions   []BedrockOption
+	azureOptions     []AzureOption
 }
 
 type LLMClientOption func(*llmClientOptions)
@@ -265,6 +266,13 @@ func WithGeminiOptions(geminiOptions ...GeminiOption) LLMClientOption {
 func WithBedrockOptions(bedrockOptions ...BedrockOption) LLMClientOption {
 	return func(options *llmClientOptions) {
 		options.bedrockOptions = bedrockOptions
+	}
+}
+
+// WithAzureOptions applies provider-specific configuration for Azure OpenAI models
+func WithAzureOptions(azureOptions ...AzureOption) LLMClientOption {
+	return func(options *llmClientOptions) {
+		options.azureOptions = azureOptions
 	}
 }
 
