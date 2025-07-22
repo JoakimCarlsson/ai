@@ -165,9 +165,8 @@ func (a *anthropicClient) preparedMessages(messages []anthropic.MessageParam, to
 	isUser := lastMessage.Role == anthropic.MessageParamRoleUser
 	messageContent := ""
 	temperature := anthropic.Float(0)
-	if a.llmOptions.temperature != nil {
-		temperature = anthropic.Float(*a.llmOptions.temperature)
-	}
+	paramBuilder := newParameterBuilder(a.llmOptions)
+	paramBuilder.applyFloat64Temperature(func(t *float64) { temperature = anthropic.Float(*t) })
 	if isUser {
 		for _, m := range lastMessage.Content {
 			if m.OfText != nil && m.OfText.Text != "" {
@@ -202,13 +201,8 @@ func (a *anthropicClient) preparedMessages(messages []anthropic.MessageParam, to
 		Thinking:    thinkingParam,
 	}
 
-	if a.llmOptions.topP != nil {
-		params.TopP = anthropic.Float(*a.llmOptions.topP)
-	}
-
-	if a.llmOptions.topK != nil {
-		params.TopK = anthropic.Int(*a.llmOptions.topK)
-	}
+	paramBuilder.applyFloat64TopP(func(p *float64) { params.TopP = anthropic.Float(*p) })
+	paramBuilder.applyInt64TopK(func(k *int64) { params.TopK = anthropic.Int(*k) })
 
 	if len(a.llmOptions.stopSequences) > 0 {
 		params.StopSequences = a.llmOptions.stopSequences

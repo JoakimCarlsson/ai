@@ -166,13 +166,9 @@ func (o *openaiClient) preparedParams(messages []openai.ChatCompletionMessagePar
 		Tools:    tools,
 	}
 
-	if o.providerOptions.temperature != nil {
-		params.Temperature = openai.Float(*o.providerOptions.temperature)
-	}
-
-	if o.providerOptions.topP != nil {
-		params.TopP = openai.Float(*o.providerOptions.topP)
-	}
+	paramBuilder := newParameterBuilder(o.providerOptions)
+	paramBuilder.applyFloat64Temperature(func(t *float64) { params.Temperature = openai.Float(*t) })
+	paramBuilder.applyFloat64TopP(func(p *float64) { params.TopP = openai.Float(*p) })
 
 	if len(o.providerOptions.stopSequences) > 0 {
 		params.Stop = openai.ChatCompletionNewParamsStopUnion{
@@ -180,17 +176,9 @@ func (o *openaiClient) preparedParams(messages []openai.ChatCompletionMessagePar
 		}
 	}
 
-	if o.options.frequencyPenalty != nil {
-		params.FrequencyPenalty = openai.Float(*o.options.frequencyPenalty)
-	}
-
-	if o.options.presencePenalty != nil {
-		params.PresencePenalty = openai.Float(*o.options.presencePenalty)
-	}
-
-	if o.options.seed != nil {
-		params.Seed = openai.Int(*o.options.seed)
-	}
+	paramBuilder.applyFloat64FrequencyPenalty(o.options.frequencyPenalty, func(fp *float64) { params.FrequencyPenalty = openai.Float(*fp) })
+	paramBuilder.applyFloat64PresencePenalty(o.options.presencePenalty, func(pp *float64) { params.PresencePenalty = openai.Float(*pp) })
+	paramBuilder.applyInt64Seed(o.options.seed, func(s *int64) { params.Seed = openai.Int(*s) })
 
 	if o.providerOptions.model.CanReason {
 		params.MaxCompletionTokens = openai.Int(o.providerOptions.maxTokens)
