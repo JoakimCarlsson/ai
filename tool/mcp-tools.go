@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/mark3labs/mcp-go/client"
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
@@ -52,23 +51,10 @@ func (b *mcpTool) Info() ToolInfo {
 }
 
 func runTool(ctx context.Context, c MCPClient, toolName string, input string) (ToolResponse, error) {
-	defer c.Close()
-	initRequest := mcp.InitializeRequest{}
-	initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
-	initRequest.Params.ClientInfo = mcp.Implementation{
-		Name:    "llm",
-		Version: "0.0.1",
-	}
-
-	_, err := c.Initialize(ctx, initRequest)
-	if err != nil {
-		return NewTextErrorResponse(err.Error()), nil
-	}
-
 	toolRequest := mcp.CallToolRequest{}
 	toolRequest.Params.Name = toolName
 	var args map[string]any
-	if err = json.Unmarshal([]byte(input), &args); err != nil {
+	if err := json.Unmarshal([]byte(input), &args); err != nil {
 		return NewTextErrorResponse(fmt.Sprintf("error parsing parameters: %s", err)), nil
 	}
 	toolRequest.Params.Arguments = args
@@ -90,29 +76,11 @@ func runTool(ctx context.Context, c MCPClient, toolName string, input string) (T
 }
 
 func (b *mcpTool) Run(ctx context.Context, params ToolCall) (ToolResponse, error) {
-	switch b.mcpConfig.Type {
-	case MCPStdio:
-		c, err := client.NewStdioMCPClient(
-			b.mcpConfig.Command,
-			b.mcpConfig.Env,
-			b.mcpConfig.Args...,
-		)
-		if err != nil {
-			return NewTextErrorResponse(err.Error()), nil
-		}
-		return runTool(ctx, c, b.tool.Name, params.Input)
-	case MCPSse:
-		c, err := client.NewSSEMCPClient(
-			b.mcpConfig.URL,
-			client.WithHeaders(b.mcpConfig.Headers),
-		)
-		if err != nil {
-			return NewTextErrorResponse(err.Error()), nil
-		}
-		return runTool(ctx, c, b.tool.Name, params.Input)
+	c, err := pool.getClient(ctx, b.mcpName, b.mcpConfig)
+	if err != nil {
+		return NewTextErrorResponse(err.Error()), nil
 	}
-
-	return NewTextErrorResponse("invalid mcp type"), nil
+	return runTool(ctx, c, b.tool.Name, params.Input)
 }
 
 func newMcpTool(
@@ -129,20 +97,14 @@ func newMcpTool(
 
 var mcpTools []BaseTool
 
-func getTools(ctx context.Context, name string, m MCPServer, c MCPClient) []BaseTool {
+func getTools(ctx context.Context, name string, m MCPServer) []BaseTool {
 	var stdioTools []BaseTool
-	initRequest := mcp.InitializeRequest{}
-	initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
-	initRequest.Params.ClientInfo = mcp.Implementation{
-		Name:    "llm",
-		Version: "0.0.1",
-	}
-
-	_, err := c.Initialize(ctx, initRequest)
+	c, err := pool.getClient(ctx, name, m)
 	if err != nil {
-		slog.Error("error initializing mcp client", "error", err)
+		slog.Error("error getting mcp client", "error", err)
 		return stdioTools
 	}
+
 	toolsRequest := mcp.ListToolsRequest{}
 	tools, err := c.ListTools(ctx, toolsRequest)
 	if err != nil {
@@ -152,7 +114,6 @@ func getTools(ctx context.Context, name string, m MCPServer, c MCPClient) []Base
 	for _, t := range tools.Tools {
 		stdioTools = append(stdioTools, newMcpTool(name, t, m))
 	}
-	defer c.Close()
 	return stdioTools
 }
 
@@ -165,30 +126,7 @@ func GetMcpTools(
 		return mcpTools
 	}
 	for name, m := range servers {
-		switch m.Type {
-		case MCPStdio:
-			c, err := client.NewStdioMCPClient(
-				m.Command,
-				m.Env,
-				m.Args...,
-			)
-			if err != nil {
-				slog.Error("error creating mcp client", "error", err)
-				continue
-			}
-
-			mcpTools = append(mcpTools, getTools(ctx, name, m, c)...)
-		case MCPSse:
-			c, err := client.NewSSEMCPClient(
-				m.URL,
-				client.WithHeaders(m.Headers),
-			)
-			if err != nil {
-				slog.Error("error creating mcp client", "error", err)
-				continue
-			}
-			mcpTools = append(mcpTools, getTools(ctx, name, m, c)...)
-		}
+		mcpTools = append(mcpTools, getTools(ctx, name, m)...)
 	}
 
 	return mcpTools
