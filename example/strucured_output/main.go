@@ -95,13 +95,13 @@ func streamExample(ctx context.Context, client llm.LLM, messages []message.Messa
 
 	for event := range stream {
 		switch event.Type {
-		case types.EventTypeContentDelta:
+		case types.EventContentDelta:
 			fmt.Print(event.Content)
-		case types.EventTypeFinal:
+		case types.EventComplete:
 			if event.Response.StructuredOutput != nil {
 				fmt.Println(*event.Response.StructuredOutput)
 			}
-		case types.EventTypeError:
+		case types.EventError:
 			log.Fatal(event.Error)
 		}
 	}

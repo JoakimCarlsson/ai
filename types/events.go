@@ -14,8 +14,4 @@ const (
 	EventComplete         EventType = "complete"
 	EventError            EventType = "error"
 	EventWarning          EventType = "warning"
-	EventTypeContentDelta EventType = "content_delta"
-	EventTypeToolCall     EventType = "tool_call"
-	EventTypeFinal        EventType = "final"
-	EventTypeError        EventType = "error"
 )
