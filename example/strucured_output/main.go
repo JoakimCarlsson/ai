@@ -45,7 +45,7 @@ func main() {
 
 	client, err := llm.NewLLM(
 		model.ProviderXAI,
-		llm.WithAPIKey("xai-9GMOZYzHh7AlEMYDMHJgcMu3sbVjYZhfjodyPZJyuuR4ZiCUkU9tnRoqVkJ3amXweDIQqiUdMXhJIiIF"),
+		llm.WithAPIKey(""),
 		llm.WithModel(model.XAIModels[model.XAIGrok3]),
 		llm.WithMaxTokens(1000),
 	)
