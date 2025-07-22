@@ -528,7 +528,7 @@ func mapJSONTypeToGenAI(jsonType string) genai.Type {
 }
 
 func (g *geminiClient) supportsStructuredOutput() bool {
-	return true
+	return g.providerOptions.model.SupportsStructuredOut
 }
 
 func (g *geminiClient) sendWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (*LLMResponse, error) {

@@ -1,9 +1,13 @@
 package llm
 
 import (
+	"context"
 	"os"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/schema"
+	"github.com/joakimcarlsson/ai/tool"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/azure"
 	"github.com/openai/openai-go/option"
@@ -44,4 +48,16 @@ func newAzureClient(opts llmClientOptions) AzureClient {
 	}
 
 	return &azureClient{openaiClient: base}
+}
+
+func (a *azureClient) supportsStructuredOutput() bool {
+	return a.providerOptions.model.SupportsStructuredOut
+}
+
+func (a *azureClient) sendWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (*LLMResponse, error) {
+	return a.openaiClient.sendWithStructuredOutput(ctx, messages, tools, outputSchema)
+}
+
+func (a *azureClient) streamWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent {
+	return a.openaiClient.streamWithStructuredOutput(ctx, messages, tools, outputSchema)
 }

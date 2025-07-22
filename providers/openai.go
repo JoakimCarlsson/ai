@@ -400,7 +400,7 @@ func WithOpenAISeed(seed int64) OpenAIOption {
 }
 
 func (o *openaiClient) supportsStructuredOutput() bool {
-	return true
+	return o.providerOptions.model.SupportsStructuredOut
 }
 
 func (o *openaiClient) sendWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (response *LLMResponse, err error) {
