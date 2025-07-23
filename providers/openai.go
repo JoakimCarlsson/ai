@@ -3,6 +3,7 @@ package llm
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/joakimcarlsson/ai/message"
@@ -165,13 +166,9 @@ func (o *openaiClient) preparedParams(messages []openai.ChatCompletionMessagePar
 		Tools:    tools,
 	}
 
-	if o.providerOptions.temperature != nil {
-		params.Temperature = openai.Float(*o.providerOptions.temperature)
-	}
-
-	if o.providerOptions.topP != nil {
-		params.TopP = openai.Float(*o.providerOptions.topP)
-	}
+	paramBuilder := newParameterBuilder(o.providerOptions)
+	paramBuilder.applyFloat64Temperature(func(t *float64) { params.Temperature = openai.Float(*t) })
+	paramBuilder.applyFloat64TopP(func(p *float64) { params.TopP = openai.Float(*p) })
 
 	if len(o.providerOptions.stopSequences) > 0 {
 		params.Stop = openai.ChatCompletionNewParamsStopUnion{
@@ -179,17 +176,9 @@ func (o *openaiClient) preparedParams(messages []openai.ChatCompletionMessagePar
 		}
 	}
 
-	if o.options.frequencyPenalty != nil {
-		params.FrequencyPenalty = openai.Float(*o.options.frequencyPenalty)
-	}
-
-	if o.options.presencePenalty != nil {
-		params.PresencePenalty = openai.Float(*o.options.presencePenalty)
-	}
-
-	if o.options.seed != nil {
-		params.Seed = openai.Int(*o.options.seed)
-	}
+	paramBuilder.applyFloat64FrequencyPenalty(o.options.frequencyPenalty, func(fp *float64) { params.FrequencyPenalty = openai.Float(*fp) })
+	paramBuilder.applyFloat64PresencePenalty(o.options.presencePenalty, func(pp *float64) { params.PresencePenalty = openai.Float(*pp) })
+	paramBuilder.applyInt64Seed(o.options.seed, func(s *int64) { params.Seed = openai.Int(*s) })
 
 	if o.providerOptions.model.CanReason {
 		params.MaxCompletionTokens = openai.Int(o.providerOptions.maxTokens)
@@ -213,16 +202,17 @@ func (o *openaiClient) preparedParams(messages []openai.ChatCompletionMessagePar
 func (o *openaiClient) send(ctx context.Context, messages []message.Message, tools []tool.BaseTool) (response *LLMResponse, err error) {
 	params := o.preparedParams(o.convertMessages(messages), o.convertTools(tools))
 
-	if o.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *o.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, o.providerOptions.timeout)
+	defer cancel()
 
 	return ExecuteWithRetry(ctx, OpenAIRetryConfig(), func() (*LLMResponse, error) {
 		openaiResponse, err := o.client.Chat.Completions.New(ctx, params)
 		if err != nil {
 			return nil, err
+		}
+
+		if len(openaiResponse.Choices) == 0 {
+			return nil, fmt.Errorf("no response choices returned from OpenAI")
 		}
 
 		content := ""
@@ -252,11 +242,8 @@ func (o *openaiClient) stream(ctx context.Context, messages []message.Message, t
 		IncludeUsage: openai.Bool(true),
 	}
 
-	if o.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *o.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, o.providerOptions.timeout)
+	defer cancel()
 
 	eventChan := make(chan LLMEvent)
 
@@ -287,6 +274,10 @@ func (o *openaiClient) stream(ctx context.Context, messages []message.Message, t
 
 			err := openaiStream.Err()
 			if err == nil || errors.Is(err, io.EOF) {
+				if len(acc.ChatCompletion.Choices) == 0 {
+					eventChan <- LLMEvent{Type: types.EventError, Error: errors.New("no response choices in stream")}
+					return errors.New("no response choices in stream")
+				}
 				finishReason := o.finishReason(string(acc.ChatCompletion.Choices[0].FinishReason))
 				if len(acc.ChatCompletion.Choices[0].Message.ToolCalls) > 0 {
 					toolCalls = append(toolCalls, o.toolCalls(acc.ChatCompletion)...)
@@ -423,16 +414,17 @@ func (o *openaiClient) sendWithStructuredOutput(ctx context.Context, messages []
 		},
 	}
 
-	if o.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *o.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, o.providerOptions.timeout)
+	defer cancel()
 
 	return ExecuteWithRetry(ctx, OpenAIRetryConfig(), func() (*LLMResponse, error) {
 		openaiResponse, err := o.client.Chat.Completions.New(ctx, params)
 		if err != nil {
 			return nil, err
+		}
+
+		if len(openaiResponse.Choices) == 0 {
+			return nil, fmt.Errorf("no response choices returned from OpenAI")
 		}
 
 		content := ""
@@ -482,11 +474,8 @@ func (o *openaiClient) streamWithStructuredOutput(ctx context.Context, messages 
 		IncludeUsage: openai.Bool(true),
 	}
 
-	if o.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *o.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, o.providerOptions.timeout)
+	defer cancel()
 
 	eventChan := make(chan LLMEvent)
 
@@ -517,6 +506,10 @@ func (o *openaiClient) streamWithStructuredOutput(ctx context.Context, messages 
 
 			err := openaiStream.Err()
 			if err == nil || errors.Is(err, io.EOF) {
+				if len(acc.ChatCompletion.Choices) == 0 {
+					eventChan <- LLMEvent{Type: types.EventError, Error: errors.New("no response choices in stream")}
+					return errors.New("no response choices in stream")
+				}
 				finishReason := o.finishReason(string(acc.ChatCompletion.Choices[0].FinishReason))
 				if len(acc.ChatCompletion.Choices[0].Message.ToolCalls) > 0 {
 					toolCalls = append(toolCalls, o.toolCalls(acc.ChatCompletion)...)

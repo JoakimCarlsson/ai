@@ -4,19 +4,14 @@ package types
 type EventType string
 
 const (
-	EventContentStart  EventType = "content_start"
-	EventContentDelta  EventType = "content_delta"
-	EventContentStop   EventType = "content_stop"
-	EventToolUseStart  EventType = "tool_use_start"
-	EventToolUseDelta  EventType = "tool_use_delta"
-	EventToolUseStop   EventType = "tool_use_stop"
-	EventThinkingDelta EventType = "thinking_delta"
-	EventComplete      EventType = "complete"
-	EventError         EventType = "error"
-	EventWarning       EventType = "warning"
-	
-	EventTypeContentDelta   EventType = "content_delta"
-	EventTypeToolCall       EventType = "tool_call"
-	EventTypeFinal          EventType = "final"
-	EventTypeError          EventType = "error"
+	EventContentStart     EventType = "content_start"
+	EventContentDelta     EventType = "content_delta"
+	EventContentStop      EventType = "content_stop"
+	EventToolUseStart     EventType = "tool_use_start"
+	EventToolUseDelta     EventType = "tool_use_delta"
+	EventToolUseStop      EventType = "tool_use_stop"
+	EventThinkingDelta    EventType = "thinking_delta"
+	EventComplete         EventType = "complete"
+	EventError            EventType = "error"
+	EventWarning          EventType = "warning"
 )

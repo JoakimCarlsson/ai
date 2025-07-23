@@ -156,11 +156,8 @@ func (g *geminiClient) finishReason(reason genai.FinishReason) message.FinishRea
 func (g *geminiClient) send(ctx context.Context, messages []message.Message, tools []tool.BaseTool) (*LLMResponse, error) {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
-	if g.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *g.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
+	defer cancel()
 
 	history := geminiMessages[:len(geminiMessages)-1]
 	lastMsg := geminiMessages[len(geminiMessages)-1]
@@ -168,35 +165,13 @@ func (g *geminiClient) send(ctx context.Context, messages []message.Message, too
 		MaxOutputTokens: int32(g.providerOptions.maxTokens),
 	}
 
-	if g.providerOptions.temperature != nil {
-		temp := float32(*g.providerOptions.temperature)
-		config.Temperature = &temp
-	}
-
-	if g.providerOptions.topP != nil {
-		topP := float32(*g.providerOptions.topP)
-		config.TopP = &topP
-	}
-
-	if g.providerOptions.topK != nil {
-		topK := float32(*g.providerOptions.topK)
-		config.TopK = &topK
-	}
-
-	if g.options.frequencyPenalty != nil {
-		fp := float32(*g.options.frequencyPenalty)
-		config.FrequencyPenalty = &fp
-	}
-
-	if g.options.presencePenalty != nil {
-		pp := float32(*g.options.presencePenalty)
-		config.PresencePenalty = &pp
-	}
-
-	if g.options.seed != nil {
-		seed := int32(*g.options.seed)
-		config.Seed = &seed
-	}
+	params := newParameterBuilder(g.providerOptions)
+	params.applyFloat32Temperature(func(t *float32) { config.Temperature = t })
+	params.applyFloat32TopP(func(p *float32) { config.TopP = p })
+	params.applyFloat32TopK(func(k *float32) { config.TopK = k })
+	params.applyFloat32FrequencyPenalty(g.options.frequencyPenalty, func(fp *float32) { config.FrequencyPenalty = fp })
+	params.applyFloat32PresencePenalty(g.options.presencePenalty, func(pp *float32) { config.PresencePenalty = pp })
+	params.applyInt32Seed(g.options.seed, func(s *int32) { config.Seed = s })
 
 	if len(g.providerOptions.stopSequences) > 0 {
 		config.StopSequences = g.providerOptions.stopSequences
@@ -265,11 +240,8 @@ func (g *geminiClient) send(ctx context.Context, messages []message.Message, too
 func (g *geminiClient) stream(ctx context.Context, messages []message.Message, tools []tool.BaseTool) <-chan LLMEvent {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
-	if g.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *g.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
+	defer cancel()
 
 	history := geminiMessages[:len(geminiMessages)-1]
 	lastMsg := geminiMessages[len(geminiMessages)-1]
@@ -277,35 +249,13 @@ func (g *geminiClient) stream(ctx context.Context, messages []message.Message, t
 		MaxOutputTokens: int32(g.providerOptions.maxTokens),
 	}
 
-	if g.providerOptions.temperature != nil {
-		temp := float32(*g.providerOptions.temperature)
-		config.Temperature = &temp
-	}
-
-	if g.providerOptions.topP != nil {
-		topP := float32(*g.providerOptions.topP)
-		config.TopP = &topP
-	}
-
-	if g.providerOptions.topK != nil {
-		topK := float32(*g.providerOptions.topK)
-		config.TopK = &topK
-	}
-
-	if g.options.frequencyPenalty != nil {
-		fp := float32(*g.options.frequencyPenalty)
-		config.FrequencyPenalty = &fp
-	}
-
-	if g.options.presencePenalty != nil {
-		pp := float32(*g.options.presencePenalty)
-		config.PresencePenalty = &pp
-	}
-
-	if g.options.seed != nil {
-		seed := int32(*g.options.seed)
-		config.Seed = &seed
-	}
+	params := newParameterBuilder(g.providerOptions)
+	params.applyFloat32Temperature(func(t *float32) { config.Temperature = t })
+	params.applyFloat32TopP(func(p *float32) { config.TopP = p })
+	params.applyFloat32TopK(func(k *float32) { config.TopK = k })
+	params.applyFloat32FrequencyPenalty(g.options.frequencyPenalty, func(fp *float32) { config.FrequencyPenalty = fp })
+	params.applyFloat32PresencePenalty(g.options.presencePenalty, func(pp *float32) { config.PresencePenalty = pp })
+	params.applyInt32Seed(g.options.seed, func(s *int32) { config.Seed = s })
 
 	if len(g.providerOptions.stopSequences) > 0 {
 		config.StopSequences = g.providerOptions.stopSequences
@@ -534,11 +484,8 @@ func (g *geminiClient) supportsStructuredOutput() bool {
 func (g *geminiClient) sendWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (*LLMResponse, error) {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
-	if g.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *g.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
+	defer cancel()
 
 	history := geminiMessages[:len(geminiMessages)-1]
 	lastMsg := geminiMessages[len(geminiMessages)-1]
@@ -549,35 +496,13 @@ func (g *geminiClient) sendWithStructuredOutput(ctx context.Context, messages []
 	responseSchema := g.convertSchemaToGenai(outputSchema.Parameters, outputSchema.Required)
 	config.ResponseSchema = responseSchema
 
-	if g.providerOptions.temperature != nil {
-		temp := float32(*g.providerOptions.temperature)
-		config.Temperature = &temp
-	}
-
-	if g.providerOptions.topP != nil {
-		topP := float32(*g.providerOptions.topP)
-		config.TopP = &topP
-	}
-
-	if g.providerOptions.topK != nil {
-		topK := float32(*g.providerOptions.topK)
-		config.TopK = &topK
-	}
-
-	if g.options.frequencyPenalty != nil {
-		penalty := float32(*g.options.frequencyPenalty)
-		config.FrequencyPenalty = &penalty
-	}
-
-	if g.options.presencePenalty != nil {
-		penalty := float32(*g.options.presencePenalty)
-		config.PresencePenalty = &penalty
-	}
-
-	if g.options.seed != nil {
-		seed := int32(*g.options.seed)
-		config.Seed = &seed
-	}
+	params := newParameterBuilder(g.providerOptions)
+	params.applyFloat32Temperature(func(t *float32) { config.Temperature = t })
+	params.applyFloat32TopP(func(p *float32) { config.TopP = p })
+	params.applyFloat32TopK(func(k *float32) { config.TopK = k })
+	params.applyFloat32FrequencyPenalty(g.options.frequencyPenalty, func(fp *float32) { config.FrequencyPenalty = fp })
+	params.applyFloat32PresencePenalty(g.options.presencePenalty, func(pp *float32) { config.PresencePenalty = pp })
+	params.applyInt32Seed(g.options.seed, func(s *int32) { config.Seed = s })
 
 	geminiTools := g.convertTools(tools)
 	if len(geminiTools) > 0 {
@@ -645,11 +570,8 @@ func (g *geminiClient) sendWithStructuredOutput(ctx context.Context, messages []
 func (g *geminiClient) streamWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
-	if g.providerOptions.timeout != nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, *g.providerOptions.timeout)
-		defer cancel()
-	}
+	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
+	defer cancel()
 
 	history := geminiMessages[:len(geminiMessages)-1]
 	lastMsg := geminiMessages[len(geminiMessages)-1]
@@ -660,35 +582,13 @@ func (g *geminiClient) streamWithStructuredOutput(ctx context.Context, messages 
 	responseSchema := g.convertSchemaToGenai(outputSchema.Parameters, outputSchema.Required)
 	config.ResponseSchema = responseSchema
 
-	if g.providerOptions.temperature != nil {
-		temp := float32(*g.providerOptions.temperature)
-		config.Temperature = &temp
-	}
-
-	if g.providerOptions.topP != nil {
-		topP := float32(*g.providerOptions.topP)
-		config.TopP = &topP
-	}
-
-	if g.providerOptions.topK != nil {
-		topK := float32(*g.providerOptions.topK)
-		config.TopK = &topK
-	}
-
-	if g.options.frequencyPenalty != nil {
-		fp := float32(*g.options.frequencyPenalty)
-		config.FrequencyPenalty = &fp
-	}
-
-	if g.options.presencePenalty != nil {
-		pp := float32(*g.options.presencePenalty)
-		config.PresencePenalty = &pp
-	}
-
-	if g.options.seed != nil {
-		seed := int32(*g.options.seed)
-		config.Seed = &seed
-	}
+	params := newParameterBuilder(g.providerOptions)
+	params.applyFloat32Temperature(func(t *float32) { config.Temperature = t })
+	params.applyFloat32TopP(func(p *float32) { config.TopP = p })
+	params.applyFloat32TopK(func(k *float32) { config.TopK = k })
+	params.applyFloat32FrequencyPenalty(g.options.frequencyPenalty, func(fp *float32) { config.FrequencyPenalty = fp })
+	params.applyFloat32PresencePenalty(g.options.presencePenalty, func(pp *float32) { config.PresencePenalty = pp })
+	params.applyInt32Seed(g.options.seed, func(s *int32) { config.Seed = s })
 
 	if len(g.providerOptions.stopSequences) > 0 {
 		config.StopSequences = g.providerOptions.stopSequences
