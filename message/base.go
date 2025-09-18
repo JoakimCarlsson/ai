@@ -146,6 +146,17 @@ func (m *Message) BinaryContent() []BinaryContent {
 	return binaryContents
 }
 
+// ImageURLContent returns all image URL content parts from the message
+func (m *Message) ImageURLContent() []ImageURLContent {
+	imageURLContents := make([]ImageURLContent, 0)
+	for _, part := range m.Parts {
+		if c, ok := part.(ImageURLContent); ok {
+			imageURLContents = append(imageURLContents, c)
+		}
+	}
+	return imageURLContents
+}
+
 // ToolCalls returns all tool call parts from the message
 func (m *Message) ToolCalls() []ToolCall {
 	var toolCalls []ToolCall

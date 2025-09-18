@@ -75,10 +75,19 @@ func (o *openaiClient) convertMessages(messages []message.Message) (openaiMessag
 			var content []openai.ChatCompletionContentPartUnionParam
 			textBlock := openai.ChatCompletionContentPartTextParam{Text: msg.Content().String()}
 			content = append(content, openai.ChatCompletionContentPartUnionParam{OfText: &textBlock})
+
 			for _, binaryContent := range msg.BinaryContent() {
 				imageURL := openai.ChatCompletionContentPartImageImageURLParam{URL: binaryContent.String(model.ProviderOpenAI)}
 				imageBlock := openai.ChatCompletionContentPartImageParam{ImageURL: imageURL}
+				content = append(content, openai.ChatCompletionContentPartUnionParam{OfImageURL: &imageBlock})
+			}
 
+			for _, imageURLContent := range msg.ImageURLContent() {
+				imageURL := openai.ChatCompletionContentPartImageImageURLParam{URL: imageURLContent.URL}
+				if imageURLContent.Detail != "" {
+					imageURL.Detail = imageURLContent.Detail
+				}
+				imageBlock := openai.ChatCompletionContentPartImageParam{ImageURL: imageURL}
 				content = append(content, openai.ChatCompletionContentPartUnionParam{OfImageURL: &imageBlock})
 			}
 
