@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	testImageURL  = "https://upload.wikimedia.org/wikipedia/commons/a/a7/Camponotus_flavomarginatus_ant.jpg"
-	testImageURL2 = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+	testImageURL = "https://static0.srcdn.com/wordpress/wp-content/uploads/2020/04/Rickroll-Wide.jpg"
 )
 
 func main() {
@@ -45,7 +44,7 @@ func anthropicExample(ctx context.Context) {
 	fmt.Println(response.Content)
 
 	base64Message := message.NewUserMessage("What do you see in this image?")
-	imageData, mimeType, err := downloadImage(testImageURL2)
+	imageData, mimeType, err := downloadImage(testImageURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -79,7 +78,7 @@ func openaiExample(ctx context.Context) {
 	fmt.Println(response.Content)
 
 	base64Message := message.NewUserMessage("Analyze this image and tell me what you observe.")
-	imageData, mimeType, err := downloadImage(testImageURL2)
+	imageData, mimeType, err := downloadImage(testImageURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -130,7 +129,7 @@ func multiModalExample(ctx context.Context) {
 	multiMessage := message.NewUserMessage("Compare these two images and tell me the differences:")
 	multiMessage.AddImageURL(testImageURL, "")
 
-	imageData, mimeType, err := downloadImage(testImageURL2)
+	imageData, mimeType, err := downloadImage("https://upload.wikimedia.org/wikipedia/commons/a/a7/Camponotus_flavomarginatus_ant.jpg")
 	if err != nil {
 		log.Fatal(err)
 	}
