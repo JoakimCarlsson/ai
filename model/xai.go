@@ -24,7 +24,7 @@ var XAIModels = map[ModelID]Model{
 		CostPer1MInCached:     0.75,
 		CostPer1MOut:          15.0,
 		CostPer1MOutCached:    0,
-		ContextWindow:         2_000_000,
+		ContextWindow:         256_000,
 		DefaultMaxTokens:      20_000,
 		SupportsStructuredOut: true,
 	},
