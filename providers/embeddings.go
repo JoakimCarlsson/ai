@@ -31,9 +31,16 @@ type EmbeddingResponse struct {
 	Model      string
 }
 
+type ContextualizedEmbeddingResponse struct {
+	DocumentEmbeddings [][][]float32
+	Usage              EmbeddingUsage
+	Model              string
+}
+
 type Embedding interface {
 	GenerateEmbeddings(ctx context.Context, texts []string) (*EmbeddingResponse, error)
 	GenerateMultimodalEmbeddings(ctx context.Context, inputs []MultimodalInput) (*EmbeddingResponse, error)
+	GenerateContextualizedEmbeddings(ctx context.Context, documentChunks [][]string) (*ContextualizedEmbeddingResponse, error)
 	Model() model.EmbeddingModel
 }
 
@@ -51,6 +58,7 @@ type EmbeddingClientOption func(*embeddingClientOptions)
 type EmbeddingClient interface {
 	embed(ctx context.Context, texts []string) (*EmbeddingResponse, error)
 	embedMultimodal(ctx context.Context, inputs []MultimodalInput) (*EmbeddingResponse, error)
+	embedContextualized(ctx context.Context, documentChunks [][]string) (*ContextualizedEmbeddingResponse, error)
 }
 
 type baseEmbedding[C EmbeddingClient] struct {
@@ -99,6 +107,18 @@ func (e *baseEmbedding[C]) GenerateMultimodalEmbeddings(ctx context.Context, inp
 	}
 
 	return e.client.embedMultimodal(ctx, inputs)
+}
+
+func (e *baseEmbedding[C]) GenerateContextualizedEmbeddings(ctx context.Context, documentChunks [][]string) (*ContextualizedEmbeddingResponse, error) {
+	if len(documentChunks) == 0 {
+		return &ContextualizedEmbeddingResponse{
+			DocumentEmbeddings: [][][]float32{},
+			Usage:              EmbeddingUsage{TotalTokens: 0},
+			Model:              e.options.model.APIModel,
+		}, nil
+	}
+
+	return e.client.embedContextualized(ctx, documentChunks)
 }
 
 func (e *baseEmbedding[C]) Model() model.EmbeddingModel {

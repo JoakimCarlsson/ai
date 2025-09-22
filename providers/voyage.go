@@ -62,6 +62,29 @@ type voyageMultimodalRequest struct {
 	OutputEncoding string            `json:"output_encoding,omitempty"`
 }
 
+type voyageContextualizedRequest struct {
+	Inputs    [][]string `json:"inputs"`
+	Model     string     `json:"model"`
+	InputType string     `json:"input_type,omitempty"`
+}
+
+type voyageContextualizedResponse struct {
+	Object string `json:"object"`
+	Data   []struct {
+		Object string `json:"object"`
+		Data   []struct {
+			Object    string    `json:"object"`
+			Embedding []float32 `json:"embedding"`
+			Index     int       `json:"index"`
+		} `json:"data"`
+		Index int `json:"index"`
+	} `json:"data"`
+	Model string `json:"model"`
+	Usage struct {
+		TotalTokens int64 `json:"total_tokens"`
+	} `json:"usage"`
+}
+
 func newVoyageClient(opts embeddingClientOptions) VoyageClient {
 	voyageOpts := voyageOptions{
 		inputType:      "document",
@@ -250,6 +273,71 @@ func (v *voyageClient) embedMultimodal(ctx context.Context, inputs []MultimodalI
 			ImagePixels: voyageResp.Usage.ImagePixels,
 		},
 		Model: voyageResp.Model,
+	}, nil
+}
+
+func (v *voyageClient) embedContextualized(ctx context.Context, documentChunks [][]string) (*ContextualizedEmbeddingResponse, error) {
+	if len(documentChunks) == 0 {
+		return &ContextualizedEmbeddingResponse{
+			DocumentEmbeddings: [][][]float32{},
+			Usage:              EmbeddingUsage{TotalTokens: 0},
+			Model:              v.providerOptions.model.APIModel,
+		}, nil
+	}
+
+	reqBody := voyageContextualizedRequest{
+		Inputs:    documentChunks,
+		Model:     v.providerOptions.model.APIModel,
+		InputType: v.options.inputType,
+	}
+
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal contextualized request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", v.baseURL+"/contextualizedembeddings", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create contextualized request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+v.providerOptions.apiKey)
+
+	resp, err := v.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make contextualized request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read contextualized response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("contextualized API request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var voyageResp voyageContextualizedResponse
+	if err := json.Unmarshal(body, &voyageResp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal contextualized response: %w", err)
+	}
+
+	// Convert nested response structure to our format
+	documentEmbeddings := make([][][]float32, len(voyageResp.Data))
+	for docIndex, docData := range voyageResp.Data {
+		chunkEmbeddings := make([][]float32, len(docData.Data))
+		for chunkIndex, chunkData := range docData.Data {
+			chunkEmbeddings[chunkIndex] = chunkData.Embedding
+		}
+		documentEmbeddings[docIndex] = chunkEmbeddings
+	}
+
+	return &ContextualizedEmbeddingResponse{
+		DocumentEmbeddings: documentEmbeddings,
+		Usage:              EmbeddingUsage{TotalTokens: voyageResp.Usage.TotalTokens},
+		Model:              voyageResp.Model,
 	}, nil
 }
 

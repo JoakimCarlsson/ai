@@ -3,10 +3,19 @@ package model
 const (
 	ProviderVoyage ModelProvider = "voyage"
 
-	Voyage35     ModelID = "voyage-3.5"
-	Voyage35Lite ModelID = "voyage-3.5-lite"
-	Voyage3Large ModelID = "voyage-3-large"
-	VoyageCode3  ModelID = "voyage-code-3"
+	Voyage35       ModelID = "voyage-3.5"
+	Voyage35Lite   ModelID = "voyage-3.5-lite"
+	Voyage3Large   ModelID = "voyage-3-large"
+	VoyageCode3    ModelID = "voyage-code-3"
+	VoyageContext3 ModelID = "voyage-context-3"
+
+	// Reranker models
+	Rerank25     ModelID = "rerank-2.5"
+	Rerank25Lite ModelID = "rerank-2.5-lite"
+	Rerank2      ModelID = "rerank-2"
+	Rerank2Lite  ModelID = "rerank-2-lite"
+	Rerank1      ModelID = "rerank-1"
+	RerankLite1  ModelID = "rerank-lite-1"
 
 	VoyageCode2    ModelID = "voyage-code-2"
 	VoyageLarge2   ModelID = "voyage-large-2"
@@ -50,6 +59,15 @@ var VoyageEmbeddingModels = map[ModelID]EmbeddingModel{
 		Name:            "Voyage Code 3",
 		Provider:        ProviderVoyage,
 		APIModel:        "voyage-code-3",
+		CostPer1MTokens: 0.12,
+		MaxInputTokens:  120000,
+		EmbeddingDims:   1024,
+	},
+	VoyageContext3: {
+		ID:              VoyageContext3,
+		Name:            "Voyage Context 3",
+		Provider:        ProviderVoyage,
+		APIModel:        "voyage-context-3",
 		CostPer1MTokens: 0.12,
 		MaxInputTokens:  120000,
 		EmbeddingDims:   1024,
@@ -117,5 +135,62 @@ var VoyageEmbeddingModels = map[ModelID]EmbeddingModel{
 		CostPer1MTokens: 0.12,
 		MaxInputTokens:  32000,
 		EmbeddingDims:   1024,
+	},
+}
+
+var VoyageRerankerModels = map[ModelID]RerankerModel{
+	Rerank25: {
+		ID:              Rerank25,
+		Name:            "Rerank 2.5",
+		Provider:        ProviderVoyage,
+		APIModel:        "rerank-2.5",
+		CostPer1MTokens: 0.05,
+		MaxQueryTokens:  8000,
+		MaxTotalTokens:  600000,
+	},
+	Rerank25Lite: {
+		ID:              Rerank25Lite,
+		Name:            "Rerank 2.5 Lite",
+		Provider:        ProviderVoyage,
+		APIModel:        "rerank-2.5-lite",
+		CostPer1MTokens: 0.02,
+		MaxQueryTokens:  8000,
+		MaxTotalTokens:  600000,
+	},
+	Rerank2: {
+		ID:              Rerank2,
+		Name:            "Rerank 2",
+		Provider:        ProviderVoyage,
+		APIModel:        "rerank-2",
+		CostPer1MTokens: 0.05,
+		MaxQueryTokens:  4000,
+		MaxTotalTokens:  600000,
+	},
+	Rerank2Lite: {
+		ID:              Rerank2Lite,
+		Name:            "Rerank 2 Lite",
+		Provider:        ProviderVoyage,
+		APIModel:        "rerank-2-lite",
+		CostPer1MTokens: 0.02,
+		MaxQueryTokens:  2000,
+		MaxTotalTokens:  600000,
+	},
+	Rerank1: {
+		ID:              Rerank1,
+		Name:            "Rerank 1",
+		Provider:        ProviderVoyage,
+		APIModel:        "rerank-1",
+		CostPer1MTokens: 0.05,
+		MaxQueryTokens:  2000,
+		MaxTotalTokens:  300000,
+	},
+	RerankLite1: {
+		ID:              RerankLite1,
+		Name:            "Rerank Lite 1",
+		Provider:        ProviderVoyage,
+		APIModel:        "rerank-lite-1",
+		CostPer1MTokens: 0.02,
+		MaxQueryTokens:  1000,
+		MaxTotalTokens:  300000,
 	},
 }
