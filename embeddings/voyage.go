@@ -10,6 +10,146 @@ import (
 	"time"
 )
 
+type EmbeddingVector struct {
+	Float32  []float32 `json:"-"`
+	Int8     []int8    `json:"-"`
+	Uint8    []uint8   `json:"-"`
+	Binary   []int8    `json:"-"`
+	UBinary  []uint8   `json:"-"`
+	Base64   string    `json:"-"`
+	DataType string    `json:"-"`
+}
+
+func (ev *EmbeddingVector) UnmarshalJSON(data []byte) error {
+	var raw interface{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	switch v := raw.(type) {
+	case string:
+		ev.Base64 = v
+		ev.DataType = "base64"
+	case []interface{}:
+		if len(v) == 0 {
+			return fmt.Errorf("empty embedding vector")
+		}
+
+		switch first := v[0].(type) {
+		case float64:
+			ev.Float32 = make([]float32, len(v))
+			for i, val := range v {
+				if f, ok := val.(float64); ok {
+					ev.Float32[i] = float32(f)
+				} else {
+					return fmt.Errorf("mixed types in float embedding at index %d", i)
+				}
+			}
+			ev.DataType = "float32"
+		case float32:
+			ev.Float32 = make([]float32, len(v))
+			for i, val := range v {
+				if f, ok := val.(float32); ok {
+					ev.Float32[i] = f
+				} else {
+					return fmt.Errorf("mixed types in float32 embedding at index %d", i)
+				}
+			}
+			ev.DataType = "float32"
+		default:
+			if intVal, ok := first.(float64); ok && intVal == float64(int(intVal)) {
+				if intVal >= -128 && intVal <= 127 {
+					ev.Int8 = make([]int8, len(v))
+					for i, val := range v {
+						if f, ok := val.(float64); ok && f == float64(int(f)) {
+							ev.Int8[i] = int8(f)
+						} else {
+							return fmt.Errorf("invalid int8 value at index %d", i)
+						}
+					}
+					ev.DataType = "int8"
+				} else if intVal >= 0 && intVal <= 255 {
+					ev.Uint8 = make([]uint8, len(v))
+					for i, val := range v {
+						if f, ok := val.(float64); ok && f == float64(int(f)) {
+							ev.Uint8[i] = uint8(f)
+						} else {
+							return fmt.Errorf("invalid uint8 value at index %d", i)
+						}
+					}
+					ev.DataType = "uint8"
+				} else {
+					return fmt.Errorf("integer value out of range: %v", intVal)
+				}
+			} else {
+				return fmt.Errorf("unsupported embedding value type: %T", first)
+			}
+		}
+	default:
+		return fmt.Errorf("unsupported embedding type: %T", v)
+	}
+
+	return nil
+}
+
+func (ev *EmbeddingVector) ToFloat32() []float32 {
+	switch ev.DataType {
+	case "float32":
+		return ev.Float32
+	case "int8":
+		result := make([]float32, len(ev.Int8))
+		for i, v := range ev.Int8 {
+			result[i] = float32(v)
+		}
+		return result
+	case "uint8":
+		result := make([]float32, len(ev.Uint8))
+		for i, v := range ev.Uint8 {
+			result[i] = float32(v)
+		}
+		return result
+	case "binary":
+		result := make([]float32, len(ev.Binary))
+		for i, v := range ev.Binary {
+			result[i] = float32(v)
+		}
+		return result
+	case "ubinary":
+		result := make([]float32, len(ev.UBinary))
+		for i, v := range ev.UBinary {
+			result[i] = float32(v)
+		}
+		return result
+	case "base64":
+		return nil
+	default:
+		return nil
+	}
+}
+
+func (ev *EmbeddingVector) Len() int {
+	switch ev.DataType {
+	case "float32":
+		return len(ev.Float32)
+	case "int8", "binary":
+		return len(ev.Int8)
+	case "uint8", "ubinary":
+		return len(ev.Uint8)
+	case "base64":
+		return 0
+	default:
+		return 0
+	}
+}
+
+func (ev *EmbeddingVector) GetDataType() string {
+	return ev.DataType
+}
+
+func (ev *EmbeddingVector) IsBase64() bool {
+	return ev.DataType == "base64"
+}
+
 type voyageOptions struct {
 	inputType       string
 	truncation      *bool
@@ -42,9 +182,9 @@ type voyageEmbeddingRequest struct {
 type voyageEmbeddingResponse struct {
 	Object string `json:"object"`
 	Data   []struct {
-		Object    string    `json:"object"`
-		Embedding []float32 `json:"embedding"`
-		Index     int       `json:"index"`
+		Object    string          `json:"object"`
+		Embedding EmbeddingVector `json:"embedding"`
+		Index     int             `json:"index"`
 	} `json:"data"`
 	Model string `json:"model"`
 	Usage struct {
@@ -87,7 +227,7 @@ type voyageContextualizedResponse struct {
 
 func newVoyageClient(opts embeddingClientOptions) VoyageClient {
 	voyageOpts := voyageOptions{
-		inputType:      "document",
+		inputType:      "",
 		outputDtype:    "float",
 		encodingFormat: "",
 	}
@@ -110,7 +250,7 @@ func newVoyageClient(opts embeddingClientOptions) VoyageClient {
 	}
 }
 
-func (v *voyageClient) embed(ctx context.Context, texts []string) (*EmbeddingResponse, error) {
+func (v *voyageClient) embed(ctx context.Context, texts []string, inputType ...string) (*EmbeddingResponse, error) {
 	if len(texts) == 0 {
 		return &EmbeddingResponse{
 			Embeddings: [][]float32{},
@@ -134,7 +274,7 @@ func (v *voyageClient) embed(ctx context.Context, texts []string) (*EmbeddingRes
 		}
 
 		batch := texts[i:end]
-		response, err := v.embedBatch(ctx, batch)
+		response, err := v.embedBatch(ctx, batch, inputType...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to embed batch: %w", err)
 		}
@@ -150,15 +290,28 @@ func (v *voyageClient) embed(ctx context.Context, texts []string) (*EmbeddingRes
 	}, nil
 }
 
-func (v *voyageClient) embedBatch(ctx context.Context, texts []string) (*EmbeddingResponse, error) {
+func (v *voyageClient) embedBatch(ctx context.Context, texts []string, inputType ...string) (*EmbeddingResponse, error) {
 	reqBody := voyageEmbeddingRequest{
-		Input:           texts,
-		Model:           v.providerOptions.model.APIModel,
-		InputType:       v.options.inputType,
-		Truncation:      v.options.truncation,
-		OutputDimension: v.options.outputDimension,
-		OutputDtype:     v.options.outputDtype,
-		EncodingFormat:  v.options.encodingFormat,
+		Input: texts,
+		Model: v.providerOptions.model.APIModel,
+	}
+
+	if len(inputType) > 0 && inputType[0] != "" {
+		reqBody.InputType = inputType[0]
+	} else if v.options.inputType != "" {
+		reqBody.InputType = v.options.inputType
+	}
+	if v.options.truncation != nil {
+		reqBody.Truncation = v.options.truncation
+	}
+	if v.options.outputDimension != nil {
+		reqBody.OutputDimension = v.options.outputDimension
+	}
+	if v.options.outputDtype != "float" {
+		reqBody.OutputDtype = v.options.outputDtype
+	}
+	if v.options.encodingFormat != "" {
+		reqBody.EncodingFormat = v.options.encodingFormat
 	}
 
 	jsonBody, err := json.Marshal(reqBody)
@@ -196,7 +349,11 @@ func (v *voyageClient) embedBatch(ctx context.Context, texts []string) (*Embeddi
 
 	embeddings := make([][]float32, len(voyageResp.Data))
 	for i, data := range voyageResp.Data {
-		embeddings[i] = data.Embedding
+		embedding := data.Embedding.ToFloat32()
+		if embedding == nil {
+			return nil, fmt.Errorf("failed to convert embedding at index %d: unsupported data type %s", i, data.Embedding.DataType)
+		}
+		embeddings[i] = embedding
 	}
 
 	return &EmbeddingResponse{
@@ -210,7 +367,7 @@ func (v *voyageClient) embedBatch(ctx context.Context, texts []string) (*Embeddi
 	}, nil
 }
 
-func (v *voyageClient) embedMultimodal(ctx context.Context, inputs []MultimodalInput) (*EmbeddingResponse, error) {
+func (v *voyageClient) embedMultimodal(ctx context.Context, inputs []MultimodalInput, inputType ...string) (*EmbeddingResponse, error) {
 	if len(inputs) == 0 {
 		return &EmbeddingResponse{
 			Embeddings: [][]float32{},
@@ -220,11 +377,22 @@ func (v *voyageClient) embedMultimodal(ctx context.Context, inputs []MultimodalI
 	}
 
 	reqBody := voyageMultimodalRequest{
-		Inputs:         inputs,
-		Model:          v.providerOptions.model.APIModel,
-		InputType:      v.options.inputType,
-		Truncation:     v.options.truncation,
-		OutputEncoding: v.options.encodingFormat,
+		Inputs: inputs,
+		Model:  v.providerOptions.model.APIModel,
+	}
+
+	if len(inputType) > 0 && inputType[0] != "" {
+		reqBody.InputType = inputType[0]
+	} else if v.options.inputType != "" {
+		reqBody.InputType = v.options.inputType
+	}
+
+	if v.options.truncation != nil {
+		reqBody.Truncation = v.options.truncation
+	}
+
+	if v.options.encodingFormat != "" {
+		reqBody.OutputEncoding = v.options.encodingFormat
 	}
 
 	jsonBody, err := json.Marshal(reqBody)
@@ -262,7 +430,11 @@ func (v *voyageClient) embedMultimodal(ctx context.Context, inputs []MultimodalI
 
 	embeddings := make([][]float32, len(voyageResp.Data))
 	for i, data := range voyageResp.Data {
-		embeddings[i] = data.Embedding
+		embedding := data.Embedding.ToFloat32()
+		if embedding == nil {
+			return nil, fmt.Errorf("failed to convert multimodal embedding at index %d: unsupported data type %s", i, data.Embedding.DataType)
+		}
+		embeddings[i] = embedding
 	}
 
 	return &EmbeddingResponse{
@@ -276,7 +448,7 @@ func (v *voyageClient) embedMultimodal(ctx context.Context, inputs []MultimodalI
 	}, nil
 }
 
-func (v *voyageClient) embedContextualized(ctx context.Context, documentChunks [][]string) (*ContextualizedEmbeddingResponse, error) {
+func (v *voyageClient) embedContextualized(ctx context.Context, documentChunks [][]string, inputType ...string) (*ContextualizedEmbeddingResponse, error) {
 	if len(documentChunks) == 0 {
 		return &ContextualizedEmbeddingResponse{
 			DocumentEmbeddings: [][][]float32{},
@@ -286,9 +458,14 @@ func (v *voyageClient) embedContextualized(ctx context.Context, documentChunks [
 	}
 
 	reqBody := voyageContextualizedRequest{
-		Inputs:    documentChunks,
-		Model:     v.providerOptions.model.APIModel,
-		InputType: v.options.inputType,
+		Inputs: documentChunks,
+		Model:  v.providerOptions.model.APIModel,
+	}
+
+	if len(inputType) > 0 && inputType[0] != "" {
+		reqBody.InputType = inputType[0]
+	} else if v.options.inputType != "" {
+		reqBody.InputType = v.options.inputType
 	}
 
 	jsonBody, err := json.Marshal(reqBody)
