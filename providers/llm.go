@@ -11,11 +11,17 @@
 // Key features include:
 //   - Multi-provider support (OpenAI, Anthropic, Google, AWS Bedrock, Azure, etc.)
 //   - Streaming and non-streaming responses
-//   - Tool calling with automatic function execution
-//   - Structured output with JSON schema validation
+//   - Tool calling with automatic function execution (see package tool)
+//   - Structured output with JSON schema validation (see package schema)
 //   - Automatic retry logic with exponential backoff
-//   - Token usage tracking and cost calculation
+//   - Token usage tracking and cost calculation (see package model)
 //   - Provider-specific optimizations and features
+//
+// Messages are created using the message package, which provides support for text,
+// images, and multimodal content. Tools can be implemented using the tool package
+// interfaces, and model configurations are available in the model package.
+//
+// For streaming responses, events are defined in the types package.
 //
 // Example usage:
 //
