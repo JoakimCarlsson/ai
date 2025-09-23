@@ -6,14 +6,14 @@ import (
 	"log"
 
 	"github.com/joakimcarlsson/ai/model"
-	llm "github.com/joakimcarlsson/ai/providers"
+	"github.com/joakimcarlsson/ai/rerankers"
 )
 
 func main() {
-	reranker, err := llm.NewReranker(model.ProviderVoyage,
-		llm.WithRerankerAPIKey(""),
-		llm.WithRerankerModel(model.VoyageRerankerModels[model.Rerank25Lite]),
-		llm.WithReturnDocuments(true),
+	reranker, err := rerankers.NewReranker(model.ProviderVoyage,
+		rerankers.WithAPIKey(""),
+		rerankers.WithModel(model.VoyageRerankerModels[model.Rerank25Lite]),
+		rerankers.WithReturnDocuments(true),
 	)
 	if err != nil {
 		log.Fatal(err)

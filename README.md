@@ -1,10 +1,13 @@
-# Go LLM Client Library
+# Go AI Client Library
 
-A comprehensive, multi-provider Go library for interacting with various Large Language Models (LLMs) through a unified interface. This library supports multiple AI providers including Anthropic, OpenAI, Google, AWS, and more, with features like streaming responses, tool calling, structured output, and MCP (Model Context Protocol) integration.
+A comprehensive, multi-provider Go library for interacting with various AI models through unified interfaces. This library supports Large Language Models (LLMs), embedding models, and rerankers from multiple providers including Anthropic, OpenAI, Google, AWS, Voyage AI, and more, with features like streaming responses, tool calling, structured output, and MCP (Model Context Protocol) integration.
 
 ## Features
 
 - **Multi-Provider Support**: Unified interface for 9+ AI providers
+- **LLM Support**: Chat completions, streaming, tool calling, structured output
+- **Embedding Models**: Text, multimodal, and contextualized embeddings
+- **Rerankers**: Document reranking for improved search relevance
 - **Streaming Responses**: Real-time response streaming via Go channels
 - **Tool Calling**: Native function calling with JSON schema validation
 - **Structured Output**: Constrained generation with JSON schemas
@@ -16,17 +19,25 @@ A comprehensive, multi-provider Go library for interacting with various Large La
 
 ## Supported Providers
 
+### LLM Providers
+
 | Provider | Streaming | Tools | Structured Output | Attachments |
 |----------|-----------|-------|-------------------|-------------|
 | Anthropic (Claude) | ✅ | ✅ | ❌ | ✅ |
 | OpenAI (GPT) | ✅ | ✅ | ✅ | ✅ |
 | Google Gemini | ✅ | ✅ | ✅ | ✅ |
-| AWS Bedrock | ✅ | ✅ | Varies | ✅ |
+| AWS Bedrock | ✅ | ✅ | ❌ | ✅ |
 | Azure OpenAI | ✅ | ✅ | ✅ | ✅ |
 | Google Vertex AI | ✅ | ✅ | ✅ | ✅ |
 | Groq | ✅ | ✅ | ✅ | ✅ |
 | OpenRouter | ✅ | ✅ | ✅ | ✅ |
 | xAI (Grok) | ✅ | ✅ | ✅ | ✅ |
+
+### Embedding & Reranker Providers
+
+| Provider | Text Embeddings | Multimodal Embeddings | Contextualized Embeddings | Rerankers |
+|----------|-----------------|----------------------|---------------------------|-----------|
+| Voyage AI | ✅ | ✅ | ✅ | ✅ |
 
 ## Installation
 
@@ -192,38 +203,142 @@ messages := []message.Message{msg}
 response, err := client.SendMessages(ctx, messages, nil)
 ```
 
+### Embeddings
+
+```go
+import (
+    "github.com/joakimcarlsson/ai/embeddings"
+    "github.com/joakimcarlsson/ai/model"
+)
+
+// Create embedding client
+embedder, err := embeddings.NewEmbedding(model.ProviderVoyage,
+    embeddings.WithAPIKey(""),
+    embeddings.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Generate text embeddings
+texts := []string{
+    "Hello, world!",
+    "This is a test document.",
+}
+
+response, err := embedder.GenerateEmbeddings(context.Background(), texts)
+if err != nil {
+    log.Fatal(err)
+}
+
+for i, embedding := range response.Embeddings {
+    fmt.Printf("Text: %s\n", texts[i])
+    fmt.Printf("Dimensions: %d\n", len(embedding))
+    fmt.Printf("First 5 values: %v\n", embedding[:5])
+}
+```
+
+### Multimodal Embeddings
+
+```go
+// Create multimodal embedding client
+embedder, err := embeddings.NewEmbedding(model.ProviderVoyage,
+    embeddings.WithAPIKey(""),
+    embeddings.WithModel(model.VoyageEmbeddingModels[model.VoyageMulti3]),
+)
+
+// Generate multimodal embeddings (text + image)
+multimodalInputs := []embeddings.MultimodalInput{
+    {
+        Content: []embeddings.MultimodalContent{
+            {Type: "text", Text: "This is a banana."},
+            {Type: "image_url", ImageURL: "https://example.com/banana.jpg"},
+        },
+    },
+}
+
+response, err := embedder.GenerateMultimodalEmbeddings(context.Background(), multimodalInputs)
+```
+
+### Document Reranking
+
+```go
+import (
+    "github.com/joakimcarlsson/ai/rerankers"
+    "github.com/joakimcarlsson/ai/model"
+)
+
+// Create reranker client
+reranker, err := rerankers.NewReranker(model.ProviderVoyage,
+    rerankers.WithAPIKey(""),
+    rerankers.WithModel(model.VoyageRerankerModels[model.Rerank25Lite]),
+    rerankers.WithReturnDocuments(true),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+query := "What is machine learning?"
+documents := []string{
+    "Machine learning is a subset of artificial intelligence.",
+    "The weather today is sunny.",
+    "Deep learning uses neural networks.",
+}
+
+response, err := reranker.Rerank(context.Background(), query, documents)
+if err != nil {
+    log.Fatal(err)
+}
+
+for i, result := range response.Results {
+    fmt.Printf("Rank %d (Score: %.4f): %s\n", 
+        i+1, result.RelevanceScore, result.Document)
+}
+```
+
 ## Project Structure
 
 ```
 ├── example/
-│   └── structured_output/     # Example implementations
-├── message/                   # Message types and handling
-│   ├── base.go               # Core message structures
-│   ├── multimodal.go         # Image/attachment support
-│   ├── marshal.go            # Serialization helpers
-│   └── text.go               # Text message utilities
-├── model/                     # Model definitions and configurations
-│   ├── models.go             # Base model structure
-│   ├── anthropic.go          # Claude models
-│   ├── openai.go             # GPT models
-│   ├── gemini.go             # Gemini models
-│   └── ...                   # Other provider models
-├── providers/                 # LLM provider implementations
-│   ├── llm.go                # Main LLM interface
-│   ├── anthropic.go          # Anthropic implementation
-│   ├── openai.go             # OpenAI implementation
-│   ├── retry.go              # Retry logic
-│   └── ...                   # Other providers
-├── schema/                    # Structured output schemas
-├── tool/                      # Tool calling infrastructure
-│   ├── tool.go               # Base tool interface
-│   └── mcp-tools.go          # MCP integration
-└── types/                     # Event types for streaming
+│   ├── structured_output/        # Structured output example
+│   ├── vision/                   # Multimodal LLM example
+│   ├── embeddings/               # Text embedding example
+│   ├── multimodal_embeddings/    # Multimodal embedding example
+│   ├── contextualized_embeddings/# Contextualized embedding example
+│   └── reranker/                 # Document reranking example
+├── message/                      # Message types and handling
+│   ├── base.go                  # Core message structures
+│   ├── multimodal.go            # Image/attachment support
+│   ├── marshal.go               # Serialization helpers
+│   └── text.go                  # Text message utilities
+├── model/                        # Model definitions and configurations
+│   ├── models.go                # Base model structure
+│   ├── embedding_models.go      # Embedding model types
+│   ├── voyage.go                # Voyage AI models (embeddings & rerankers)
+│   ├── anthropic.go             # Claude models
+│   ├── openai.go                # GPT models
+│   ├── gemini.go                # Gemini models
+│   └── ...                      # Other provider models
+├── providers/                    # AI provider implementations
+│   ├── llm.go                   # Main LLM interface
+│   ├── embeddings.go            # Embedding interface
+│   ├── rerankers.go             # Reranker interface
+│   ├── voyage.go                # Voyage embedding implementation
+│   ├── voyage_reranker.go       # Voyage reranker implementation
+│   ├── anthropic.go             # Anthropic LLM implementation
+│   ├── openai.go                # OpenAI LLM implementation
+│   ├── retry.go                 # Retry logic
+│   └── ...                      # Other providers
+├── schema/                       # Structured output schemas
+├── tool/                         # Tool calling infrastructure
+│   ├── tool.go                  # Base tool interface
+│   └── mcp-tools.go             # MCP integration
+└── types/                        # Event types for streaming
 ```
 
 ## Configuration Options
 
-### Client Options
+### LLM Client Options
 
 ```go
 client, err := llm.NewLLM(
@@ -235,6 +350,37 @@ client, err := llm.NewLLM(
     llm.WithTopP(0.9),
     llm.WithTimeout(30*time.Second),
     llm.WithStopSequences("STOP", "END"),
+)
+```
+
+### Embedding Client Options
+
+```go
+embedder, err := embeddings.NewEmbedding(
+    model.ProviderVoyage,
+    embeddings.WithAPIKey(""),
+    embeddings.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
+    embeddings.WithBatchSize(100),
+    embeddings.WithTimeout(30*time.Second),
+    embeddings.WithVoyageOptions(
+        embeddings.WithInputType("document"),
+        embeddings.WithOutputDimension(1024),
+        embeddings.WithOutputDtype("float"),
+    ),
+)
+```
+
+### Reranker Client Options
+
+```go
+reranker, err := rerankers.NewReranker(
+    model.ProviderVoyage,
+    rerankers.WithAPIKey(""),
+    rerankers.WithModel(model.VoyageRerankerModels[model.Rerank25Lite]),
+    rerankers.WithTopK(10),
+    rerankers.WithReturnDocuments(true),
+    rerankers.WithTruncation(true),
+    rerankers.WithTimeout(30*time.Second),
 )
 ```
 

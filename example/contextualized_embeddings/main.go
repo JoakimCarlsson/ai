@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/joakimcarlsson/ai/embeddings"
 	"github.com/joakimcarlsson/ai/model"
-	llm "github.com/joakimcarlsson/ai/providers"
 )
 
 func main() {
-	embedder, err := llm.NewEmbedding(model.ProviderVoyage,
-		llm.WithEmbeddingAPIKey(""),
-		llm.WithEmbeddingModel(model.VoyageEmbeddingModels[model.VoyageContext3]),
+	embedder, err := embeddings.NewEmbedding(model.ProviderVoyage,
+		embeddings.WithAPIKey(""),
+		embeddings.WithModel(model.VoyageEmbeddingModels[model.VoyageContext3]),
 	)
 	if err != nil {
 		log.Fatal(err)
