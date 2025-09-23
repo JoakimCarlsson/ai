@@ -11,33 +11,9 @@ import (
 
 func main() {
 	ctx := context.Background()
-	basicExample(ctx)
 	advancedParametersExample(ctx)
 	differentDataTypesExample(ctx)
 	typeSafetyExample(ctx)
-}
-
-func basicExample(ctx context.Context) {
-	embedder, err := embeddings.NewEmbedding(model.ProviderVoyage,
-		embeddings.WithAPIKey(""),
-		embeddings.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	texts := []string{
-		"Hello, world!",
-		"This is a test document.",
-	}
-
-	response, err := embedder.GenerateEmbeddings(ctx, texts)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("Basic embeddings: %d vectors, %d dimensions each\n",
-		len(response.Embeddings), len(response.Embeddings[0]))
 }
 
 func advancedParametersExample(ctx context.Context) {
