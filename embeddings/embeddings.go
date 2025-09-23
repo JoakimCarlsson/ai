@@ -38,27 +38,29 @@ type ContextualizedEmbeddingResponse struct {
 }
 
 type Embedding interface {
-	GenerateEmbeddings(ctx context.Context, texts []string) (*EmbeddingResponse, error)
-	GenerateMultimodalEmbeddings(ctx context.Context, inputs []MultimodalInput) (*EmbeddingResponse, error)
-	GenerateContextualizedEmbeddings(ctx context.Context, documentChunks [][]string) (*ContextualizedEmbeddingResponse, error)
+	GenerateEmbeddings(ctx context.Context, texts []string, inputType ...string) (*EmbeddingResponse, error)
+	GenerateMultimodalEmbeddings(ctx context.Context, inputs []MultimodalInput, inputType ...string) (*EmbeddingResponse, error)
+	GenerateContextualizedEmbeddings(ctx context.Context, documentChunks [][]string, inputType ...string) (*ContextualizedEmbeddingResponse, error)
 	Model() model.EmbeddingModel
 }
 
 type embeddingClientOptions struct {
-	apiKey    string
-	model     model.EmbeddingModel
-	batchSize int
-	timeout   *time.Duration
+	apiKey     string
+	model      model.EmbeddingModel
+	batchSize  int
+	timeout    *time.Duration
+	dimensions *int
 
 	voyageOptions []VoyageOption
+	openaiOptions []OpenAIOption
 }
 
 type EmbeddingClientOption func(*embeddingClientOptions)
 
 type EmbeddingClient interface {
-	embed(ctx context.Context, texts []string) (*EmbeddingResponse, error)
-	embedMultimodal(ctx context.Context, inputs []MultimodalInput) (*EmbeddingResponse, error)
-	embedContextualized(ctx context.Context, documentChunks [][]string) (*ContextualizedEmbeddingResponse, error)
+	embed(ctx context.Context, texts []string, inputType ...string) (*EmbeddingResponse, error)
+	embedMultimodal(ctx context.Context, inputs []MultimodalInput, inputType ...string) (*EmbeddingResponse, error)
+	embedContextualized(ctx context.Context, documentChunks [][]string, inputType ...string) (*ContextualizedEmbeddingResponse, error)
 }
 
 type baseEmbedding[C EmbeddingClient] struct {
@@ -80,12 +82,17 @@ func NewEmbedding(provider model.ModelProvider, opts ...EmbeddingClientOption) (
 			options: clientOptions,
 			client:  newVoyageClient(clientOptions),
 		}, nil
+	case model.ProviderOpenAI:
+		return &baseEmbedding[OpenAIClient]{
+			options: clientOptions,
+			client:  newOpenAIClient(clientOptions),
+		}, nil
 	}
 
 	return nil, fmt.Errorf("embedding provider not supported: %s", provider)
 }
 
-func (e *baseEmbedding[C]) GenerateEmbeddings(ctx context.Context, texts []string) (*EmbeddingResponse, error) {
+func (e *baseEmbedding[C]) GenerateEmbeddings(ctx context.Context, texts []string, inputType ...string) (*EmbeddingResponse, error) {
 	if len(texts) == 0 {
 		return &EmbeddingResponse{
 			Embeddings: [][]float32{},
@@ -94,10 +101,10 @@ func (e *baseEmbedding[C]) GenerateEmbeddings(ctx context.Context, texts []strin
 		}, nil
 	}
 
-	return e.client.embed(ctx, texts)
+	return e.client.embed(ctx, texts, inputType...)
 }
 
-func (e *baseEmbedding[C]) GenerateMultimodalEmbeddings(ctx context.Context, inputs []MultimodalInput) (*EmbeddingResponse, error) {
+func (e *baseEmbedding[C]) GenerateMultimodalEmbeddings(ctx context.Context, inputs []MultimodalInput, inputType ...string) (*EmbeddingResponse, error) {
 	if len(inputs) == 0 {
 		return &EmbeddingResponse{
 			Embeddings: [][]float32{},
@@ -106,10 +113,10 @@ func (e *baseEmbedding[C]) GenerateMultimodalEmbeddings(ctx context.Context, inp
 		}, nil
 	}
 
-	return e.client.embedMultimodal(ctx, inputs)
+	return e.client.embedMultimodal(ctx, inputs, inputType...)
 }
 
-func (e *baseEmbedding[C]) GenerateContextualizedEmbeddings(ctx context.Context, documentChunks [][]string) (*ContextualizedEmbeddingResponse, error) {
+func (e *baseEmbedding[C]) GenerateContextualizedEmbeddings(ctx context.Context, documentChunks [][]string, inputType ...string) (*ContextualizedEmbeddingResponse, error) {
 	if len(documentChunks) == 0 {
 		return &ContextualizedEmbeddingResponse{
 			DocumentEmbeddings: [][][]float32{},
@@ -118,7 +125,7 @@ func (e *baseEmbedding[C]) GenerateContextualizedEmbeddings(ctx context.Context,
 		}, nil
 	}
 
-	return e.client.embedContextualized(ctx, documentChunks)
+	return e.client.embedContextualized(ctx, documentChunks, inputType...)
 }
 
 func (e *baseEmbedding[C]) Model() model.EmbeddingModel {
@@ -149,8 +156,20 @@ func WithTimeout(timeout time.Duration) EmbeddingClientOption {
 	}
 }
 
+func WithDimensions(dimensions int) EmbeddingClientOption {
+	return func(options *embeddingClientOptions) {
+		options.dimensions = &dimensions
+	}
+}
+
 func WithVoyageOptions(voyageOptions ...VoyageOption) EmbeddingClientOption {
 	return func(options *embeddingClientOptions) {
 		options.voyageOptions = voyageOptions
+	}
+}
+
+func WithOpenAIOptions(openaiOptions ...OpenAIOption) EmbeddingClientOption {
+	return func(options *embeddingClientOptions) {
+		options.openaiOptions = openaiOptions
 	}
 }

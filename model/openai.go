@@ -18,6 +18,10 @@ const (
 	GPT5         ModelID = "gpt-5"
 	GPT5Mini     ModelID = "gpt-5-mini"
 	GPT5Nano     ModelID = "gpt-5-nano"
+
+	TextEmbedding3Large ModelID = "text-embedding-3-large"
+	TextEmbedding3Small ModelID = "text-embedding-3-small"
+	AdaEmbedding002     ModelID = "text-embedding-ada-002"
 )
 
 var OpenAIModels = map[ModelID]Model{
@@ -237,5 +241,44 @@ var OpenAIModels = map[ModelID]Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+	},
+}
+
+var OpenAIEmbeddingModels = map[ModelID]EmbeddingModel{
+	TextEmbedding3Large: {
+		ID:                  TextEmbedding3Large,
+		Name:                "Text Embedding 3 Large",
+		Provider:            ProviderOpenAI,
+		APIModel:            "text-embedding-3-large",
+		CostPer1MTokens:     0.13,
+		MaxInputTokens:      8191,
+		EmbeddingDims:       3072,
+		SupportedDimensions: []int{256, 512, 1024, 1536, 2048, 3072},
+		MaxBatchSize:        2048,
+		MaxTokensPerBatch:   1000000,
+	},
+	TextEmbedding3Small: {
+		ID:                  TextEmbedding3Small,
+		Name:                "Text Embedding 3 Small",
+		Provider:            ProviderOpenAI,
+		APIModel:            "text-embedding-3-small",
+		CostPer1MTokens:     0.02,
+		MaxInputTokens:      8191,
+		EmbeddingDims:       1536,
+		SupportedDimensions: []int{512, 1536},
+		MaxBatchSize:        2048,
+		MaxTokensPerBatch:   1000000,
+	},
+	AdaEmbedding002: {
+		ID:                  AdaEmbedding002,
+		Name:                "Ada Embedding 002",
+		Provider:            ProviderOpenAI,
+		APIModel:            "text-embedding-ada-002",
+		CostPer1MTokens:     0.10,
+		MaxInputTokens:      8191,
+		EmbeddingDims:       1536,
+		SupportedDimensions: []int{1536},
+		MaxBatchSize:        2048,
+		MaxTokensPerBatch:   1000000,
 	},
 }
