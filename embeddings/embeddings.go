@@ -51,6 +51,7 @@ type embeddingClientOptions struct {
 	timeout   *time.Duration
 
 	voyageOptions []VoyageOption
+	openaiOptions []OpenAIOption
 }
 
 type EmbeddingClientOption func(*embeddingClientOptions)
@@ -79,6 +80,11 @@ func NewEmbedding(provider model.ModelProvider, opts ...EmbeddingClientOption) (
 		return &baseEmbedding[VoyageClient]{
 			options: clientOptions,
 			client:  newVoyageClient(clientOptions),
+		}, nil
+	case model.ProviderOpenAI:
+		return &baseEmbedding[OpenAIClient]{
+			options: clientOptions,
+			client:  newOpenAIClient(clientOptions),
 		}, nil
 	}
 
@@ -152,5 +158,11 @@ func WithTimeout(timeout time.Duration) EmbeddingClientOption {
 func WithVoyageOptions(voyageOptions ...VoyageOption) EmbeddingClientOption {
 	return func(options *embeddingClientOptions) {
 		options.voyageOptions = voyageOptions
+	}
+}
+
+func WithOpenAIOptions(openaiOptions ...OpenAIOption) EmbeddingClientOption {
+	return func(options *embeddingClientOptions) {
+		options.openaiOptions = openaiOptions
 	}
 }

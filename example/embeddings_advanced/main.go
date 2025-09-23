@@ -47,7 +47,7 @@ func advancedParametersExample(ctx context.Context) {
 		embeddings.WithVoyageOptions(
 			embeddings.WithInputType("query"),
 			embeddings.WithTruncation(false),
-			embeddings.WithOutputDimension(512),
+			embeddings.WithOutputDimensions(512),
 		),
 	)
 	if err != nil {
@@ -71,7 +71,7 @@ func differentDataTypesExample(ctx context.Context) {
 		embeddings.WithModel(model.VoyageEmbeddingModels[model.Voyage3Large]),
 		embeddings.WithVoyageOptions(
 			embeddings.WithInputType("document"),
-			embeddings.WithOutputDimension(256),
+			embeddings.WithOutputDimensions(256),
 			embeddings.WithOutputDtype("int8"),
 		),
 	)

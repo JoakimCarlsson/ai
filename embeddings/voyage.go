@@ -535,9 +535,9 @@ func WithEncodingFormat(format string) VoyageOption {
 	}
 }
 
-func WithOutputDimension(dimension int) VoyageOption {
+func WithOutputDimensions(dimensions int) VoyageOption {
 	return func(options *voyageOptions) {
-		options.outputDimension = &dimension
+		options.outputDimension = &dimensions
 	}
 }
 
