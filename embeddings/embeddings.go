@@ -45,10 +45,11 @@ type Embedding interface {
 }
 
 type embeddingClientOptions struct {
-	apiKey    string
-	model     model.EmbeddingModel
-	batchSize int
-	timeout   *time.Duration
+	apiKey     string
+	model      model.EmbeddingModel
+	batchSize  int
+	timeout    *time.Duration
+	dimensions *int
 
 	voyageOptions []VoyageOption
 	openaiOptions []OpenAIOption
@@ -152,6 +153,12 @@ func WithBatchSize(batchSize int) EmbeddingClientOption {
 func WithTimeout(timeout time.Duration) EmbeddingClientOption {
 	return func(options *embeddingClientOptions) {
 		options.timeout = &timeout
+	}
+}
+
+func WithDimensions(dimensions int) EmbeddingClientOption {
+	return func(options *embeddingClientOptions) {
+		options.dimensions = &dimensions
 	}
 }
 

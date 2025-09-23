@@ -90,7 +90,9 @@ func (o *openaiClient) embedBatch(ctx context.Context, texts []string) (*Embeddi
 		},
 	}
 
-	if o.options.dimensions != nil {
+	if o.providerOptions.dimensions != nil {
+		params.Dimensions = openai.Int(int64(*o.providerOptions.dimensions))
+	} else if o.options.dimensions != nil {
 		params.Dimensions = openai.Int(int64(*o.options.dimensions))
 	}
 	if o.options.user != "" {
@@ -126,12 +128,6 @@ func (o *openaiClient) embedMultimodal(ctx context.Context, inputs []MultimodalI
 
 func (o *openaiClient) embedContextualized(ctx context.Context, documentChunks [][]string, inputType ...string) (*ContextualizedEmbeddingResponse, error) {
 	return nil, fmt.Errorf("OpenAI does not support contextualized embeddings")
-}
-
-func WithDimensions(dimensions int) OpenAIOption {
-	return func(options *openaiOptions) {
-		options.dimensions = &dimensions
-	}
 }
 
 func WithUser(user string) OpenAIOption {

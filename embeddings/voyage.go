@@ -304,7 +304,9 @@ func (v *voyageClient) embedBatch(ctx context.Context, texts []string, inputType
 	if v.options.truncation != nil {
 		reqBody.Truncation = v.options.truncation
 	}
-	if v.options.outputDimension != nil {
+	if v.providerOptions.dimensions != nil {
+		reqBody.OutputDimension = v.providerOptions.dimensions
+	} else if v.options.outputDimension != nil {
 		reqBody.OutputDimension = v.options.outputDimension
 	}
 	if v.options.outputDtype != "float" {

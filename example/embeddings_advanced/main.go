@@ -44,10 +44,10 @@ func advancedParametersExample(ctx context.Context) {
 	embedder, err := embeddings.NewEmbedding(model.ProviderVoyage,
 		embeddings.WithAPIKey(""),
 		embeddings.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
+		embeddings.WithDimensions(512),
 		embeddings.WithVoyageOptions(
 			embeddings.WithInputType("query"),
 			embeddings.WithTruncation(false),
-			embeddings.WithOutputDimensions(512),
 		),
 	)
 	if err != nil {
@@ -69,9 +69,9 @@ func differentDataTypesExample(ctx context.Context) {
 	embedder, err := embeddings.NewEmbedding(model.ProviderVoyage,
 		embeddings.WithAPIKey(""),
 		embeddings.WithModel(model.VoyageEmbeddingModels[model.Voyage3Large]),
+		embeddings.WithDimensions(256),
 		embeddings.WithVoyageOptions(
 			embeddings.WithInputType("document"),
-			embeddings.WithOutputDimensions(256),
 			embeddings.WithOutputDtype("int8"),
 		),
 	)

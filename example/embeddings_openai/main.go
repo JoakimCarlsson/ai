@@ -13,9 +13,7 @@ func main() {
 	embedder, err := embeddings.NewEmbedding(model.ProviderOpenAI,
 		embeddings.WithAPIKey(""),
 		embeddings.WithModel(model.OpenAIEmbeddingModels[model.TextEmbedding3Large]),
-		embeddings.WithOpenAIOptions(
-			embeddings.WithDimensions(1024),
-		),
+		embeddings.WithDimensions(1024),
 	)
 	if err != nil {
 		panic(err)
