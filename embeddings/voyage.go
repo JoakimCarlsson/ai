@@ -519,30 +519,39 @@ func (v *voyageClient) embedContextualized(ctx context.Context, documentChunks [
 	}, nil
 }
 
+// WithInputType specifies the type of input for optimized embedding generation.
+// Common values: "query" for search queries, "document" for documents to be searched.
 func WithInputType(inputType string) VoyageOption {
 	return func(options *voyageOptions) {
 		options.inputType = inputType
 	}
 }
 
+// WithTruncation enables automatic truncation of inputs exceeding the model's token limit.
 func WithTruncation(truncation bool) VoyageOption {
 	return func(options *voyageOptions) {
 		options.truncation = &truncation
 	}
 }
 
+// WithEncodingFormat specifies the format for encoded embeddings.
+// Supported values depend on the model configuration.
 func WithEncodingFormat(format string) VoyageOption {
 	return func(options *voyageOptions) {
 		options.encodingFormat = format
 	}
 }
 
+// WithOutputDimensions sets the dimensionality of the output embedding vectors.
+// Only applicable to models that support variable output dimensions.
 func WithOutputDimensions(dimensions int) VoyageOption {
 	return func(options *voyageOptions) {
 		options.outputDimension = &dimensions
 	}
 }
 
+// WithOutputDtype specifies the data type for embedding outputs.
+// Common values: "float" (default), "int8", "uint8", "binary", "ubinary".
 func WithOutputDtype(dtype string) VoyageOption {
 	return func(options *voyageOptions) {
 		options.outputDtype = dtype

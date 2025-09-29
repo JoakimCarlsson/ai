@@ -134,6 +134,9 @@ type baseEmbedding[C EmbeddingClient] struct {
 	client  C
 }
 
+// NewEmbedding creates a new embedding client for the specified provider.
+// Supported providers include Voyage AI and OpenAI.
+// Use WithModel() to specify the embedding model and WithAPIKey() for authentication.
 func NewEmbedding(provider model.ModelProvider, opts ...EmbeddingClientOption) (Embedding, error) {
 	clientOptions := embeddingClientOptions{
 		batchSize: 100,
@@ -198,42 +201,51 @@ func (e *baseEmbedding[C]) Model() model.EmbeddingModel {
 	return e.options.model
 }
 
+// WithAPIKey sets the API key for authentication with the embedding provider.
 func WithAPIKey(apiKey string) EmbeddingClientOption {
 	return func(options *embeddingClientOptions) {
 		options.apiKey = apiKey
 	}
 }
 
+// WithModel specifies which embedding model to use for generating embeddings.
 func WithModel(model model.EmbeddingModel) EmbeddingClientOption {
 	return func(options *embeddingClientOptions) {
 		options.model = model
 	}
 }
 
+// WithBatchSize sets the number of texts to process in each batch request.
+// Larger batch sizes improve throughput but may increase latency.
 func WithBatchSize(batchSize int) EmbeddingClientOption {
 	return func(options *embeddingClientOptions) {
 		options.batchSize = batchSize
 	}
 }
 
+// WithTimeout sets the maximum duration to wait for embedding requests to complete.
 func WithTimeout(timeout time.Duration) EmbeddingClientOption {
 	return func(options *embeddingClientOptions) {
 		options.timeout = &timeout
 	}
 }
 
+// WithDimensions specifies the output dimensionality for embedding vectors.
+// Only supported by models that allow variable dimensions (e.g., OpenAI, Voyage).
 func WithDimensions(dimensions int) EmbeddingClientOption {
 	return func(options *embeddingClientOptions) {
 		options.dimensions = &dimensions
 	}
 }
 
+// WithVoyageOptions applies Voyage AI-specific configuration options.
 func WithVoyageOptions(voyageOptions ...VoyageOption) EmbeddingClientOption {
 	return func(options *embeddingClientOptions) {
 		options.voyageOptions = voyageOptions
 	}
 }
 
+// WithOpenAIOptions applies OpenAI-specific configuration options.
 func WithOpenAIOptions(openaiOptions ...OpenAIOption) EmbeddingClientOption {
 	return func(options *embeddingClientOptions) {
 		options.openaiOptions = openaiOptions

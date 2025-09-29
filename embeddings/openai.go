@@ -130,6 +130,8 @@ func (o *openaiClient) embedContextualized(ctx context.Context, documentChunks [
 	return nil, fmt.Errorf("OpenAI does not support contextualized embeddings")
 }
 
+// WithUser sets a unique identifier for the end-user making the request.
+// This helps OpenAI monitor and detect abuse.
 func WithUser(user string) OpenAIOption {
 	return func(options *openaiOptions) {
 		options.user = user

@@ -105,6 +105,9 @@ type baseReranker[C RerankerClient] struct {
 	client  C
 }
 
+// NewReranker creates a new reranker client for the specified provider.
+// Currently only Voyage AI is supported as a reranker provider.
+// Use WithModel() to specify the reranker model and WithAPIKey() for authentication.
 func NewReranker(provider model.ModelProvider, opts ...RerankerClientOption) (Reranker, error) {
 	clientOptions := rerankerClientOptions{
 		returnDocs: false,
@@ -140,42 +143,51 @@ func (r *baseReranker[C]) Model() model.RerankerModel {
 	return r.options.model
 }
 
+// WithAPIKey sets the API key for authentication with the reranker provider.
 func WithAPIKey(apiKey string) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.apiKey = apiKey
 	}
 }
 
+// WithModel specifies which reranker model to use for document reranking.
 func WithModel(model model.RerankerModel) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.model = model
 	}
 }
 
+// WithTopK limits the number of top-ranked documents to return.
+// If not set, all documents are returned ranked by relevance.
 func WithTopK(topK int) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.topK = &topK
 	}
 }
 
+// WithReturnDocuments controls whether document text is included in results.
+// If false, only indices and scores are returned, reducing response size.
 func WithReturnDocuments(returnDocs bool) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.returnDocs = returnDocs
 	}
 }
 
+// WithTruncation enables automatic truncation of documents exceeding token limits.
 func WithTruncation(truncation bool) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.truncation = &truncation
 	}
 }
 
+// WithTimeout sets the maximum duration to wait for reranking requests to complete.
 func WithTimeout(timeout time.Duration) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.timeout = &timeout
 	}
 }
 
+// WithVoyageOptions applies Voyage AI-specific configuration options.
 func WithVoyageOptions(voyageOptions ...VoyageOption) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.voyageOptions = voyageOptions
