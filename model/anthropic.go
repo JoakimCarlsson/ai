@@ -8,8 +8,9 @@ const (
 	Claude37Sonnet ModelID = "claude-3.7-sonnet"
 	Claude35Haiku  ModelID = "claude-3.5-haiku"
 	Claude3Opus    ModelID = "claude-3-opus"
-	Claude4Opus    ModelID = "claude-4-opus"
-	Claude4Sonnet  ModelID = "claude-4-sonnet"
+	Claude4Opus     ModelID = "claude-4-opus"
+	Claude4Sonnet   ModelID = "claude-4-sonnet"
+	Claude45Sonnet  ModelID = "claude-4.5-sonnet"
 )
 
 var AnthropicModels = map[ModelID]Model{
@@ -110,6 +111,21 @@ var AnthropicModels = map[ModelID]Model{
 		CostPer1MOut:          75.0,
 		ContextWindow:         200000,
 		DefaultMaxTokens:      4096,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: false,
+	},
+	Claude45Sonnet: {
+		ID:                    Claude45Sonnet,
+		Name:                  "Claude 4.5 Sonnet",
+		Provider:              ProviderAnthropic,
+		APIModel:              "claude-sonnet-4-5-20250929",
+		CostPer1MIn:           3.0,
+		CostPer1MInCached:     3.75,
+		CostPer1MOutCached:    0.30,
+		CostPer1MOut:          15.0,
+		ContextWindow:         200000,
+		DefaultMaxTokens:      50000,
+		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: false,
 	},
