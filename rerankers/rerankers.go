@@ -1,3 +1,44 @@
+// Package rerankers provides a unified interface for document reranking using various AI providers.
+//
+// Document reranking improves search relevance by reordering a list of documents based on
+// their semantic similarity to a query. This package abstracts the differences between
+// reranking providers, offering a consistent API for improving search results.
+//
+// Key features include:
+//   - Document reranking based on semantic similarity
+//   - Relevance score calculation for each document
+//   - Configurable result count limits (topK)
+//   - Optional document content return
+//   - Token usage tracking and cost calculation
+//   - Provider-specific optimizations
+//
+// Example usage:
+//
+//	reranker, err := rerankers.NewReranker(model.ProviderVoyage,
+//		rerankers.WithAPIKey("your-api-key"),
+//		rerankers.WithModel(model.VoyageRerankerModels[model.Rerank25Lite]),
+//		rerankers.WithTopK(5),
+//		rerankers.WithReturnDocuments(true),
+//	)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	query := "What is machine learning?"
+//	documents := []string{
+//		"Machine learning is a subset of artificial intelligence.",
+//		"The weather today is sunny.",
+//		"Deep learning uses neural networks.",
+//	}
+//
+//	response, err := reranker.Rerank(ctx, query, documents)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	for i, result := range response.Results {
+//		fmt.Printf("Rank %d (Score: %.4f): %s\n", i+1, result.RelevanceScore, result.Document)
+//	}
 package rerankers
 
 import (
@@ -8,24 +49,41 @@ import (
 	"github.com/joakimcarlsson/ai/model"
 )
 
+// RerankerUsage tracks the resource consumption for reranking operations.
 type RerankerUsage struct {
+	// TotalTokens is the total number of tokens processed during reranking.
 	TotalTokens int64
 }
 
+// RerankerResult represents a single document's reranking result with its relevance score.
 type RerankerResult struct {
-	Index          int     `json:"index"`
+	// Index is the original position of this document in the input list.
+	Index int `json:"index"`
+	// RelevanceScore indicates how relevant this document is to the query (higher = more relevant).
 	RelevanceScore float64 `json:"relevance_score"`
-	Document       string  `json:"document,omitempty"`
+	// Document contains the original document text if WithReturnDocuments(true) was specified.
+	Document string `json:"document,omitempty"`
 }
 
+// RerankerResponse contains the reranked results and metadata from a reranking request.
 type RerankerResponse struct {
+	// Results contains the documents ordered by relevance (most relevant first).
 	Results []RerankerResult
-	Usage   RerankerUsage
-	Model   string
+	// Usage tracks resource consumption for this request.
+	Usage RerankerUsage
+	// Model identifies which reranker model was used.
+	Model string
 }
 
+// Reranker defines the interface for document reranking operations.
 type Reranker interface {
-	Rerank(ctx context.Context, query string, documents []string) (*RerankerResponse, error)
+	// Rerank reorders documents by relevance to the query, returning results sorted by relevance score.
+	Rerank(
+		ctx context.Context,
+		query string,
+		documents []string,
+	) (*RerankerResponse, error)
+	// Model returns the reranker model configuration being used.
 	Model() model.RerankerModel
 }
 
@@ -43,7 +101,11 @@ type rerankerClientOptions struct {
 type RerankerClientOption func(*rerankerClientOptions)
 
 type RerankerClient interface {
-	rerank(ctx context.Context, query string, documents []string) (*RerankerResponse, error)
+	rerank(
+		ctx context.Context,
+		query string,
+		documents []string,
+	) (*RerankerResponse, error)
 }
 
 type baseReranker[C RerankerClient] struct {
@@ -51,7 +113,13 @@ type baseReranker[C RerankerClient] struct {
 	client  C
 }
 
-func NewReranker(provider model.ModelProvider, opts ...RerankerClientOption) (Reranker, error) {
+// NewReranker creates a new reranker client for the specified provider.
+// Currently only Voyage AI is supported as a reranker provider.
+// Use WithModel() to specify the reranker model and WithAPIKey() for authentication.
+func NewReranker(
+	provider model.ModelProvider,
+	opts ...RerankerClientOption,
+) (Reranker, error) {
 	clientOptions := rerankerClientOptions{
 		returnDocs: false,
 	}
@@ -70,7 +138,11 @@ func NewReranker(provider model.ModelProvider, opts ...RerankerClientOption) (Re
 	return nil, fmt.Errorf("reranker provider not supported: %s", provider)
 }
 
-func (r *baseReranker[C]) Rerank(ctx context.Context, query string, documents []string) (*RerankerResponse, error) {
+func (r *baseReranker[C]) Rerank(
+	ctx context.Context,
+	query string,
+	documents []string,
+) (*RerankerResponse, error) {
 	if len(documents) == 0 {
 		return &RerankerResponse{
 			Results: []RerankerResult{},
@@ -86,42 +158,51 @@ func (r *baseReranker[C]) Model() model.RerankerModel {
 	return r.options.model
 }
 
+// WithAPIKey sets the API key for authentication with the reranker provider.
 func WithAPIKey(apiKey string) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.apiKey = apiKey
 	}
 }
 
+// WithModel specifies which reranker model to use for document reranking.
 func WithModel(model model.RerankerModel) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.model = model
 	}
 }
 
+// WithTopK limits the number of top-ranked documents to return.
+// If not set, all documents are returned ranked by relevance.
 func WithTopK(topK int) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.topK = &topK
 	}
 }
 
+// WithReturnDocuments controls whether document text is included in results.
+// If false, only indices and scores are returned, reducing response size.
 func WithReturnDocuments(returnDocs bool) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.returnDocs = returnDocs
 	}
 }
 
+// WithTruncation enables automatic truncation of documents exceeding token limits.
 func WithTruncation(truncation bool) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.truncation = &truncation
 	}
 }
 
+// WithTimeout sets the maximum duration to wait for reranking requests to complete.
 func WithTimeout(timeout time.Duration) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.timeout = &timeout
 	}
 }
 
+// WithVoyageOptions applies Voyage AI-specific configuration options.
 func WithVoyageOptions(voyageOptions ...VoyageOption) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.voyageOptions = voyageOptions

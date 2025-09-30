@@ -110,7 +110,10 @@ func newVoyageClient(opts embeddingClientOptions) VoyageClient {
 	}
 }
 
-func (v *voyageClient) embed(ctx context.Context, texts []string) (*EmbeddingResponse, error) {
+func (v *voyageClient) embed(
+	ctx context.Context,
+	texts []string,
+) (*EmbeddingResponse, error) {
 	if len(texts) == 0 {
 		return &EmbeddingResponse{
 			Embeddings: [][]float32{},
@@ -150,7 +153,10 @@ func (v *voyageClient) embed(ctx context.Context, texts []string) (*EmbeddingRes
 	}, nil
 }
 
-func (v *voyageClient) embedBatch(ctx context.Context, texts []string) (*EmbeddingResponse, error) {
+func (v *voyageClient) embedBatch(
+	ctx context.Context,
+	texts []string,
+) (*EmbeddingResponse, error) {
 	reqBody := voyageEmbeddingRequest{
 		Input:           texts,
 		Model:           v.providerOptions.model.APIModel,
@@ -166,7 +172,12 @@ func (v *voyageClient) embedBatch(ctx context.Context, texts []string) (*Embeddi
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", v.baseURL+"/embeddings", bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		v.baseURL+"/embeddings",
+		bytes.NewBuffer(jsonBody),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -186,7 +197,11 @@ func (v *voyageClient) embedBatch(ctx context.Context, texts []string) (*Embeddi
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"API request failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var voyageResp voyageEmbeddingResponse
@@ -210,7 +225,10 @@ func (v *voyageClient) embedBatch(ctx context.Context, texts []string) (*Embeddi
 	}, nil
 }
 
-func (v *voyageClient) embedMultimodal(ctx context.Context, inputs []MultimodalInput) (*EmbeddingResponse, error) {
+func (v *voyageClient) embedMultimodal(
+	ctx context.Context,
+	inputs []MultimodalInput,
+) (*EmbeddingResponse, error) {
 	if len(inputs) == 0 {
 		return &EmbeddingResponse{
 			Embeddings: [][]float32{},
@@ -232,7 +250,12 @@ func (v *voyageClient) embedMultimodal(ctx context.Context, inputs []MultimodalI
 		return nil, fmt.Errorf("failed to marshal multimodal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", v.baseURL+"/multimodalembeddings", bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		v.baseURL+"/multimodalembeddings",
+		bytes.NewBuffer(jsonBody),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create multimodal request: %w", err)
 	}
@@ -248,16 +271,26 @@ func (v *voyageClient) embedMultimodal(ctx context.Context, inputs []MultimodalI
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read multimodal response body: %w", err)
+		return nil, fmt.Errorf(
+			"failed to read multimodal response body: %w",
+			err,
+		)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("multimodal API request failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"multimodal API request failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var voyageResp voyageEmbeddingResponse
 	if err := json.Unmarshal(body, &voyageResp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal multimodal response: %w", err)
+		return nil, fmt.Errorf(
+			"failed to unmarshal multimodal response: %w",
+			err,
+		)
 	}
 
 	embeddings := make([][]float32, len(voyageResp.Data))
@@ -276,7 +309,10 @@ func (v *voyageClient) embedMultimodal(ctx context.Context, inputs []MultimodalI
 	}, nil
 }
 
-func (v *voyageClient) embedContextualized(ctx context.Context, documentChunks [][]string) (*ContextualizedEmbeddingResponse, error) {
+func (v *voyageClient) embedContextualized(
+	ctx context.Context,
+	documentChunks [][]string,
+) (*ContextualizedEmbeddingResponse, error) {
 	if len(documentChunks) == 0 {
 		return &ContextualizedEmbeddingResponse{
 			DocumentEmbeddings: [][][]float32{},
@@ -293,12 +329,23 @@ func (v *voyageClient) embedContextualized(ctx context.Context, documentChunks [
 
 	jsonBody, err := json.Marshal(reqBody)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal contextualized request: %w", err)
+		return nil, fmt.Errorf(
+			"failed to marshal contextualized request: %w",
+			err,
+		)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", v.baseURL+"/contextualizedembeddings", bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		v.baseURL+"/contextualizedembeddings",
+		bytes.NewBuffer(jsonBody),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create contextualized request: %w", err)
+		return nil, fmt.Errorf(
+			"failed to create contextualized request: %w",
+			err,
+		)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -312,16 +359,26 @@ func (v *voyageClient) embedContextualized(ctx context.Context, documentChunks [
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read contextualized response body: %w", err)
+		return nil, fmt.Errorf(
+			"failed to read contextualized response body: %w",
+			err,
+		)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("contextualized API request failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"contextualized API request failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var voyageResp voyageContextualizedResponse
 	if err := json.Unmarshal(body, &voyageResp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal contextualized response: %w", err)
+		return nil, fmt.Errorf(
+			"failed to unmarshal contextualized response: %w",
+			err,
+		)
 	}
 
 	// Convert nested response structure to our format
@@ -336,8 +393,10 @@ func (v *voyageClient) embedContextualized(ctx context.Context, documentChunks [
 
 	return &ContextualizedEmbeddingResponse{
 		DocumentEmbeddings: documentEmbeddings,
-		Usage:              EmbeddingUsage{TotalTokens: voyageResp.Usage.TotalTokens},
-		Model:              voyageResp.Model,
+		Usage: EmbeddingUsage{
+			TotalTokens: voyageResp.Usage.TotalTokens,
+		},
+		Model: voyageResp.Model,
 	}, nil
 }
 

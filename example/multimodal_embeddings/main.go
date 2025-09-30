@@ -33,13 +33,19 @@ func main() {
 		},
 	}
 
-	response, err := embedder.GenerateMultimodalEmbeddings(context.Background(), multimodalInputs)
+	response, err := embedder.GenerateMultimodalEmbeddings(
+		context.Background(),
+		multimodalInputs,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if len(response.Embeddings) > 0 {
-		fmt.Printf("Multimodal embedding dimensions: %d\n", len(response.Embeddings[0]))
+		fmt.Printf(
+			"Multimodal embedding dimensions: %d\n",
+			len(response.Embeddings[0]),
+		)
 		fmt.Printf("First 5 values: %v\n", response.Embeddings[0][:5])
 	}
 }

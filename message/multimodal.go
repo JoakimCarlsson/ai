@@ -85,7 +85,11 @@ type MultiModalMessage struct {
 }
 
 // NewMultiModalMessage creates a multimodal message with source, role and contents
-func NewMultiModalMessage(source MessageSource, role MessageRole, contents []MultiModalContent) *MultiModalMessage {
+func NewMultiModalMessage(
+	source MessageSource,
+	role MessageRole,
+	contents []MultiModalContent,
+) *MultiModalMessage {
 	return &MultiModalMessage{
 		baseMessage: newBaseMessage(source, role),
 		Contents:    contents,
@@ -105,10 +109,16 @@ func NewUserMultiModalMessageWithText(text string) *MultiModalMessage {
 }
 
 // NewUserMultiModalMessageWithAttachments creates a user message with text and file attachments
-func NewUserMultiModalMessageWithAttachments(text string, attachments []Attachment) *MultiModalMessage {
+func NewUserMultiModalMessageWithAttachments(
+	text string,
+	attachments []Attachment,
+) *MultiModalMessage {
 	contents := []MultiModalContent{NewTextContent(text)}
 	for _, attachment := range attachments {
-		contents = append(contents, NewBinaryContent(attachment.MIMEType, attachment.Data))
+		contents = append(
+			contents,
+			NewBinaryContent(attachment.MIMEType, attachment.Data),
+		)
 	}
 	return NewUserMultiModalMessage(contents)
 }

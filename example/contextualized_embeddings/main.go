@@ -29,14 +29,22 @@ func main() {
 		},
 	}
 
-	response, err := embedder.GenerateContextualizedEmbeddings(context.Background(), documentChunks)
+	response, err := embedder.GenerateContextualizedEmbeddings(
+		context.Background(),
+		documentChunks,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for docIndex, docEmbeddings := range response.DocumentEmbeddings {
 		for chunkIndex, chunkEmbedding := range docEmbeddings {
-			fmt.Printf("Document %d, Chunk %d: %s\n", docIndex+1, chunkIndex+1, documentChunks[docIndex][chunkIndex])
+			fmt.Printf(
+				"Document %d, Chunk %d: %s\n",
+				docIndex+1,
+				chunkIndex+1,
+				documentChunks[docIndex][chunkIndex],
+			)
 			fmt.Printf("Dimensions: %d\n", len(chunkEmbedding))
 			fmt.Printf("First 5 values: %v\n\n", chunkEmbedding[:5])
 		}

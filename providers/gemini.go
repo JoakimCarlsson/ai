@@ -36,7 +36,13 @@ func newGeminiClient(opts llmClientOptions) GeminiClient {
 		o(&geminiOpts)
 	}
 
-	client, err := genai.NewClient(context.Background(), &genai.ClientConfig{APIKey: opts.apiKey, Backend: genai.BackendGeminiAPI})
+	client, err := genai.NewClient(
+		context.Background(),
+		&genai.ClientConfig{
+			APIKey:  opts.apiKey,
+			Backend: genai.BackendGeminiAPI,
+		},
+	)
 	if err != nil {
 		return nil
 	}
@@ -48,7 +54,9 @@ func newGeminiClient(opts llmClientOptions) GeminiClient {
 	}
 }
 
-func (g *geminiClient) convertMessages(messages []message.Message) ([]*genai.Content, []string) {
+func (g *geminiClient) convertMessages(
+	messages []message.Message,
+) ([]*genai.Content, []string) {
 	var geminiMessages []*genai.Content
 	var systemMessages []string
 
@@ -122,7 +130,11 @@ func (g *geminiClient) convertMessages(messages []message.Message) ([]*genai.Con
 
 func (g *geminiClient) convertTools(tools []tool.BaseTool) []*genai.Tool {
 	geminiTool := &genai.Tool{}
-	geminiTool.FunctionDeclarations = make([]*genai.FunctionDeclaration, 0, len(tools))
+	geminiTool.FunctionDeclarations = make(
+		[]*genai.FunctionDeclaration,
+		0,
+		len(tools),
+	)
 
 	for _, tool := range tools {
 		info := tool.Info()
@@ -136,13 +148,18 @@ func (g *geminiClient) convertTools(tools []tool.BaseTool) []*genai.Tool {
 			},
 		}
 
-		geminiTool.FunctionDeclarations = append(geminiTool.FunctionDeclarations, declaration)
+		geminiTool.FunctionDeclarations = append(
+			geminiTool.FunctionDeclarations,
+			declaration,
+		)
 	}
 
 	return []*genai.Tool{geminiTool}
 }
 
-func (g *geminiClient) finishReason(reason genai.FinishReason) message.FinishReason {
+func (g *geminiClient) finishReason(
+	reason genai.FinishReason,
+) message.FinishReason {
 	switch {
 	case reason == genai.FinishReasonStop:
 		return message.FinishReasonEndTurn
@@ -153,7 +170,11 @@ func (g *geminiClient) finishReason(reason genai.FinishReason) message.FinishRea
 	}
 }
 
-func (g *geminiClient) send(ctx context.Context, messages []message.Message, tools []tool.BaseTool) (*LLMResponse, error) {
+func (g *geminiClient) send(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+) (*LLMResponse, error) {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
 	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
@@ -169,8 +190,14 @@ func (g *geminiClient) send(ctx context.Context, messages []message.Message, too
 	params.applyFloat32Temperature(func(t *float32) { config.Temperature = t })
 	params.applyFloat32TopP(func(p *float32) { config.TopP = p })
 	params.applyFloat32TopK(func(k *float32) { config.TopK = k })
-	params.applyFloat32FrequencyPenalty(g.options.frequencyPenalty, func(fp *float32) { config.FrequencyPenalty = fp })
-	params.applyFloat32PresencePenalty(g.options.presencePenalty, func(pp *float32) { config.PresencePenalty = pp })
+	params.applyFloat32FrequencyPenalty(
+		g.options.frequencyPenalty,
+		func(fp *float32) { config.FrequencyPenalty = fp },
+	)
+	params.applyFloat32PresencePenalty(
+		g.options.presencePenalty,
+		func(pp *float32) { config.PresencePenalty = pp },
+	)
 	params.applyInt32Seed(g.options.seed, func(s *int32) { config.Seed = s })
 
 	if len(g.providerOptions.stopSequences) > 0 {
@@ -186,58 +213,71 @@ func (g *geminiClient) send(ctx context.Context, messages []message.Message, too
 	if len(tools) > 0 {
 		config.Tools = g.convertTools(tools)
 	}
-	chat, _ := g.client.Chats.Create(ctx, g.providerOptions.model.APIModel, config, history)
+	chat, _ := g.client.Chats.Create(
+		ctx,
+		g.providerOptions.model.APIModel,
+		config,
+		history,
+	)
 
-	return ExecuteWithRetry(ctx, GeminiRetryConfig(), func() (*LLMResponse, error) {
-		var toolCalls []message.ToolCall
+	return ExecuteWithRetry(
+		ctx,
+		GeminiRetryConfig(),
+		func() (*LLMResponse, error) {
+			var toolCalls []message.ToolCall
 
-		var lastMsgParts []genai.Part
-		for _, part := range lastMsg.Parts {
-			lastMsgParts = append(lastMsgParts, *part)
-		}
-		resp, err := chat.SendMessage(ctx, lastMsgParts...)
-		if err != nil {
-			return nil, err
-		}
+			var lastMsgParts []genai.Part
+			for _, part := range lastMsg.Parts {
+				lastMsgParts = append(lastMsgParts, *part)
+			}
+			resp, err := chat.SendMessage(ctx, lastMsgParts...)
+			if err != nil {
+				return nil, err
+			}
 
-		content := ""
+			content := ""
 
-		if len(resp.Candidates) > 0 && resp.Candidates[0].Content != nil {
-			for _, part := range resp.Candidates[0].Content.Parts {
-				switch {
-				case part.Text != "":
-					content = string(part.Text)
-				case part.FunctionCall != nil:
-					id := "call_" + uuid.New().String()
-					args, _ := json.Marshal(part.FunctionCall.Args)
-					toolCalls = append(toolCalls, message.ToolCall{
-						ID:       id,
-						Name:     part.FunctionCall.Name,
-						Input:    string(args),
-						Type:     "function",
-						Finished: true,
-					})
+			if len(resp.Candidates) > 0 && resp.Candidates[0].Content != nil {
+				for _, part := range resp.Candidates[0].Content.Parts {
+					switch {
+					case part.Text != "":
+						content = string(part.Text)
+					case part.FunctionCall != nil:
+						id := "call_" + uuid.New().String()
+						args, _ := json.Marshal(part.FunctionCall.Args)
+						toolCalls = append(toolCalls, message.ToolCall{
+							ID:       id,
+							Name:     part.FunctionCall.Name,
+							Input:    string(args),
+							Type:     "function",
+							Finished: true,
+						})
+					}
 				}
 			}
-		}
-		finishReason := message.FinishReasonEndTurn
-		if len(resp.Candidates) > 0 {
-			finishReason = g.finishReason(resp.Candidates[0].FinishReason)
-		}
-		if len(toolCalls) > 0 {
-			finishReason = message.FinishReasonToolUse
-		}
+			finishReason := message.FinishReasonEndTurn
+			if len(resp.Candidates) > 0 {
+				finishReason = g.finishReason(resp.Candidates[0].FinishReason)
+			}
+			if len(toolCalls) > 0 {
+				finishReason = message.FinishReasonToolUse
+			}
 
-		return &LLMResponse{
-			Content:      content,
-			ToolCalls:    toolCalls,
-			Usage:        g.usage(resp),
-			FinishReason: finishReason,
-		}, nil
-	})
+			return &LLMResponse{
+				Content:      content,
+				ToolCalls:    toolCalls,
+				Usage:        g.usage(resp),
+				FinishReason: finishReason,
+			}, nil
+		},
+	)
 }
 
-func (g *geminiClient) stream(ctx context.Context, messages []message.Message, tools []tool.BaseTool) <-chan LLMEvent {
+func (g *geminiClient) stream(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+) <-chan LLMEvent {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
 	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
@@ -253,8 +293,14 @@ func (g *geminiClient) stream(ctx context.Context, messages []message.Message, t
 	params.applyFloat32Temperature(func(t *float32) { config.Temperature = t })
 	params.applyFloat32TopP(func(p *float32) { config.TopP = p })
 	params.applyFloat32TopK(func(k *float32) { config.TopK = k })
-	params.applyFloat32FrequencyPenalty(g.options.frequencyPenalty, func(fp *float32) { config.FrequencyPenalty = fp })
-	params.applyFloat32PresencePenalty(g.options.presencePenalty, func(pp *float32) { config.PresencePenalty = pp })
+	params.applyFloat32FrequencyPenalty(
+		g.options.frequencyPenalty,
+		func(fp *float32) { config.FrequencyPenalty = fp },
+	)
+	params.applyFloat32PresencePenalty(
+		g.options.presencePenalty,
+		func(pp *float32) { config.PresencePenalty = pp },
+	)
 	params.applyInt32Seed(g.options.seed, func(s *int32) { config.Seed = s })
 
 	if len(g.providerOptions.stopSequences) > 0 {
@@ -270,7 +316,12 @@ func (g *geminiClient) stream(ctx context.Context, messages []message.Message, t
 	if len(tools) > 0 {
 		config.Tools = g.convertTools(tools)
 	}
-	chat, _ := g.client.Chats.Create(ctx, g.providerOptions.model.APIModel, config, history)
+	chat, _ := g.client.Chats.Create(
+		ctx,
+		g.providerOptions.model.APIModel,
+		config,
+		history,
+	)
 
 	eventChan := make(chan LLMEvent)
 
@@ -296,7 +347,8 @@ func (g *geminiClient) stream(ctx context.Context, messages []message.Message, t
 
 				finalResp = resp
 
-				if len(resp.Candidates) > 0 && resp.Candidates[0].Content != nil {
+				if len(resp.Candidates) > 0 &&
+					resp.Candidates[0].Content != nil {
 					for _, part := range resp.Candidates[0].Content.Parts {
 						switch {
 						case part.Text != "":
@@ -319,7 +371,8 @@ func (g *geminiClient) stream(ctx context.Context, messages []message.Message, t
 
 							isNew := true
 							for _, existing := range toolCalls {
-								if existing.Name == newCall.Name && existing.Input == newCall.Input {
+								if existing.Name == newCall.Name &&
+									existing.Input == newCall.Input {
 									isNew = false
 									break
 								}
@@ -339,7 +392,9 @@ func (g *geminiClient) stream(ctx context.Context, messages []message.Message, t
 
 				finishReason := message.FinishReasonEndTurn
 				if len(finalResp.Candidates) > 0 {
-					finishReason = g.finishReason(finalResp.Candidates[0].FinishReason)
+					finishReason = g.finishReason(
+						finalResp.Candidates[0].FinishReason,
+					)
 				}
 				if len(toolCalls) > 0 {
 					finishReason = message.FinishReasonToolUse
@@ -403,7 +458,9 @@ func WithGeminiSeed(seed int64) GeminiOption {
 	}
 }
 
-func convertSchemaProperties(parameters map[string]interface{}) map[string]*genai.Schema {
+func convertSchemaProperties(
+	parameters map[string]interface{},
+) map[string]*genai.Schema {
 	properties := make(map[string]*genai.Schema)
 
 	for name, param := range parameters {
@@ -481,7 +538,12 @@ func (g *geminiClient) supportsStructuredOutput() bool {
 	return g.providerOptions.model.SupportsStructuredOut
 }
 
-func (g *geminiClient) sendWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (*LLMResponse, error) {
+func (g *geminiClient) sendWithStructuredOutput(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+	outputSchema *schema.StructuredOutputInfo,
+) (*LLMResponse, error) {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
 	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
@@ -493,15 +555,24 @@ func (g *geminiClient) sendWithStructuredOutput(ctx context.Context, messages []
 		MaxOutputTokens: int32(g.providerOptions.maxTokens),
 	}
 
-	responseSchema := g.convertSchemaToGenai(outputSchema.Parameters, outputSchema.Required)
+	responseSchema := g.convertSchemaToGenai(
+		outputSchema.Parameters,
+		outputSchema.Required,
+	)
 	config.ResponseSchema = responseSchema
 
 	params := newParameterBuilder(g.providerOptions)
 	params.applyFloat32Temperature(func(t *float32) { config.Temperature = t })
 	params.applyFloat32TopP(func(p *float32) { config.TopP = p })
 	params.applyFloat32TopK(func(k *float32) { config.TopK = k })
-	params.applyFloat32FrequencyPenalty(g.options.frequencyPenalty, func(fp *float32) { config.FrequencyPenalty = fp })
-	params.applyFloat32PresencePenalty(g.options.presencePenalty, func(pp *float32) { config.PresencePenalty = pp })
+	params.applyFloat32FrequencyPenalty(
+		g.options.frequencyPenalty,
+		func(fp *float32) { config.FrequencyPenalty = fp },
+	)
+	params.applyFloat32PresencePenalty(
+		g.options.presencePenalty,
+		func(pp *float32) { config.PresencePenalty = pp },
+	)
 	params.applyInt32Seed(g.options.seed, func(s *int32) { config.Seed = s })
 
 	geminiTools := g.convertTools(tools)
@@ -515,59 +586,75 @@ func (g *geminiClient) sendWithStructuredOutput(ctx context.Context, messages []
 		}
 	}
 
-	chat, _ := g.client.Chats.Create(ctx, g.providerOptions.model.APIModel, config, history)
+	chat, _ := g.client.Chats.Create(
+		ctx,
+		g.providerOptions.model.APIModel,
+		config,
+		history,
+	)
 
-	return ExecuteWithRetry(ctx, GeminiRetryConfig(), func() (*LLMResponse, error) {
-		response, err := chat.Send(ctx, lastMsg.Parts[0])
-		if err != nil {
-			return nil, err
-		}
+	return ExecuteWithRetry(
+		ctx,
+		GeminiRetryConfig(),
+		func() (*LLMResponse, error) {
+			response, err := chat.Send(ctx, lastMsg.Parts[0])
+			if err != nil {
+				return nil, err
+			}
 
-		content := ""
-		for _, candidate := range response.Candidates {
-			for _, part := range candidate.Content.Parts {
-				if part.Text != "" {
-					content += string(part.Text)
+			content := ""
+			for _, candidate := range response.Candidates {
+				for _, part := range candidate.Content.Parts {
+					if part.Text != "" {
+						content += string(part.Text)
+					}
 				}
 			}
-		}
 
-		toolCalls := []message.ToolCall{}
-		for _, candidate := range response.Candidates {
-			for _, part := range candidate.Content.Parts {
-				if part.FunctionCall != nil {
-					input, _ := json.Marshal(part.FunctionCall.Args)
-					toolCalls = append(toolCalls, message.ToolCall{
-						ID:    part.FunctionCall.Name,
-						Name:  part.FunctionCall.Name,
-						Input: string(input),
-						Type:  "function",
-					})
+			toolCalls := []message.ToolCall{}
+			for _, candidate := range response.Candidates {
+				for _, part := range candidate.Content.Parts {
+					if part.FunctionCall != nil {
+						input, _ := json.Marshal(part.FunctionCall.Args)
+						toolCalls = append(toolCalls, message.ToolCall{
+							ID:    part.FunctionCall.Name,
+							Name:  part.FunctionCall.Name,
+							Input: string(input),
+							Type:  "function",
+						})
+					}
 				}
 			}
-		}
 
-		finishReason := message.FinishReasonEndTurn
-		if len(response.Candidates) > 0 {
-			finishReason = g.finishReason(response.Candidates[0].FinishReason)
-		}
+			finishReason := message.FinishReasonEndTurn
+			if len(response.Candidates) > 0 {
+				finishReason = g.finishReason(
+					response.Candidates[0].FinishReason,
+				)
+			}
 
-		if len(toolCalls) > 0 {
-			finishReason = message.FinishReasonToolUse
-		}
+			if len(toolCalls) > 0 {
+				finishReason = message.FinishReasonToolUse
+			}
 
-		return &LLMResponse{
-			Content:                    content,
-			ToolCalls:                  toolCalls,
-			Usage:                      g.usage(response),
-			FinishReason:               finishReason,
-			StructuredOutput:           &content,
-			UsedNativeStructuredOutput: true,
-		}, nil
-	})
+			return &LLMResponse{
+				Content:                    content,
+				ToolCalls:                  toolCalls,
+				Usage:                      g.usage(response),
+				FinishReason:               finishReason,
+				StructuredOutput:           &content,
+				UsedNativeStructuredOutput: true,
+			}, nil
+		},
+	)
 }
 
-func (g *geminiClient) streamWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent {
+func (g *geminiClient) streamWithStructuredOutput(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+	outputSchema *schema.StructuredOutputInfo,
+) <-chan LLMEvent {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
 	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
@@ -579,15 +666,24 @@ func (g *geminiClient) streamWithStructuredOutput(ctx context.Context, messages 
 		MaxOutputTokens: int32(g.providerOptions.maxTokens),
 	}
 
-	responseSchema := g.convertSchemaToGenai(outputSchema.Parameters, outputSchema.Required)
+	responseSchema := g.convertSchemaToGenai(
+		outputSchema.Parameters,
+		outputSchema.Required,
+	)
 	config.ResponseSchema = responseSchema
 
 	params := newParameterBuilder(g.providerOptions)
 	params.applyFloat32Temperature(func(t *float32) { config.Temperature = t })
 	params.applyFloat32TopP(func(p *float32) { config.TopP = p })
 	params.applyFloat32TopK(func(k *float32) { config.TopK = k })
-	params.applyFloat32FrequencyPenalty(g.options.frequencyPenalty, func(fp *float32) { config.FrequencyPenalty = fp })
-	params.applyFloat32PresencePenalty(g.options.presencePenalty, func(pp *float32) { config.PresencePenalty = pp })
+	params.applyFloat32FrequencyPenalty(
+		g.options.frequencyPenalty,
+		func(fp *float32) { config.FrequencyPenalty = fp },
+	)
+	params.applyFloat32PresencePenalty(
+		g.options.presencePenalty,
+		func(pp *float32) { config.PresencePenalty = pp },
+	)
 	params.applyInt32Seed(g.options.seed, func(s *int32) { config.Seed = s })
 
 	if len(g.providerOptions.stopSequences) > 0 {
@@ -603,7 +699,12 @@ func (g *geminiClient) streamWithStructuredOutput(ctx context.Context, messages 
 	if len(tools) > 0 {
 		config.Tools = g.convertTools(tools)
 	}
-	chat, _ := g.client.Chats.Create(ctx, g.providerOptions.model.APIModel, config, history)
+	chat, _ := g.client.Chats.Create(
+		ctx,
+		g.providerOptions.model.APIModel,
+		config,
+		history,
+	)
 
 	eventChan := make(chan LLMEvent)
 
@@ -629,7 +730,8 @@ func (g *geminiClient) streamWithStructuredOutput(ctx context.Context, messages 
 
 				finalResp = resp
 
-				if len(resp.Candidates) > 0 && resp.Candidates[0].Content != nil {
+				if len(resp.Candidates) > 0 &&
+					resp.Candidates[0].Content != nil {
 					for _, part := range resp.Candidates[0].Content.Parts {
 						switch {
 						case part.Text != "":
@@ -652,7 +754,8 @@ func (g *geminiClient) streamWithStructuredOutput(ctx context.Context, messages 
 
 							isNew := true
 							for _, existing := range toolCalls {
-								if existing.Name == newCall.Name && existing.Input == newCall.Input {
+								if existing.Name == newCall.Name &&
+									existing.Input == newCall.Input {
 									isNew = false
 									break
 								}
@@ -671,7 +774,9 @@ func (g *geminiClient) streamWithStructuredOutput(ctx context.Context, messages 
 			if finalResp != nil {
 				finishReason := message.FinishReasonEndTurn
 				if len(finalResp.Candidates) > 0 {
-					finishReason = g.finishReason(finalResp.Candidates[0].FinishReason)
+					finishReason = g.finishReason(
+						finalResp.Candidates[0].FinishReason,
+					)
 				}
 				if len(toolCalls) > 0 {
 					finishReason = message.FinishReasonToolUse
@@ -696,7 +801,10 @@ func (g *geminiClient) streamWithStructuredOutput(ctx context.Context, messages 
 	return eventChan
 }
 
-func (g *geminiClient) convertSchemaToGenai(parameters map[string]any, required []string) *genai.Schema {
+func (g *geminiClient) convertSchemaToGenai(
+	parameters map[string]any,
+	required []string,
+) *genai.Schema {
 	schema := &genai.Schema{
 		Type:       genai.TypeObject,
 		Properties: make(map[string]*genai.Schema),
@@ -736,7 +844,9 @@ func (g *geminiClient) convertSchemaToGenai(parameters map[string]any, required 
 	return schema
 }
 
-func (g *geminiClient) convertPropertyToGenai(propMap map[string]any) *genai.Schema {
+func (g *geminiClient) convertPropertyToGenai(
+	propMap map[string]any,
+) *genai.Schema {
 	schema := &genai.Schema{}
 
 	if typeVal, ok := propMap["type"].(string); ok {

@@ -32,10 +32,16 @@ func visionExample(ctx context.Context) {
 		log.Fatal(err)
 	}
 
-	urlMessage := message.NewUserMessage("What do you see in this image? Explain it like grug would.")
+	urlMessage := message.NewUserMessage(
+		"What do you see in this image? Explain it like grug would.",
+	)
 	urlMessage.AddImageURL(testImageURL, "")
 
-	response, err := client.SendMessages(ctx, []message.Message{urlMessage}, nil)
+	response, err := client.SendMessages(
+		ctx,
+		[]message.Message{urlMessage},
+		nil,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -48,7 +54,11 @@ func visionExample(ctx context.Context) {
 	}
 	base64Message.AddBinary(mimeType, imageData)
 
-	response, err = client.SendMessages(ctx, []message.Message{base64Message}, nil)
+	response, err = client.SendMessages(
+		ctx,
+		[]message.Message{base64Message},
+		nil,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,7 +73,10 @@ func downloadImage(url string) ([]byte, string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, "", fmt.Errorf("failed to download image: status %d", resp.StatusCode)
+		return nil, "", fmt.Errorf(
+			"failed to download image: status %d",
+			resp.StatusCode,
+		)
 	}
 
 	data, err := io.ReadAll(resp.Body)

@@ -44,10 +44,30 @@ func (v *vertexAIClient) supportsStructuredOutput() bool {
 	return v.providerOptions.model.SupportsStructuredOut
 }
 
-func (v *vertexAIClient) sendWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (*LLMResponse, error) {
-	return v.geminiClient.sendWithStructuredOutput(ctx, messages, tools, outputSchema)
+func (v *vertexAIClient) sendWithStructuredOutput(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+	outputSchema *schema.StructuredOutputInfo,
+) (*LLMResponse, error) {
+	return v.geminiClient.sendWithStructuredOutput(
+		ctx,
+		messages,
+		tools,
+		outputSchema,
+	)
 }
 
-func (v *vertexAIClient) streamWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent {
-	return v.geminiClient.streamWithStructuredOutput(ctx, messages, tools, outputSchema)
+func (v *vertexAIClient) streamWithStructuredOutput(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+	outputSchema *schema.StructuredOutputInfo,
+) <-chan LLMEvent {
+	return v.geminiClient.streamWithStructuredOutput(
+		ctx,
+		messages,
+		tools,
+		outputSchema,
+	)
 }

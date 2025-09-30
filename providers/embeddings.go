@@ -38,9 +38,18 @@ type ContextualizedEmbeddingResponse struct {
 }
 
 type Embedding interface {
-	GenerateEmbeddings(ctx context.Context, texts []string) (*EmbeddingResponse, error)
-	GenerateMultimodalEmbeddings(ctx context.Context, inputs []MultimodalInput) (*EmbeddingResponse, error)
-	GenerateContextualizedEmbeddings(ctx context.Context, documentChunks [][]string) (*ContextualizedEmbeddingResponse, error)
+	GenerateEmbeddings(
+		ctx context.Context,
+		texts []string,
+	) (*EmbeddingResponse, error)
+	GenerateMultimodalEmbeddings(
+		ctx context.Context,
+		inputs []MultimodalInput,
+	) (*EmbeddingResponse, error)
+	GenerateContextualizedEmbeddings(
+		ctx context.Context,
+		documentChunks [][]string,
+	) (*ContextualizedEmbeddingResponse, error)
 	Model() model.EmbeddingModel
 }
 
@@ -57,8 +66,14 @@ type EmbeddingClientOption func(*embeddingClientOptions)
 
 type EmbeddingClient interface {
 	embed(ctx context.Context, texts []string) (*EmbeddingResponse, error)
-	embedMultimodal(ctx context.Context, inputs []MultimodalInput) (*EmbeddingResponse, error)
-	embedContextualized(ctx context.Context, documentChunks [][]string) (*ContextualizedEmbeddingResponse, error)
+	embedMultimodal(
+		ctx context.Context,
+		inputs []MultimodalInput,
+	) (*EmbeddingResponse, error)
+	embedContextualized(
+		ctx context.Context,
+		documentChunks [][]string,
+	) (*ContextualizedEmbeddingResponse, error)
 }
 
 type baseEmbedding[C EmbeddingClient] struct {
@@ -66,7 +81,10 @@ type baseEmbedding[C EmbeddingClient] struct {
 	client  C
 }
 
-func NewEmbedding(provider model.ModelProvider, opts ...EmbeddingClientOption) (Embedding, error) {
+func NewEmbedding(
+	provider model.ModelProvider,
+	opts ...EmbeddingClientOption,
+) (Embedding, error) {
 	clientOptions := embeddingClientOptions{
 		batchSize: 100,
 	}
@@ -85,7 +103,10 @@ func NewEmbedding(provider model.ModelProvider, opts ...EmbeddingClientOption) (
 	return nil, fmt.Errorf("embedding provider not supported: %s", provider)
 }
 
-func (e *baseEmbedding[C]) GenerateEmbeddings(ctx context.Context, texts []string) (*EmbeddingResponse, error) {
+func (e *baseEmbedding[C]) GenerateEmbeddings(
+	ctx context.Context,
+	texts []string,
+) (*EmbeddingResponse, error) {
 	if len(texts) == 0 {
 		return &EmbeddingResponse{
 			Embeddings: [][]float32{},
@@ -97,7 +118,10 @@ func (e *baseEmbedding[C]) GenerateEmbeddings(ctx context.Context, texts []strin
 	return e.client.embed(ctx, texts)
 }
 
-func (e *baseEmbedding[C]) GenerateMultimodalEmbeddings(ctx context.Context, inputs []MultimodalInput) (*EmbeddingResponse, error) {
+func (e *baseEmbedding[C]) GenerateMultimodalEmbeddings(
+	ctx context.Context,
+	inputs []MultimodalInput,
+) (*EmbeddingResponse, error) {
 	if len(inputs) == 0 {
 		return &EmbeddingResponse{
 			Embeddings: [][]float32{},
@@ -109,7 +133,10 @@ func (e *baseEmbedding[C]) GenerateMultimodalEmbeddings(ctx context.Context, inp
 	return e.client.embedMultimodal(ctx, inputs)
 }
 
-func (e *baseEmbedding[C]) GenerateContextualizedEmbeddings(ctx context.Context, documentChunks [][]string) (*ContextualizedEmbeddingResponse, error) {
+func (e *baseEmbedding[C]) GenerateContextualizedEmbeddings(
+	ctx context.Context,
+	documentChunks [][]string,
+) (*ContextualizedEmbeddingResponse, error) {
 	if len(documentChunks) == 0 {
 		return &ContextualizedEmbeddingResponse{
 			DocumentEmbeddings: [][][]float32{},

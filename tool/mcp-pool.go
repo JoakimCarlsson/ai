@@ -21,7 +21,11 @@ var pool = &mcpClientPool{
 	configs: make(map[string]MCPServer),
 }
 
-func (p *mcpClientPool) getClient(ctx context.Context, name string, config MCPServer) (MCPClient, error) {
+func (p *mcpClientPool) getClient(
+	ctx context.Context,
+	name string,
+	config MCPServer,
+) (MCPClient, error) {
 	p.mu.RLock()
 	if client, exists := p.clients[name]; exists {
 		p.mu.RUnlock()
@@ -41,9 +45,15 @@ func (p *mcpClientPool) getClient(ctx context.Context, name string, config MCPSe
 
 	switch config.Type {
 	case MCPStdio:
-		c, err = client.NewStdioMCPClient(config.Command, config.Env, config.Args...)
+		c, err = client.NewStdioMCPClient(
+			config.Command,
+			config.Env,
+			config.Args...)
 	case MCPSse:
-		c, err = client.NewSSEMCPClient(config.URL, client.WithHeaders(config.Headers))
+		c, err = client.NewSSEMCPClient(
+			config.URL,
+			client.WithHeaders(config.Headers),
+		)
 	default:
 		return nil, fmt.Errorf("invalid MCP type: %s", config.Type)
 	}

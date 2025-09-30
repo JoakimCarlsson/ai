@@ -27,8 +27,14 @@ type MCPClient interface {
 		ctx context.Context,
 		request mcp.InitializeRequest,
 	) (*mcp.InitializeResult, error)
-	ListTools(ctx context.Context, request mcp.ListToolsRequest) (*mcp.ListToolsResult, error)
-	CallTool(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error)
+	ListTools(
+		ctx context.Context,
+		request mcp.ListToolsRequest,
+	) (*mcp.ListToolsResult, error)
+	CallTool(
+		ctx context.Context,
+		request mcp.CallToolRequest,
+	) (*mcp.CallToolResult, error)
 	Close() error
 }
 
@@ -50,12 +56,19 @@ func (b *mcpTool) Info() ToolInfo {
 	}
 }
 
-func runTool(ctx context.Context, c MCPClient, toolName string, input string) (ToolResponse, error) {
+func runTool(
+	ctx context.Context,
+	c MCPClient,
+	toolName string,
+	input string,
+) (ToolResponse, error) {
 	toolRequest := mcp.CallToolRequest{}
 	toolRequest.Params.Name = toolName
 	var args map[string]any
 	if err := json.Unmarshal([]byte(input), &args); err != nil {
-		return NewTextErrorResponse(fmt.Sprintf("error parsing parameters: %s", err)), nil
+		return NewTextErrorResponse(
+			fmt.Sprintf("error parsing parameters: %s", err),
+		), nil
 	}
 	toolRequest.Params.Arguments = args
 	result, err := c.CallTool(ctx, toolRequest)
@@ -75,7 +88,10 @@ func runTool(ctx context.Context, c MCPClient, toolName string, input string) (T
 	return NewTextResponse(output), nil
 }
 
-func (b *mcpTool) Run(ctx context.Context, params ToolCall) (ToolResponse, error) {
+func (b *mcpTool) Run(
+	ctx context.Context,
+	params ToolCall,
+) (ToolResponse, error) {
 	c, err := pool.getClient(ctx, b.mcpName, b.mcpConfig)
 	if err != nil {
 		return NewTextErrorResponse(err.Error()), nil

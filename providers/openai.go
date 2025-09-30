@@ -46,15 +46,24 @@ func newOpenAIClient(opts llmClientOptions) OpenAIClient {
 
 	openaiClientOptions := []option.RequestOption{}
 	if opts.apiKey != "" {
-		openaiClientOptions = append(openaiClientOptions, option.WithAPIKey(opts.apiKey))
+		openaiClientOptions = append(
+			openaiClientOptions,
+			option.WithAPIKey(opts.apiKey),
+		)
 	}
 	if openaiOpts.baseURL != "" {
-		openaiClientOptions = append(openaiClientOptions, option.WithBaseURL(openaiOpts.baseURL))
+		openaiClientOptions = append(
+			openaiClientOptions,
+			option.WithBaseURL(openaiOpts.baseURL),
+		)
 	}
 
 	if openaiOpts.extraHeaders != nil {
 		for key, value := range openaiOpts.extraHeaders {
-			openaiClientOptions = append(openaiClientOptions, option.WithHeader(key, value))
+			openaiClientOptions = append(
+				openaiClientOptions,
+				option.WithHeader(key, value),
+			)
 		}
 	}
 
@@ -66,29 +75,57 @@ func newOpenAIClient(opts llmClientOptions) OpenAIClient {
 	}
 }
 
-func (o *openaiClient) convertMessages(messages []message.Message) (openaiMessages []openai.ChatCompletionMessageParamUnion) {
+func (o *openaiClient) convertMessages(
+	messages []message.Message,
+) (openaiMessages []openai.ChatCompletionMessageParamUnion) {
 	for _, msg := range messages {
 		switch msg.Role {
 		case message.System:
-			openaiMessages = append(openaiMessages, openai.SystemMessage(msg.Content().String()))
+			openaiMessages = append(
+				openaiMessages,
+				openai.SystemMessage(msg.Content().String()),
+			)
 		case message.User:
 			var content []openai.ChatCompletionContentPartUnionParam
-			textBlock := openai.ChatCompletionContentPartTextParam{Text: msg.Content().String()}
-			content = append(content, openai.ChatCompletionContentPartUnionParam{OfText: &textBlock})
+			textBlock := openai.ChatCompletionContentPartTextParam{
+				Text: msg.Content().String(),
+			}
+			content = append(
+				content,
+				openai.ChatCompletionContentPartUnionParam{OfText: &textBlock},
+			)
 
 			for _, binaryContent := range msg.BinaryContent() {
-				imageURL := openai.ChatCompletionContentPartImageImageURLParam{URL: binaryContent.String(model.ProviderOpenAI)}
-				imageBlock := openai.ChatCompletionContentPartImageParam{ImageURL: imageURL}
-				content = append(content, openai.ChatCompletionContentPartUnionParam{OfImageURL: &imageBlock})
+				imageURL := openai.ChatCompletionContentPartImageImageURLParam{
+					URL: binaryContent.String(model.ProviderOpenAI),
+				}
+				imageBlock := openai.ChatCompletionContentPartImageParam{
+					ImageURL: imageURL,
+				}
+				content = append(
+					content,
+					openai.ChatCompletionContentPartUnionParam{
+						OfImageURL: &imageBlock,
+					},
+				)
 			}
 
 			for _, imageURLContent := range msg.ImageURLContent() {
-				imageURL := openai.ChatCompletionContentPartImageImageURLParam{URL: imageURLContent.URL}
+				imageURL := openai.ChatCompletionContentPartImageImageURLParam{
+					URL: imageURLContent.URL,
+				}
 				if imageURLContent.Detail != "" {
 					imageURL.Detail = imageURLContent.Detail
 				}
-				imageBlock := openai.ChatCompletionContentPartImageParam{ImageURL: imageURL}
-				content = append(content, openai.ChatCompletionContentPartUnionParam{OfImageURL: &imageBlock})
+				imageBlock := openai.ChatCompletionContentPartImageParam{
+					ImageURL: imageURL,
+				}
+				content = append(
+					content,
+					openai.ChatCompletionContentPartUnionParam{
+						OfImageURL: &imageBlock,
+					},
+				)
 			}
 
 			openaiMessages = append(openaiMessages, openai.UserMessage(content))
@@ -105,7 +142,10 @@ func (o *openaiClient) convertMessages(messages []message.Message) (openaiMessag
 			}
 
 			if len(msg.ToolCalls()) > 0 {
-				assistantMsg.ToolCalls = make([]openai.ChatCompletionMessageToolCallParam, len(msg.ToolCalls()))
+				assistantMsg.ToolCalls = make(
+					[]openai.ChatCompletionMessageToolCallParam,
+					len(msg.ToolCalls()),
+				)
 				for i, call := range msg.ToolCalls() {
 					assistantMsg.ToolCalls[i] = openai.ChatCompletionMessageToolCallParam{
 						ID:   call.ID,
@@ -118,9 +158,12 @@ func (o *openaiClient) convertMessages(messages []message.Message) (openaiMessag
 				}
 			}
 
-			openaiMessages = append(openaiMessages, openai.ChatCompletionMessageParamUnion{
-				OfAssistant: &assistantMsg,
-			})
+			openaiMessages = append(
+				openaiMessages,
+				openai.ChatCompletionMessageParamUnion{
+					OfAssistant: &assistantMsg,
+				},
+			)
 
 		case message.Tool:
 			for _, result := range msg.ToolResults() {
@@ -134,7 +177,9 @@ func (o *openaiClient) convertMessages(messages []message.Message) (openaiMessag
 	return
 }
 
-func (o *openaiClient) convertTools(tools []tool.BaseTool) []openai.ChatCompletionToolParam {
+func (o *openaiClient) convertTools(
+	tools []tool.BaseTool,
+) []openai.ChatCompletionToolParam {
 	openaiTools := make([]openai.ChatCompletionToolParam, len(tools))
 
 	for i, tool := range tools {
@@ -168,7 +213,10 @@ func (o *openaiClient) finishReason(reason string) message.FinishReason {
 	}
 }
 
-func (o *openaiClient) preparedParams(messages []openai.ChatCompletionMessageParamUnion, tools []openai.ChatCompletionToolParam) openai.ChatCompletionNewParams {
+func (o *openaiClient) preparedParams(
+	messages []openai.ChatCompletionMessageParamUnion,
+	tools []openai.ChatCompletionToolParam,
+) openai.ChatCompletionNewParams {
 	params := openai.ChatCompletionNewParams{
 		Model:    openai.ChatModel(o.providerOptions.model.APIModel),
 		Messages: messages,
@@ -176,8 +224,12 @@ func (o *openaiClient) preparedParams(messages []openai.ChatCompletionMessagePar
 	}
 
 	paramBuilder := newParameterBuilder(o.providerOptions)
-	paramBuilder.applyFloat64Temperature(func(t *float64) { params.Temperature = openai.Float(*t) })
-	paramBuilder.applyFloat64TopP(func(p *float64) { params.TopP = openai.Float(*p) })
+	paramBuilder.applyFloat64Temperature(
+		func(t *float64) { params.Temperature = openai.Float(*t) },
+	)
+	paramBuilder.applyFloat64TopP(
+		func(p *float64) { params.TopP = openai.Float(*p) },
+	)
 
 	if len(o.providerOptions.stopSequences) > 0 {
 		params.Stop = openai.ChatCompletionNewParamsStopUnion{
@@ -185,9 +237,18 @@ func (o *openaiClient) preparedParams(messages []openai.ChatCompletionMessagePar
 		}
 	}
 
-	paramBuilder.applyFloat64FrequencyPenalty(o.options.frequencyPenalty, func(fp *float64) { params.FrequencyPenalty = openai.Float(*fp) })
-	paramBuilder.applyFloat64PresencePenalty(o.options.presencePenalty, func(pp *float64) { params.PresencePenalty = openai.Float(*pp) })
-	paramBuilder.applyInt64Seed(o.options.seed, func(s *int64) { params.Seed = openai.Int(*s) })
+	paramBuilder.applyFloat64FrequencyPenalty(
+		o.options.frequencyPenalty,
+		func(fp *float64) { params.FrequencyPenalty = openai.Float(*fp) },
+	)
+	paramBuilder.applyFloat64PresencePenalty(
+		o.options.presencePenalty,
+		func(pp *float64) { params.PresencePenalty = openai.Float(*pp) },
+	)
+	paramBuilder.applyInt64Seed(
+		o.options.seed,
+		func(s *int64) { params.Seed = openai.Int(*s) },
+	)
 
 	if o.providerOptions.model.CanReason {
 		params.MaxCompletionTokens = openai.Int(o.providerOptions.maxTokens)
@@ -208,45 +269,67 @@ func (o *openaiClient) preparedParams(messages []openai.ChatCompletionMessagePar
 	return params
 }
 
-func (o *openaiClient) send(ctx context.Context, messages []message.Message, tools []tool.BaseTool) (response *LLMResponse, err error) {
-	params := o.preparedParams(o.convertMessages(messages), o.convertTools(tools))
+func (o *openaiClient) send(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+) (response *LLMResponse, err error) {
+	params := o.preparedParams(
+		o.convertMessages(messages),
+		o.convertTools(tools),
+	)
 
 	ctx, cancel := withTimeout(ctx, o.providerOptions.timeout)
 	defer cancel()
 
-	return ExecuteWithRetry(ctx, OpenAIRetryConfig(), func() (*LLMResponse, error) {
-		openaiResponse, err := o.client.Chat.Completions.New(ctx, params)
-		if err != nil {
-			return nil, err
-		}
+	return ExecuteWithRetry(
+		ctx,
+		OpenAIRetryConfig(),
+		func() (*LLMResponse, error) {
+			openaiResponse, err := o.client.Chat.Completions.New(ctx, params)
+			if err != nil {
+				return nil, err
+			}
 
-		if len(openaiResponse.Choices) == 0 {
-			return nil, fmt.Errorf("no response choices returned from OpenAI")
-		}
+			if len(openaiResponse.Choices) == 0 {
+				return nil, fmt.Errorf(
+					"no response choices returned from OpenAI",
+				)
+			}
 
-		content := ""
-		if openaiResponse.Choices[0].Message.Content != "" {
-			content = openaiResponse.Choices[0].Message.Content
-		}
+			content := ""
+			if openaiResponse.Choices[0].Message.Content != "" {
+				content = openaiResponse.Choices[0].Message.Content
+			}
 
-		toolCalls := o.toolCalls(*openaiResponse)
-		finishReason := o.finishReason(string(openaiResponse.Choices[0].FinishReason))
+			toolCalls := o.toolCalls(*openaiResponse)
+			finishReason := o.finishReason(
+				string(openaiResponse.Choices[0].FinishReason),
+			)
 
-		if len(toolCalls) > 0 {
-			finishReason = message.FinishReasonToolUse
-		}
+			if len(toolCalls) > 0 {
+				finishReason = message.FinishReasonToolUse
+			}
 
-		return &LLMResponse{
-			Content:      content,
-			ToolCalls:    toolCalls,
-			Usage:        o.usage(*openaiResponse),
-			FinishReason: finishReason,
-		}, nil
-	})
+			return &LLMResponse{
+				Content:      content,
+				ToolCalls:    toolCalls,
+				Usage:        o.usage(*openaiResponse),
+				FinishReason: finishReason,
+			}, nil
+		},
+	)
 }
 
-func (o *openaiClient) stream(ctx context.Context, messages []message.Message, tools []tool.BaseTool) <-chan LLMEvent {
-	params := o.preparedParams(o.convertMessages(messages), o.convertTools(tools))
+func (o *openaiClient) stream(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+) <-chan LLMEvent {
+	params := o.preparedParams(
+		o.convertMessages(messages),
+		o.convertTools(tools),
+	)
 	params.StreamOptions = openai.ChatCompletionStreamOptionsParam{
 		IncludeUsage: openai.Bool(true),
 	}
@@ -287,9 +370,13 @@ func (o *openaiClient) stream(ctx context.Context, messages []message.Message, t
 					eventChan <- LLMEvent{Type: types.EventError, Error: errors.New("no response choices in stream")}
 					return errors.New("no response choices in stream")
 				}
-				finishReason := o.finishReason(string(acc.ChatCompletion.Choices[0].FinishReason))
+				finishReason := o.finishReason(
+					string(acc.ChatCompletion.Choices[0].FinishReason),
+				)
 				if len(acc.ChatCompletion.Choices[0].Message.ToolCalls) > 0 {
-					toolCalls = append(toolCalls, o.toolCalls(acc.ChatCompletion)...)
+					toolCalls = append(
+						toolCalls,
+						o.toolCalls(acc.ChatCompletion)...)
 				}
 				if len(toolCalls) > 0 {
 					finishReason = message.FinishReasonToolUse
@@ -313,10 +400,13 @@ func (o *openaiClient) stream(ctx context.Context, messages []message.Message, t
 	return eventChan
 }
 
-func (o *openaiClient) toolCalls(completion openai.ChatCompletion) []message.ToolCall {
+func (o *openaiClient) toolCalls(
+	completion openai.ChatCompletion,
+) []message.ToolCall {
 	var toolCalls []message.ToolCall
 
-	if len(completion.Choices) > 0 && len(completion.Choices[0].Message.ToolCalls) > 0 {
+	if len(completion.Choices) > 0 &&
+		len(completion.Choices[0].Message.ToolCalls) > 0 {
 		for _, call := range completion.Choices[0].Message.ToolCalls {
 			toolCall := message.ToolCall{
 				ID:       call.ID,
@@ -403,8 +493,16 @@ func (o *openaiClient) supportsStructuredOutput() bool {
 	return o.providerOptions.model.SupportsStructuredOut
 }
 
-func (o *openaiClient) sendWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (response *LLMResponse, err error) {
-	params := o.preparedParams(o.convertMessages(messages), o.convertTools(tools))
+func (o *openaiClient) sendWithStructuredOutput(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+	outputSchema *schema.StructuredOutputInfo,
+) (response *LLMResponse, err error) {
+	params := o.preparedParams(
+		o.convertMessages(messages),
+		o.convertTools(tools),
+	)
 
 	schemaMap := map[string]any{
 		"type":                 "object",
@@ -426,41 +524,57 @@ func (o *openaiClient) sendWithStructuredOutput(ctx context.Context, messages []
 	ctx, cancel := withTimeout(ctx, o.providerOptions.timeout)
 	defer cancel()
 
-	return ExecuteWithRetry(ctx, OpenAIRetryConfig(), func() (*LLMResponse, error) {
-		openaiResponse, err := o.client.Chat.Completions.New(ctx, params)
-		if err != nil {
-			return nil, err
-		}
+	return ExecuteWithRetry(
+		ctx,
+		OpenAIRetryConfig(),
+		func() (*LLMResponse, error) {
+			openaiResponse, err := o.client.Chat.Completions.New(ctx, params)
+			if err != nil {
+				return nil, err
+			}
 
-		if len(openaiResponse.Choices) == 0 {
-			return nil, fmt.Errorf("no response choices returned from OpenAI")
-		}
+			if len(openaiResponse.Choices) == 0 {
+				return nil, fmt.Errorf(
+					"no response choices returned from OpenAI",
+				)
+			}
 
-		content := ""
-		if openaiResponse.Choices[0].Message.Content != "" {
-			content = openaiResponse.Choices[0].Message.Content
-		}
+			content := ""
+			if openaiResponse.Choices[0].Message.Content != "" {
+				content = openaiResponse.Choices[0].Message.Content
+			}
 
-		toolCalls := o.toolCalls(*openaiResponse)
-		finishReason := o.finishReason(string(openaiResponse.Choices[0].FinishReason))
+			toolCalls := o.toolCalls(*openaiResponse)
+			finishReason := o.finishReason(
+				string(openaiResponse.Choices[0].FinishReason),
+			)
 
-		if len(toolCalls) > 0 {
-			finishReason = message.FinishReasonToolUse
-		}
+			if len(toolCalls) > 0 {
+				finishReason = message.FinishReasonToolUse
+			}
 
-		return &LLMResponse{
-			Content:                    content,
-			ToolCalls:                  toolCalls,
-			Usage:                      o.usage(*openaiResponse),
-			FinishReason:               finishReason,
-			StructuredOutput:           &content,
-			UsedNativeStructuredOutput: true,
-		}, nil
-	})
+			return &LLMResponse{
+				Content:                    content,
+				ToolCalls:                  toolCalls,
+				Usage:                      o.usage(*openaiResponse),
+				FinishReason:               finishReason,
+				StructuredOutput:           &content,
+				UsedNativeStructuredOutput: true,
+			}, nil
+		},
+	)
 }
 
-func (o *openaiClient) streamWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent {
-	params := o.preparedParams(o.convertMessages(messages), o.convertTools(tools))
+func (o *openaiClient) streamWithStructuredOutput(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+	outputSchema *schema.StructuredOutputInfo,
+) <-chan LLMEvent {
+	params := o.preparedParams(
+		o.convertMessages(messages),
+		o.convertTools(tools),
+	)
 
 	schemaMap := map[string]any{
 		"type":                 "object",
@@ -519,9 +633,13 @@ func (o *openaiClient) streamWithStructuredOutput(ctx context.Context, messages 
 					eventChan <- LLMEvent{Type: types.EventError, Error: errors.New("no response choices in stream")}
 					return errors.New("no response choices in stream")
 				}
-				finishReason := o.finishReason(string(acc.ChatCompletion.Choices[0].FinishReason))
+				finishReason := o.finishReason(
+					string(acc.ChatCompletion.Choices[0].FinishReason),
+				)
 				if len(acc.ChatCompletion.Choices[0].Message.ToolCalls) > 0 {
-					toolCalls = append(toolCalls, o.toolCalls(acc.ChatCompletion)...)
+					toolCalls = append(
+						toolCalls,
+						o.toolCalls(acc.ChatCompletion)...)
 				}
 				if len(toolCalls) > 0 {
 					finishReason = message.FinishReasonToolUse

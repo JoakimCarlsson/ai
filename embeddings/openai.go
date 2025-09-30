@@ -31,7 +31,10 @@ func newOpenAIClient(opts embeddingClientOptions) OpenAIClient {
 
 	openaiClientOptions := []option.RequestOption{}
 	if opts.apiKey != "" {
-		openaiClientOptions = append(openaiClientOptions, option.WithAPIKey(opts.apiKey))
+		openaiClientOptions = append(
+			openaiClientOptions,
+			option.WithAPIKey(opts.apiKey),
+		)
 	}
 
 	client := openai.NewClient(openaiClientOptions...)
@@ -42,7 +45,11 @@ func newOpenAIClient(opts embeddingClientOptions) OpenAIClient {
 	}
 }
 
-func (o *openaiClient) embed(ctx context.Context, texts []string, inputType ...string) (*EmbeddingResponse, error) {
+func (o *openaiClient) embed(
+	ctx context.Context,
+	texts []string,
+	inputType ...string,
+) (*EmbeddingResponse, error) {
 	if len(texts) == 0 {
 		return &EmbeddingResponse{
 			Embeddings: [][]float32{},
@@ -82,7 +89,10 @@ func (o *openaiClient) embed(ctx context.Context, texts []string, inputType ...s
 	}, nil
 }
 
-func (o *openaiClient) embedBatch(ctx context.Context, texts []string) (*EmbeddingResponse, error) {
+func (o *openaiClient) embedBatch(
+	ctx context.Context,
+	texts []string,
+) (*EmbeddingResponse, error) {
 	params := openai.EmbeddingNewParams{
 		Model: openai.EmbeddingModel(o.providerOptions.model.APIModel),
 		Input: openai.EmbeddingNewParamsInputUnion{
@@ -122,14 +132,24 @@ func (o *openaiClient) embedBatch(ctx context.Context, texts []string) (*Embeddi
 	}, nil
 }
 
-func (o *openaiClient) embedMultimodal(ctx context.Context, inputs []MultimodalInput, inputType ...string) (*EmbeddingResponse, error) {
+func (o *openaiClient) embedMultimodal(
+	ctx context.Context,
+	inputs []MultimodalInput,
+	inputType ...string,
+) (*EmbeddingResponse, error) {
 	return nil, fmt.Errorf("OpenAI does not support multimodal embeddings")
 }
 
-func (o *openaiClient) embedContextualized(ctx context.Context, documentChunks [][]string, inputType ...string) (*ContextualizedEmbeddingResponse, error) {
+func (o *openaiClient) embedContextualized(
+	ctx context.Context,
+	documentChunks [][]string,
+	inputType ...string,
+) (*ContextualizedEmbeddingResponse, error) {
 	return nil, fmt.Errorf("OpenAI does not support contextualized embeddings")
 }
 
+// WithUser sets a unique identifier for the end-user making the request.
+// This helps OpenAI monitor and detect abuse.
 func WithUser(user string) OpenAIOption {
 	return func(options *openaiOptions) {
 		options.user = user

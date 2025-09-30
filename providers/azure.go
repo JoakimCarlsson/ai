@@ -73,11 +73,31 @@ func (a *azureClient) supportsStructuredOutput() bool {
 }
 
 // sendWithStructuredOutput sends a request with structured output to the Azure OpenAI client
-func (a *azureClient) sendWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (*LLMResponse, error) {
-	return a.openaiClient.sendWithStructuredOutput(ctx, messages, tools, outputSchema)
+func (a *azureClient) sendWithStructuredOutput(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+	outputSchema *schema.StructuredOutputInfo,
+) (*LLMResponse, error) {
+	return a.openaiClient.sendWithStructuredOutput(
+		ctx,
+		messages,
+		tools,
+		outputSchema,
+	)
 }
 
 // stream streams responses with structured output from the Azure OpenAI client
-func (a *azureClient) streamWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent {
-	return a.openaiClient.streamWithStructuredOutput(ctx, messages, tools, outputSchema)
+func (a *azureClient) streamWithStructuredOutput(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+	outputSchema *schema.StructuredOutputInfo,
+) <-chan LLMEvent {
+	return a.openaiClient.streamWithStructuredOutput(
+		ctx,
+		messages,
+		tools,
+		outputSchema,
+	)
 }

@@ -10,9 +10,12 @@ import (
 func main() {
 	ctx := context.Background()
 
-	embedder, err := embeddings.NewEmbedding(model.ProviderOpenAI,
+	embedder, err := embeddings.NewEmbedding(
+		model.ProviderOpenAI,
 		embeddings.WithAPIKey(""),
-		embeddings.WithModel(model.OpenAIEmbeddingModels[model.TextEmbedding3Large]),
+		embeddings.WithModel(
+			model.OpenAIEmbeddingModels[model.TextEmbedding3Large],
+		),
 		embeddings.WithDimensions(1024),
 	)
 	if err != nil {

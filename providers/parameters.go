@@ -55,14 +55,20 @@ func (p *parameterBuilder) applyInt32Seed(seed *int64, setter func(*int32)) {
 	}
 }
 
-func (p *parameterBuilder) applyFloat32FrequencyPenalty(penalty *float64, setter func(*float32)) {
+func (p *parameterBuilder) applyFloat32FrequencyPenalty(
+	penalty *float64,
+	setter func(*float32),
+) {
 	if penalty != nil {
 		fp := float32(*penalty)
 		setter(&fp)
 	}
 }
 
-func (p *parameterBuilder) applyFloat32PresencePenalty(penalty *float64, setter func(*float32)) {
+func (p *parameterBuilder) applyFloat32PresencePenalty(
+	penalty *float64,
+	setter func(*float32),
+) {
 	if penalty != nil {
 		pp := float32(*penalty)
 		setter(&pp)
@@ -94,13 +100,19 @@ func (p *parameterBuilder) applyInt64Seed(seed *int64, setter func(*int64)) {
 	}
 }
 
-func (p *parameterBuilder) applyFloat64FrequencyPenalty(penalty *float64, setter func(*float64)) {
+func (p *parameterBuilder) applyFloat64FrequencyPenalty(
+	penalty *float64,
+	setter func(*float64),
+) {
 	if penalty != nil {
 		setter(penalty)
 	}
 }
 
-func (p *parameterBuilder) applyFloat64PresencePenalty(penalty *float64, setter func(*float64)) {
+func (p *parameterBuilder) applyFloat64PresencePenalty(
+	penalty *float64,
+	setter func(*float64),
+) {
 	if penalty != nil {
 		setter(penalty)
 	}
