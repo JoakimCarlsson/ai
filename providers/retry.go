@@ -122,9 +122,16 @@ func GeminiRetryConfig() RetryConfig {
 }
 
 // ShouldRetry determines if an operation should be retried based on the error and configuration
-func ShouldRetry(attempts int, err error, config RetryConfig) (bool, int64, error) {
+func ShouldRetry(
+	attempts int,
+	err error,
+	config RetryConfig,
+) (bool, int64, error) {
 	if attempts > config.MaxRetries {
-		return false, 0, fmt.Errorf("maximum retry attempts reached: %d retries", config.MaxRetries)
+		return false, 0, fmt.Errorf(
+			"maximum retry attempts reached: %d retries",
+			config.MaxRetries,
+		)
 	}
 
 	if errors.Is(err, io.EOF) {
@@ -136,7 +143,10 @@ func ShouldRetry(attempts int, err error, config RetryConfig) (bool, int64, erro
 		return false, 0, err
 	}
 
-	if !isRetryableStatusCode(retryableErr.GetStatusCode(), config.RetryStatusCodes) {
+	if !isRetryableStatusCode(
+		retryableErr.GetStatusCode(),
+		config.RetryStatusCodes,
+	) {
 		return false, 0, err
 	}
 
@@ -199,7 +209,11 @@ func parseRetryAfter(retryAfter string) (int, error) {
 
 func isGeminiRateLimitError(err error) bool {
 	errMsg := strings.ToLower(err.Error())
-	rateLimitKeywords := []string{"rate limit", "quota exceeded", "too many requests"}
+	rateLimitKeywords := []string{
+		"rate limit",
+		"quota exceeded",
+		"too many requests",
+	}
 
 	for _, keyword := range rateLimitKeywords {
 		if strings.Contains(errMsg, keyword) {
@@ -226,7 +240,11 @@ func ExecuteWithRetry[T any](
 			return result, nil
 		}
 
-		shouldRetry, retryAfterMs, retryErr := ShouldRetry(attempts, err, config)
+		shouldRetry, retryAfterMs, retryErr := ShouldRetry(
+			attempts,
+			err,
+			config,
+		)
 		if retryErr != nil {
 			return result, retryErr
 		}
@@ -266,7 +284,11 @@ func ExecuteStreamWithRetry(
 			return
 		}
 
-		shouldRetry, retryAfterMs, retryErr := ShouldRetry(attempts, err, config)
+		shouldRetry, retryAfterMs, retryErr := ShouldRetry(
+			attempts,
+			err,
+			config,
+		)
 		if retryErr != nil {
 			eventChan <- LLMEvent{Type: types.EventError, Error: retryErr}
 			return

@@ -67,7 +67,10 @@ func differentDataTypesExample(ctx context.Context) {
 
 	fmt.Printf("Compressed embeddings: %d vectors, %d dimensions each\n",
 		len(response.Embeddings), len(response.Embeddings[0]))
-	fmt.Printf("First document embedding (first 5): %v\n", response.Embeddings[0][:5])
+	fmt.Printf(
+		"First document embedding (first 5): %v\n",
+		response.Embeddings[0][:5],
+	)
 }
 
 func typeSafetyExample(ctx context.Context) {
@@ -89,7 +92,10 @@ func typeSafetyExample(ctx context.Context) {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Type-safe embeddings: %d dimensions\n", len(response.Embeddings[0]))
+	fmt.Printf(
+		"Type-safe embeddings: %d dimensions\n",
+		len(response.Embeddings[0]),
+	)
 	fmt.Printf("Data automatically converted from uint8 to float32\n")
 	fmt.Printf("Sample values: %v\n", response.Embeddings[0][:3])
 }

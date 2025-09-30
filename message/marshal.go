@@ -56,7 +56,10 @@ func UnmarshalMessage(data []byte) (BaseMessage, error) {
 	case "multimodal":
 		var msg MultiModalMessage
 		if err := json.Unmarshal(envelope.Data, &msg); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal multimodal message: %w", err)
+			return nil, fmt.Errorf(
+				"failed to unmarshal multimodal message: %w",
+				err,
+			)
 		}
 		return &msg, nil
 	default:
@@ -85,7 +88,11 @@ func MarshalMessages(messages []BaseMessage) ([]byte, error) {
 		}
 
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal message at index %d: %w", i, err)
+			return nil, fmt.Errorf(
+				"failed to marshal message at index %d: %w",
+				i,
+				err,
+			)
 		}
 
 		envelopes[i] = MessageEnvelope{
@@ -111,17 +118,29 @@ func UnmarshalMessages(data []byte) ([]BaseMessage, error) {
 		case "text":
 			var msg TextMessage
 			if err := json.Unmarshal(envelope.Data, &msg); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal text message at index %d: %w", i, err)
+				return nil, fmt.Errorf(
+					"failed to unmarshal text message at index %d: %w",
+					i,
+					err,
+				)
 			}
 			messages[i] = &msg
 		case "multimodal":
 			var msg MultiModalMessage
 			if err := json.Unmarshal(envelope.Data, &msg); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal multimodal message at index %d: %w", i, err)
+				return nil, fmt.Errorf(
+					"failed to unmarshal multimodal message at index %d: %w",
+					i,
+					err,
+				)
 			}
 			messages[i] = &msg
 		default:
-			return nil, fmt.Errorf("unknown message type at index %d: %s", i, envelope.Type)
+			return nil, fmt.Errorf(
+				"unknown message type at index %d: %s",
+				i,
+				envelope.Type,
+			)
 		}
 	}
 

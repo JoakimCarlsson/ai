@@ -8,9 +8,9 @@ const (
 	Claude37Sonnet ModelID = "claude-3.7-sonnet"
 	Claude35Haiku  ModelID = "claude-3.5-haiku"
 	Claude3Opus    ModelID = "claude-3-opus"
-	Claude4Opus     ModelID = "claude-4-opus"
-	Claude4Sonnet   ModelID = "claude-4-sonnet"
-	Claude45Sonnet  ModelID = "claude-4.5-sonnet"
+	Claude4Opus    ModelID = "claude-4-opus"
+	Claude4Sonnet  ModelID = "claude-4-sonnet"
+	Claude45Sonnet ModelID = "claude-4.5-sonnet"
 )
 
 var AnthropicModels = map[ModelID]Model{

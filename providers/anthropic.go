@@ -42,10 +42,16 @@ func newAnthropicClient(opts llmClientOptions) AnthropicClient {
 
 	anthropicClientOptions := []option.RequestOption{}
 	if opts.apiKey != "" {
-		anthropicClientOptions = append(anthropicClientOptions, option.WithAPIKey(opts.apiKey))
+		anthropicClientOptions = append(
+			anthropicClientOptions,
+			option.WithAPIKey(opts.apiKey),
+		)
 	}
 	if anthropicOpts.useBedrock {
-		anthropicClientOptions = append(anthropicClientOptions, bedrock.WithLoadDefaultConfig(context.Background()))
+		anthropicClientOptions = append(
+			anthropicClientOptions,
+			bedrock.WithLoadDefaultConfig(context.Background()),
+		)
 	}
 
 	client := anthropic.NewClient(anthropicClientOptions...)
@@ -56,7 +62,9 @@ func newAnthropicClient(opts llmClientOptions) AnthropicClient {
 	}
 }
 
-func (a *anthropicClient) convertMessages(messages []message.Message) (anthropicMessages []anthropic.MessageParam, systemMessages []string) {
+func (a *anthropicClient) convertMessages(
+	messages []message.Message,
+) (anthropicMessages []anthropic.MessageParam, systemMessages []string) {
 	for i, msg := range messages {
 		cache := false
 		if i > len(messages)-3 {
@@ -77,19 +85,27 @@ func (a *anthropicClient) convertMessages(messages []message.Message) (anthropic
 
 			for _, binaryContent := range msg.BinaryContent() {
 				base64Image := binaryContent.String(model.ProviderAnthropic)
-				imageBlock := anthropic.NewImageBlockBase64(binaryContent.MIMEType, base64Image)
+				imageBlock := anthropic.NewImageBlockBase64(
+					binaryContent.MIMEType,
+					base64Image,
+				)
 				contentBlocks = append(contentBlocks, imageBlock)
 			}
 
 			for _, imageURLContent := range msg.ImageURLContent() {
-				imageBlock := anthropic.NewImageBlock(anthropic.URLImageSourceParam{
-					Type: "url",
-					URL:  imageURLContent.URL,
-				})
+				imageBlock := anthropic.NewImageBlock(
+					anthropic.URLImageSourceParam{
+						Type: "url",
+						URL:  imageURLContent.URL,
+					},
+				)
 				contentBlocks = append(contentBlocks, imageBlock)
 			}
 
-			anthropicMessages = append(anthropicMessages, anthropic.NewUserMessage(contentBlocks...))
+			anthropicMessages = append(
+				anthropicMessages,
+				anthropic.NewUserMessage(contentBlocks...),
+			)
 
 		case message.Assistant:
 			blocks := []anthropic.ContentBlockParamUnion{}
@@ -109,27 +125,51 @@ func (a *anthropicClient) convertMessages(messages []message.Message) (anthropic
 				if err != nil {
 					continue
 				}
-				blocks = append(blocks, anthropic.NewToolUseBlock(toolCall.ID, inputMap, toolCall.Name))
+				blocks = append(
+					blocks,
+					anthropic.NewToolUseBlock(
+						toolCall.ID,
+						inputMap,
+						toolCall.Name,
+					),
+				)
 			}
 
 			if len(blocks) == 0 {
-				slog.Warn("There is a message without content, investigate, this should not happen")
+				slog.Warn(
+					"There is a message without content, investigate, this should not happen",
+				)
 				continue
 			}
-			anthropicMessages = append(anthropicMessages, anthropic.NewAssistantMessage(blocks...))
+			anthropicMessages = append(
+				anthropicMessages,
+				anthropic.NewAssistantMessage(blocks...),
+			)
 
 		case message.Tool:
-			results := make([]anthropic.ContentBlockParamUnion, len(msg.ToolResults()))
+			results := make(
+				[]anthropic.ContentBlockParamUnion,
+				len(msg.ToolResults()),
+			)
 			for i, toolResult := range msg.ToolResults() {
-				results[i] = anthropic.NewToolResultBlock(toolResult.ToolCallID, toolResult.Content, toolResult.IsError)
+				results[i] = anthropic.NewToolResultBlock(
+					toolResult.ToolCallID,
+					toolResult.Content,
+					toolResult.IsError,
+				)
 			}
-			anthropicMessages = append(anthropicMessages, anthropic.NewUserMessage(results...))
+			anthropicMessages = append(
+				anthropicMessages,
+				anthropic.NewUserMessage(results...),
+			)
 		}
 	}
 	return
 }
 
-func (a *anthropicClient) convertTools(tools []tool.BaseTool) []anthropic.ToolUnionParam {
+func (a *anthropicClient) convertTools(
+	tools []tool.BaseTool,
+) []anthropic.ToolUnionParam {
 	anthropicTools := make([]anthropic.ToolUnionParam, len(tools))
 
 	for i, tool := range tools {
@@ -169,21 +209,28 @@ func (a *anthropicClient) finishReason(reason string) message.FinishReason {
 	}
 }
 
-func (a *anthropicClient) preparedMessages(messages []anthropic.MessageParam, tools []anthropic.ToolUnionParam, systemMessages []string) anthropic.MessageNewParams {
+func (a *anthropicClient) preparedMessages(
+	messages []anthropic.MessageParam,
+	tools []anthropic.ToolUnionParam,
+	systemMessages []string,
+) anthropic.MessageNewParams {
 	var thinkingParam anthropic.ThinkingConfigParamUnion
 	lastMessage := messages[len(messages)-1]
 	isUser := lastMessage.Role == anthropic.MessageParamRoleUser
 	messageContent := ""
 	temperature := anthropic.Float(0)
 	paramBuilder := newParameterBuilder(a.llmOptions)
-	paramBuilder.applyFloat64Temperature(func(t *float64) { temperature = anthropic.Float(*t) })
+	paramBuilder.applyFloat64Temperature(
+		func(t *float64) { temperature = anthropic.Float(*t) },
+	)
 	if isUser {
 		for _, m := range lastMessage.Content {
 			if m.OfText != nil && m.OfText.Text != "" {
 				messageContent = m.OfText.Text
 			}
 		}
-		if messageContent != "" && a.options.shouldThink != nil && a.options.shouldThink(messageContent) {
+		if messageContent != "" && a.options.shouldThink != nil &&
+			a.options.shouldThink(messageContent) {
 			thinkingParam = anthropic.ThinkingConfigParamUnion{
 				OfEnabled: &anthropic.ThinkingConfigEnabledParam{
 					BudgetTokens: int64(float64(a.llmOptions.maxTokens) * 0.8),
@@ -211,8 +258,12 @@ func (a *anthropicClient) preparedMessages(messages []anthropic.MessageParam, to
 		Thinking:    thinkingParam,
 	}
 
-	paramBuilder.applyFloat64TopP(func(p *float64) { params.TopP = anthropic.Float(*p) })
-	paramBuilder.applyInt64TopK(func(k *int64) { params.TopK = anthropic.Int(*k) })
+	paramBuilder.applyFloat64TopP(
+		func(p *float64) { params.TopP = anthropic.Float(*p) },
+	)
+	paramBuilder.applyInt64TopK(
+		func(k *int64) { params.TopK = anthropic.Int(*k) },
+	)
 
 	if len(a.llmOptions.stopSequences) > 0 {
 		params.StopSequences = a.llmOptions.stopSequences
@@ -234,38 +285,63 @@ func (a *anthropicClient) preparedMessages(messages []anthropic.MessageParam, to
 	return params
 }
 
-func (a *anthropicClient) send(ctx context.Context, messages []message.Message, tools []tool.BaseTool) (resposne *LLMResponse, err error) {
+func (a *anthropicClient) send(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+) (resposne *LLMResponse, err error) {
 	anthropicMessages, systemMessages := a.convertMessages(messages)
-	preparedMessages := a.preparedMessages(anthropicMessages, a.convertTools(tools), systemMessages)
+	preparedMessages := a.preparedMessages(
+		anthropicMessages,
+		a.convertTools(tools),
+		systemMessages,
+	)
 
 	ctx, cancel := withTimeout(ctx, a.llmOptions.timeout)
 	defer cancel()
 
-	return ExecuteWithRetry(ctx, AnthropicRetryConfig(), func() (*LLMResponse, error) {
-		anthropicResponse, err := a.client.Messages.New(ctx, preparedMessages)
-		if err != nil {
-			return nil, err
-		}
-
-		content := ""
-		for _, block := range anthropicResponse.Content {
-			if text, ok := block.AsAny().(anthropic.TextBlock); ok {
-				content += text.Text
+	return ExecuteWithRetry(
+		ctx,
+		AnthropicRetryConfig(),
+		func() (*LLMResponse, error) {
+			anthropicResponse, err := a.client.Messages.New(
+				ctx,
+				preparedMessages,
+			)
+			if err != nil {
+				return nil, err
 			}
-		}
 
-		return &LLMResponse{
-			Content:      content,
-			ToolCalls:    a.toolCalls(*anthropicResponse),
-			Usage:        a.usage(*anthropicResponse),
-			FinishReason: a.finishReason(string(anthropicResponse.StopReason)),
-		}, nil
-	})
+			content := ""
+			for _, block := range anthropicResponse.Content {
+				if text, ok := block.AsAny().(anthropic.TextBlock); ok {
+					content += text.Text
+				}
+			}
+
+			return &LLMResponse{
+				Content:   content,
+				ToolCalls: a.toolCalls(*anthropicResponse),
+				Usage:     a.usage(*anthropicResponse),
+				FinishReason: a.finishReason(
+					string(anthropicResponse.StopReason),
+				),
+			}, nil
+		},
+	)
 }
 
-func (a *anthropicClient) stream(ctx context.Context, messages []message.Message, tools []tool.BaseTool) <-chan LLMEvent {
+func (a *anthropicClient) stream(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+) <-chan LLMEvent {
 	anthropicMessages, systemMessages := a.convertMessages(messages)
-	preparedMessages := a.preparedMessages(anthropicMessages, a.convertTools(tools), systemMessages)
+	preparedMessages := a.preparedMessages(
+		anthropicMessages,
+		a.convertTools(tools),
+		systemMessages,
+	)
 	eventChan := make(chan LLMEvent)
 
 	ctx, cancel := withTimeout(ctx, a.llmOptions.timeout)
@@ -275,7 +351,10 @@ func (a *anthropicClient) stream(ctx context.Context, messages []message.Message
 		defer close(eventChan)
 
 		ExecuteStreamWithRetry(ctx, AnthropicRetryConfig(), func() error {
-			anthropicStream := a.client.Messages.NewStreaming(ctx, preparedMessages)
+			anthropicStream := a.client.Messages.NewStreaming(
+				ctx,
+				preparedMessages,
+			)
 			accumulatedMessage := anthropic.Message{}
 
 			currentToolCallID := ""
@@ -431,12 +510,24 @@ func (a *anthropicClient) supportsStructuredOutput() bool {
 }
 
 // SendMessagesWithStructuredOutput sends messages with a structured output schema
-func (a *anthropicClient) sendWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) (*LLMResponse, error) {
-	return nil, errors.New("structured output not supported by Anthropic Claude - use tool-based approach instead")
+func (a *anthropicClient) sendWithStructuredOutput(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+	outputSchema *schema.StructuredOutputInfo,
+) (*LLMResponse, error) {
+	return nil, errors.New(
+		"structured output not supported by Anthropic Claude - use tool-based approach instead",
+	)
 }
 
 // StreamWithStructuredOutput streams messages with a structured output schema
-func (a *anthropicClient) streamWithStructuredOutput(ctx context.Context, messages []message.Message, tools []tool.BaseTool, outputSchema *schema.StructuredOutputInfo) <-chan LLMEvent {
+func (a *anthropicClient) streamWithStructuredOutput(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+	outputSchema *schema.StructuredOutputInfo,
+) <-chan LLMEvent {
 	errChan := make(chan LLMEvent, 1)
 	errChan <- LLMEvent{
 		Type:  types.EventError,

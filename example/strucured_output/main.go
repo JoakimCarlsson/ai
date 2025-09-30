@@ -79,8 +79,18 @@ func main() {
 	streamExample(ctx, client, messages, &outputSchema)
 }
 
-func regularExample(ctx context.Context, client llm.LLM, messages []message.Message, schema *schema.StructuredOutputInfo) {
-	response, err := client.SendMessagesWithStructuredOutput(ctx, messages, nil, schema)
+func regularExample(
+	ctx context.Context,
+	client llm.LLM,
+	messages []message.Message,
+	schema *schema.StructuredOutputInfo,
+) {
+	response, err := client.SendMessagesWithStructuredOutput(
+		ctx,
+		messages,
+		nil,
+		schema,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -90,8 +100,18 @@ func regularExample(ctx context.Context, client llm.LLM, messages []message.Mess
 	}
 }
 
-func streamExample(ctx context.Context, client llm.LLM, messages []message.Message, schema *schema.StructuredOutputInfo) {
-	stream := client.StreamResponseWithStructuredOutput(ctx, messages, nil, schema)
+func streamExample(
+	ctx context.Context,
+	client llm.LLM,
+	messages []message.Message,
+	schema *schema.StructuredOutputInfo,
+) {
+	stream := client.StreamResponseWithStructuredOutput(
+		ctx,
+		messages,
+		nil,
+		schema,
+	)
 
 	for event := range stream {
 		switch event.Type {

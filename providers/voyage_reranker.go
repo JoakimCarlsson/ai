@@ -74,7 +74,11 @@ func newVoyageRerankerClient(opts rerankerClientOptions) VoyageRerankerClient {
 	}
 }
 
-func (v *voyageRerankerClient) rerank(ctx context.Context, query string, documents []string) (*RerankerResponse, error) {
+func (v *voyageRerankerClient) rerank(
+	ctx context.Context,
+	query string,
+	documents []string,
+) (*RerankerResponse, error) {
 	if len(documents) == 0 {
 		return &RerankerResponse{
 			Results: []RerankerResult{},
@@ -97,7 +101,12 @@ func (v *voyageRerankerClient) rerank(ctx context.Context, query string, documen
 		return nil, fmt.Errorf("failed to marshal reranker request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", v.baseURL+"/rerank", bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		v.baseURL+"/rerank",
+		bytes.NewBuffer(jsonBody),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create reranker request: %w", err)
 	}
@@ -117,7 +126,11 @@ func (v *voyageRerankerClient) rerank(ctx context.Context, query string, documen
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("reranker API request failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"reranker API request failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var voyageResp voyageRerankerResponse

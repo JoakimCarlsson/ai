@@ -22,7 +22,11 @@ type StructuredOutputInfo struct {
 }
 
 // NewStructuredOutputInfo creates a new structured output schema with the provided parameters.
-func NewStructuredOutputInfo(name, description string, parameters map[string]any, required []string) *StructuredOutputInfo {
+func NewStructuredOutputInfo(
+	name, description string,
+	parameters map[string]any,
+	required []string,
+) *StructuredOutputInfo {
 	return &StructuredOutputInfo{
 		Name:        name,
 		Description: description,

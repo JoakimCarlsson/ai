@@ -16,7 +16,11 @@ type TextMessage struct {
 }
 
 // NewTextMessage creates a text message with source, role and content.
-func NewTextMessage(source MessageSource, role MessageRole, content string) *TextMessage {
+func NewTextMessage(
+	source MessageSource,
+	role MessageRole,
+	content string,
+) *TextMessage {
 	return &TextMessage{
 		baseMessage: newBaseMessage(source, role),
 		Content:     content,

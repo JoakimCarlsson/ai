@@ -25,7 +25,11 @@ type RerankerResponse struct {
 }
 
 type Reranker interface {
-	Rerank(ctx context.Context, query string, documents []string) (*RerankerResponse, error)
+	Rerank(
+		ctx context.Context,
+		query string,
+		documents []string,
+	) (*RerankerResponse, error)
 	Model() model.RerankerModel
 }
 
@@ -43,7 +47,11 @@ type rerankerClientOptions struct {
 type RerankerClientOption func(*rerankerClientOptions)
 
 type RerankerClient interface {
-	rerank(ctx context.Context, query string, documents []string) (*RerankerResponse, error)
+	rerank(
+		ctx context.Context,
+		query string,
+		documents []string,
+	) (*RerankerResponse, error)
 }
 
 type baseReranker[C RerankerClient] struct {
@@ -51,7 +59,10 @@ type baseReranker[C RerankerClient] struct {
 	client  C
 }
 
-func NewReranker(provider model.ModelProvider, opts ...RerankerClientOption) (Reranker, error) {
+func NewReranker(
+	provider model.ModelProvider,
+	opts ...RerankerClientOption,
+) (Reranker, error) {
 	clientOptions := rerankerClientOptions{
 		returnDocs: false,
 	}
@@ -70,7 +81,11 @@ func NewReranker(provider model.ModelProvider, opts ...RerankerClientOption) (Re
 	return nil, fmt.Errorf("reranker provider not supported: %s", provider)
 }
 
-func (r *baseReranker[C]) Rerank(ctx context.Context, query string, documents []string) (*RerankerResponse, error) {
+func (r *baseReranker[C]) Rerank(
+	ctx context.Context,
+	query string,
+	documents []string,
+) (*RerankerResponse, error) {
 	if len(documents) == 0 {
 		return &RerankerResponse{
 			Results: []RerankerResult{},
@@ -122,7 +137,9 @@ func WithRerankerTimeout(timeout time.Duration) RerankerClientOption {
 	}
 }
 
-func WithVoyageRerankerOptions(voyageOptions ...VoyageRerankerOption) RerankerClientOption {
+func WithVoyageRerankerOptions(
+	voyageOptions ...VoyageRerankerOption,
+) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.voyageOptions = voyageOptions
 	}

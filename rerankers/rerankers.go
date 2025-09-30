@@ -78,7 +78,11 @@ type RerankerResponse struct {
 // Reranker defines the interface for document reranking operations.
 type Reranker interface {
 	// Rerank reorders documents by relevance to the query, returning results sorted by relevance score.
-	Rerank(ctx context.Context, query string, documents []string) (*RerankerResponse, error)
+	Rerank(
+		ctx context.Context,
+		query string,
+		documents []string,
+	) (*RerankerResponse, error)
 	// Model returns the reranker model configuration being used.
 	Model() model.RerankerModel
 }
@@ -97,7 +101,11 @@ type rerankerClientOptions struct {
 type RerankerClientOption func(*rerankerClientOptions)
 
 type RerankerClient interface {
-	rerank(ctx context.Context, query string, documents []string) (*RerankerResponse, error)
+	rerank(
+		ctx context.Context,
+		query string,
+		documents []string,
+	) (*RerankerResponse, error)
 }
 
 type baseReranker[C RerankerClient] struct {
@@ -108,7 +116,10 @@ type baseReranker[C RerankerClient] struct {
 // NewReranker creates a new reranker client for the specified provider.
 // Currently only Voyage AI is supported as a reranker provider.
 // Use WithModel() to specify the reranker model and WithAPIKey() for authentication.
-func NewReranker(provider model.ModelProvider, opts ...RerankerClientOption) (Reranker, error) {
+func NewReranker(
+	provider model.ModelProvider,
+	opts ...RerankerClientOption,
+) (Reranker, error) {
 	clientOptions := rerankerClientOptions{
 		returnDocs: false,
 	}
@@ -127,7 +138,11 @@ func NewReranker(provider model.ModelProvider, opts ...RerankerClientOption) (Re
 	return nil, fmt.Errorf("reranker provider not supported: %s", provider)
 }
 
-func (r *baseReranker[C]) Rerank(ctx context.Context, query string, documents []string) (*RerankerResponse, error) {
+func (r *baseReranker[C]) Rerank(
+	ctx context.Context,
+	query string,
+	documents []string,
+) (*RerankerResponse, error) {
 	if len(documents) == 0 {
 		return &RerankerResponse{
 			Results: []RerankerResult{},

@@ -96,15 +96,27 @@ type ContextualizedEmbeddingResponse struct {
 type Embedding interface {
 	// GenerateEmbeddings creates vector embeddings from a list of text strings.
 	// The optional inputType parameter can specify the intended use ("query", "document", etc.).
-	GenerateEmbeddings(ctx context.Context, texts []string, inputType ...string) (*EmbeddingResponse, error)
+	GenerateEmbeddings(
+		ctx context.Context,
+		texts []string,
+		inputType ...string,
+	) (*EmbeddingResponse, error)
 
 	// GenerateMultimodalEmbeddings creates embeddings from mixed text and image content.
 	// Each input can contain multiple content pieces of different types.
-	GenerateMultimodalEmbeddings(ctx context.Context, inputs []MultimodalInput, inputType ...string) (*EmbeddingResponse, error)
+	GenerateMultimodalEmbeddings(
+		ctx context.Context,
+		inputs []MultimodalInput,
+		inputType ...string,
+	) (*EmbeddingResponse, error)
 
 	// GenerateContextualizedEmbeddings creates embeddings where each chunk is aware of its document context.
 	// Input is organized as documents (outer slice) containing chunks (inner slices).
-	GenerateContextualizedEmbeddings(ctx context.Context, documentChunks [][]string, inputType ...string) (*ContextualizedEmbeddingResponse, error)
+	GenerateContextualizedEmbeddings(
+		ctx context.Context,
+		documentChunks [][]string,
+		inputType ...string,
+	) (*ContextualizedEmbeddingResponse, error)
 
 	// Model returns the embedding model configuration being used.
 	Model() model.EmbeddingModel
@@ -124,9 +136,21 @@ type embeddingClientOptions struct {
 type EmbeddingClientOption func(*embeddingClientOptions)
 
 type EmbeddingClient interface {
-	embed(ctx context.Context, texts []string, inputType ...string) (*EmbeddingResponse, error)
-	embedMultimodal(ctx context.Context, inputs []MultimodalInput, inputType ...string) (*EmbeddingResponse, error)
-	embedContextualized(ctx context.Context, documentChunks [][]string, inputType ...string) (*ContextualizedEmbeddingResponse, error)
+	embed(
+		ctx context.Context,
+		texts []string,
+		inputType ...string,
+	) (*EmbeddingResponse, error)
+	embedMultimodal(
+		ctx context.Context,
+		inputs []MultimodalInput,
+		inputType ...string,
+	) (*EmbeddingResponse, error)
+	embedContextualized(
+		ctx context.Context,
+		documentChunks [][]string,
+		inputType ...string,
+	) (*ContextualizedEmbeddingResponse, error)
 }
 
 type baseEmbedding[C EmbeddingClient] struct {
@@ -137,7 +161,10 @@ type baseEmbedding[C EmbeddingClient] struct {
 // NewEmbedding creates a new embedding client for the specified provider.
 // Supported providers include Voyage AI and OpenAI.
 // Use WithModel() to specify the embedding model and WithAPIKey() for authentication.
-func NewEmbedding(provider model.ModelProvider, opts ...EmbeddingClientOption) (Embedding, error) {
+func NewEmbedding(
+	provider model.ModelProvider,
+	opts ...EmbeddingClientOption,
+) (Embedding, error) {
 	clientOptions := embeddingClientOptions{
 		batchSize: 100,
 	}
@@ -161,7 +188,11 @@ func NewEmbedding(provider model.ModelProvider, opts ...EmbeddingClientOption) (
 	return nil, fmt.Errorf("embedding provider not supported: %s", provider)
 }
 
-func (e *baseEmbedding[C]) GenerateEmbeddings(ctx context.Context, texts []string, inputType ...string) (*EmbeddingResponse, error) {
+func (e *baseEmbedding[C]) GenerateEmbeddings(
+	ctx context.Context,
+	texts []string,
+	inputType ...string,
+) (*EmbeddingResponse, error) {
 	if len(texts) == 0 {
 		return &EmbeddingResponse{
 			Embeddings: [][]float32{},
@@ -173,7 +204,11 @@ func (e *baseEmbedding[C]) GenerateEmbeddings(ctx context.Context, texts []strin
 	return e.client.embed(ctx, texts, inputType...)
 }
 
-func (e *baseEmbedding[C]) GenerateMultimodalEmbeddings(ctx context.Context, inputs []MultimodalInput, inputType ...string) (*EmbeddingResponse, error) {
+func (e *baseEmbedding[C]) GenerateMultimodalEmbeddings(
+	ctx context.Context,
+	inputs []MultimodalInput,
+	inputType ...string,
+) (*EmbeddingResponse, error) {
 	if len(inputs) == 0 {
 		return &EmbeddingResponse{
 			Embeddings: [][]float32{},
@@ -185,7 +220,11 @@ func (e *baseEmbedding[C]) GenerateMultimodalEmbeddings(ctx context.Context, inp
 	return e.client.embedMultimodal(ctx, inputs, inputType...)
 }
 
-func (e *baseEmbedding[C]) GenerateContextualizedEmbeddings(ctx context.Context, documentChunks [][]string, inputType ...string) (*ContextualizedEmbeddingResponse, error) {
+func (e *baseEmbedding[C]) GenerateContextualizedEmbeddings(
+	ctx context.Context,
+	documentChunks [][]string,
+	inputType ...string,
+) (*ContextualizedEmbeddingResponse, error) {
 	if len(documentChunks) == 0 {
 		return &ContextualizedEmbeddingResponse{
 			DocumentEmbeddings: [][][]float32{},

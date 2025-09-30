@@ -177,7 +177,10 @@ func (r *Registry) Names() []string {
 }
 
 // Execute runs a tool by name with the provided parameters.
-func (r *Registry) Execute(ctx context.Context, call ToolCall) (ToolResponse, error) {
+func (r *Registry) Execute(
+	ctx context.Context,
+	call ToolCall,
+) (ToolResponse, error) {
 	tool, exists := r.tools[call.Name]
 	if !exists {
 		return NewTextErrorResponse("tool not found: " + call.Name), nil

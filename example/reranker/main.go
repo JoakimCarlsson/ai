@@ -35,6 +35,11 @@ func main() {
 	}
 
 	for i, result := range response.Results {
-		fmt.Printf("Rank %d (Score: %.4f): %s\n", i+1, result.RelevanceScore, result.Document)
+		fmt.Printf(
+			"Rank %d (Score: %.4f): %s\n",
+			i+1,
+			result.RelevanceScore,
+			result.Document,
+		)
 	}
 }
