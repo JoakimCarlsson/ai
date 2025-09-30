@@ -1,5 +1,8 @@
 # Go AI Client Library
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/joakimcarlsson/ai.svg)](https://pkg.go.dev/github.com/joakimcarlsson/ai)
+[![Go Report Card](https://goreportcard.com/badge/github.com/joakimcarlsson/ai)](https://goreportcard.com/report/github.com/joakimcarlsson/ai)
+
 A comprehensive, multi-provider Go library for interacting with various AI models through unified interfaces. This library supports Large Language Models (LLMs), embedding models, and rerankers from multiple providers including Anthropic, OpenAI, Google, AWS, Voyage AI, and more, with features like streaming responses, tool calling, structured output, and MCP (Model Context Protocol) integration.
 
 ## Features
