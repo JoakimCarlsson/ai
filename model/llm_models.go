@@ -61,4 +61,6 @@ type Model struct {
 	SupportsAttachments bool `json:"supports_attachments"`
 	// SupportsStructuredOut indicates if the model supports structured JSON output.
 	SupportsStructuredOut bool `json:"supports_structured_output"`
+	// SupportsImageGeneration indicates if the model can generate images.
+	SupportsImageGeneration bool `json:"supports_image_generation"`
 }

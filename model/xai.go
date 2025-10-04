@@ -12,6 +12,7 @@ const (
 	XAIGrok3MiniFast         ModelID = "grok-3-mini-fast"
 	XAIGrok2Vision           ModelID = "grok-2-vision-1212"
 	XAIGrokCodeFast1         ModelID = "grok-code-fast-1"
+	XAIGrok2Image            ModelID = "grok-2-image-1212"
 )
 
 var XAIModels = map[ModelID]Model{
@@ -131,5 +132,18 @@ var XAIModels = map[ModelID]Model{
 		ContextWindow:         2_000_000,
 		DefaultMaxTokens:      20_000,
 		SupportsStructuredOut: true,
+	},
+}
+
+var XAIImageGenerationModels = map[ModelID]ImageGenerationModel{
+	XAIGrok2Image: {
+		ID:              XAIGrok2Image,
+		Name:            "Grok 2 Image",
+		Provider:        ProviderXAI,
+		APIModel:        "grok-2-image-1212",
+		CostPerImage:    0.07,
+		MaxPromptTokens: 1000,
+		SupportedSizes:  []string{"1024x1024", "512x512", "256x256"},
+		DefaultSize:     "1024x1024",
 	},
 }
