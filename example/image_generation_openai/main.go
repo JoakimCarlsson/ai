@@ -11,9 +11,9 @@ import (
 
 func main() {
 	client, err := image_generation.NewImageGeneration(
-		model.ProviderXAI,
+		model.ProviderOpenAI,
 		image_generation.WithAPIKey(""),
-		image_generation.WithModel(model.XAIImageGenerationModels[model.XAIGrok2Image]),
+		image_generation.WithModel(model.OpenAIImageGenerationModels[model.DALLE3]),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -22,6 +22,8 @@ func main() {
 	response, err := client.GenerateImage(
 		context.Background(),
 		"A serene mountain landscape at sunset with vibrant colors",
+		image_generation.WithSize("1024x1024"),
+		image_generation.WithQuality("hd"),
 		image_generation.WithResponseFormat("b64_json"),
 	)
 	if err != nil {

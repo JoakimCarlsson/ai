@@ -21,14 +21,18 @@ type xaiOptions struct {
 	extraHeaders map[string]string
 }
 
+// XAIOption is a function that configures xAI-specific options.
 type XAIOption func(*xaiOptions)
 
+// WithXAIBaseURL sets a custom base URL for the xAI API endpoint.
+// The default is "https://api.x.ai/v1".
 func WithXAIBaseURL(baseURL string) XAIOption {
 	return func(options *xaiOptions) {
 		options.baseURL = baseURL
 	}
 }
 
+// WithXAIExtraHeaders adds custom HTTP headers to xAI API requests.
 func WithXAIExtraHeaders(headers map[string]string) XAIOption {
 	return func(options *xaiOptions) {
 		options.extraHeaders = headers
@@ -124,6 +128,8 @@ func (x XAIClient) generate(
 	}, nil
 }
 
+// DownloadImage downloads an image from a URL and returns its binary data.
+// This is a helper function for processing image generation responses that return URLs.
 func DownloadImage(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -143,6 +149,8 @@ func DownloadImage(url string) ([]byte, error) {
 	return data, nil
 }
 
+// DecodeBase64Image decodes a base64-encoded image string into binary data.
+// This is a helper function for processing image generation responses with base64 format.
 func DecodeBase64Image(b64 string) ([]byte, error) {
 	data, err := base64.StdEncoding.DecodeString(b64)
 	if err != nil {

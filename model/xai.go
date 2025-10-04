@@ -137,13 +137,17 @@ var XAIModels = map[ModelID]Model{
 
 var XAIImageGenerationModels = map[ModelID]ImageGenerationModel{
 	XAIGrok2Image: {
-		ID:              XAIGrok2Image,
-		Name:            "Grok 2 Image",
-		Provider:        ProviderXAI,
-		APIModel:        "grok-2-image-1212",
-		CostPerImage:    0.07,
-		MaxPromptTokens: 1000,
-		SupportedSizes:  []string{"1024x1024", "512x512", "256x256"},
-		DefaultSize:     "1024x1024",
+		ID:       XAIGrok2Image,
+		Name:     "Grok 2 Image",
+		Provider: ProviderXAI,
+		APIModel: "grok-2-image-1212",
+		Pricing: map[string]map[string]float64{
+			"default": {
+				"default": 0.07,
+			},
+		},
+		MaxPromptTokens:    1000,
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
 	},
 }
