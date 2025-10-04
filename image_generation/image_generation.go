@@ -1,7 +1,7 @@
 // Package image_generation provides a unified interface for generating images from text prompts
 // using various AI providers.
 //
-// This package abstracts the differences between image generation providers like OpenAI and xAI,
+// This package abstracts the differences between image generation providers like OpenAI, xAI, and Gemini,
 // offering a consistent API for creating images from natural language descriptions.
 //
 // Key features include:
@@ -86,6 +86,7 @@ type imageGenerationClientOptions struct {
 	timeout *time.Duration
 
 	openaiOptions []OpenAIOption
+	geminiOptions []GeminiOption
 }
 
 type ImageGenerationClientOption func(*imageGenerationClientOptions)
@@ -104,7 +105,7 @@ type baseImageGeneration[C ImageGenerationClient] struct {
 }
 
 // NewImageGeneration creates a new image generation client for the specified provider.
-// Supported providers include OpenAI and xAI. Use WithModel() to specify the image generation model
+// Supported providers include OpenAI, xAI, and Gemini. Use WithModel() to specify the image generation model
 // and WithAPIKey() for authentication.
 func NewImageGeneration(
 	provider model.ModelProvider,
@@ -128,6 +129,11 @@ func NewImageGeneration(
 		return &baseImageGeneration[OpenAIClient]{
 			options: clientOptions,
 			client:  newOpenAIClient(clientOptions),
+		}, nil
+	case model.ProviderGemini:
+		return &baseImageGeneration[GeminiClient]{
+			options: clientOptions,
+			client:  newGeminiClient(clientOptions),
 		}, nil
 	}
 
@@ -172,6 +178,13 @@ func WithTimeout(timeout time.Duration) ImageGenerationClientOption {
 func WithOpenAIOptions(openaiOptions ...OpenAIOption) ImageGenerationClientOption {
 	return func(options *imageGenerationClientOptions) {
 		options.openaiOptions = openaiOptions
+	}
+}
+
+// WithGeminiOptions applies Gemini-specific configuration options.
+func WithGeminiOptions(geminiOptions ...GeminiOption) ImageGenerationClientOption {
+	return func(options *imageGenerationClientOptions) {
+		options.geminiOptions = geminiOptions
 	}
 }
 
