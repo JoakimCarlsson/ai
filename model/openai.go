@@ -23,9 +23,9 @@ const (
 	TextEmbedding3Small ModelID = "text-embedding-3-small"
 	AdaEmbedding002     ModelID = "text-embedding-ada-002"
 
-	DALLE2      ModelID = "dall-e-2"
-	DALLE3      ModelID = "dall-e-3"
-	GPTImage1   ModelID = "gpt-image-1"
+	DALLE2    ModelID = "dall-e-2"
+	DALLE3    ModelID = "dall-e-3"
+	GPTImage1 ModelID = "gpt-image-1"
 )
 
 var OpenAIModels = map[ModelID]Model{

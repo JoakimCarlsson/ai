@@ -13,7 +13,9 @@ func main() {
 	client, err := image_generation.NewImageGeneration(
 		model.ProviderGemini,
 		image_generation.WithAPIKey(""),
-		image_generation.WithModel(model.GeminiImageGenerationModels[model.Imagen4]),
+		image_generation.WithModel(
+			model.GeminiImageGenerationModels[model.Imagen4],
+		),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -28,7 +30,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	imageData, err := image_generation.DecodeBase64Image(response.Images[0].ImageBase64)
+	imageData, err := image_generation.DecodeBase64Image(
+		response.Images[0].ImageBase64,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}

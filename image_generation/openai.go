@@ -91,14 +91,17 @@ func (o OpenAIClient) generate(
 	}
 
 	if genOpts.ResponseFormat != "" {
-		params.ResponseFormat = openai.ImageGenerateParamsResponseFormat(genOpts.ResponseFormat)
+		params.ResponseFormat = openai.ImageGenerateParamsResponseFormat(
+			genOpts.ResponseFormat,
+		)
 	}
 
 	if genOpts.Size != "" && len(o.options.model.SupportedSizes) > 0 {
 		params.Size = openai.ImageGenerateParamsSize(genOpts.Size)
 	}
 
-	if genOpts.Quality != "" && genOpts.Quality != "default" && len(o.options.model.SupportedQualities) > 1 {
+	if genOpts.Quality != "" && genOpts.Quality != "default" &&
+		len(o.options.model.SupportedQualities) > 1 {
 		params.Quality = openai.ImageGenerateParamsQuality(genOpts.Quality)
 	}
 
@@ -149,7 +152,10 @@ func DownloadImage(url string) ([]byte, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to download image: status code %d", resp.StatusCode)
+		return nil, fmt.Errorf(
+			"failed to download image: status code %d",
+			resp.StatusCode,
+		)
 	}
 
 	data, err := io.ReadAll(resp.Body)

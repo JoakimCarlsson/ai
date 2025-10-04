@@ -137,7 +137,10 @@ func NewImageGeneration(
 		}, nil
 	}
 
-	return nil, fmt.Errorf("image generation provider not supported: %s", provider)
+	return nil, fmt.Errorf(
+		"image generation provider not supported: %s",
+		provider,
+	)
 }
 
 func (i *baseImageGeneration[C]) GenerateImage(
@@ -175,14 +178,18 @@ func WithTimeout(timeout time.Duration) ImageGenerationClientOption {
 
 // WithOpenAIOptions applies OpenAI-specific configuration options.
 // Also used for xAI since it uses OpenAI-compatible API.
-func WithOpenAIOptions(openaiOptions ...OpenAIOption) ImageGenerationClientOption {
+func WithOpenAIOptions(
+	openaiOptions ...OpenAIOption,
+) ImageGenerationClientOption {
 	return func(options *imageGenerationClientOptions) {
 		options.openaiOptions = openaiOptions
 	}
 }
 
 // WithGeminiOptions applies Gemini-specific configuration options.
-func WithGeminiOptions(geminiOptions ...GeminiOption) ImageGenerationClientOption {
+func WithGeminiOptions(
+	geminiOptions ...GeminiOption,
+) ImageGenerationClientOption {
 	return func(options *imageGenerationClientOptions) {
 		options.geminiOptions = geminiOptions
 	}
