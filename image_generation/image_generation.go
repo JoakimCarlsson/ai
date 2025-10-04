@@ -1,7 +1,7 @@
 // Package image_generation provides a unified interface for generating images from text prompts
 // using various AI providers.
 //
-// This package abstracts the differences between image generation providers like xAI and OpenAI,
+// This package abstracts the differences between image generation providers like OpenAI and xAI,
 // offering a consistent API for creating images from natural language descriptions.
 //
 // Key features include:
@@ -85,7 +85,6 @@ type imageGenerationClientOptions struct {
 	model   model.ImageGenerationModel
 	timeout *time.Duration
 
-	xaiOptions    []XAIOption
 	openaiOptions []OpenAIOption
 }
 
@@ -123,9 +122,12 @@ func NewImageGeneration(
 			client:  newOpenAIClient(clientOptions),
 		}, nil
 	case model.ProviderXAI:
-		return &baseImageGeneration[XAIClient]{
+		clientOptions.openaiOptions = append(clientOptions.openaiOptions,
+			WithOpenAIBaseURL("https://api.x.ai/v1"),
+		)
+		return &baseImageGeneration[OpenAIClient]{
 			options: clientOptions,
-			client:  newXAIClient(clientOptions),
+			client:  newOpenAIClient(clientOptions),
 		}, nil
 	}
 
@@ -165,14 +167,8 @@ func WithTimeout(timeout time.Duration) ImageGenerationClientOption {
 	}
 }
 
-// WithXAIOptions applies xAI-specific configuration options.
-func WithXAIOptions(xaiOptions ...XAIOption) ImageGenerationClientOption {
-	return func(options *imageGenerationClientOptions) {
-		options.xaiOptions = xaiOptions
-	}
-}
-
 // WithOpenAIOptions applies OpenAI-specific configuration options.
+// Also used for xAI since it uses OpenAI-compatible API.
 func WithOpenAIOptions(openaiOptions ...OpenAIOption) ImageGenerationClientOption {
 	return func(options *imageGenerationClientOptions) {
 		options.openaiOptions = openaiOptions

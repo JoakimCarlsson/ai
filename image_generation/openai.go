@@ -2,7 +2,10 @@ package image_generation
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"io"
+	"net/http"
 
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -91,11 +94,11 @@ func (o OpenAIClient) generate(
 		params.ResponseFormat = openai.ImageGenerateParamsResponseFormat(genOpts.ResponseFormat)
 	}
 
-	if genOpts.Size != "" {
+	if genOpts.Size != "" && len(o.options.model.SupportedSizes) > 0 {
 		params.Size = openai.ImageGenerateParamsSize(genOpts.Size)
 	}
 
-	if genOpts.Quality != "" {
+	if genOpts.Quality != "" && genOpts.Quality != "default" && len(o.options.model.SupportedQualities) > 1 {
 		params.Quality = openai.ImageGenerateParamsQuality(genOpts.Quality)
 	}
 
@@ -134,4 +137,35 @@ func (o OpenAIClient) generate(
 		},
 		Model: o.options.model.APIModel,
 	}, nil
+}
+
+// DownloadImage downloads an image from a URL and returns its binary data.
+// This is a helper function for processing image generation responses that return URLs.
+func DownloadImage(url string) ([]byte, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download image: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to download image: status code %d", resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read image data: %w", err)
+	}
+
+	return data, nil
+}
+
+// DecodeBase64Image decodes a base64-encoded image string into binary data.
+// This is a helper function for processing image generation responses with base64 format.
+func DecodeBase64Image(b64 string) ([]byte, error) {
+	data, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode base64 image: %w", err)
+	}
+	return data, nil
 }
