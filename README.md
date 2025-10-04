@@ -3,13 +3,14 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/joakimcarlsson/ai.svg)](https://pkg.go.dev/github.com/joakimcarlsson/ai)
 [![Go Report Card](https://goreportcard.com/badge/github.com/joakimcarlsson/ai)](https://goreportcard.com/report/github.com/joakimcarlsson/ai)
 
-A comprehensive, multi-provider Go library for interacting with various AI models through unified interfaces. This library supports Large Language Models (LLMs), embedding models, and rerankers from multiple providers including Anthropic, OpenAI, Google, AWS, Voyage AI, and more, with features like streaming responses, tool calling, structured output, and MCP (Model Context Protocol) integration.
+A comprehensive, multi-provider Go library for interacting with various AI models through unified interfaces. This library supports Large Language Models (LLMs), embedding models, image generation models, and rerankers from multiple providers including Anthropic, OpenAI, Google, AWS, Voyage AI, xAI, and more, with features like streaming responses, tool calling, structured output, and MCP (Model Context Protocol) integration.
 
 ## Features
 
 - **Multi-Provider Support**: Unified interface for 9+ AI providers
 - **LLM Support**: Chat completions, streaming, tool calling, structured output
 - **Embedding Models**: Text, multimodal, and contextualized embeddings
+- **Image Generation**: Text-to-image generation with multiple quality and size options
 - **Rerankers**: Document reranking for improved search relevance
 - **Streaming Responses**: Real-time response streaming via Go channels
 - **Tool Calling**: Native function calling with JSON schema validation
@@ -41,6 +42,15 @@ A comprehensive, multi-provider Go library for interacting with various AI model
 | Provider | Text Embeddings | Multimodal Embeddings | Contextualized Embeddings | Rerankers |
 |----------|-----------------|----------------------|---------------------------|-----------|
 | Voyage AI | ✅ | ✅ | ✅ | ✅ |
+| OpenAI | ✅ | ❌ | ❌ | ❌ |
+
+### Image Generation Providers
+
+| Provider | Models | Quality Options | Size Options |
+|----------|--------|-----------------|--------------|
+| OpenAI | DALL-E 2, DALL-E 3, GPT Image 1 | standard, hd, low, medium, high | 256x256 to 1792x1024 |
+| xAI (Grok) | Grok 2 Image | default | default |
+| Google Gemini | Gemini 2.5 Flash Image, Imagen 3, Imagen 4, Imagen 4 Ultra, Imagen 4 Fast | default | Aspect ratios: 1:1, 3:4, 4:3, 9:16, 16:9 |
 
 ## Installation
 
@@ -294,9 +304,69 @@ if err != nil {
 }
 
 for i, result := range response.Results {
-    fmt.Printf("Rank %d (Score: %.4f): %s\n", 
+    fmt.Printf("Rank %d (Score: %.4f): %s\n",
         i+1, result.RelevanceScore, result.Document)
 }
+```
+
+### Image Generation
+
+```go
+import (
+    "github.com/joakimcarlsson/ai/image_generation"
+    "github.com/joakimcarlsson/ai/model"
+)
+
+// OpenAI DALL-E 3
+client, err := image_generation.NewImageGeneration(
+    model.ProviderOpenAI,
+    image_generation.WithAPIKey("your-api-key"),
+    image_generation.WithModel(model.OpenAIImageGenerationModels[model.DALLE3]),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+response, err := client.GenerateImage(
+    context.Background(),
+    "A serene mountain landscape at sunset with vibrant colors",
+    image_generation.WithSize("1024x1024"),
+    image_generation.WithQuality("hd"),
+    image_generation.WithResponseFormat("b64_json"),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+imageData, _ := image_generation.DecodeBase64Image(response.Images[0].ImageBase64)
+os.WriteFile("image.png", imageData, 0644)
+
+// Google Gemini Imagen 4
+client, err := image_generation.NewImageGeneration(
+    model.ProviderGemini,
+    image_generation.WithAPIKey("your-api-key"),
+    image_generation.WithModel(model.GeminiImageGenerationModels[model.Imagen4]),
+)
+
+response, err := client.GenerateImage(
+    context.Background(),
+    "A futuristic cityscape at night",
+    image_generation.WithSize("16:9"),
+    image_generation.WithN(4),
+)
+
+// xAI Grok 2 Image
+client, err := image_generation.NewImageGeneration(
+    model.ProviderXAI,
+    image_generation.WithAPIKey("your-api-key"),
+    image_generation.WithModel(model.XAIImageGenerationModels[model.XAIGrok2Image]),
+)
+
+response, err := client.GenerateImage(
+    context.Background(),
+    "A robot playing chess",
+    image_generation.WithResponseFormat("b64_json"),
+)
 ```
 
 ## Project Structure
@@ -308,19 +378,28 @@ for i, result := range response.Results {
 │   ├── embeddings/               # Text embedding example
 │   ├── multimodal_embeddings/    # Multimodal embedding example
 │   ├── contextualized_embeddings/# Contextualized embedding example
-│   └── reranker/                 # Document reranking example
+│   ├── reranker/                 # Document reranking example
+│   ├── image_generation/         # xAI image generation example
+│   ├── image_generation_openai/  # OpenAI image generation example
+│   └── image_generation_gemini/  # Gemini image generation example
+├── image_generation/             # Image generation package
+│   ├── image_generation.go      # Main image generation interface
+│   ├── openai.go                # OpenAI/xAI implementation
+│   └── gemini.go                # Gemini implementation
 ├── message/                      # Message types and handling
 │   ├── base.go                  # Core message structures
 │   ├── multimodal.go            # Image/attachment support
 │   ├── marshal.go               # Serialization helpers
 │   └── text.go                  # Text message utilities
 ├── model/                        # Model definitions and configurations
-│   ├── models.go                # Base model structure
+│   ├── llm_models.go            # LLM model types
 │   ├── embedding_models.go      # Embedding model types
+│   ├── image_generation_models.go # Image generation model types
 │   ├── voyage.go                # Voyage AI models (embeddings & rerankers)
 │   ├── anthropic.go             # Claude models
-│   ├── openai.go                # GPT models
-│   ├── gemini.go                # Gemini models
+│   ├── openai.go                # GPT and DALL-E models
+│   ├── gemini.go                # Gemini and Imagen models
+│   ├── xai.go                   # xAI Grok models
 │   └── ...                      # Other provider models
 ├── providers/                    # AI provider implementations
 │   ├── llm.go                   # Main LLM interface
@@ -387,6 +466,32 @@ reranker, err := rerankers.NewReranker(
 )
 ```
 
+### Image Generation Client Options
+
+```go
+// OpenAI/xAI
+client, err := image_generation.NewImageGeneration(
+    model.ProviderOpenAI,
+    image_generation.WithAPIKey("your-key"),
+    image_generation.WithModel(model.OpenAIImageGenerationModels[model.DALLE3]),
+    image_generation.WithTimeout(60*time.Second),
+    image_generation.WithOpenAIOptions(
+        image_generation.WithOpenAIBaseURL("custom-endpoint"),
+    ),
+)
+
+// Gemini
+client, err := image_generation.NewImageGeneration(
+    model.ProviderGemini,
+    image_generation.WithAPIKey("your-key"),
+    image_generation.WithModel(model.GeminiImageGenerationModels[model.Imagen4]),
+    image_generation.WithTimeout(60*time.Second),
+    image_generation.WithGeminiOptions(
+        image_generation.WithGeminiBackend(genai.BackendVertexAI),
+    ),
+)
+```
+
 ### Provider-Specific Options
 
 ```go
@@ -430,7 +535,9 @@ response, err := client.SendMessages(ctx, messages, mcpTools)
 
 ### Cost Tracking
 
-All models include cost information per million tokens:
+#### LLM Models
+
+All LLM models include cost information per million tokens:
 
 ```go
 model := model.OpenAIModels[model.GPT4o]
@@ -441,4 +548,25 @@ fmt.Printf("Output cost: $%.2f per 1M tokens\n", model.CostPer1MOut)
 response, err := client.SendMessages(ctx, messages, nil)
 inputCost := float64(response.Usage.InputTokens) * model.CostPer1MIn / 1_000_000
 outputCost := float64(response.Usage.OutputTokens) * model.CostPer1MOut / 1_000_000
+```
+
+#### Image Generation Models
+
+Image generation models include pricing by size and quality:
+
+```go
+model := model.OpenAIImageGenerationModels[model.DALLE3]
+
+// Pricing structure: size -> quality -> cost
+standardCost := model.Pricing["1024x1024"]["standard"]  // $0.04
+hdCost := model.Pricing["1024x1024"]["hd"]              // $0.08
+
+fmt.Printf("Standard quality: $%.2f per image\n", standardCost)
+fmt.Printf("HD quality: $%.2f per image\n", hdCost)
+
+// GPT Image 1 with multiple quality tiers
+gptImageModel := model.OpenAIImageGenerationModels[model.GPTImage1]
+lowCost := gptImageModel.Pricing["1024x1024"]["low"]       // $0.011
+mediumCost := gptImageModel.Pricing["1024x1024"]["medium"] // $0.042
+highCost := gptImageModel.Pricing["1024x1024"]["high"]     // $0.167
 ```

@@ -22,6 +22,10 @@ const (
 	TextEmbedding3Large ModelID = "text-embedding-3-large"
 	TextEmbedding3Small ModelID = "text-embedding-3-small"
 	AdaEmbedding002     ModelID = "text-embedding-ada-002"
+
+	DALLE2    ModelID = "dall-e-2"
+	DALLE3    ModelID = "dall-e-3"
+	GPTImage1 ModelID = "gpt-image-1"
 )
 
 var OpenAIModels = map[ModelID]Model{
@@ -280,5 +284,83 @@ var OpenAIEmbeddingModels = map[ModelID]EmbeddingModel{
 		SupportedDimensions: []int{1536},
 		MaxBatchSize:        2048,
 		MaxTokensPerBatch:   1000000,
+	},
+}
+
+var OpenAIImageGenerationModels = map[ModelID]ImageGenerationModel{
+	DALLE2: {
+		ID:       DALLE2,
+		Name:     "DALL-E 2",
+		Provider: ProviderOpenAI,
+		APIModel: "dall-e-2",
+		Pricing: map[string]map[string]float64{
+			"256x256": {
+				"standard": 0.016,
+			},
+			"512x512": {
+				"standard": 0.018,
+			},
+			"1024x1024": {
+				"standard": 0.02,
+			},
+		},
+		MaxPromptTokens:    1000,
+		SupportedSizes:     []string{"256x256", "512x512", "1024x1024"},
+		DefaultSize:        "1024x1024",
+		SupportedQualities: []string{"standard"},
+		DefaultQuality:     "standard",
+	},
+	DALLE3: {
+		ID:       DALLE3,
+		Name:     "DALL-E 3",
+		Provider: ProviderOpenAI,
+		APIModel: "dall-e-3",
+		Pricing: map[string]map[string]float64{
+			"1024x1024": {
+				"standard": 0.04,
+				"hd":       0.08,
+			},
+			"1024x1792": {
+				"standard": 0.08,
+				"hd":       0.12,
+			},
+			"1792x1024": {
+				"standard": 0.08,
+				"hd":       0.12,
+			},
+		},
+		MaxPromptTokens:    4000,
+		SupportedSizes:     []string{"1024x1024", "1024x1792", "1792x1024"},
+		DefaultSize:        "1024x1024",
+		SupportedQualities: []string{"standard", "hd"},
+		DefaultQuality:     "standard",
+	},
+	GPTImage1: {
+		ID:       GPTImage1,
+		Name:     "GPT Image 1",
+		Provider: ProviderOpenAI,
+		APIModel: "gpt-image-1",
+		Pricing: map[string]map[string]float64{
+			"1024x1024": {
+				"low":    0.011,
+				"medium": 0.042,
+				"high":   0.167,
+			},
+			"1024x1536": {
+				"low":    0.016,
+				"medium": 0.063,
+				"high":   0.25,
+			},
+			"1536x1024": {
+				"low":    0.016,
+				"medium": 0.063,
+				"high":   0.25,
+			},
+		},
+		MaxPromptTokens:    4000,
+		SupportedSizes:     []string{"1024x1024", "1024x1536", "1536x1024"},
+		DefaultSize:        "1024x1024",
+		SupportedQualities: []string{"low", "medium", "high"},
+		DefaultQuality:     "medium",
 	},
 }
