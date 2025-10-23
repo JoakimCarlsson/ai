@@ -127,8 +127,6 @@ func newMcpTool(
 	}
 }
 
-var mcpTools []BaseTool
-
 func getTools(ctx context.Context, name string, m MCPServer) ([]BaseTool, error) {
 	var stdioTools []BaseTool
 	c, err := pool.getClient(ctx, name, m)
@@ -152,16 +150,14 @@ func GetMcpTools(
 	ctx context.Context,
 	servers map[string]MCPServer,
 ) ([]BaseTool, error) {
-	if len(mcpTools) > 0 {
-		return mcpTools, nil
-	}
+	var tools []BaseTool
 	for name, m := range servers {
-		tools, err := getTools(ctx, name, m)
+		serverTools, err := getTools(ctx, name, m)
 		if err != nil {
 			return nil, err
 		}
-		mcpTools = append(mcpTools, tools...)
+		tools = append(tools, serverTools...)
 	}
 
-	return mcpTools, nil
+	return tools, nil
 }
