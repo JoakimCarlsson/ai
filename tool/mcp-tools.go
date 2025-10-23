@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 
-	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 type MCPType string
@@ -18,22 +17,18 @@ const (
 
 type mcpTool struct {
 	mcpName   string
-	tool      mcp.Tool
+	tool      *mcp.Tool
 	mcpConfig MCPServer
 }
 
 type MCPClient interface {
-	Initialize(
-		ctx context.Context,
-		request mcp.InitializeRequest,
-	) (*mcp.InitializeResult, error)
 	ListTools(
 		ctx context.Context,
-		request mcp.ListToolsRequest,
+		params *mcp.ListToolsParams,
 	) (*mcp.ListToolsResult, error)
 	CallTool(
 		ctx context.Context,
-		request mcp.CallToolRequest,
+		params *mcp.CallToolParams,
 	) (*mcp.CallToolResult, error)
 	Close() error
 }
@@ -48,11 +43,29 @@ type MCPServer struct {
 }
 
 func (b *mcpTool) Info() ToolInfo {
+	params := make(map[string]any)
+	required := []string{}
+
+	if b.tool.InputSchema != nil {
+		if schemaMap, ok := b.tool.InputSchema.(map[string]any); ok {
+			if props, ok := schemaMap["properties"].(map[string]any); ok {
+				params = props
+			}
+			if req, ok := schemaMap["required"].([]any); ok {
+				for _, r := range req {
+					if str, ok := r.(string); ok {
+						required = append(required, str)
+					}
+				}
+			}
+		}
+	}
+
 	return ToolInfo{
 		Name:        fmt.Sprintf("%s_%s", b.mcpName, b.tool.Name),
 		Description: b.tool.Description,
-		Parameters:  b.tool.InputSchema.Properties,
-		Required:    b.tool.InputSchema.Required,
+		Parameters:  params,
+		Required:    required,
 	}
 }
 
@@ -62,26 +75,29 @@ func runTool(
 	toolName string,
 	input string,
 ) (ToolResponse, error) {
-	toolRequest := mcp.CallToolRequest{}
-	toolRequest.Params.Name = toolName
 	var args map[string]any
 	if err := json.Unmarshal([]byte(input), &args); err != nil {
 		return NewTextErrorResponse(
 			fmt.Sprintf("error parsing parameters: %s", err),
 		), nil
 	}
-	toolRequest.Params.Arguments = args
-	result, err := c.CallTool(ctx, toolRequest)
+
+	params := &mcp.CallToolParams{
+		Name:      toolName,
+		Arguments: args,
+	}
+
+	result, err := c.CallTool(ctx, params)
 	if err != nil {
 		return NewTextErrorResponse(err.Error()), nil
 	}
 
 	output := ""
-	for _, v := range result.Content {
-		if v, ok := v.(mcp.TextContent); ok {
-			output = v.Text
+	for _, content := range result.Content {
+		if textContent, ok := content.(*mcp.TextContent); ok {
+			output += textContent.Text
 		} else {
-			output = fmt.Sprintf("%v", v)
+			output += fmt.Sprintf("%v", content)
 		}
 	}
 
@@ -101,7 +117,7 @@ func (b *mcpTool) Run(
 
 func newMcpTool(
 	name string,
-	tool mcp.Tool,
+	tool *mcp.Tool,
 	mcpConfig MCPServer,
 ) BaseTool {
 	return &mcpTool{
@@ -111,39 +127,37 @@ func newMcpTool(
 	}
 }
 
-var mcpTools []BaseTool
-
-func getTools(ctx context.Context, name string, m MCPServer) []BaseTool {
+func getTools(ctx context.Context, name string, m MCPServer) ([]BaseTool, error) {
 	var stdioTools []BaseTool
 	c, err := pool.getClient(ctx, name, m)
 	if err != nil {
-		slog.Error("error getting mcp client", "error", err)
-		return stdioTools
+		return nil, fmt.Errorf("error getting mcp client for %s: %w", name, err)
 	}
 
-	toolsRequest := mcp.ListToolsRequest{}
-	tools, err := c.ListTools(ctx, toolsRequest)
+	params := &mcp.ListToolsParams{}
+	tools, err := c.ListTools(ctx, params)
 	if err != nil {
-		slog.Error("error listing tools", "error", err)
-		return stdioTools
+		return nil, fmt.Errorf("error listing tools for %s: %w", name, err)
 	}
 	for _, t := range tools.Tools {
 		stdioTools = append(stdioTools, newMcpTool(name, t, m))
 	}
-	return stdioTools
+	return stdioTools, nil
 }
 
 // GetMcpTools connects to MCP servers and returns available tools
 func GetMcpTools(
 	ctx context.Context,
 	servers map[string]MCPServer,
-) []BaseTool {
-	if len(mcpTools) > 0 {
-		return mcpTools
-	}
+) ([]BaseTool, error) {
+	var tools []BaseTool
 	for name, m := range servers {
-		mcpTools = append(mcpTools, getTools(ctx, name, m)...)
+		serverTools, err := getTools(ctx, name, m)
+		if err != nil {
+			return nil, err
+		}
+		tools = append(tools, serverTools...)
 	}
 
-	return mcpTools
+	return tools, nil
 }
