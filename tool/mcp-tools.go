@@ -22,6 +22,7 @@ type mcpTool struct {
 }
 
 type MCPClient interface {
+	Start(ctx context.Context) error
 	Initialize(
 		ctx context.Context,
 		request mcp.InitializeRequest,

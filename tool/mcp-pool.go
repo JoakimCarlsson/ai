@@ -61,6 +61,12 @@ func (p *mcpClientPool) getClient(
 		return nil, err
 	}
 
+	err = c.Start(ctx)
+	if err != nil {
+		c.Close()
+		return nil, fmt.Errorf("failed to start MCP client: %w", err)
+	}
+
 	initRequest := mcp.InitializeRequest{}
 	initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
 	initRequest.Params.ClientInfo = mcp.Implementation{
@@ -71,7 +77,7 @@ func (p *mcpClientPool) getClient(
 	_, err = c.Initialize(ctx, initRequest)
 	if err != nil {
 		c.Close()
-		return nil, err
+		return nil, fmt.Errorf("failed to initialize MCP client: %w", err)
 	}
 
 	p.clients[name] = c
