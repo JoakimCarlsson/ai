@@ -11,8 +11,9 @@ import (
 type MCPType string
 
 const (
-	MCPStdio MCPType = "stdio"
-	MCPSse   MCPType = "sse"
+	MCPStdio          MCPType = "stdio"
+	MCPSse            MCPType = "sse"
+	MCPStreamableHTTP MCPType = "streamable_http"
 )
 
 type mcpTool struct {
