@@ -84,6 +84,19 @@ func (p *mcpClientPool) getClient(
 			Endpoint:   config.URL,
 			HTTPClient: httpClient,
 		}
+	case MCPStreamableHTTP:
+		httpClient := &http.Client{}
+		if len(config.Headers) > 0 {
+			transport := http.DefaultTransport.(*http.Transport).Clone()
+			httpClient.Transport = &headerTransport{
+				base:    transport,
+				headers: config.Headers,
+			}
+		}
+		transport = &mcp.StreamableClientTransport{
+			Endpoint:   config.URL,
+			HTTPClient: httpClient,
+		}
 	default:
 		return nil, fmt.Errorf("invalid MCP type: %s", config.Type)
 	}
