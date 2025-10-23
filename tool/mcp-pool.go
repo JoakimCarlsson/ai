@@ -3,11 +3,28 @@ package tool
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os/exec"
 	"sync"
 
-	"github.com/mark3labs/mcp-go/client"
-	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
+
+type sessionWrapper struct {
+	session *mcp.ClientSession
+}
+
+func (s *sessionWrapper) ListTools(ctx context.Context, params *mcp.ListToolsParams) (*mcp.ListToolsResult, error) {
+	return s.session.ListTools(ctx, params)
+}
+
+func (s *sessionWrapper) CallTool(ctx context.Context, params *mcp.CallToolParams) (*mcp.CallToolResult, error) {
+	return s.session.CallTool(ctx, params)
+}
+
+func (s *sessionWrapper) Close() error {
+	return s.session.Close()
+}
 
 type mcpClientPool struct {
 	clients map[string]MCPClient
@@ -39,50 +56,59 @@ func (p *mcpClientPool) getClient(
 		return client, nil
 	}
 
-	var c MCPClient
+	client := mcp.NewClient(&mcp.Implementation{
+		Name:    "llm",
+		Version: "1.0.0",
+	}, nil)
+
+	var transport mcp.Transport
 	var err error
 
 	switch config.Type {
 	case MCPStdio:
-		c, err = client.NewStdioMCPClient(
-			config.Command,
-			config.Env,
-			config.Args...)
+		cmd := exec.Command(config.Command, config.Args...)
+		if len(config.Env) > 0 {
+			cmd.Env = config.Env
+		}
+		transport = &mcp.CommandTransport{Command: cmd}
 	case MCPSse:
-		c, err = client.NewSSEMCPClient(
-			config.URL,
-			client.WithHeaders(config.Headers),
-		)
+		httpClient := &http.Client{}
+		if len(config.Headers) > 0 {
+			transport := http.DefaultTransport.(*http.Transport).Clone()
+			httpClient.Transport = &headerTransport{
+				base:    transport,
+				headers: config.Headers,
+			}
+		}
+		transport = &mcp.SSEClientTransport{
+			Endpoint:   config.URL,
+			HTTPClient: httpClient,
+		}
 	default:
 		return nil, fmt.Errorf("invalid MCP type: %s", config.Type)
 	}
 
+	session, err := client.Connect(ctx, transport, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to connect MCP client: %w", err)
 	}
 
-	err = c.Start(ctx)
-	if err != nil {
-		c.Close()
-		return nil, fmt.Errorf("failed to start MCP client: %w", err)
-	}
-
-	initRequest := mcp.InitializeRequest{}
-	initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
-	initRequest.Params.ClientInfo = mcp.Implementation{
-		Name:    "llm",
-		Version: "0.0.1",
-	}
-
-	_, err = c.Initialize(ctx, initRequest)
-	if err != nil {
-		c.Close()
-		return nil, fmt.Errorf("failed to initialize MCP client: %w", err)
-	}
-
-	p.clients[name] = c
+	wrapper := &sessionWrapper{session: session}
+	p.clients[name] = wrapper
 	p.configs[name] = config
-	return c, nil
+	return wrapper, nil
+}
+
+type headerTransport struct {
+	base    http.RoundTripper
+	headers map[string]string
+}
+
+func (h *headerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	for key, value := range h.headers {
+		req.Header.Set(key, value)
+	}
+	return h.base.RoundTrip(req)
 }
 
 func (p *mcpClientPool) closeAll() {

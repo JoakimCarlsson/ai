@@ -33,9 +33,15 @@ func main() {
 func httpExample(ctx context.Context) {
 
 	mcpServers := map[string]tool.MCPServer{
-		"local": {
-			Type: tool.MCPStdio,
-			URL:  "http://localhost:9349",
+		"context7": {
+			Type:    tool.MCPStdio,
+			Command: "npx",
+			Args: []string{
+				"-y",
+				"@upstash/context7-mcp",
+				"--api-key",
+				"ctx7sk-83259b90-6b4f-4eb6-b1ae-6dceb5507a17",
+			},
 		},
 	}
 

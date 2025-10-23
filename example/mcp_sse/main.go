@@ -31,15 +31,11 @@ func main() {
 }
 
 func httpExample(ctx context.Context) {
-	apiKey := ""
 
 	mcpServers := map[string]tool.MCPServer{
-		"context7": {
+		"local": {
 			Type: tool.MCPSse,
-			URL:  "https://mcp.context7.com/mcp",
-			Headers: map[string]string{
-				"CONTEXT7_API_KEY": apiKey,
-			},
+			URL:  "http://localhost:9349/mcp",
 		},
 	}
 
