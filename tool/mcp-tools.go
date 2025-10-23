@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 
 	"github.com/mark3labs/mcp-go/mcp"
 )
@@ -113,37 +112,39 @@ func newMcpTool(
 
 var mcpTools []BaseTool
 
-func getTools(ctx context.Context, name string, m MCPServer) []BaseTool {
+func getTools(ctx context.Context, name string, m MCPServer) ([]BaseTool, error) {
 	var stdioTools []BaseTool
 	c, err := pool.getClient(ctx, name, m)
 	if err != nil {
-		slog.Error("error getting mcp client", "error", err)
-		return stdioTools
+		return nil, fmt.Errorf("error getting mcp client for %s: %w", name, err)
 	}
 
 	toolsRequest := mcp.ListToolsRequest{}
 	tools, err := c.ListTools(ctx, toolsRequest)
 	if err != nil {
-		slog.Error("error listing tools", "error", err)
-		return stdioTools
+		return nil, fmt.Errorf("error listing tools for %s: %w", name, err)
 	}
 	for _, t := range tools.Tools {
 		stdioTools = append(stdioTools, newMcpTool(name, t, m))
 	}
-	return stdioTools
+	return stdioTools, nil
 }
 
 // GetMcpTools connects to MCP servers and returns available tools
 func GetMcpTools(
 	ctx context.Context,
 	servers map[string]MCPServer,
-) []BaseTool {
+) ([]BaseTool, error) {
 	if len(mcpTools) > 0 {
-		return mcpTools
+		return mcpTools, nil
 	}
 	for name, m := range servers {
-		mcpTools = append(mcpTools, getTools(ctx, name, m)...)
+		tools, err := getTools(ctx, name, m)
+		if err != nil {
+			return nil, err
+		}
+		mcpTools = append(mcpTools, tools...)
 	}
 
-	return mcpTools
+	return mcpTools, nil
 }

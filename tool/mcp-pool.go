@@ -3,7 +3,6 @@ package tool
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"sync"
 
 	"github.com/mark3labs/mcp-go/client"
@@ -84,10 +83,8 @@ func (p *mcpClientPool) closeAll() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	for name, client := range p.clients {
-		if err := client.Close(); err != nil {
-			slog.Error("error closing MCP client", "name", name, "error", err)
-		}
+	for _, client := range p.clients {
+		client.Close()
 	}
 	p.clients = make(map[string]MCPClient)
 	p.configs = make(map[string]MCPServer)
