@@ -535,7 +535,7 @@ response, _ := client.SendMessages(ctx, messages, nil)
 
 **Supported servers**: Ollama, LocalAI, vLLM, LM Studio, or any OpenAI-compatible API.
 
-See `example/ollama/main.go` for complete examples.
+See `example/byom/main.go` for complete example.
 
 ### MCP (Model Context Protocol) Integration
 
