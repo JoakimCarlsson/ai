@@ -18,7 +18,7 @@ func main() {
 		model.WithModelID("gpt-oss-20b"),
 		model.WithAPIModel("openai/gpt-oss-20b"),
 		model.WithName("GPT OSS 20B"),
-		model.WithContextWindow(128_000),
+		model.WithContextWindow(131_000),
 		model.WithDefaultMaxTokens(4096),
 		model.WithStructuredOutput(false),
 	)
