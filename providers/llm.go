@@ -48,6 +48,7 @@ package llm
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/joakimcarlsson/ai/message"
@@ -59,6 +60,92 @@ import (
 
 // maxRetries defines the maximum number of retry attempts for failed requests.
 const maxRetries = 8
+
+// customProviders stores registered custom provider configurations.
+var customProviders = make(map[model.ModelProvider]CustomProviderConfig)
+var customProvidersMu sync.RWMutex
+
+// CustomProviderConfig defines configuration for OpenAI-compatible custom providers.
+// This enables BYOM (Bring Your Own Model) support for Ollama, local endpoints,
+// and custom API providers that implement OpenAI-compatible APIs.
+//
+// Example usage:
+//
+//	ollama := llm.RegisterCustomProvider("ollama", llm.CustomProviderConfig{
+//	    BaseURL: "http://localhost:11434/v1",
+//	    DefaultModel: model.NewCustomModel(
+//	        model.WithModelID("llama3.2"),
+//	        model.WithAPIModel("llama3.2:latest"),
+//	    ),
+//	})
+//	client, _ := llm.NewLLM(ollama)
+type CustomProviderConfig struct {
+	// BaseURL is the base URL for the custom provider's API endpoint.
+	// For Ollama, this is typically "http://localhost:11434/v1".
+	BaseURL string
+
+	// ExtraHeaders contains additional HTTP headers to include in requests.
+	// Useful for authentication tokens, tenant IDs, or custom headers.
+	ExtraHeaders map[string]string
+
+	// DefaultModel is the model configuration to use when WithModel is not specified.
+	// This can be created using model.NewCustomModel().
+	DefaultModel model.Model
+}
+
+// RegisterCustomProvider registers an OpenAI-compatible custom provider for use with NewLLM.
+// Returns a ModelProvider constant that can be passed to NewLLM() to create clients.
+//
+// Custom providers must implement OpenAI-compatible APIs for message formatting and streaming.
+// This works well with Ollama, LocalAI, and other OpenAI-compatible local inference servers.
+//
+// Example with Ollama:
+//
+//	llamaModel := model.NewCustomModel(
+//	    model.WithModelID("llama3.2"),
+//	    model.WithAPIModel("llama3.2:latest"),
+//	    model.WithContextWindow(128_000),
+//	    model.WithStructuredOutput(true),
+//	)
+//
+//	ollama := llm.RegisterCustomProvider("ollama", llm.CustomProviderConfig{
+//	    BaseURL: "http://localhost:11434/v1",
+//	    DefaultModel: llamaModel,
+//	})
+//
+//	client, err := llm.NewLLM(ollama,
+//	    llm.WithMaxTokens(2000),
+//	    llm.WithTemperature(0.7),
+//	)
+//
+// Example with authentication:
+//
+//	custom := llm.RegisterCustomProvider("my-service", llm.CustomProviderConfig{
+//	    BaseURL: "https://my-ai-service.com/v1",
+//	    ExtraHeaders: map[string]string{
+//	        "X-API-Key": "secret-key",
+//	    },
+//	    DefaultModel: customModel,
+//	})
+//
+//	client, _ := llm.NewLLM(custom, llm.WithAPIKey("bearer-token"))
+func RegisterCustomProvider(name string, config CustomProviderConfig) model.ModelProvider {
+	customProvidersMu.Lock()
+	defer customProvidersMu.Unlock()
+
+	providerID := model.ModelProvider("custom:" + name)
+	customProviders[providerID] = config
+	return providerID
+}
+
+// getCustomProvider safely retrieves a custom provider configuration.
+func getCustomProvider(provider model.ModelProvider) (CustomProviderConfig, bool) {
+	customProvidersMu.RLock()
+	defer customProvidersMu.RUnlock()
+
+	config, exists := customProviders[provider]
+	return config, exists
+}
 
 // TokenUsage tracks the number of tokens consumed during an LLM interaction.
 type TokenUsage struct {
@@ -264,6 +351,24 @@ func NewLLM(
 		clientOptions.openaiOptions = append(clientOptions.openaiOptions,
 			WithOpenAIBaseURL("https://api.x.ai/v1"),
 		)
+		return &baseLLM[OpenAIClient]{
+			options: clientOptions,
+			client:  newOpenAIClient(clientOptions),
+		}, nil
+	}
+
+	if config, exists := getCustomProvider(llmProvider); exists {
+		clientOptions.openaiOptions = append(clientOptions.openaiOptions,
+			WithOpenAIBaseURL(config.BaseURL),
+		)
+		if config.ExtraHeaders != nil {
+			clientOptions.openaiOptions = append(clientOptions.openaiOptions,
+				WithOpenAIExtraHeaders(config.ExtraHeaders),
+			)
+		}
+		if clientOptions.model.ID == "" && config.DefaultModel.ID != "" {
+			clientOptions.model = config.DefaultModel
+		}
 		return &baseLLM[OpenAIClient]{
 			options: clientOptions,
 			client:  newOpenAIClient(clientOptions),
