@@ -511,6 +511,32 @@ llm.WithOpenAIOptions(
 
 ## Advanced Features
 
+### BYOM (Bring Your Own Model)
+
+Use Ollama, LocalAI, or any OpenAI-compatible inference server with 3 simple steps:
+
+```go
+// 1. Create model
+llamaModel := model.NewCustomModel(
+    model.WithModelID("llama3.2"),
+    model.WithAPIModel("llama3.2:latest"),
+)
+
+// 2. Register provider
+ollama := llm.RegisterCustomProvider("ollama", llm.CustomProviderConfig{
+    BaseURL:      "http://localhost:11434/v1",
+    DefaultModel: llamaModel,
+})
+
+// 3. Use it
+client, _ := llm.NewLLM(ollama)
+response, _ := client.SendMessages(ctx, messages, nil)
+```
+
+**Supported servers**: Ollama, LocalAI, vLLM, LM Studio, or any OpenAI-compatible API.
+
+See `example/byom/main.go` for complete example.
+
 ### MCP (Model Context Protocol) Integration
 
 This library integrates with the official [Model Context Protocol Go SDK](https://github.com/modelcontextprotocol/go-sdk) to provide seamless access to MCP servers and their tools.
