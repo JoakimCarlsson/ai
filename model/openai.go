@@ -3,21 +3,30 @@ package model
 const (
 	ProviderOpenAI ModelProvider = "openai"
 
-	GPT41        ModelID = "gpt-4.1"
-	GPT41Mini    ModelID = "gpt-4.1-mini"
-	GPT41Nano    ModelID = "gpt-4.1-nano"
-	GPT45Preview ModelID = "gpt-4.5-preview"
-	GPT4o        ModelID = "gpt-4o"
-	GPT4oMini    ModelID = "gpt-4o-mini"
-	O1           ModelID = "o1"
-	O1Pro        ModelID = "o1-pro"
-	O1Mini       ModelID = "o1-mini"
-	O3           ModelID = "o3"
-	O3Mini       ModelID = "o3-mini"
-	O4Mini       ModelID = "o4-mini"
-	GPT5         ModelID = "gpt-5"
-	GPT5Mini     ModelID = "gpt-5-mini"
-	GPT5Nano     ModelID = "gpt-5-nano"
+	GPT41           ModelID = "gpt-4.1"
+	GPT41Mini       ModelID = "gpt-4.1-mini"
+	GPT41Nano       ModelID = "gpt-4.1-nano"
+	GPT45Preview    ModelID = "gpt-4.5-preview"
+	GPT4o           ModelID = "gpt-4o"
+	GPT4oMini       ModelID = "gpt-4o-mini"
+	O1              ModelID = "o1"
+	O1Pro           ModelID = "o1-pro"
+	O1Mini          ModelID = "o1-mini"
+	O3              ModelID = "o3"
+	O3Mini          ModelID = "o3-mini"
+	O4Mini          ModelID = "o4-mini"
+	GPT5            ModelID = "gpt-5"
+	GPT5Mini        ModelID = "gpt-5-mini"
+	GPT5Nano        ModelID = "gpt-5-nano"
+	GPT51           ModelID = "gpt-5.1"
+	GPT51Mini       ModelID = "gpt-5.1-mini"
+	GPT51Nano       ModelID = "gpt-5.1-nano"
+	GPT51ChatLatest ModelID = "gpt-5.1-chat-latest"
+	GPT5ChatLatest  ModelID = "gpt-5-chat-latest"
+	GPT51Codex      ModelID = "gpt-5.1-codex"
+	GPT5Codex       ModelID = "gpt-5-codex"
+	GPT51CodexMini  ModelID = "gpt-5.1-codex-mini"
+	GPT5Pro         ModelID = "gpt-5-pro"
 
 	TextEmbedding3Large ModelID = "text-embedding-3-large"
 	TextEmbedding3Small ModelID = "text-embedding-3-small"
@@ -240,6 +249,141 @@ var OpenAIModels = map[ModelID]Model{
 		CostPer1MInCached:     0.005,
 		CostPer1MOutCached:    0.0,
 		CostPer1MOut:          0.40,
+		ContextWindow:         200_000,
+		DefaultMaxTokens:      50000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	GPT51: {
+		ID:                    GPT51,
+		Name:                  "GPT-5.1",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5.1",
+		CostPer1MIn:           1.25,
+		CostPer1MInCached:     0.125,
+		CostPer1MOutCached:    0.0,
+		CostPer1MOut:          10.00,
+		ContextWindow:         200_000,
+		DefaultMaxTokens:      50000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	GPT51Mini: {
+		ID:                    GPT51Mini,
+		Name:                  "GPT-5.1 mini",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5.1-mini",
+		CostPer1MIn:           0.25,
+		CostPer1MInCached:     0.025,
+		CostPer1MOutCached:    0.0,
+		CostPer1MOut:          2.00,
+		ContextWindow:         200_000,
+		DefaultMaxTokens:      50000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	GPT51Nano: {
+		ID:                    GPT51Nano,
+		Name:                  "GPT-5.1 nano",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5.1-nano",
+		CostPer1MIn:           0.05,
+		CostPer1MInCached:     0.005,
+		CostPer1MOutCached:    0.0,
+		CostPer1MOut:          0.40,
+		ContextWindow:         200_000,
+		DefaultMaxTokens:      50000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	GPT51ChatLatest: {
+		ID:                    GPT51ChatLatest,
+		Name:                  "GPT-5.1 chat latest",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5.1-chat-latest",
+		CostPer1MIn:           1.25,
+		CostPer1MInCached:     0.125,
+		CostPer1MOutCached:    0.0,
+		CostPer1MOut:          10.00,
+		ContextWindow:         200_000,
+		DefaultMaxTokens:      50000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	GPT5ChatLatest: {
+		ID:                    GPT5ChatLatest,
+		Name:                  "GPT-5 chat latest",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5-chat-latest",
+		CostPer1MIn:           1.25,
+		CostPer1MInCached:     0.125,
+		CostPer1MOutCached:    0.0,
+		CostPer1MOut:          10.00,
+		ContextWindow:         200_000,
+		DefaultMaxTokens:      50000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	GPT51Codex: {
+		ID:                    GPT51Codex,
+		Name:                  "GPT-5.1 codex",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5.1-codex",
+		CostPer1MIn:           1.25,
+		CostPer1MInCached:     0.125,
+		CostPer1MOutCached:    0.0,
+		CostPer1MOut:          10.00,
+		ContextWindow:         200_000,
+		DefaultMaxTokens:      50000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	GPT5Codex: {
+		ID:                    GPT5Codex,
+		Name:                  "GPT-5 codex",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5-codex",
+		CostPer1MIn:           1.25,
+		CostPer1MInCached:     0.125,
+		CostPer1MOutCached:    0.0,
+		CostPer1MOut:          10.00,
+		ContextWindow:         200_000,
+		DefaultMaxTokens:      50000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	GPT51CodexMini: {
+		ID:                    GPT51CodexMini,
+		Name:                  "GPT-5.1 codex mini",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5.1-codex-mini",
+		CostPer1MIn:           0.25,
+		CostPer1MInCached:     0.025,
+		CostPer1MOutCached:    0.0,
+		CostPer1MOut:          2.00,
+		ContextWindow:         200_000,
+		DefaultMaxTokens:      50000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	GPT5Pro: {
+		ID:                    GPT5Pro,
+		Name:                  "GPT-5 pro",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5-pro",
+		CostPer1MIn:           15.00,
+		CostPer1MInCached:     0.0,
+		CostPer1MOutCached:    0.0,
+		CostPer1MOut:          120.00,
 		ContextWindow:         200_000,
 		DefaultMaxTokens:      50000,
 		CanReason:             true,
