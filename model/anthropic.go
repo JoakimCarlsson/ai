@@ -5,13 +5,13 @@ const (
 
 	Claude35Sonnet ModelID = "claude-3.5-sonnet"
 	Claude3Haiku   ModelID = "claude-3-haiku"
-	Claude37Sonnet ModelID = "claude-3.7-sonnet"
 	Claude35Haiku  ModelID = "claude-3.5-haiku"
 	Claude3Opus    ModelID = "claude-3-opus"
 	Claude4Opus    ModelID = "claude-4-opus"
 	Claude41Opus   ModelID = "claude-4.1-opus"
 	Claude4Sonnet  ModelID = "claude-4-sonnet"
 	Claude45Sonnet ModelID = "claude-4.5-sonnet"
+	Claude45Opus   ModelID = "claude-4.5-opus"
 	Claude45Haiku  ModelID = "claude-4.5-haiku"
 )
 
@@ -41,21 +41,6 @@ var AnthropicModels = map[ModelID]Model{
 		CostPer1MOut:          1.25,
 		ContextWindow:         200000,
 		DefaultMaxTokens:      4096,
-		SupportsAttachments:   true,
-		SupportsStructuredOut: false,
-	},
-	Claude37Sonnet: {
-		ID:                    Claude37Sonnet,
-		Name:                  "Claude 3.7 Sonnet",
-		Provider:              ProviderAnthropic,
-		APIModel:              "claude-3-7-sonnet-latest",
-		CostPer1MIn:           3.0,
-		CostPer1MInCached:     3.75,
-		CostPer1MOutCached:    0.30,
-		CostPer1MOut:          15.0,
-		ContextWindow:         200000,
-		DefaultMaxTokens:      50000,
-		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: false,
 	},
@@ -141,6 +126,21 @@ var AnthropicModels = map[ModelID]Model{
 		CostPer1MOut:          15.0,
 		ContextWindow:         200000,
 		DefaultMaxTokens:      50000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: false,
+	},
+	Claude45Opus: {
+		ID:                    Claude45Opus,
+		Name:                  "Claude 4.5 Opus",
+		Provider:              ProviderAnthropic,
+		APIModel:              "claude-opus-4-5-20251101",
+		CostPer1MIn:           5.0,
+		CostPer1MInCached:     6.25,
+		CostPer1MOutCached:    0.50,
+		CostPer1MOut:          25.0,
+		ContextWindow:         200000,
+		DefaultMaxTokens:      4096,
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: false,

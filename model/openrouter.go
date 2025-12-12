@@ -18,7 +18,6 @@ const (
 	OpenRouterGemini25       ModelID = "openrouter.gemini-2.5"
 	OpenRouterClaude35Sonnet ModelID = "openrouter.claude-3.5-sonnet"
 	OpenRouterClaude3Haiku   ModelID = "openrouter.claude-3-haiku"
-	OpenRouterClaude37Sonnet ModelID = "openrouter.claude-3.7-sonnet"
 	OpenRouterClaude35Haiku  ModelID = "openrouter.claude-3.5-haiku"
 	OpenRouterClaude3Opus    ModelID = "openrouter.claude-3-opus"
 )
@@ -222,20 +221,6 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOutCached:    AnthropicModels[Claude3Haiku].CostPer1MOutCached,
 		ContextWindow:         AnthropicModels[Claude3Haiku].ContextWindow,
 		DefaultMaxTokens:      AnthropicModels[Claude3Haiku].DefaultMaxTokens,
-		SupportsStructuredOut: false,
-	},
-	OpenRouterClaude37Sonnet: {
-		ID:                    OpenRouterClaude37Sonnet,
-		Name:                  "OpenRouter – Claude 3.7 Sonnet",
-		Provider:              ProviderOpenRouter,
-		APIModel:              "anthropic/claude-3.7-sonnet",
-		CostPer1MIn:           AnthropicModels[Claude37Sonnet].CostPer1MIn,
-		CostPer1MInCached:     AnthropicModels[Claude37Sonnet].CostPer1MInCached,
-		CostPer1MOut:          AnthropicModels[Claude37Sonnet].CostPer1MOut,
-		CostPer1MOutCached:    AnthropicModels[Claude37Sonnet].CostPer1MOutCached,
-		ContextWindow:         AnthropicModels[Claude37Sonnet].ContextWindow,
-		DefaultMaxTokens:      AnthropicModels[Claude37Sonnet].DefaultMaxTokens,
-		CanReason:             AnthropicModels[Claude37Sonnet].CanReason,
 		SupportsStructuredOut: false,
 	},
 	OpenRouterClaude35Haiku: {
