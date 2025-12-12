@@ -3,16 +3,18 @@ package model
 const (
 	ProviderXAI ModelProvider = "xai"
 
-	XAIGrok4                 ModelID = "grok-4-0709"
-	XAIGrok4FastReasoning    ModelID = "grok-4-fast-reasoning"
-	XAIGrok4FastNonReasoning ModelID = "grok-4-fast-non-reasoning"
-	XAIGrok3                 ModelID = "grok-3"
-	XAIGrok3Mini             ModelID = "grok-3-mini"
-	XAIGrok3Fast             ModelID = "grok-3-fast"
-	XAIGrok3MiniFast         ModelID = "grok-3-mini-fast"
-	XAIGrok2Vision           ModelID = "grok-2-vision-1212"
-	XAIGrokCodeFast1         ModelID = "grok-code-fast-1"
-	XAIGrok2Image            ModelID = "grok-2-image-1212"
+	XAIGrok4                  ModelID = "grok-4-0709"
+	XAIGrok4FastReasoning     ModelID = "grok-4-fast-reasoning"
+	XAIGrok4FastNonReasoning  ModelID = "grok-4-fast-non-reasoning"
+	XAIGrok41FastReasoning    ModelID = "grok-4-1-fast-reasoning"
+	XAIGrok41FastNonReasoning ModelID = "grok-4-1-fast-non-reasoning"
+	XAIGrok3                  ModelID = "grok-3"
+	XAIGrok3Mini              ModelID = "grok-3-mini"
+	XAIGrok3Fast              ModelID = "grok-3-fast"
+	XAIGrok3MiniFast          ModelID = "grok-3-mini-fast"
+	XAIGrok2Vision            ModelID = "grok-2-vision-1212"
+	XAIGrokCodeFast1          ModelID = "grok-code-fast-1"
+	XAIGrok2Image             ModelID = "grok-2-image-1212"
 )
 
 var XAIModels = map[ModelID]Model{
@@ -120,6 +122,32 @@ var XAIModels = map[ModelID]Model{
 		DefaultMaxTokens:      20_000,
 		SupportsStructuredOut: true,
 	},
+	XAIGrok41FastReasoning: {
+		ID:                    XAIGrok41FastReasoning,
+		Name:                  "Grok4.1 Fast Reasoning",
+		Provider:              ProviderXAI,
+		APIModel:              "grok-4-1-fast-reasoning",
+		CostPer1MIn:           0.20,
+		CostPer1MInCached:     0.05,
+		CostPer1MOut:          0.50,
+		CostPer1MOutCached:    0,
+		ContextWindow:         2_000_000,
+		DefaultMaxTokens:      20_000,
+		SupportsStructuredOut: true,
+	},
+	XAIGrok41FastNonReasoning: {
+		ID:                    XAIGrok41FastNonReasoning,
+		Name:                  "Grok4.1 Fast Non-Reasoning",
+		Provider:              ProviderXAI,
+		APIModel:              "grok-4-1-fast-non-reasoning",
+		CostPer1MIn:           0.20,
+		CostPer1MInCached:     0.05,
+		CostPer1MOut:          0.50,
+		CostPer1MOutCached:    0,
+		ContextWindow:         2_000_000,
+		DefaultMaxTokens:      20_000,
+		SupportsStructuredOut: true,
+	},
 	XAIGrokCodeFast1: {
 		ID:                    XAIGrokCodeFast1,
 		Name:                  "Grok Code Fast 1",
@@ -129,7 +157,7 @@ var XAIModels = map[ModelID]Model{
 		CostPer1MInCached:     0.02,
 		CostPer1MOut:          1.50,
 		CostPer1MOutCached:    0,
-		ContextWindow:         2_000_000,
+		ContextWindow:         256_000,
 		DefaultMaxTokens:      20_000,
 		SupportsStructuredOut: true,
 	},
