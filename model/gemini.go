@@ -3,7 +3,9 @@ package model
 const (
 	ProviderGemini ModelProvider = "gemini"
 
+	Gemini3Pro        ModelID = "gemini-3-pro"
 	Gemini25Flash     ModelID = "gemini-2.5-flash"
+	Gemini25FlashLite ModelID = "gemini-2.5-flash-lite"
 	Gemini25          ModelID = "gemini-2.5"
 	Gemini20Flash     ModelID = "gemini-2.0-flash"
 	Gemini20FlashLite ModelID = "gemini-2.0-flash-lite"
@@ -16,15 +18,44 @@ const (
 )
 
 var GeminiModels = map[ModelID]Model{
+	Gemini3Pro: {
+		ID:                    Gemini3Pro,
+		Name:                  "Gemini 3 Pro",
+		Provider:              ProviderGemini,
+		APIModel:              "gemini-3-pro",
+		CostPer1MIn:           2.00,
+		CostPer1MInCached:     0.20,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          12.00,
+		ContextWindow:         1000000,
+		DefaultMaxTokens:      64000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
 	Gemini25Flash: {
 		ID:                    Gemini25Flash,
 		Name:                  "Gemini 2.5 Flash",
 		Provider:              ProviderGemini,
-		APIModel:              "gemini-2.5-flash-preview-04-17",
+		APIModel:              "gemini-2.5-flash",
 		CostPer1MIn:           0.15,
-		CostPer1MInCached:     0,
+		CostPer1MInCached:     0.0375,
 		CostPer1MOutCached:    0,
 		CostPer1MOut:          0.60,
+		ContextWindow:         1000000,
+		DefaultMaxTokens:      50000,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	Gemini25FlashLite: {
+		ID:                    Gemini25FlashLite,
+		Name:                  "Gemini 2.5 Flash Lite",
+		Provider:              ProviderGemini,
+		APIModel:              "gemini-2.5-flash-lite",
+		CostPer1MIn:           0.10,
+		CostPer1MInCached:     0.01,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          0.40,
 		ContextWindow:         1000000,
 		DefaultMaxTokens:      50000,
 		SupportsAttachments:   true,
@@ -34,13 +65,13 @@ var GeminiModels = map[ModelID]Model{
 		ID:                    Gemini25,
 		Name:                  "Gemini 2.5 Pro",
 		Provider:              ProviderGemini,
-		APIModel:              "gemini-2.5-pro-preview-03-25",
+		APIModel:              "gemini-2.5-pro",
 		CostPer1MIn:           1.25,
-		CostPer1MInCached:     0,
+		CostPer1MInCached:     0.3125,
 		CostPer1MOutCached:    0,
 		CostPer1MOut:          10,
 		ContextWindow:         1000000,
-		DefaultMaxTokens:      50000,
+		DefaultMaxTokens:      64000,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 	},
