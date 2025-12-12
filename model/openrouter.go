@@ -3,23 +3,30 @@ package model
 const (
 	ProviderOpenRouter ModelProvider = "openrouter"
 
-	OpenRouterGPT41          ModelID = "openrouter.gpt-4.1"
-	OpenRouterGPT41Mini      ModelID = "openrouter.gpt-4.1-mini"
-	OpenRouterGPT41Nano      ModelID = "openrouter.gpt-4.1-nano"
-	OpenRouterGPT4o          ModelID = "openrouter.gpt-4o"
-	OpenRouterGPT4oMini      ModelID = "openrouter.gpt-4o-mini"
-	OpenRouterO1             ModelID = "openrouter.o1"
-	OpenRouterO1Pro          ModelID = "openrouter.o1-pro"
-	OpenRouterO1Mini         ModelID = "openrouter.o1-mini"
-	OpenRouterO3             ModelID = "openrouter.o3"
-	OpenRouterO3Mini         ModelID = "openrouter.o3-mini"
-	OpenRouterO4Mini         ModelID = "openrouter.o4-mini"
-	OpenRouterGemini25Flash  ModelID = "openrouter.gemini-2.5-flash"
-	OpenRouterGemini25       ModelID = "openrouter.gemini-2.5"
-	OpenRouterClaude35Sonnet ModelID = "openrouter.claude-3.5-sonnet"
-	OpenRouterClaude3Haiku   ModelID = "openrouter.claude-3-haiku"
-	OpenRouterClaude35Haiku  ModelID = "openrouter.claude-3.5-haiku"
-	OpenRouterClaude3Opus    ModelID = "openrouter.claude-3-opus"
+	OpenRouterGPT41             ModelID = "openrouter.gpt-4.1"
+	OpenRouterGPT41Mini         ModelID = "openrouter.gpt-4.1-mini"
+	OpenRouterGPT41Nano         ModelID = "openrouter.gpt-4.1-nano"
+	OpenRouterGPT4o             ModelID = "openrouter.gpt-4o"
+	OpenRouterGPT4oMini         ModelID = "openrouter.gpt-4o-mini"
+	OpenRouterO1                ModelID = "openrouter.o1"
+	OpenRouterO1Pro             ModelID = "openrouter.o1-pro"
+	OpenRouterO1Mini            ModelID = "openrouter.o1-mini"
+	OpenRouterO3                ModelID = "openrouter.o3"
+	OpenRouterO3Pro             ModelID = "openrouter.o3-pro"
+	OpenRouterO3Mini            ModelID = "openrouter.o3-mini"
+	OpenRouterO4Mini            ModelID = "openrouter.o4-mini"
+	OpenRouterGPT52             ModelID = "openrouter.gpt-5.2"
+	OpenRouterGPT52Pro          ModelID = "openrouter.gpt-5.2-pro"
+	OpenRouterGPT52Instant      ModelID = "openrouter.gpt-5.2-instant"
+	OpenRouterGemini3Pro        ModelID = "openrouter.gemini-3-pro"
+	OpenRouterGemini25Flash     ModelID = "openrouter.gemini-2.5-flash"
+	OpenRouterGemini25FlashLite ModelID = "openrouter.gemini-2.5-flash-lite"
+	OpenRouterGemini25          ModelID = "openrouter.gemini-2.5"
+	OpenRouterClaude35Sonnet    ModelID = "openrouter.claude-3.5-sonnet"
+	OpenRouterClaude3Haiku      ModelID = "openrouter.claude-3-haiku"
+	OpenRouterClaude35Haiku     ModelID = "openrouter.claude-3.5-haiku"
+	OpenRouterClaude3Opus       ModelID = "openrouter.claude-3-opus"
+	OpenRouterClaude45Opus      ModelID = "openrouter.claude-4.5-opus"
 )
 
 var OpenRouterModels = map[ModelID]Model{
@@ -171,11 +178,67 @@ var OpenRouterModels = map[ModelID]Model{
 		CanReason:             OpenAIModels[O4Mini].CanReason,
 		SupportsStructuredOut: OpenAIModels[O4Mini].SupportsStructuredOut,
 	},
+	OpenRouterO3Pro: {
+		ID:                    OpenRouterO3Pro,
+		Name:                  "OpenRouter – o3 pro",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "openai/o3-pro",
+		CostPer1MIn:           OpenAIModels[O3Pro].CostPer1MIn,
+		CostPer1MInCached:     OpenAIModels[O3Pro].CostPer1MInCached,
+		CostPer1MOut:          OpenAIModels[O3Pro].CostPer1MOut,
+		CostPer1MOutCached:    OpenAIModels[O3Pro].CostPer1MOutCached,
+		ContextWindow:         OpenAIModels[O3Pro].ContextWindow,
+		DefaultMaxTokens:      OpenAIModels[O3Pro].DefaultMaxTokens,
+		CanReason:             OpenAIModels[O3Pro].CanReason,
+		SupportsStructuredOut: OpenAIModels[O3Pro].SupportsStructuredOut,
+	},
+	OpenRouterGPT52: {
+		ID:                    OpenRouterGPT52,
+		Name:                  "OpenRouter – GPT-5.2",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "openai/gpt-5.2",
+		CostPer1MIn:           OpenAIModels[GPT52].CostPer1MIn,
+		CostPer1MInCached:     OpenAIModels[GPT52].CostPer1MInCached,
+		CostPer1MOut:          OpenAIModels[GPT52].CostPer1MOut,
+		CostPer1MOutCached:    OpenAIModels[GPT52].CostPer1MOutCached,
+		ContextWindow:         OpenAIModels[GPT52].ContextWindow,
+		DefaultMaxTokens:      OpenAIModels[GPT52].DefaultMaxTokens,
+		CanReason:             OpenAIModels[GPT52].CanReason,
+		SupportsStructuredOut: OpenAIModels[GPT52].SupportsStructuredOut,
+	},
+	OpenRouterGPT52Pro: {
+		ID:                    OpenRouterGPT52Pro,
+		Name:                  "OpenRouter – GPT-5.2 Pro",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "openai/gpt-5.2-pro",
+		CostPer1MIn:           OpenAIModels[GPT52Pro].CostPer1MIn,
+		CostPer1MInCached:     OpenAIModels[GPT52Pro].CostPer1MInCached,
+		CostPer1MOut:          OpenAIModels[GPT52Pro].CostPer1MOut,
+		CostPer1MOutCached:    OpenAIModels[GPT52Pro].CostPer1MOutCached,
+		ContextWindow:         OpenAIModels[GPT52Pro].ContextWindow,
+		DefaultMaxTokens:      OpenAIModels[GPT52Pro].DefaultMaxTokens,
+		CanReason:             OpenAIModels[GPT52Pro].CanReason,
+		SupportsStructuredOut: OpenAIModels[GPT52Pro].SupportsStructuredOut,
+	},
+	OpenRouterGPT52Instant: {
+		ID:                    OpenRouterGPT52Instant,
+		Name:                  "OpenRouter – GPT-5.2 Instant",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "openai/gpt-5.2-chat-latest",
+		CostPer1MIn:           OpenAIModels[GPT52Instant].CostPer1MIn,
+		CostPer1MInCached:     OpenAIModels[GPT52Instant].CostPer1MInCached,
+		CostPer1MOut:          OpenAIModels[GPT52Instant].CostPer1MOut,
+		CostPer1MOutCached:    OpenAIModels[GPT52Instant].CostPer1MOutCached,
+		ContextWindow:         OpenAIModels[GPT52Instant].ContextWindow,
+		DefaultMaxTokens:      OpenAIModels[GPT52Instant].DefaultMaxTokens,
+		CanReason:             OpenAIModels[GPT52Instant].CanReason,
+		SupportsStructuredOut: OpenAIModels[GPT52Instant].SupportsStructuredOut,
+	},
 	OpenRouterGemini25Flash: {
 		ID:                    OpenRouterGemini25Flash,
 		Name:                  "OpenRouter – Gemini 2.5 Flash",
 		Provider:              ProviderOpenRouter,
-		APIModel:              "google/gemini-2.5-flash-preview:thinking",
+		APIModel:              "google/gemini-2.5-flash",
 		CostPer1MIn:           GeminiModels[Gemini25Flash].CostPer1MIn,
 		CostPer1MInCached:     GeminiModels[Gemini25Flash].CostPer1MInCached,
 		CostPer1MOut:          GeminiModels[Gemini25Flash].CostPer1MOut,
@@ -188,7 +251,7 @@ var OpenRouterModels = map[ModelID]Model{
 		ID:                    OpenRouterGemini25,
 		Name:                  "OpenRouter – Gemini 2.5 Pro",
 		Provider:              ProviderOpenRouter,
-		APIModel:              "google/gemini-2.5-pro-preview-03-25",
+		APIModel:              "google/gemini-2.5-pro",
 		CostPer1MIn:           GeminiModels[Gemini25].CostPer1MIn,
 		CostPer1MInCached:     GeminiModels[Gemini25].CostPer1MInCached,
 		CostPer1MOut:          GeminiModels[Gemini25].CostPer1MOut,
@@ -196,6 +259,33 @@ var OpenRouterModels = map[ModelID]Model{
 		ContextWindow:         GeminiModels[Gemini25].ContextWindow,
 		DefaultMaxTokens:      GeminiModels[Gemini25].DefaultMaxTokens,
 		SupportsStructuredOut: GeminiModels[Gemini25].SupportsStructuredOut,
+	},
+	OpenRouterGemini3Pro: {
+		ID:                    OpenRouterGemini3Pro,
+		Name:                  "OpenRouter – Gemini 3 Pro",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "google/gemini-3-pro",
+		CostPer1MIn:           GeminiModels[Gemini3Pro].CostPer1MIn,
+		CostPer1MInCached:     GeminiModels[Gemini3Pro].CostPer1MInCached,
+		CostPer1MOut:          GeminiModels[Gemini3Pro].CostPer1MOut,
+		CostPer1MOutCached:    GeminiModels[Gemini3Pro].CostPer1MOutCached,
+		ContextWindow:         GeminiModels[Gemini3Pro].ContextWindow,
+		DefaultMaxTokens:      GeminiModels[Gemini3Pro].DefaultMaxTokens,
+		CanReason:             GeminiModels[Gemini3Pro].CanReason,
+		SupportsStructuredOut: GeminiModels[Gemini3Pro].SupportsStructuredOut,
+	},
+	OpenRouterGemini25FlashLite: {
+		ID:                    OpenRouterGemini25FlashLite,
+		Name:                  "OpenRouter – Gemini 2.5 Flash Lite",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "google/gemini-2.5-flash-lite",
+		CostPer1MIn:           GeminiModels[Gemini25FlashLite].CostPer1MIn,
+		CostPer1MInCached:     GeminiModels[Gemini25FlashLite].CostPer1MInCached,
+		CostPer1MOut:          GeminiModels[Gemini25FlashLite].CostPer1MOut,
+		CostPer1MOutCached:    GeminiModels[Gemini25FlashLite].CostPer1MOutCached,
+		ContextWindow:         GeminiModels[Gemini25FlashLite].ContextWindow,
+		DefaultMaxTokens:      GeminiModels[Gemini25FlashLite].DefaultMaxTokens,
+		SupportsStructuredOut: GeminiModels[Gemini25FlashLite].SupportsStructuredOut,
 	},
 	OpenRouterClaude35Sonnet: {
 		ID:                    OpenRouterClaude35Sonnet,
@@ -247,6 +337,20 @@ var OpenRouterModels = map[ModelID]Model{
 		CostPer1MOutCached:    AnthropicModels[Claude3Opus].CostPer1MOutCached,
 		ContextWindow:         AnthropicModels[Claude3Opus].ContextWindow,
 		DefaultMaxTokens:      AnthropicModels[Claude3Opus].DefaultMaxTokens,
+		SupportsStructuredOut: false,
+	},
+	OpenRouterClaude45Opus: {
+		ID:                    OpenRouterClaude45Opus,
+		Name:                  "OpenRouter – Claude 4.5 Opus",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "anthropic/claude-opus-4-5-20251101",
+		CostPer1MIn:           AnthropicModels[Claude45Opus].CostPer1MIn,
+		CostPer1MInCached:     AnthropicModels[Claude45Opus].CostPer1MInCached,
+		CostPer1MOut:          AnthropicModels[Claude45Opus].CostPer1MOut,
+		CostPer1MOutCached:    AnthropicModels[Claude45Opus].CostPer1MOutCached,
+		ContextWindow:         AnthropicModels[Claude45Opus].ContextWindow,
+		DefaultMaxTokens:      AnthropicModels[Claude45Opus].DefaultMaxTokens,
+		CanReason:             AnthropicModels[Claude45Opus].CanReason,
 		SupportsStructuredOut: false,
 	},
 }
