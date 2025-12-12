@@ -45,6 +45,11 @@ const (
 	OpenRouterQwen3CoderPlus    ModelID = "openrouter.qwen-3-coder-plus"
 	OpenRouterCommandRPlus      ModelID = "openrouter.command-r-plus"
 	OpenRouterCommandR          ModelID = "openrouter.command-r"
+	OpenRouterSonar             ModelID = "openrouter.sonar"
+	OpenRouterSonarPro          ModelID = "openrouter.sonar-pro"
+	OpenRouterSonarReasoning    ModelID = "openrouter.sonar-reasoning"
+	OpenRouterSonarReasoningPro ModelID = "openrouter.sonar-reasoning-pro"
+	OpenRouterSonarDeepResearch ModelID = "openrouter.sonar-deep-research"
 )
 
 var OpenRouterModels = map[ModelID]Model{
@@ -608,5 +613,75 @@ var OpenRouterModels = map[ModelID]Model{
 		ContextWindow:         CohereModels[CommandR].ContextWindow,
 		DefaultMaxTokens:      CohereModels[CommandR].DefaultMaxTokens,
 		SupportsStructuredOut: CohereModels[CommandR].SupportsStructuredOut,
+	},
+	OpenRouterSonar: {
+		ID:                    OpenRouterSonar,
+		Name:                  "OpenRouter – Sonar",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "perplexity/sonar",
+		CostPer1MIn:           PerplexityModels[Sonar].CostPer1MIn,
+		CostPer1MInCached:     PerplexityModels[Sonar].CostPer1MInCached,
+		CostPer1MOut:          PerplexityModels[Sonar].CostPer1MOut,
+		CostPer1MOutCached:    PerplexityModels[Sonar].CostPer1MOutCached,
+		ContextWindow:         PerplexityModels[Sonar].ContextWindow,
+		DefaultMaxTokens:      PerplexityModels[Sonar].DefaultMaxTokens,
+		CanReason:             PerplexityModels[Sonar].CanReason,
+		SupportsStructuredOut: PerplexityModels[Sonar].SupportsStructuredOut,
+	},
+	OpenRouterSonarPro: {
+		ID:                    OpenRouterSonarPro,
+		Name:                  "OpenRouter – Sonar Pro",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "perplexity/sonar-pro",
+		CostPer1MIn:           PerplexityModels[SonarPro].CostPer1MIn,
+		CostPer1MInCached:     PerplexityModels[SonarPro].CostPer1MInCached,
+		CostPer1MOut:          PerplexityModels[SonarPro].CostPer1MOut,
+		CostPer1MOutCached:    PerplexityModels[SonarPro].CostPer1MOutCached,
+		ContextWindow:         PerplexityModels[SonarPro].ContextWindow,
+		DefaultMaxTokens:      PerplexityModels[SonarPro].DefaultMaxTokens,
+		CanReason:             PerplexityModels[SonarPro].CanReason,
+		SupportsStructuredOut: PerplexityModels[SonarPro].SupportsStructuredOut,
+	},
+	OpenRouterSonarReasoning: {
+		ID:                    OpenRouterSonarReasoning,
+		Name:                  "OpenRouter – Sonar Reasoning",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "perplexity/sonar-reasoning",
+		CostPer1MIn:           PerplexityModels[SonarReasoning].CostPer1MIn,
+		CostPer1MInCached:     PerplexityModels[SonarReasoning].CostPer1MInCached,
+		CostPer1MOut:          PerplexityModels[SonarReasoning].CostPer1MOut,
+		CostPer1MOutCached:    PerplexityModels[SonarReasoning].CostPer1MOutCached,
+		ContextWindow:         PerplexityModels[SonarReasoning].ContextWindow,
+		DefaultMaxTokens:      PerplexityModels[SonarReasoning].DefaultMaxTokens,
+		CanReason:             PerplexityModels[SonarReasoning].CanReason,
+		SupportsStructuredOut: PerplexityModels[SonarReasoning].SupportsStructuredOut,
+	},
+	OpenRouterSonarReasoningPro: {
+		ID:                    OpenRouterSonarReasoningPro,
+		Name:                  "OpenRouter – Sonar Reasoning Pro",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "perplexity/sonar-reasoning-pro",
+		CostPer1MIn:           PerplexityModels[SonarReasoningPro].CostPer1MIn,
+		CostPer1MInCached:     PerplexityModels[SonarReasoningPro].CostPer1MInCached,
+		CostPer1MOut:          PerplexityModels[SonarReasoningPro].CostPer1MOut,
+		CostPer1MOutCached:    PerplexityModels[SonarReasoningPro].CostPer1MOutCached,
+		ContextWindow:         PerplexityModels[SonarReasoningPro].ContextWindow,
+		DefaultMaxTokens:      PerplexityModels[SonarReasoningPro].DefaultMaxTokens,
+		CanReason:             PerplexityModels[SonarReasoningPro].CanReason,
+		SupportsStructuredOut: PerplexityModels[SonarReasoningPro].SupportsStructuredOut,
+	},
+	OpenRouterSonarDeepResearch: {
+		ID:                    OpenRouterSonarDeepResearch,
+		Name:                  "OpenRouter – Sonar Deep Research",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "perplexity/sonar-deep-research",
+		CostPer1MIn:           PerplexityModels[SonarDeepResearch].CostPer1MIn,
+		CostPer1MInCached:     PerplexityModels[SonarDeepResearch].CostPer1MInCached,
+		CostPer1MOut:          PerplexityModels[SonarDeepResearch].CostPer1MOut,
+		CostPer1MOutCached:    PerplexityModels[SonarDeepResearch].CostPer1MOutCached,
+		ContextWindow:         PerplexityModels[SonarDeepResearch].ContextWindow,
+		DefaultMaxTokens:      PerplexityModels[SonarDeepResearch].DefaultMaxTokens,
+		CanReason:             PerplexityModels[SonarDeepResearch].CanReason,
+		SupportsStructuredOut: PerplexityModels[SonarDeepResearch].SupportsStructuredOut,
 	},
 }
