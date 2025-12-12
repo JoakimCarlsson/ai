@@ -3,17 +3,16 @@ package model
 const ProviderAzure ModelProvider = "azure"
 
 const (
-	AzureGPT41        ModelID = "azure.gpt-4.1"
-	AzureGPT41Mini    ModelID = "azure.gpt-4.1-mini"
-	AzureGPT41Nano    ModelID = "azure.gpt-4.1-nano"
-	AzureGPT45Preview ModelID = "azure.gpt-4.5-preview"
-	AzureGPT4o        ModelID = "azure.gpt-4o"
-	AzureGPT4oMini    ModelID = "azure.gpt-4o-mini"
-	AzureO1           ModelID = "azure.o1"
-	AzureO1Mini       ModelID = "azure.o1-mini"
-	AzureO3           ModelID = "azure.o3"
-	AzureO3Mini       ModelID = "azure.o3-mini"
-	AzureO4Mini       ModelID = "azure.o4-mini"
+	AzureGPT41     ModelID = "azure.gpt-4.1"
+	AzureGPT41Mini ModelID = "azure.gpt-4.1-mini"
+	AzureGPT41Nano ModelID = "azure.gpt-4.1-nano"
+	AzureGPT4o     ModelID = "azure.gpt-4o"
+	AzureGPT4oMini ModelID = "azure.gpt-4o-mini"
+	AzureO1        ModelID = "azure.o1"
+	AzureO1Mini    ModelID = "azure.o1-mini"
+	AzureO3        ModelID = "azure.o3"
+	AzureO3Mini    ModelID = "azure.o3-mini"
+	AzureO4Mini    ModelID = "azure.o4-mini"
 )
 
 var AzureModels = map[ModelID]Model{
@@ -56,20 +55,6 @@ var AzureModels = map[ModelID]Model{
 		CostPer1MOutCached:    OpenAIModels[GPT41Nano].CostPer1MOutCached,
 		ContextWindow:         OpenAIModels[GPT41Nano].ContextWindow,
 		DefaultMaxTokens:      OpenAIModels[GPT41Nano].DefaultMaxTokens,
-		SupportsAttachments:   true,
-		SupportsStructuredOut: true,
-	},
-	AzureGPT45Preview: {
-		ID:                    AzureGPT45Preview,
-		Name:                  "Azure OpenAI – GPT 4.5 preview",
-		Provider:              ProviderAzure,
-		APIModel:              "gpt-4.5-preview",
-		CostPer1MIn:           OpenAIModels[GPT45Preview].CostPer1MIn,
-		CostPer1MInCached:     OpenAIModels[GPT45Preview].CostPer1MInCached,
-		CostPer1MOut:          OpenAIModels[GPT45Preview].CostPer1MOut,
-		CostPer1MOutCached:    OpenAIModels[GPT45Preview].CostPer1MOutCached,
-		ContextWindow:         OpenAIModels[GPT45Preview].ContextWindow,
-		DefaultMaxTokens:      OpenAIModels[GPT45Preview].DefaultMaxTokens,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 	},

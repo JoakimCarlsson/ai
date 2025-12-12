@@ -6,7 +6,6 @@ const (
 	OpenRouterGPT41          ModelID = "openrouter.gpt-4.1"
 	OpenRouterGPT41Mini      ModelID = "openrouter.gpt-4.1-mini"
 	OpenRouterGPT41Nano      ModelID = "openrouter.gpt-4.1-nano"
-	OpenRouterGPT45Preview   ModelID = "openrouter.gpt-4.5-preview"
 	OpenRouterGPT4o          ModelID = "openrouter.gpt-4o"
 	OpenRouterGPT4oMini      ModelID = "openrouter.gpt-4o-mini"
 	OpenRouterO1             ModelID = "openrouter.o1"
@@ -63,19 +62,6 @@ var OpenRouterModels = map[ModelID]Model{
 		ContextWindow:         OpenAIModels[GPT41Nano].ContextWindow,
 		DefaultMaxTokens:      OpenAIModels[GPT41Nano].DefaultMaxTokens,
 		SupportsStructuredOut: OpenAIModels[GPT41Nano].SupportsStructuredOut,
-	},
-	OpenRouterGPT45Preview: {
-		ID:                    OpenRouterGPT45Preview,
-		Name:                  "OpenRouter – GPT 4.5 preview",
-		Provider:              ProviderOpenRouter,
-		APIModel:              "openai/gpt-4.5-preview",
-		CostPer1MIn:           OpenAIModels[GPT45Preview].CostPer1MIn,
-		CostPer1MInCached:     OpenAIModels[GPT45Preview].CostPer1MInCached,
-		CostPer1MOut:          OpenAIModels[GPT45Preview].CostPer1MOut,
-		CostPer1MOutCached:    OpenAIModels[GPT45Preview].CostPer1MOutCached,
-		ContextWindow:         OpenAIModels[GPT45Preview].ContextWindow,
-		DefaultMaxTokens:      OpenAIModels[GPT45Preview].DefaultMaxTokens,
-		SupportsStructuredOut: OpenAIModels[GPT45Preview].SupportsStructuredOut,
 	},
 	OpenRouterGPT4o: {
 		ID:                    OpenRouterGPT4o,
