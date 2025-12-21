@@ -90,7 +90,7 @@ func (o OpenAIClient) generate(
 		N:      openai.Int(int64(genOpts.N)),
 	}
 
-	if genOpts.ResponseFormat != "" {
+	if genOpts.ResponseFormat != "" && o.options.model.APIModel != "gpt-image-1" && o.options.model.APIModel != "gpt-image-1.5" {
 		params.ResponseFormat = openai.ImageGenerateParamsResponseFormat(
 			genOpts.ResponseFormat,
 		)
