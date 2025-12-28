@@ -10,21 +10,52 @@ import (
 	"github.com/joakimcarlsson/ai/message"
 )
 
+type FileSessionStore struct {
+	dir string
+}
+
+func NewFileSessionStore(dir string) (*FileSessionStore, error) {
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, err
+	}
+	return &FileSessionStore{dir: dir}, nil
+}
+
+func (s *FileSessionStore) filePath(id string) string {
+	return filepath.Join(s.dir, id+".json")
+}
+
+func (s *FileSessionStore) Exists(ctx context.Context, id string) (bool, error) {
+	_, err := os.Stat(s.filePath(id))
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
+func (s *FileSessionStore) Create(ctx context.Context, id string) (Session, error) {
+	filePath := s.filePath(id)
+	if err := os.WriteFile(filePath, []byte("[]"), 0644); err != nil {
+		return nil, err
+	}
+	return &FileSession{id: id, filePath: filePath}, nil
+}
+
+func (s *FileSessionStore) Load(ctx context.Context, id string) (Session, error) {
+	return &FileSession{id: id, filePath: s.filePath(id)}, nil
+}
+
+func (s *FileSessionStore) Delete(ctx context.Context, id string) error {
+	return os.Remove(s.filePath(id))
+}
+
 type FileSession struct {
 	id       string
 	filePath string
 	mu       sync.RWMutex
-}
-
-func NewFileSession(id string, directory string) (*FileSession, error) {
-	if err := os.MkdirAll(directory, 0755); err != nil {
-		return nil, err
-	}
-
-	return &FileSession{
-		id:       id,
-		filePath: filepath.Join(directory, id+".json"),
-	}, nil
 }
 
 func (s *FileSession) ID() string {
