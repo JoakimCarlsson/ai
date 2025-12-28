@@ -57,7 +57,12 @@ func main() {
 		agent.WithTools(&weatherTool{}),
 	)
 
-	session, err := agent.NewFileSession("conv-1", "./sessions")
+	store, err := agent.NewFileSessionStore("./sessions")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	session, err := agent.GetOrCreateSession(ctx, "conv-1", store)
 	if err != nil {
 		log.Fatal(err)
 	}

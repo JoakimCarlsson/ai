@@ -158,7 +158,12 @@ Use delete_memory when users ask you to forget something.`),
 
 	ctx = context.WithValue(ctx, "user_id", "alice")
 
-	session, err := agent.NewFileSession("conv-1", "./sessions")
+	store, err := agent.NewFileSessionStore("./sessions")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	session, err := agent.GetOrCreateSession(ctx, "conv-1", store)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -169,7 +174,7 @@ Use delete_memory when users ask you to forget something.`),
 	}
 	fmt.Println(response.Content)
 
-	session2, err := agent.NewFileSession("conv-2", "./sessions")
+	session2, err := agent.GetOrCreateSession(ctx, "conv-2", store)
 	if err != nil {
 		log.Fatal(err)
 	}
