@@ -50,7 +50,7 @@ func (a *Agent) getTools() []tool.BaseTool {
 	allTools := make([]tool.BaseTool, len(a.tools))
 	copy(allTools, a.tools)
 
-	if a.memory != nil {
+	if a.memory != nil && !a.autoExtract {
 		memoryTools := createMemoryTools(a.memory, a.userIDKey)
 		allTools = append(allTools, memoryTools...)
 	}
@@ -137,7 +137,8 @@ func (a *Agent) Chat(ctx context.Context, session Session, userMessage string) (
 			}
 
 			if a.autoExtract {
-				_ = a.extractAndStoreMemories(ctx, session)
+				extractCtx := context.WithValue(context.Background(), a.userIDKey, ctx.Value(a.userIDKey))
+				go a.extractAndStoreMemories(extractCtx, session)
 			}
 
 			return &ChatResponse{
@@ -221,7 +222,8 @@ func (a *Agent) ChatStream(ctx context.Context, session Session, userMessage str
 				_ = session.AddMessages(ctx, []message.Message{assistantMsg})
 
 				if a.autoExtract {
-					_ = a.extractAndStoreMemories(ctx, session)
+					extractCtx := context.WithValue(context.Background(), a.userIDKey, ctx.Value(a.userIDKey))
+					go a.extractAndStoreMemories(extractCtx, session)
 				}
 
 				var usage llm.TokenUsage

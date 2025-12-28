@@ -108,7 +108,13 @@ func (a *Agent) extractAndStoreMemories(ctx context.Context, session Session) er
 			"source":     "auto_extract",
 			"created_at": time.Now().Format(time.RFC3339),
 		}
-		if err := a.storeWithDedup(ctx, userID, fact, metadata); err != nil {
+		var storeErr error
+		if a.autoDedup {
+			storeErr = a.storeWithDedup(ctx, userID, fact, metadata)
+		} else {
+			storeErr = a.memory.Store(ctx, userID, fact, metadata)
+		}
+		if storeErr != nil {
 			continue
 		}
 	}
