@@ -14,10 +14,10 @@ type Memory interface {
 }
 
 type MemoryEntry struct {
-	ID        string
-	Content   string
-	UserID    string
-	Score     float64
-	CreatedAt time.Time
-	Metadata  map[string]any
+	ID        string         `json:"id"`
+	Content   string         `json:"content"`
+	UserID    string         `json:"user_id"`
+	Score     float64        `json:"score"`
+	CreatedAt time.Time      `json:"created_at"`
+	Metadata  map[string]any `json:"metadata,omitempty"`
 }
