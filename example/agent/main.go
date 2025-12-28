@@ -1,0 +1,87 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/joakimcarlsson/ai/agent"
+	"github.com/joakimcarlsson/ai/model"
+	llm "github.com/joakimcarlsson/ai/providers"
+	"github.com/joakimcarlsson/ai/tool"
+	"github.com/joakimcarlsson/ai/types"
+)
+
+type weatherTool struct{}
+
+func (w *weatherTool) Info() tool.ToolInfo {
+	return tool.ToolInfo{
+		Name:        "get_weather",
+		Description: "Get the current weather for a location",
+		Parameters: map[string]any{
+			"location": map[string]any{
+				"type":        "string",
+				"description": "The city name",
+			},
+		},
+		Required: []string{"location"},
+	}
+}
+
+func (w *weatherTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+	var input struct {
+		Location string `json:"location"`
+	}
+	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
+		return tool.NewTextErrorResponse(err.Error()), nil
+	}
+	return tool.NewTextResponse(fmt.Sprintf("The weather in %s is sunny, 22°C", input.Location)), nil
+}
+
+func main() {
+	ctx := context.Background()
+
+	llmClient, err := llm.NewLLM(
+		model.ProviderOpenAI,
+		llm.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+		llm.WithModel(model.OpenAIModels[model.GPT5Nano]),
+		llm.WithMaxTokens(2000),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	myAgent := agent.New(llmClient,
+		agent.WithSystemPrompt("You are a helpful assistant with access to weather tools."),
+		agent.WithTools(&weatherTool{}),
+	)
+
+	session, err := agent.NewFileSession("conv-1", "./sessions")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	response, err := myAgent.Chat(ctx, session, "What's the weather in Tokyo?")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(response.Content)
+
+	streamSession, err := agent.NewFileSession("conv-2", "./sessions")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for event := range myAgent.ChatStream(ctx, streamSession, "What about Paris?") {
+		switch event.Type {
+		case types.EventContentDelta:
+			fmt.Print(event.Content)
+		case types.EventComplete:
+			fmt.Println()
+		case types.EventError:
+			log.Fatal(event.Error)
+		}
+	}
+}

@@ -12,6 +12,7 @@ package message
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -298,6 +299,105 @@ func (m *Message) AddImageURL(url, detail string) {
 // AddBinary adds binary content to the message with the specified MIME type.
 func (m *Message) AddBinary(mimeType string, data []byte) {
 	m.Parts = append(m.Parts, BinaryContent{MIMEType: mimeType, Data: data})
+}
+
+type contentPartWrapper struct {
+	Type string          `json:"type"`
+	Data json.RawMessage `json:"data"`
+}
+
+type messageJSON struct {
+	Role      MessageRole          `json:"role"`
+	Parts     []contentPartWrapper `json:"parts"`
+	Model     model.ModelID        `json:"model,omitempty"`
+	CreatedAt int64                `json:"created_at"`
+}
+
+func (m Message) MarshalJSON() ([]byte, error) {
+	parts := make([]contentPartWrapper, 0, len(m.Parts))
+	for _, part := range m.Parts {
+		var typeName string
+		switch part.(type) {
+		case TextContent:
+			typeName = "text"
+		case ImageURLContent:
+			typeName = "image_url"
+		case BinaryContent:
+			typeName = "binary"
+		case ToolCall:
+			typeName = "tool_call"
+		case ToolResult:
+			typeName = "tool_result"
+		default:
+			typeName = "unknown"
+		}
+
+		data, err := json.Marshal(part)
+		if err != nil {
+			return nil, err
+		}
+		parts = append(parts, contentPartWrapper{Type: typeName, Data: data})
+	}
+
+	return json.Marshal(messageJSON{
+		Role:      m.Role,
+		Parts:     parts,
+		Model:     m.Model,
+		CreatedAt: m.CreatedAt,
+	})
+}
+
+func (m *Message) UnmarshalJSON(data []byte) error {
+	var mj messageJSON
+	if err := json.Unmarshal(data, &mj); err != nil {
+		return err
+	}
+
+	m.Role = mj.Role
+	m.Model = mj.Model
+	m.CreatedAt = mj.CreatedAt
+	m.Parts = make([]ContentPart, 0, len(mj.Parts))
+
+	for _, wrapper := range mj.Parts {
+		var part ContentPart
+		switch wrapper.Type {
+		case "text":
+			var tc TextContent
+			if err := json.Unmarshal(wrapper.Data, &tc); err != nil {
+				return err
+			}
+			part = tc
+		case "image_url":
+			var iuc ImageURLContent
+			if err := json.Unmarshal(wrapper.Data, &iuc); err != nil {
+				return err
+			}
+			part = iuc
+		case "binary":
+			var bc BinaryContent
+			if err := json.Unmarshal(wrapper.Data, &bc); err != nil {
+				return err
+			}
+			part = bc
+		case "tool_call":
+			var tc ToolCall
+			if err := json.Unmarshal(wrapper.Data, &tc); err != nil {
+				return err
+			}
+			part = tc
+		case "tool_result":
+			var tr ToolResult
+			if err := json.Unmarshal(wrapper.Data, &tr); err != nil {
+				return err
+			}
+			part = tr
+		default:
+			continue
+		}
+		m.Parts = append(m.Parts, part)
+	}
+
+	return nil
 }
 
 // BaseMessage defines the interface for advanced message implementations
