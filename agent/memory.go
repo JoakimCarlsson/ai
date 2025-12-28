@@ -10,6 +10,7 @@ type Memory interface {
 	Search(ctx context.Context, userID string, query string, limit int) ([]MemoryEntry, error)
 	GetAll(ctx context.Context, userID string, limit int) ([]MemoryEntry, error)
 	Delete(ctx context.Context, memoryID string) error
+	Update(ctx context.Context, memoryID string, fact string, metadata map[string]any) error
 }
 
 type MemoryEntry struct {

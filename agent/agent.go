@@ -12,6 +12,7 @@ import (
 
 type Agent struct {
 	llm           llm.LLM
+	memoryLLM     llm.LLM
 	tools         []tool.BaseTool
 	systemPrompt  string
 	maxIterations int
@@ -19,6 +20,14 @@ type Agent struct {
 	memory        Memory
 	userIDKey     string
 	autoExtract   bool
+	autoDedup     bool
+}
+
+func (a *Agent) getMemoryLLM() llm.LLM {
+	if a.memoryLLM != nil {
+		return a.memoryLLM
+	}
+	return a.llm
 }
 
 func New(llmClient llm.LLM, opts ...AgentOption) *Agent {

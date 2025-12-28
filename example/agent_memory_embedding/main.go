@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -15,23 +17,56 @@ import (
 	llm "github.com/joakimcarlsson/ai/providers"
 )
 
-type memoryWithVector struct {
-	entry  agent.MemoryEntry
-	vector []float32
+type storedMemory struct {
+	Entry  agent.MemoryEntry `json:"entry"`
+	Vector []float32         `json:"vector"`
 }
 
 type VectorMemory struct {
+	dir      string
 	embedder embeddings.Embedding
-	entries  map[string][]memoryWithVector
+	entries  map[string][]storedMemory
 	mu       sync.RWMutex
 	counter  int
 }
 
-func NewVectorMemory(embedder embeddings.Embedding) *VectorMemory {
-	return &VectorMemory{
-		embedder: embedder,
-		entries:  make(map[string][]memoryWithVector),
+func NewVectorMemory(dir string, embedder embeddings.Embedding) (*VectorMemory, error) {
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, err
 	}
+
+	m := &VectorMemory{
+		dir:      dir,
+		embedder: embedder,
+		entries:  make(map[string][]storedMemory),
+	}
+
+	files, _ := filepath.Glob(filepath.Join(dir, "*.json"))
+	for _, f := range files {
+		userID := filepath.Base(f[:len(f)-5])
+		data, err := os.ReadFile(f)
+		if err != nil {
+			continue
+		}
+		var entries []storedMemory
+		if err := json.Unmarshal(data, &entries); err != nil {
+			continue
+		}
+		m.entries[userID] = entries
+		if len(entries) > m.counter {
+			m.counter = len(entries)
+		}
+	}
+
+	return m, nil
+}
+
+func (m *VectorMemory) save(userID string) error {
+	data, err := json.MarshalIndent(m.entries[userID], "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(m.dir, userID+".json"), data, 0644)
 }
 
 func (m *VectorMemory) Store(ctx context.Context, userID string, fact string, metadata map[string]any) error {
@@ -44,17 +79,17 @@ func (m *VectorMemory) Store(ctx context.Context, userID string, fact string, me
 	defer m.mu.Unlock()
 
 	m.counter++
-	m.entries[userID] = append(m.entries[userID], memoryWithVector{
-		entry: agent.MemoryEntry{
+	m.entries[userID] = append(m.entries[userID], storedMemory{
+		Entry: agent.MemoryEntry{
 			ID:        fmt.Sprintf("mem-%d", m.counter),
 			Content:   fact,
 			UserID:    userID,
 			CreatedAt: time.Now(),
 			Metadata:  metadata,
 		},
-		vector: resp.Embeddings[0],
+		Vector: resp.Embeddings[0],
 	})
-	return nil
+	return m.save(userID)
 }
 
 func (m *VectorMemory) Search(ctx context.Context, userID string, query string, limit int) ([]agent.MemoryEntry, error) {
@@ -79,8 +114,8 @@ func (m *VectorMemory) Search(ctx context.Context, userID string, query string, 
 	var results []scored
 
 	for _, mem := range userEntries {
-		score := cosineSimilarity(queryVector, mem.vector)
-		entry := mem.entry
+		score := cosineSimilarity(queryVector, mem.Vector)
+		entry := mem.Entry
 		entry.Score = score
 		results = append(results, scored{entry: entry, score: score})
 	}
@@ -115,7 +150,7 @@ func (m *VectorMemory) GetAll(ctx context.Context, userID string, limit int) ([]
 
 	out := make([]agent.MemoryEntry, limit)
 	for i := 0; i < limit; i++ {
-		out[i] = userEntries[i].entry
+		out[i] = userEntries[i].Entry
 	}
 	return out, nil
 }
@@ -126,9 +161,31 @@ func (m *VectorMemory) Delete(ctx context.Context, memoryID string) error {
 
 	for userID, entries := range m.entries {
 		for i, mem := range entries {
-			if mem.entry.ID == memoryID {
+			if mem.Entry.ID == memoryID {
 				m.entries[userID] = append(entries[:i], entries[i+1:]...)
-				return nil
+				return m.save(userID)
+			}
+		}
+	}
+	return fmt.Errorf("memory not found: %s", memoryID)
+}
+
+func (m *VectorMemory) Update(ctx context.Context, memoryID string, fact string, metadata map[string]any) error {
+	resp, err := m.embedder.GenerateEmbeddings(ctx, []string{fact})
+	if err != nil {
+		return err
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for userID, entries := range m.entries {
+		for i, mem := range entries {
+			if mem.Entry.ID == memoryID {
+				m.entries[userID][i].Entry.Content = fact
+				m.entries[userID][i].Entry.Metadata = metadata
+				m.entries[userID][i].Vector = resp.Embeddings[0]
+				return m.save(userID)
 			}
 		}
 	}
@@ -169,13 +226,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	memory := NewVectorMemory(embedder)
+	memory, err := NewVectorMemory("./memories", embedder)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	myAgent := agent.New(llmClient,
 		agent.WithSystemPrompt(`You are a personal assistant with semantic memory.
 Use store_memory when users share personal information or preferences.
-Use recall_memories to find relevant context before answering questions.`),
+Use recall_memories to find relevant context before answering questions.
+Use replace_memory when information has changed (first recall to get the memory_id).
+Use delete_memory when users ask you to forget something.`),
 		agent.WithMemory(memory),
+		agent.WithAutoDedup(true),
 	)
 
 	ctx = context.WithValue(ctx, "user_id", "alice")
@@ -201,9 +264,4 @@ Use recall_memories to find relevant context before answering questions.`),
 		log.Fatal(err)
 	}
 	fmt.Println(response.Content)
-
-	memories, _ := memory.Search(ctx, "alice", "food preferences", 5)
-	for _, m := range memories {
-		fmt.Printf("[%.2f] %s\n", m.Score, m.Content)
-	}
 }

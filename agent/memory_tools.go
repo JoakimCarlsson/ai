@@ -159,10 +159,65 @@ func (t *deleteMemoryTool) Run(ctx context.Context, params tool.ToolCall) (tool.
 	return tool.NewTextResponse("Memory deleted successfully"), nil
 }
 
+type replaceMemoryTool struct {
+	memory    Memory
+	userIDKey string
+}
+
+func newReplaceMemoryTool(memory Memory, userIDKey string) *replaceMemoryTool {
+	return &replaceMemoryTool{memory: memory, userIDKey: userIDKey}
+}
+
+func (t *replaceMemoryTool) Info() tool.ToolInfo {
+	return tool.ToolInfo{
+		Name:        "replace_memory",
+		Description: "Replace an existing memory with updated information. Use when a fact has changed or needs correction. First use recall_memories to find the memory_id.",
+		Parameters: map[string]any{
+			"memory_id": map[string]any{
+				"type":        "string",
+				"description": "The ID of the memory to replace (from recall_memories results)",
+			},
+			"fact": map[string]any{
+				"type":        "string",
+				"description": "The updated fact to store",
+			},
+			"category": map[string]any{
+				"type":        "string",
+				"enum":        []string{"preference", "personal", "health", "professional", "other"},
+				"description": "Category of the memory",
+			},
+		},
+		Required: []string{"memory_id", "fact"},
+	}
+}
+
+func (t *replaceMemoryTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+	var input struct {
+		MemoryID string `json:"memory_id"`
+		Fact     string `json:"fact"`
+		Category string `json:"category"`
+	}
+	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
+		return tool.NewTextErrorResponse("invalid parameters: " + err.Error()), nil
+	}
+
+	metadata := map[string]any{}
+	if input.Category != "" {
+		metadata["category"] = input.Category
+	}
+
+	if err := t.memory.Update(ctx, input.MemoryID, input.Fact, metadata); err != nil {
+		return tool.NewTextErrorResponse("failed to replace memory: " + err.Error()), nil
+	}
+
+	return tool.NewTextResponse("Memory replaced successfully"), nil
+}
+
 func createMemoryTools(memory Memory, userIDKey string) []tool.BaseTool {
 	return []tool.BaseTool{
 		newStoreMemoryTool(memory, userIDKey),
 		newRecallMemoriesTool(memory, userIDKey),
+		newReplaceMemoryTool(memory, userIDKey),
 		newDeleteMemoryTool(memory, userIDKey),
 	}
 }

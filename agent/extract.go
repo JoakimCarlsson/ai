@@ -98,7 +98,7 @@ func (a *Agent) extractAndStoreMemories(ctx context.Context, session Session) er
 		return err
 	}
 
-	facts, err := extractFacts(ctx, a.llm, messages)
+	facts, err := extractFacts(ctx, a.getMemoryLLM(), messages)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (a *Agent) extractAndStoreMemories(ctx context.Context, session Session) er
 			"source":     "auto_extract",
 			"created_at": time.Now().Format(time.RFC3339),
 		}
-		if err := a.memory.Store(ctx, userID, fact, metadata); err != nil {
+		if err := a.storeWithDedup(ctx, userID, fact, metadata); err != nil {
 			continue
 		}
 	}
