@@ -1,4 +1,4 @@
-package agent
+package session
 
 import (
 	"context"
@@ -15,10 +15,11 @@ type Session interface {
 	Clear(ctx context.Context) error
 }
 
-// SessionStore manages session persistence and retrieval.
-type SessionStore interface {
+// Store manages session persistence and retrieval.
+type Store interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Create(ctx context.Context, id string) (Session, error)
 	Load(ctx context.Context, id string) (Session, error)
 	Delete(ctx context.Context, id string) error
 }
+

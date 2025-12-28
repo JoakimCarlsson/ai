@@ -6,16 +6,17 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/joakimcarlsson/ai/agent/memory"
 	"github.com/joakimcarlsson/ai/tool"
 )
 
 type storeMemoryTool struct {
-	memory    Memory
-	userIDKey string
+	store    memory.Store
+	memoryID string
 }
 
-func newStoreMemoryTool(memory Memory, userIDKey string) *storeMemoryTool {
-	return &storeMemoryTool{memory: memory, userIDKey: userIDKey}
+func newStoreMemoryTool(store memory.Store, memoryID string) *storeMemoryTool {
+	return &storeMemoryTool{store: store, memoryID: memoryID}
 }
 
 func (t *storeMemoryTool) Info() tool.ToolInfo {
@@ -46,17 +47,12 @@ func (t *storeMemoryTool) Run(ctx context.Context, params tool.ToolCall) (tool.T
 		return tool.NewTextErrorResponse("invalid parameters: " + err.Error()), nil
 	}
 
-	userID, ok := ctx.Value(t.userIDKey).(string)
-	if !ok || userID == "" {
-		return tool.NewTextErrorResponse("user_id not found in context"), nil
-	}
-
 	metadata := map[string]any{}
 	if input.Category != "" {
 		metadata["category"] = input.Category
 	}
 
-	if err := t.memory.Store(ctx, userID, input.Fact, metadata); err != nil {
+	if err := t.store.Store(ctx, t.memoryID, input.Fact, metadata); err != nil {
 		return tool.NewTextErrorResponse("failed to store memory: " + err.Error()), nil
 	}
 
@@ -64,12 +60,12 @@ func (t *storeMemoryTool) Run(ctx context.Context, params tool.ToolCall) (tool.T
 }
 
 type recallMemoriesTool struct {
-	memory    Memory
-	userIDKey string
+	store    memory.Store
+	memoryID string
 }
 
-func newRecallMemoriesTool(memory Memory, userIDKey string) *recallMemoriesTool {
-	return &recallMemoriesTool{memory: memory, userIDKey: userIDKey}
+func newRecallMemoriesTool(store memory.Store, memoryID string) *recallMemoriesTool {
+	return &recallMemoriesTool{store: store, memoryID: memoryID}
 }
 
 func (t *recallMemoriesTool) Info() tool.ToolInfo {
@@ -94,12 +90,7 @@ func (t *recallMemoriesTool) Run(ctx context.Context, params tool.ToolCall) (too
 		return tool.NewTextErrorResponse("invalid parameters: " + err.Error()), nil
 	}
 
-	userID, ok := ctx.Value(t.userIDKey).(string)
-	if !ok || userID == "" {
-		return tool.NewTextErrorResponse("user_id not found in context"), nil
-	}
-
-	memories, err := t.memory.Search(ctx, userID, input.Query, 5)
+	memories, err := t.store.Search(ctx, t.memoryID, input.Query, 5)
 	if err != nil {
 		return tool.NewTextErrorResponse("failed to search memories: " + err.Error()), nil
 	}
@@ -117,12 +108,12 @@ func (t *recallMemoriesTool) Run(ctx context.Context, params tool.ToolCall) (too
 }
 
 type deleteMemoryTool struct {
-	memory    Memory
-	userIDKey string
+	store    memory.Store
+	memoryID string
 }
 
-func newDeleteMemoryTool(memory Memory, userIDKey string) *deleteMemoryTool {
-	return &deleteMemoryTool{memory: memory, userIDKey: userIDKey}
+func newDeleteMemoryTool(store memory.Store, memoryID string) *deleteMemoryTool {
+	return &deleteMemoryTool{store: store, memoryID: memoryID}
 }
 
 func (t *deleteMemoryTool) Info() tool.ToolInfo {
@@ -152,7 +143,7 @@ func (t *deleteMemoryTool) Run(ctx context.Context, params tool.ToolCall) (tool.
 		return tool.NewTextErrorResponse("invalid parameters: " + err.Error()), nil
 	}
 
-	if err := t.memory.Delete(ctx, input.MemoryID); err != nil {
+	if err := t.store.Delete(ctx, input.MemoryID); err != nil {
 		return tool.NewTextErrorResponse("failed to delete memory: " + err.Error()), nil
 	}
 
@@ -160,12 +151,12 @@ func (t *deleteMemoryTool) Run(ctx context.Context, params tool.ToolCall) (tool.
 }
 
 type replaceMemoryTool struct {
-	memory    Memory
-	userIDKey string
+	store    memory.Store
+	memoryID string
 }
 
-func newReplaceMemoryTool(memory Memory, userIDKey string) *replaceMemoryTool {
-	return &replaceMemoryTool{memory: memory, userIDKey: userIDKey}
+func newReplaceMemoryTool(store memory.Store, memoryID string) *replaceMemoryTool {
+	return &replaceMemoryTool{store: store, memoryID: memoryID}
 }
 
 func (t *replaceMemoryTool) Info() tool.ToolInfo {
@@ -206,18 +197,18 @@ func (t *replaceMemoryTool) Run(ctx context.Context, params tool.ToolCall) (tool
 		metadata["category"] = input.Category
 	}
 
-	if err := t.memory.Update(ctx, input.MemoryID, input.Fact, metadata); err != nil {
+	if err := t.store.Update(ctx, input.MemoryID, input.Fact, metadata); err != nil {
 		return tool.NewTextErrorResponse("failed to replace memory: " + err.Error()), nil
 	}
 
 	return tool.NewTextResponse("Memory replaced successfully"), nil
 }
 
-func createMemoryTools(memory Memory, userIDKey string) []tool.BaseTool {
+func createMemoryTools(store memory.Store, memoryID string) []tool.BaseTool {
 	return []tool.BaseTool{
-		newStoreMemoryTool(memory, userIDKey),
-		newRecallMemoriesTool(memory, userIDKey),
-		newReplaceMemoryTool(memory, userIDKey),
-		newDeleteMemoryTool(memory, userIDKey),
+		newStoreMemoryTool(store, memoryID),
+		newRecallMemoriesTool(store, memoryID),
+		newReplaceMemoryTool(store, memoryID),
+		newDeleteMemoryTool(store, memoryID),
 	}
 }

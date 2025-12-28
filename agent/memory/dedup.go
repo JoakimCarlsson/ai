@@ -1,4 +1,4 @@
-package agent
+package memory
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	llm "github.com/joakimcarlsson/ai/providers"
 )
 
+// DedupEvent represents the type of deduplication action to take.
 type DedupEvent string
 
 const (
@@ -18,12 +19,14 @@ const (
 	DedupEventNone   DedupEvent = "NONE"
 )
 
+// DedupDecision represents a single deduplication decision.
 type DedupDecision struct {
 	Event    DedupEvent `json:"event"`
 	MemoryID string     `json:"memory_id,omitempty"`
 	Text     string     `json:"text"`
 }
 
+// DedupResult contains all deduplication decisions for a fact.
 type DedupResult struct {
 	Decisions []DedupDecision `json:"decisions"`
 }
@@ -45,11 +48,13 @@ Rules:
 3. Use NONE when the new fact adds no new information
 4. The "text" field should contain the final fact to store (for ADD/UPDATE) or the original fact (for DELETE/NONE)`
 
-func deduplicateMemory(
+// Deduplicate checks if a new fact conflicts with or duplicates existing memories.
+// It uses an LLM to decide whether to ADD, UPDATE, DELETE, or skip the new fact.
+func Deduplicate(
 	ctx context.Context,
 	llmClient llm.LLM,
 	newFact string,
-	existing []MemoryEntry,
+	existing []Entry,
 ) (*DedupResult, error) {
 	if len(existing) == 0 {
 		return &DedupResult{
@@ -90,38 +95,3 @@ func deduplicateMemory(
 	return &result, nil
 }
 
-func (a *Agent) storeWithDedup(ctx context.Context, userID string, fact string, metadata map[string]any) error {
-	if !a.autoDedup || a.memory == nil {
-		return a.memory.Store(ctx, userID, fact, metadata)
-	}
-
-	existing, err := a.memory.Search(ctx, userID, fact, 5)
-	if err != nil {
-		return a.memory.Store(ctx, userID, fact, metadata)
-	}
-
-	result, err := deduplicateMemory(ctx, a.getMemoryLLM(), fact, existing)
-	if err != nil {
-		return a.memory.Store(ctx, userID, fact, metadata)
-	}
-
-	for _, decision := range result.Decisions {
-		switch decision.Event {
-		case DedupEventAdd:
-			if err := a.memory.Store(ctx, userID, decision.Text, metadata); err != nil {
-				return err
-			}
-		case DedupEventUpdate:
-			if err := a.memory.Update(ctx, decision.MemoryID, decision.Text, metadata); err != nil {
-				return err
-			}
-		case DedupEventDelete:
-			if err := a.memory.Delete(ctx, decision.MemoryID); err != nil {
-				return err
-			}
-		case DedupEventNone:
-		}
-	}
-
-	return nil
-}

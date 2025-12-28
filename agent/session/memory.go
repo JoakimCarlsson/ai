@@ -1,4 +1,4 @@
-package agent
+package session
 
 import (
 	"context"
@@ -7,17 +7,24 @@ import (
 	"github.com/joakimcarlsson/ai/message"
 )
 
-type memorySessionStore struct {
+// memoryStore is an in-memory session store for ephemeral conversations.
+type memoryStore struct {
 	sessions sync.Map
 }
 
-func (s *memorySessionStore) Exists(ctx context.Context, id string) (bool, error) {
+// MemoryStore creates an in-memory session store for ephemeral conversations.
+// Useful for testing or when persistence is not required.
+func MemoryStore() Store {
+	return &memoryStore{}
+}
+
+func (s *memoryStore) Exists(ctx context.Context, id string) (bool, error) {
 	_, ok := s.sessions.Load(id)
 	return ok, nil
 }
 
-func (s *memorySessionStore) Create(ctx context.Context, id string) (Session, error) {
-	session := &MemorySession{
+func (s *memoryStore) Create(ctx context.Context, id string) (Session, error) {
+	session := &memorySession{
 		id:       id,
 		messages: make([]message.Message, 0),
 	}
@@ -25,37 +32,30 @@ func (s *memorySessionStore) Create(ctx context.Context, id string) (Session, er
 	return session, nil
 }
 
-func (s *memorySessionStore) Load(ctx context.Context, id string) (Session, error) {
+func (s *memoryStore) Load(ctx context.Context, id string) (Session, error) {
 	val, ok := s.sessions.Load(id)
 	if !ok {
 		return nil, nil
 	}
-	return val.(*MemorySession), nil
+	return val.(*memorySession), nil
 }
 
-func (s *memorySessionStore) Delete(ctx context.Context, id string) error {
+func (s *memoryStore) Delete(ctx context.Context, id string) error {
 	s.sessions.Delete(id)
 	return nil
 }
 
-type MemorySession struct {
+type memorySession struct {
 	id       string
 	messages []message.Message
 	mu       sync.RWMutex
 }
 
-func NewMemorySession(id string) *MemorySession {
-	return &MemorySession{
-		id:       id,
-		messages: make([]message.Message, 0),
-	}
-}
-
-func (s *MemorySession) ID() string {
+func (s *memorySession) ID() string {
 	return s.id
 }
 
-func (s *MemorySession) GetMessages(ctx context.Context, limit *int) ([]message.Message, error) {
+func (s *memorySession) GetMessages(ctx context.Context, limit *int) ([]message.Message, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -74,7 +74,7 @@ func (s *MemorySession) GetMessages(ctx context.Context, limit *int) ([]message.
 	return result, nil
 }
 
-func (s *MemorySession) AddMessages(ctx context.Context, msgs []message.Message) error {
+func (s *memorySession) AddMessages(ctx context.Context, msgs []message.Message) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -82,7 +82,7 @@ func (s *MemorySession) AddMessages(ctx context.Context, msgs []message.Message)
 	return nil
 }
 
-func (s *MemorySession) PopMessage(ctx context.Context) (*message.Message, error) {
+func (s *memorySession) PopMessage(ctx context.Context) (*message.Message, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -95,10 +95,11 @@ func (s *MemorySession) PopMessage(ctx context.Context) (*message.Message, error
 	return &msg, nil
 }
 
-func (s *MemorySession) Clear(ctx context.Context) error {
+func (s *memorySession) Clear(ctx context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.messages = make([]message.Message, 0)
 	return nil
 }
+

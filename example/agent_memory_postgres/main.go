@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/joakimcarlsson/ai/agent"
 	"github.com/joakimcarlsson/ai/agent/memory"
+	"github.com/joakimcarlsson/ai/agent/session"
 	"github.com/joakimcarlsson/ai/embeddings"
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/model"
@@ -51,7 +52,7 @@ func (s *PgSessionStore) Exists(ctx context.Context, id string) (bool, error) {
 	return exists, err
 }
 
-func (s *PgSessionStore) Create(ctx context.Context, id string) (agent.Session, error) {
+func (s *PgSessionStore) Create(ctx context.Context, id string) (session.Session, error) {
 	query := fmt.Sprintf(`INSERT INTO %s (id, messages) VALUES ($1, '[]')`, s.table)
 	_, err := s.db.ExecContext(ctx, query, id)
 	if err != nil {
@@ -60,7 +61,7 @@ func (s *PgSessionStore) Create(ctx context.Context, id string) (agent.Session, 
 	return &PgSession{db: s.db, table: s.table, id: id}, nil
 }
 
-func (s *PgSessionStore) Load(ctx context.Context, id string) (agent.Session, error) {
+func (s *PgSessionStore) Load(ctx context.Context, id string) (session.Session, error) {
 	exists, err := s.Exists(ctx, id)
 	if err != nil {
 		return nil, err
@@ -177,7 +178,7 @@ func (m *PgMemory) createTable() error {
 	query := fmt.Sprintf(`
 		CREATE TABLE IF NOT EXISTS %s (
 			id TEXT PRIMARY KEY,
-			user_id TEXT NOT NULL,
+			owner_id TEXT NOT NULL,
 			content TEXT NOT NULL,
 			embedding vector(1536),
 			metadata JSONB,
@@ -189,13 +190,13 @@ func (m *PgMemory) createTable() error {
 	}
 
 	indexQuery := fmt.Sprintf(`
-		CREATE INDEX IF NOT EXISTS %s_user_id_idx ON %s (user_id)
+		CREATE INDEX IF NOT EXISTS %s_owner_id_idx ON %s (owner_id)
 	`, m.table, m.table)
 	_, err = m.db.Exec(indexQuery)
 	return err
 }
 
-func (m *PgMemory) Store(ctx context.Context, userID string, fact string, metadata map[string]any) error {
+func (m *PgMemory) Store(ctx context.Context, id string, fact string, metadata map[string]any) error {
 	resp, err := m.embedder.GenerateEmbeddings(ctx, []string{fact})
 	if err != nil {
 		return err
@@ -206,19 +207,19 @@ func (m *PgMemory) Store(ctx context.Context, userID string, fact string, metada
 		return err
 	}
 
-	id := uuid.New().String()
+	memID := uuid.New().String()
 	vec := pgvector.NewVector(resp.Embeddings[0])
 
 	query := fmt.Sprintf(`
-		INSERT INTO %s (id, user_id, content, embedding, metadata)
+		INSERT INTO %s (id, owner_id, content, embedding, metadata)
 		VALUES ($1, $2, $3, $4, $5)
 	`, m.table)
 
-	_, err = m.db.ExecContext(ctx, query, id, userID, fact, vec, metadataJSON)
+	_, err = m.db.ExecContext(ctx, query, memID, id, fact, vec, metadataJSON)
 	return err
 }
 
-func (m *PgMemory) Search(ctx context.Context, userID string, query string, limit int) ([]agent.MemoryEntry, error) {
+func (m *PgMemory) Search(ctx context.Context, id string, query string, limit int) ([]memory.Entry, error) {
 	resp, err := m.embedder.GenerateEmbeddings(ctx, []string{query})
 	if err != nil {
 		return nil, err
@@ -227,26 +228,26 @@ func (m *PgMemory) Search(ctx context.Context, userID string, query string, limi
 	vec := pgvector.NewVector(resp.Embeddings[0])
 
 	sqlQuery := fmt.Sprintf(`
-		SELECT id, user_id, content, metadata, created_at, 1 - (embedding <=> $1) as score
+		SELECT id, owner_id, content, metadata, created_at, 1 - (embedding <=> $1) as score
 		FROM %s
-		WHERE user_id = $2
+		WHERE owner_id = $2
 		ORDER BY embedding <=> $1
 		LIMIT $3
 	`, m.table)
 
-	rows, err := m.db.QueryContext(ctx, sqlQuery, vec, userID, limit)
+	rows, err := m.db.QueryContext(ctx, sqlQuery, vec, id, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var entries []agent.MemoryEntry
+	var entries []memory.Entry
 	for rows.Next() {
-		var entry agent.MemoryEntry
+		var entry memory.Entry
 		var metadataJSON []byte
 		var createdAt time.Time
 
-		if err := rows.Scan(&entry.ID, &entry.UserID, &entry.Content, &metadataJSON, &createdAt, &entry.Score); err != nil {
+		if err := rows.Scan(&entry.ID, &entry.OwnerID, &entry.Content, &metadataJSON, &createdAt, &entry.Score); err != nil {
 			return nil, err
 		}
 
@@ -261,28 +262,28 @@ func (m *PgMemory) Search(ctx context.Context, userID string, query string, limi
 	return entries, rows.Err()
 }
 
-func (m *PgMemory) GetAll(ctx context.Context, userID string, limit int) ([]agent.MemoryEntry, error) {
+func (m *PgMemory) GetAll(ctx context.Context, id string, limit int) ([]memory.Entry, error) {
 	sqlQuery := fmt.Sprintf(`
-		SELECT id, user_id, content, metadata, created_at
+		SELECT id, owner_id, content, metadata, created_at
 		FROM %s
-		WHERE user_id = $1
+		WHERE owner_id = $1
 		ORDER BY created_at DESC
 		LIMIT $2
 	`, m.table)
 
-	rows, err := m.db.QueryContext(ctx, sqlQuery, userID, limit)
+	rows, err := m.db.QueryContext(ctx, sqlQuery, id, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var entries []agent.MemoryEntry
+	var entries []memory.Entry
 	for rows.Next() {
-		var entry agent.MemoryEntry
+		var entry memory.Entry
 		var metadataJSON []byte
 		var createdAt time.Time
 
-		if err := rows.Scan(&entry.ID, &entry.UserID, &entry.Content, &metadataJSON, &createdAt); err != nil {
+		if err := rows.Scan(&entry.ID, &entry.OwnerID, &entry.Content, &metadataJSON, &createdAt); err != nil {
 			return nil, err
 		}
 
@@ -385,11 +386,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	ctx = context.WithValue(ctx, "user_id", "alice")
-
 	agent1 := agent.New(llmClient,
 		agent.WithSystemPrompt(`You are a personal assistant with memory capabilities.`),
-		agent.WithMemory(pgMemory,
+		agent.WithMemory("alice", pgMemory,
 			memory.AutoExtract(),
 			memory.AutoDedup(),
 		),
@@ -404,7 +403,7 @@ func main() {
 
 	agent2 := agent.New(llmClient,
 		agent.WithSystemPrompt(`You are a personal assistant with memory capabilities.`),
-		agent.WithMemory(pgMemory,
+		agent.WithMemory("alice", pgMemory,
 			memory.AutoExtract(),
 			memory.AutoDedup(),
 		),

@@ -1,10 +1,9 @@
-package agent
+package memory
 
 import (
 	"context"
 	"encoding/json"
 	"strings"
-	"time"
 
 	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/providers"
@@ -41,7 +40,9 @@ type factExtractionResult struct {
 	Facts []string `json:"facts"`
 }
 
-func extractFacts(ctx context.Context, llmClient llm.LLM, messages []message.Message) ([]string, error) {
+// ExtractFacts extracts facts from a conversation using an LLM.
+// It only extracts facts from user messages, ignoring system and assistant messages.
+func ExtractFacts(ctx context.Context, llmClient llm.LLM, messages []message.Message) ([]string, error) {
 	var conversationBuilder strings.Builder
 	for _, msg := range messages {
 		if msg.Role == message.System {
@@ -83,41 +84,3 @@ func extractFacts(ctx context.Context, llmClient llm.LLM, messages []message.Mes
 	return result.Facts, nil
 }
 
-func (a *Agent) extractAndStoreMemories(ctx context.Context, session Session) error {
-	if a.memory == nil || !a.autoExtract {
-		return nil
-	}
-
-	userID, ok := ctx.Value(a.userIDKey).(string)
-	if !ok || userID == "" {
-		return nil
-	}
-
-	messages, err := session.GetMessages(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	facts, err := extractFacts(ctx, a.getMemoryLLM(), messages)
-	if err != nil {
-		return err
-	}
-
-	for _, fact := range facts {
-		metadata := map[string]any{
-			"source":     "auto_extract",
-			"created_at": time.Now().Format(time.RFC3339),
-		}
-		var storeErr error
-		if a.autoDedup {
-			storeErr = a.storeWithDedup(ctx, userID, fact, metadata)
-		} else {
-			storeErr = a.memory.Store(ctx, userID, fact, metadata)
-		}
-		if storeErr != nil {
-			continue
-		}
-	}
-
-	return nil
-}

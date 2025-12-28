@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/joakimcarlsson/ai/agent"
+	"github.com/joakimcarlsson/ai/agent/session"
 	"github.com/joakimcarlsson/ai/model"
 	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/tool"
@@ -48,7 +49,7 @@ func main() {
 	myAgent := agent.New(llmClient,
 		agent.WithSystemPrompt("You are a helpful assistant with access to weather tools."),
 		agent.WithTools(&weatherTool{}),
-		agent.WithSession("conv-1", agent.FileStore("./sessions")),
+		agent.WithSession("conv-1", session.FileStore("./sessions")),
 	)
 
 	response, err := myAgent.Chat(ctx, "What's the weather in Tokyo? My name is Bob.")

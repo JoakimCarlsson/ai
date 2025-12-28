@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/joakimcarlsson/ai/agent/memory"
+	"github.com/joakimcarlsson/ai/agent/session"
 	"github.com/joakimcarlsson/ai/tool"
 )
 
@@ -42,13 +43,15 @@ func WithAutoExecute(auto bool) AgentOption {
 }
 
 // WithMemory sets the memory store for cross-conversation fact storage.
+// The id parameter identifies the memory owner (e.g., user ID).
 // When set, the agent automatically injects relevant memories into the system prompt.
 // Use memory.AutoExtract() to enable automatic fact extraction from conversations.
 // Use memory.AutoDedup() to enable LLM-based memory deduplication.
 // Use memory.LLM() to set a separate LLM for memory operations.
-func WithMemory(mem Memory, opts ...memory.Option) AgentOption {
+func WithMemory(id string, store memory.Store, opts ...memory.Option) AgentOption {
 	return func(a *Agent) {
-		a.memory = mem
+		a.memoryID = id
+		a.memory = store
 		cfg := memory.Apply(opts...)
 		a.autoExtract = cfg.AutoExtract
 		a.autoDedup = cfg.AutoDedup
@@ -58,34 +61,10 @@ func WithMemory(mem Memory, opts ...memory.Option) AgentOption {
 	}
 }
 
-// WithUserIDKey sets the context key used to retrieve the user ID for memory operations.
-// Default is "user_id". The user ID must be set in the context passed to Chat/ChatStream.
-func WithUserIDKey(key string) AgentOption {
-	return func(a *Agent) {
-		a.userIDKey = key
-	}
-}
-
-// FileStore creates a file-based session store that persists conversations to disk.
-// Sessions are stored as JSON files in the specified directory.
-func FileStore(path string) SessionStore {
-	store, err := NewFileSessionStore(path)
-	if err != nil {
-		return nil
-	}
-	return store
-}
-
-// MemoryStore creates an in-memory session store for ephemeral conversations.
-// Useful for testing or when persistence is not required.
-func MemoryStore() SessionStore {
-	return &memorySessionStore{}
-}
-
 // WithSession configures the agent with a session for conversation persistence.
 // The session is automatically loaded if it exists, or created if it doesn't.
 // If not called, the agent operates in stateless mode (no conversation history).
-func WithSession(id string, store SessionStore) AgentOption {
+func WithSession(id string, store session.Store) AgentOption {
 	return func(a *Agent) {
 		if store == nil {
 			return

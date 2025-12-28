@@ -10,14 +10,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/joakimcarlsson/ai/agent"
+	"github.com/joakimcarlsson/ai/agent/memory"
 	"github.com/joakimcarlsson/ai/embeddings"
 )
 
 type storedMemory struct {
 	ID        string         `json:"id"`
 	Content   string         `json:"content"`
-	UserID    string         `json:"userId"`
+	OwnerID   string         `json:"ownerId"`
 	CreatedAt time.Time      `json:"createdAt"`
 	Metadata  map[string]any `json:"metadata,omitempty"`
 	Vector    []float32      `json:"vector"`
@@ -44,7 +44,7 @@ func NewVectorMemory(dir string, embedder embeddings.Embedding) (*VectorMemory, 
 
 	files, _ := filepath.Glob(filepath.Join(dir, "*.json"))
 	for _, f := range files {
-		userID := filepath.Base(f[:len(f)-5])
+		ownerID := filepath.Base(f[:len(f)-5])
 		data, err := os.ReadFile(f)
 		if err != nil {
 			continue
@@ -53,7 +53,7 @@ func NewVectorMemory(dir string, embedder embeddings.Embedding) (*VectorMemory, 
 		if err := json.Unmarshal(data, &entries); err != nil {
 			continue
 		}
-		m.entries[userID] = entries
+		m.entries[ownerID] = entries
 		if len(entries) > m.counter {
 			m.counter = len(entries)
 		}
@@ -62,15 +62,15 @@ func NewVectorMemory(dir string, embedder embeddings.Embedding) (*VectorMemory, 
 	return m, nil
 }
 
-func (m *VectorMemory) save(userID string) error {
-	data, err := json.MarshalIndent(m.entries[userID], "", "  ")
+func (m *VectorMemory) save(ownerID string) error {
+	data, err := json.MarshalIndent(m.entries[ownerID], "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(m.dir, userID+".json"), data, 0644)
+	return os.WriteFile(filepath.Join(m.dir, ownerID+".json"), data, 0644)
 }
 
-func (m *VectorMemory) Store(ctx context.Context, userID string, fact string, metadata map[string]any) error {
+func (m *VectorMemory) Store(ctx context.Context, id string, fact string, metadata map[string]any) error {
 	resp, err := m.embedder.GenerateEmbeddings(ctx, []string{fact})
 	if err != nil {
 		return err
@@ -80,18 +80,18 @@ func (m *VectorMemory) Store(ctx context.Context, userID string, fact string, me
 	defer m.mu.Unlock()
 
 	m.counter++
-	m.entries[userID] = append(m.entries[userID], storedMemory{
+	m.entries[id] = append(m.entries[id], storedMemory{
 		ID:        fmt.Sprintf("mem-%d", m.counter),
 		Content:   fact,
-		UserID:    userID,
+		OwnerID:   id,
 		CreatedAt: time.Now(),
 		Metadata:  metadata,
 		Vector:    resp.Embeddings[0],
 	})
-	return m.save(userID)
+	return m.save(id)
 }
 
-func (m *VectorMemory) Search(ctx context.Context, userID string, query string, limit int) ([]agent.MemoryEntry, error) {
+func (m *VectorMemory) Search(ctx context.Context, id string, query string, limit int) ([]memory.Entry, error) {
 	resp, err := m.embedder.GenerateEmbeddings(ctx, []string{query})
 	if err != nil {
 		return nil, err
@@ -101,8 +101,8 @@ func (m *VectorMemory) Search(ctx context.Context, userID string, query string, 
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	userEntries := m.entries[userID]
-	if len(userEntries) == 0 {
+	entries := m.entries[id]
+	if len(entries) == 0 {
 		return nil, nil
 	}
 
@@ -112,7 +112,7 @@ func (m *VectorMemory) Search(ctx context.Context, userID string, query string, 
 	}
 	var results []scored
 
-	for _, mem := range userEntries {
+	for _, mem := range entries {
 		score := cosineSimilarity(queryVector, mem.Vector)
 		results = append(results, scored{entry: mem, score: score})
 	}
@@ -129,12 +129,12 @@ func (m *VectorMemory) Search(ctx context.Context, userID string, query string, 
 		limit = len(results)
 	}
 
-	out := make([]agent.MemoryEntry, limit)
+	out := make([]memory.Entry, limit)
 	for i := 0; i < limit; i++ {
-		out[i] = agent.MemoryEntry{
+		out[i] = memory.Entry{
 			ID:        results[i].entry.ID,
 			Content:   results[i].entry.Content,
-			UserID:    results[i].entry.UserID,
+			OwnerID:   results[i].entry.OwnerID,
 			Score:     results[i].score,
 			CreatedAt: results[i].entry.CreatedAt,
 			Metadata:  results[i].entry.Metadata,
@@ -143,23 +143,23 @@ func (m *VectorMemory) Search(ctx context.Context, userID string, query string, 
 	return out, nil
 }
 
-func (m *VectorMemory) GetAll(ctx context.Context, userID string, limit int) ([]agent.MemoryEntry, error) {
+func (m *VectorMemory) GetAll(ctx context.Context, id string, limit int) ([]memory.Entry, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	userEntries := m.entries[userID]
-	if limit > len(userEntries) {
-		limit = len(userEntries)
+	entries := m.entries[id]
+	if limit > len(entries) {
+		limit = len(entries)
 	}
 
-	out := make([]agent.MemoryEntry, limit)
+	out := make([]memory.Entry, limit)
 	for i := 0; i < limit; i++ {
-		out[i] = agent.MemoryEntry{
-			ID:        userEntries[i].ID,
-			Content:   userEntries[i].Content,
-			UserID:    userEntries[i].UserID,
-			CreatedAt: userEntries[i].CreatedAt,
-			Metadata:  userEntries[i].Metadata,
+		out[i] = memory.Entry{
+			ID:        entries[i].ID,
+			Content:   entries[i].Content,
+			OwnerID:   entries[i].OwnerID,
+			CreatedAt: entries[i].CreatedAt,
+			Metadata:  entries[i].Metadata,
 		}
 	}
 	return out, nil
@@ -169,11 +169,11 @@ func (m *VectorMemory) Delete(ctx context.Context, memoryID string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	for userID, entries := range m.entries {
+	for ownerID, entries := range m.entries {
 		for i, entry := range entries {
 			if entry.ID == memoryID {
-				m.entries[userID] = append(entries[:i], entries[i+1:]...)
-				return m.save(userID)
+				m.entries[ownerID] = append(entries[:i], entries[i+1:]...)
+				return m.save(ownerID)
 			}
 		}
 	}
@@ -189,13 +189,13 @@ func (m *VectorMemory) Update(ctx context.Context, memoryID string, fact string,
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	for userID, entries := range m.entries {
+	for ownerID, entries := range m.entries {
 		for i, entry := range entries {
 			if entry.ID == memoryID {
-				m.entries[userID][i].Content = fact
-				m.entries[userID][i].Metadata = metadata
-				m.entries[userID][i].Vector = resp.Embeddings[0]
-				return m.save(userID)
+				m.entries[ownerID][i].Content = fact
+				m.entries[ownerID][i].Metadata = metadata
+				m.entries[ownerID][i].Vector = resp.Embeddings[0]
+				return m.save(ownerID)
 			}
 		}
 	}

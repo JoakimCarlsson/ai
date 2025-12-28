@@ -3,7 +3,10 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"time"
 
+	"github.com/joakimcarlsson/ai/agent/memory"
+	"github.com/joakimcarlsson/ai/agent/session"
 	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/tool"
@@ -19,11 +22,11 @@ type Agent struct {
 	systemPrompt  string
 	maxIterations int
 	autoExecute   bool
-	memory        Memory
-	userIDKey     string
+	memory        memory.Store
+	memoryID      string
 	autoExtract   bool
 	autoDedup     bool
-	session       Session
+	session       session.Session
 }
 
 func (a *Agent) getMemoryLLM() llm.LLM {
@@ -41,7 +44,8 @@ func (a *Agent) getMemoryLLM() llm.LLM {
 //	agent := agent.New(llmClient,
 //	    agent.WithSystemPrompt("You are a helpful assistant."),
 //	    agent.WithTools(&myTool{}),
-//	    agent.WithSession("conv-1", agent.FileStore("./sessions")),
+//	    agent.WithSession("conv-1", session.FileStore("./sessions")),
+//	    agent.WithMemory("user-123", myMemoryStore, memory.AutoExtract()),
 //	)
 func New(llmClient llm.LLM, opts ...AgentOption) *Agent {
 	a := &Agent{
@@ -49,7 +53,6 @@ func New(llmClient llm.LLM, opts ...AgentOption) *Agent {
 		tools:         make([]tool.BaseTool, 0),
 		maxIterations: 10,
 		autoExecute:   true,
-		userIDKey:     "user_id",
 	}
 
 	for _, opt := range opts {
@@ -63,8 +66,8 @@ func (a *Agent) getTools() []tool.BaseTool {
 	allTools := make([]tool.BaseTool, len(a.tools))
 	copy(allTools, a.tools)
 
-	if a.memory != nil && !a.autoExtract {
-		memoryTools := createMemoryTools(a.memory, a.userIDKey)
+	if a.memory != nil && !a.autoExtract && a.memoryID != "" {
+		memoryTools := createMemoryTools(a.memory, a.memoryID)
 		allTools = append(allTools, memoryTools...)
 	}
 
@@ -75,17 +78,14 @@ func (a *Agent) buildMessages(ctx context.Context, userMessage string) ([]messag
 	var messages []message.Message
 
 	systemPrompt := a.systemPrompt
-	if a.memory != nil {
-		userID, ok := ctx.Value(a.userIDKey).(string)
-		if ok && userID != "" {
-			memories, err := a.memory.Search(ctx, userID, userMessage, 5)
-			if err == nil && len(memories) > 0 {
-				var memoryContext string
-				for _, m := range memories {
-					memoryContext += "- " + m.Content + "\n"
-				}
-				systemPrompt = systemPrompt + "\n\nRelevant memories about this user:\n" + memoryContext
+	if a.memory != nil && a.memoryID != "" {
+		memories, err := a.memory.Search(ctx, a.memoryID, userMessage, 5)
+		if err == nil && len(memories) > 0 {
+			var memoryContext string
+			for _, m := range memories {
+				memoryContext += "- " + m.Content + "\n"
 			}
+			systemPrompt = systemPrompt + "\n\nRelevant memories about this user:\n" + memoryContext
 		}
 	}
 
@@ -146,6 +146,76 @@ func (a *Agent) executeTools(ctx context.Context, toolCalls []message.ToolCall) 
 	return results
 }
 
+func (a *Agent) extractAndStoreMemories(ctx context.Context) error {
+	if a.memory == nil || !a.autoExtract || a.memoryID == "" || a.session == nil {
+		return nil
+	}
+
+	messages, err := a.session.GetMessages(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	facts, err := memory.ExtractFacts(ctx, a.getMemoryLLM(), messages)
+	if err != nil {
+		return err
+	}
+
+	for _, fact := range facts {
+		metadata := map[string]any{
+			"source":     "auto_extract",
+			"created_at": time.Now().Format(time.RFC3339),
+		}
+		var storeErr error
+		if a.autoDedup {
+			storeErr = a.storeWithDedup(ctx, fact, metadata)
+		} else {
+			storeErr = a.memory.Store(ctx, a.memoryID, fact, metadata)
+		}
+		if storeErr != nil {
+			continue
+		}
+	}
+
+	return nil
+}
+
+func (a *Agent) storeWithDedup(ctx context.Context, fact string, metadata map[string]any) error {
+	if !a.autoDedup || a.memory == nil || a.memoryID == "" {
+		return a.memory.Store(ctx, a.memoryID, fact, metadata)
+	}
+
+	existing, err := a.memory.Search(ctx, a.memoryID, fact, 5)
+	if err != nil {
+		return a.memory.Store(ctx, a.memoryID, fact, metadata)
+	}
+
+	result, err := memory.Deduplicate(ctx, a.getMemoryLLM(), fact, existing)
+	if err != nil {
+		return a.memory.Store(ctx, a.memoryID, fact, metadata)
+	}
+
+	for _, decision := range result.Decisions {
+		switch decision.Event {
+		case memory.DedupEventAdd:
+			if err := a.memory.Store(ctx, a.memoryID, decision.Text, metadata); err != nil {
+				return err
+			}
+		case memory.DedupEventUpdate:
+			if err := a.memory.Update(ctx, decision.MemoryID, decision.Text, metadata); err != nil {
+				return err
+			}
+		case memory.DedupEventDelete:
+			if err := a.memory.Delete(ctx, decision.MemoryID); err != nil {
+				return err
+			}
+		case memory.DedupEventNone:
+		}
+	}
+
+	return nil
+}
+
 // Chat sends a message to the agent and returns the response.
 // If the agent has tools configured, it will automatically execute them.
 // If memory is configured, relevant memories are injected into the context.
@@ -175,8 +245,7 @@ func (a *Agent) Chat(ctx context.Context, userMessage string) (*ChatResponse, er
 			}
 
 			if a.autoExtract && a.session != nil {
-				extractCtx := context.WithValue(context.Background(), a.userIDKey, ctx.Value(a.userIDKey))
-				go a.extractAndStoreMemories(extractCtx, a.session)
+				go a.extractAndStoreMemories(context.Background())
 			}
 
 			return &ChatResponse{
@@ -267,8 +336,7 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 				}
 
 				if a.autoExtract && a.session != nil {
-					extractCtx := context.WithValue(context.Background(), a.userIDKey, ctx.Value(a.userIDKey))
-					go a.extractAndStoreMemories(extractCtx, a.session)
+					go a.extractAndStoreMemories(context.Background())
 				}
 
 				var usage llm.TokenUsage

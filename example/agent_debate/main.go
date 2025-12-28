@@ -9,6 +9,7 @@ import (
 
 	"github.com/joakimcarlsson/ai/agent"
 	"github.com/joakimcarlsson/ai/agent/memory"
+	"github.com/joakimcarlsson/ai/agent/session"
 	"github.com/joakimcarlsson/ai/embeddings"
 	"github.com/joakimcarlsson/ai/model"
 	llm "github.com/joakimcarlsson/ai/providers"
@@ -41,7 +42,6 @@ const maxRounds = 15
 
 func main() {
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, "user_id", "larry-barry")
 
 	llmClient, err := llm.NewLLM(
 		model.ProviderOpenAI,
@@ -68,16 +68,16 @@ func main() {
 
 	larry := agent.New(llmClient,
 		agent.WithSystemPrompt(larryPrompt),
-		agent.WithSession("larry", agent.MemoryStore()),
+		agent.WithSession("larry", session.MemoryStore()),
 	)
 
 	expert := agent.New(llmClient,
 		agent.WithSystemPrompt(expertPrompt),
-		agent.WithMemory(vectorMemory,
+		agent.WithMemory("larry-barry", vectorMemory,
 			memory.AutoExtract(),
 			memory.AutoDedup(),
 		),
-		agent.WithSession("expert-session", agent.FileStore("./data/sessions")),
+		agent.WithSession("expert-session", session.FileStore("./data/sessions")),
 	)
 
 	expertResponse := ""

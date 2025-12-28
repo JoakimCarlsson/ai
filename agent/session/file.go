@@ -1,4 +1,4 @@
-package agent
+package session
 
 import (
 	"context"
@@ -10,22 +10,25 @@ import (
 	"github.com/joakimcarlsson/ai/message"
 )
 
-type FileSessionStore struct {
+// fileStore is a file-based session store that persists conversations to disk.
+type fileStore struct {
 	dir string
 }
 
-func NewFileSessionStore(dir string) (*FileSessionStore, error) {
+// FileStore creates a file-based session store that persists conversations to disk.
+// Sessions are stored as JSON files in the specified directory.
+func FileStore(dir string) Store {
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, err
+		return nil
 	}
-	return &FileSessionStore{dir: dir}, nil
+	return &fileStore{dir: dir}
 }
 
-func (s *FileSessionStore) filePath(id string) string {
+func (s *fileStore) filePath(id string) string {
 	return filepath.Join(s.dir, id+".json")
 }
 
-func (s *FileSessionStore) Exists(ctx context.Context, id string) (bool, error) {
+func (s *fileStore) Exists(ctx context.Context, id string) (bool, error) {
 	_, err := os.Stat(s.filePath(id))
 	if err == nil {
 		return true, nil
@@ -36,33 +39,33 @@ func (s *FileSessionStore) Exists(ctx context.Context, id string) (bool, error) 
 	return false, err
 }
 
-func (s *FileSessionStore) Create(ctx context.Context, id string) (Session, error) {
+func (s *fileStore) Create(ctx context.Context, id string) (Session, error) {
 	filePath := s.filePath(id)
 	if err := os.WriteFile(filePath, []byte("[]"), 0644); err != nil {
 		return nil, err
 	}
-	return &FileSession{id: id, filePath: filePath}, nil
+	return &fileSession{id: id, filePath: filePath}, nil
 }
 
-func (s *FileSessionStore) Load(ctx context.Context, id string) (Session, error) {
-	return &FileSession{id: id, filePath: s.filePath(id)}, nil
+func (s *fileStore) Load(ctx context.Context, id string) (Session, error) {
+	return &fileSession{id: id, filePath: s.filePath(id)}, nil
 }
 
-func (s *FileSessionStore) Delete(ctx context.Context, id string) error {
+func (s *fileStore) Delete(ctx context.Context, id string) error {
 	return os.Remove(s.filePath(id))
 }
 
-type FileSession struct {
+type fileSession struct {
 	id       string
 	filePath string
 	mu       sync.RWMutex
 }
 
-func (s *FileSession) ID() string {
+func (s *fileSession) ID() string {
 	return s.id
 }
 
-func (s *FileSession) GetMessages(ctx context.Context, limit *int) ([]message.Message, error) {
+func (s *fileSession) GetMessages(ctx context.Context, limit *int) ([]message.Message, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -82,7 +85,7 @@ func (s *FileSession) GetMessages(ctx context.Context, limit *int) ([]message.Me
 	return messages[start:], nil
 }
 
-func (s *FileSession) AddMessages(ctx context.Context, msgs []message.Message) error {
+func (s *fileSession) AddMessages(ctx context.Context, msgs []message.Message) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -95,7 +98,7 @@ func (s *FileSession) AddMessages(ctx context.Context, msgs []message.Message) e
 	return s.saveMessages(existing)
 }
 
-func (s *FileSession) PopMessage(ctx context.Context) (*message.Message, error) {
+func (s *fileSession) PopMessage(ctx context.Context) (*message.Message, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -118,14 +121,14 @@ func (s *FileSession) PopMessage(ctx context.Context) (*message.Message, error) 
 	return &msg, nil
 }
 
-func (s *FileSession) Clear(ctx context.Context) error {
+func (s *fileSession) Clear(ctx context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	return os.Remove(s.filePath)
 }
 
-func (s *FileSession) loadMessages() ([]message.Message, error) {
+func (s *fileSession) loadMessages() ([]message.Message, error) {
 	data, err := os.ReadFile(s.filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -142,7 +145,7 @@ func (s *FileSession) loadMessages() ([]message.Message, error) {
 	return messages, nil
 }
 
-func (s *FileSession) saveMessages(messages []message.Message) error {
+func (s *fileSession) saveMessages(messages []message.Message) error {
 	data, err := json.MarshalIndent(messages, "", "  ")
 	if err != nil {
 		return err
@@ -150,3 +153,4 @@ func (s *FileSession) saveMessages(messages []message.Message) error {
 
 	return os.WriteFile(s.filePath, data, 0644)
 }
+
