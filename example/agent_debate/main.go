@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/joakimcarlsson/ai/agent"
+	"github.com/joakimcarlsson/ai/agent/memory"
 	"github.com/joakimcarlsson/ai/embeddings"
 	"github.com/joakimcarlsson/ai/model"
 	llm "github.com/joakimcarlsson/ai/providers"
@@ -60,31 +61,24 @@ func main() {
 		log.Fatal(err)
 	}
 
-	memory, err := NewVectorMemory("./data/memories", embedder)
+	vectorMemory, err := NewVectorMemory("./data/memories", embedder)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	sessionStore, err := agent.NewFileSessionStore("./data/sessions")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	larry := agent.New(llmClient, agent.WithSystemPrompt(larryPrompt))
+	larry := agent.New(llmClient,
+		agent.WithSystemPrompt(larryPrompt),
+		agent.WithSession("larry", agent.MemoryStore()),
+	)
 
 	expert := agent.New(llmClient,
 		agent.WithSystemPrompt(expertPrompt),
-		agent.WithMemory(memory),
-		agent.WithAutoExtract(true),
-		agent.WithAutoDedup(true),
+		agent.WithMemory(vectorMemory,
+			memory.AutoExtract(),
+			memory.AutoDedup(),
+		),
+		agent.WithSession("expert-session", agent.FileStore("./data/sessions")),
 	)
-
-	larrySession := agent.NewMemorySession("larry")
-
-	expertSession, err := agent.GetOrCreateSession(ctx, "expert-session", sessionStore)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	expertResponse := ""
 
@@ -92,23 +86,23 @@ func main() {
 		fmt.Print("Larry Barry: ")
 		var larryMsg string
 		if round == 0 {
-			larryMsg = streamAndCollect(ctx, larry, larrySession, "Start the conversation by introducing yourself and saying you want to learn about cars.")
+			larryMsg = streamAndCollect(ctx, larry, "Start the conversation by introducing yourself and saying you want to learn about cars.")
 		} else {
-			larryMsg = streamAndCollect(ctx, larry, larrySession, expertResponse)
+			larryMsg = streamAndCollect(ctx, larry, expertResponse)
 		}
 		fmt.Println()
 		fmt.Println()
 
 		fmt.Print("Car Expert: ")
-		expertResponse = streamAndCollect(ctx, expert, expertSession, larryMsg)
+		expertResponse = streamAndCollect(ctx, expert, larryMsg)
 		fmt.Println()
 		fmt.Println()
 	}
 }
 
-func streamAndCollect(ctx context.Context, a *agent.Agent, session agent.Session, input string) string {
+func streamAndCollect(ctx context.Context, a *agent.Agent, input string) string {
 	var sb strings.Builder
-	for event := range a.ChatStream(ctx, session, input) {
+	for event := range a.ChatStream(ctx, input) {
 		switch event.Type {
 		case types.EventContentDelta:
 			fmt.Print(event.Content)

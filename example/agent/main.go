@@ -48,32 +48,12 @@ func main() {
 	myAgent := agent.New(llmClient,
 		agent.WithSystemPrompt("You are a helpful assistant with access to weather tools."),
 		agent.WithTools(&weatherTool{}),
+		agent.WithSession("conv-1", agent.FileStore("./sessions")),
 	)
 
-	store, err := agent.NewFileSessionStore("./sessions")
+	response, err := myAgent.Chat(ctx, "What's the weather in Tokyo? My name is Bob.")
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	session, err := agent.GetOrCreateSession(ctx, "conv-1", store)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	msgs, _ := session.GetMessages(ctx, nil)
-	if len(msgs) == 0 {
-		fmt.Println("New session - run again to see resumption")
-		response, err := myAgent.Chat(ctx, session, "What's the weather in Tokyo? My name is Bob.")
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(response.Content)
-	} else {
-		fmt.Printf("Resumed session with %d messages\n", len(msgs))
-		response, err := myAgent.Chat(ctx, session, "What city did I ask about? What's my name?")
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(response.Content)
-	}
+	fmt.Println(response.Content)
 }

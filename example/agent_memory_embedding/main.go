@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/agent"
+	"github.com/joakimcarlsson/ai/agent/memory"
 	"github.com/joakimcarlsson/ai/embeddings"
 	"github.com/joakimcarlsson/ai/model"
 	llm "github.com/joakimcarlsson/ai/providers"
@@ -231,45 +232,32 @@ func main() {
 		log.Fatal(err)
 	}
 
-	memory, err := NewVectorMemory("./memories", embedder)
+	vectorMemory, err := NewVectorMemory("./memories", embedder)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	myAgent := agent.New(llmClient,
-		agent.WithSystemPrompt(`You are a personal assistant with semantic memory.
-Use store_memory when users share personal information or preferences.
-Use recall_memories to find relevant context before answering questions.
-Use replace_memory when information has changed (first recall to get the memory_id).
-Use delete_memory when users ask you to forget something.`),
-		agent.WithMemory(memory),
-		agent.WithAutoDedup(true),
-	)
 
 	ctx = context.WithValue(ctx, "user_id", "alice")
 
-	store, err := agent.NewFileSessionStore("./sessions")
-	if err != nil {
-		log.Fatal(err)
-	}
+	agent1 := agent.New(llmClient,
+		agent.WithSystemPrompt(`You are a personal assistant with semantic memory.`),
+		agent.WithMemory(vectorMemory, memory.AutoDedup()),
+		agent.WithSession("conv-1", agent.FileStore("./sessions")),
+	)
 
-	session, err := agent.GetOrCreateSession(ctx, "conv-1", store)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	response, err := myAgent.Chat(ctx, session, "I love hiking in the mountains and prefer vegetarian food.")
+	response, err := agent1.Chat(ctx, "I love hiking in the mountains and prefer vegetarian food.")
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(response.Content)
 
-	session2, err := agent.GetOrCreateSession(ctx, "conv-2", store)
-	if err != nil {
-		log.Fatal(err)
-	}
+	agent2 := agent.New(llmClient,
+		agent.WithSystemPrompt(`You are a personal assistant with semantic memory.`),
+		agent.WithMemory(vectorMemory, memory.AutoDedup()),
+		agent.WithSession("conv-2", agent.FileStore("./sessions")),
+	)
 
-	response, err = myAgent.Chat(ctx, session2, "What outdoor activities would you recommend for me?")
+	response, err = agent2.Chat(ctx, "What outdoor activities would you recommend for me?")
 	if err != nil {
 		log.Fatal(err)
 	}

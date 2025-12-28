@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/joakimcarlsson/ai/agent"
+	"github.com/joakimcarlsson/ai/agent/memory"
 	"github.com/joakimcarlsson/ai/embeddings"
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/model"
@@ -374,46 +375,43 @@ func main() {
 		log.Fatal(err)
 	}
 
-	memory, err := NewPgMemory(db, embedder, "memories")
+	pgMemory, err := NewPgMemory(db, embedder, "memories")
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	myAgent := agent.New(llmClient,
-		agent.WithSystemPrompt(`You are a personal assistant with memory capabilities.
-Use store_memory when users share personal information or preferences.
-Use recall_memories to find relevant context before answering questions.
-Use replace_memory when information has changed (first recall to get the memory_id).
-Use delete_memory when users ask you to forget something.`),
-		agent.WithMemory(memory),
-		agent.WithAutoExtract(true),
-		agent.WithAutoDedup(true),
-	)
-
-	ctx = context.WithValue(ctx, "user_id", "alice")
 
 	sessionStore, err := NewPgSessionStore(db, "sessions")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	session, err := agent.GetOrCreateSession(ctx, "conv-1", sessionStore)
-	if err != nil {
-		log.Fatal(err)
-	}
+	ctx = context.WithValue(ctx, "user_id", "alice")
 
-	response, err := myAgent.Chat(ctx, session, "Hi! My name is Alice and I love Italian food.")
+	agent1 := agent.New(llmClient,
+		agent.WithSystemPrompt(`You are a personal assistant with memory capabilities.`),
+		agent.WithMemory(pgMemory,
+			memory.AutoExtract(),
+			memory.AutoDedup(),
+		),
+		agent.WithSession("conv-1", sessionStore),
+	)
+
+	response, err := agent1.Chat(ctx, "Hi! My name is Alice and I love Italian food.")
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(response.Content)
 
-	session2, err := agent.GetOrCreateSession(ctx, "conv-2", sessionStore)
-	if err != nil {
-		log.Fatal(err)
-	}
+	agent2 := agent.New(llmClient,
+		agent.WithSystemPrompt(`You are a personal assistant with memory capabilities.`),
+		agent.WithMemory(pgMemory,
+			memory.AutoExtract(),
+			memory.AutoDedup(),
+		),
+		agent.WithSession("conv-2", sessionStore),
+	)
 
-	response, err = myAgent.Chat(ctx, session2, "Can you recommend a restaurant for me?")
+	response, err = agent2.Chat(ctx, "Can you recommend a restaurant for me?")
 	if err != nil {
 		log.Fatal(err)
 	}

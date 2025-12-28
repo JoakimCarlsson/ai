@@ -10,6 +10,8 @@ import (
 	"github.com/joakimcarlsson/ai/types"
 )
 
+// Agent is an AI assistant that can chat with users, use tools, and maintain memory.
+// Create one using New() with functional options.
 type Agent struct {
 	llm           llm.LLM
 	memoryLLM     llm.LLM
@@ -21,6 +23,7 @@ type Agent struct {
 	userIDKey     string
 	autoExtract   bool
 	autoDedup     bool
+	session       Session
 }
 
 func (a *Agent) getMemoryLLM() llm.LLM {
@@ -30,6 +33,16 @@ func (a *Agent) getMemoryLLM() llm.LLM {
 	return a.llm
 }
 
+// New creates a new Agent with the given LLM client and options.
+// The agent can be configured with tools, memory, session persistence, and more.
+//
+// Example:
+//
+//	agent := agent.New(llmClient,
+//	    agent.WithSystemPrompt("You are a helpful assistant."),
+//	    agent.WithTools(&myTool{}),
+//	    agent.WithSession("conv-1", agent.FileStore("./sessions")),
+//	)
 func New(llmClient llm.LLM, opts ...AgentOption) *Agent {
 	a := &Agent{
 		llm:           llmClient,
@@ -58,24 +71,43 @@ func (a *Agent) getTools() []tool.BaseTool {
 	return allTools
 }
 
-func (a *Agent) buildMessages(ctx context.Context, session Session, userMessage string) ([]message.Message, error) {
+func (a *Agent) buildMessages(ctx context.Context, userMessage string) ([]message.Message, error) {
 	var messages []message.Message
 
-	if a.systemPrompt != "" {
-		messages = append(messages, message.NewSystemMessage(a.systemPrompt))
+	systemPrompt := a.systemPrompt
+	if a.memory != nil {
+		userID, ok := ctx.Value(a.userIDKey).(string)
+		if ok && userID != "" {
+			memories, err := a.memory.Search(ctx, userID, userMessage, 5)
+			if err == nil && len(memories) > 0 {
+				var memoryContext string
+				for _, m := range memories {
+					memoryContext += "- " + m.Content + "\n"
+				}
+				systemPrompt = systemPrompt + "\n\nRelevant memories about this user:\n" + memoryContext
+			}
+		}
 	}
 
-	sessionMessages, err := session.GetMessages(ctx, nil)
-	if err != nil {
-		return nil, err
+	if systemPrompt != "" {
+		messages = append(messages, message.NewSystemMessage(systemPrompt))
 	}
-	messages = append(messages, sessionMessages...)
+
+	if a.session != nil {
+		sessionMessages, err := a.session.GetMessages(ctx, nil)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, sessionMessages...)
+	}
 
 	userMsg := message.NewUserMessage(userMessage)
 	messages = append(messages, userMsg)
 
-	if err := session.AddMessages(ctx, []message.Message{userMsg}); err != nil {
-		return nil, err
+	if a.session != nil {
+		if err := a.session.AddMessages(ctx, []message.Message{userMsg}); err != nil {
+			return nil, err
+		}
 	}
 
 	return messages, nil
@@ -114,8 +146,12 @@ func (a *Agent) executeTools(ctx context.Context, toolCalls []message.ToolCall) 
 	return results
 }
 
-func (a *Agent) Chat(ctx context.Context, session Session, userMessage string) (*ChatResponse, error) {
-	messages, err := a.buildMessages(ctx, session, userMessage)
+// Chat sends a message to the agent and returns the response.
+// If the agent has tools configured, it will automatically execute them.
+// If memory is configured, relevant memories are injected into the context.
+// If a session is configured, the conversation history is persisted.
+func (a *Agent) Chat(ctx context.Context, userMessage string) (*ChatResponse, error) {
+	messages, err := a.buildMessages(ctx, userMessage)
 	if err != nil {
 		return nil, err
 	}
@@ -132,13 +168,15 @@ func (a *Agent) Chat(ctx context.Context, session Session, userMessage string) (
 		if len(resp.ToolCalls) == 0 || !a.autoExecute || iteration >= a.maxIterations {
 			assistantMsg := message.NewAssistantMessage()
 			assistantMsg.AppendContent(resp.Content)
-			if err := session.AddMessages(ctx, []message.Message{assistantMsg}); err != nil {
-				return nil, err
+			if a.session != nil {
+				if err := a.session.AddMessages(ctx, []message.Message{assistantMsg}); err != nil {
+					return nil, err
+				}
 			}
 
-			if a.autoExtract {
+			if a.autoExtract && a.session != nil {
 				extractCtx := context.WithValue(context.Background(), a.userIDKey, ctx.Value(a.userIDKey))
-				go a.extractAndStoreMemories(extractCtx, session)
+				go a.extractAndStoreMemories(extractCtx, a.session)
 			}
 
 			return &ChatResponse{
@@ -166,21 +204,26 @@ func (a *Agent) Chat(ctx context.Context, session Session, userMessage string) (
 		}
 		messages = append(messages, toolMsg)
 
-		if err := session.AddMessages(ctx, []message.Message{assistantMsg, toolMsg}); err != nil {
-			return nil, err
+		if a.session != nil {
+			if err := a.session.AddMessages(ctx, []message.Message{assistantMsg, toolMsg}); err != nil {
+				return nil, err
+			}
 		}
 
 		iteration++
 	}
 }
 
-func (a *Agent) ChatStream(ctx context.Context, session Session, userMessage string) <-chan ChatEvent {
+// ChatStream sends a message to the agent and returns a channel of streaming events.
+// Events include content deltas, tool calls, and the final response.
+// The channel is closed when the response is complete or an error occurs.
+func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatEvent {
 	eventChan := make(chan ChatEvent)
 
 	go func() {
 		defer close(eventChan)
 
-		messages, err := a.buildMessages(ctx, session, userMessage)
+		messages, err := a.buildMessages(ctx, userMessage)
 		if err != nil {
 			eventChan <- ChatEvent{Type: types.EventError, Error: err}
 			return
@@ -219,11 +262,13 @@ func (a *Agent) ChatStream(ctx context.Context, session Session, userMessage str
 			if len(toolCalls) == 0 || !a.autoExecute || iteration >= a.maxIterations {
 				assistantMsg := message.NewAssistantMessage()
 				assistantMsg.AppendContent(fullContent)
-				_ = session.AddMessages(ctx, []message.Message{assistantMsg})
+				if a.session != nil {
+					_ = a.session.AddMessages(ctx, []message.Message{assistantMsg})
+				}
 
-				if a.autoExtract {
+				if a.autoExtract && a.session != nil {
 					extractCtx := context.WithValue(context.Background(), a.userIDKey, ctx.Value(a.userIDKey))
-					go a.extractAndStoreMemories(extractCtx, session)
+					go a.extractAndStoreMemories(extractCtx, a.session)
 				}
 
 				var usage llm.TokenUsage
@@ -269,7 +314,9 @@ func (a *Agent) ChatStream(ctx context.Context, session Session, userMessage str
 			}
 			messages = append(messages, toolMsg)
 
-			_ = session.AddMessages(ctx, []message.Message{assistantMsg, toolMsg})
+			if a.session != nil {
+				_ = a.session.AddMessages(ctx, []message.Message{assistantMsg, toolMsg})
+			}
 
 			iteration++
 		}
@@ -278,27 +325,8 @@ func (a *Agent) ChatStream(ctx context.Context, session Session, userMessage str
 	return eventChan
 }
 
-func (a *Agent) ChatWithMemoryContext(ctx context.Context, session Session, userMessage string) (*ChatResponse, error) {
-	if a.memory != nil {
-		userID, ok := ctx.Value(a.userIDKey).(string)
-		if ok && userID != "" {
-			memories, err := a.memory.Search(ctx, userID, userMessage, 5)
-			if err == nil && len(memories) > 0 {
-				var memoryContext string
-				for _, m := range memories {
-					memoryContext += "- " + m.Content + "\n"
-				}
-
-				originalPrompt := a.systemPrompt
-				a.systemPrompt = a.systemPrompt + "\n\nRelevant memories about this user:\n" + memoryContext
-				defer func() { a.systemPrompt = originalPrompt }()
-			}
-		}
-	}
-
-	return a.Chat(ctx, session, userMessage)
-}
-
+// ParseToolInput parses a JSON tool input string into the specified type.
+// This is a helper function for implementing tool.BaseTool.Run().
 func ParseToolInput[T any](input string) (T, error) {
 	var result T
 	err := json.Unmarshal([]byte(input), &result)

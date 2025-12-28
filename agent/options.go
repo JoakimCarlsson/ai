@@ -1,7 +1,9 @@
 package agent
 
 import (
-	llm "github.com/joakimcarlsson/ai/providers"
+	"context"
+
+	"github.com/joakimcarlsson/ai/agent/memory"
 	"github.com/joakimcarlsson/ai/tool"
 )
 
@@ -40,11 +42,19 @@ func WithAutoExecute(auto bool) AgentOption {
 }
 
 // WithMemory sets the memory store for cross-conversation fact storage.
-// When set, the agent gains access to store_memory, recall_memories, replace_memory,
-// and delete_memory tools for managing user facts across sessions.
-func WithMemory(memory Memory) AgentOption {
+// When set, the agent automatically injects relevant memories into the system prompt.
+// Use memory.AutoExtract() to enable automatic fact extraction from conversations.
+// Use memory.AutoDedup() to enable LLM-based memory deduplication.
+// Use memory.LLM() to set a separate LLM for memory operations.
+func WithMemory(mem Memory, opts ...memory.Option) AgentOption {
 	return func(a *Agent) {
-		a.memory = memory
+		a.memory = mem
+		cfg := memory.Apply(opts...)
+		a.autoExtract = cfg.AutoExtract
+		a.autoDedup = cfg.AutoDedup
+		if cfg.LLM != nil {
+			a.memoryLLM = cfg.LLM
+		}
 	}
 }
 
@@ -56,30 +66,39 @@ func WithUserIDKey(key string) AgentOption {
 	}
 }
 
-// WithAutoExtract enables automatic fact extraction from conversations.
-// When enabled, the agent uses an LLM to extract relevant facts from each conversation
-// and stores them in the memory store. Requires WithMemory to be set.
-func WithAutoExtract(enabled bool) AgentOption {
-	return func(a *Agent) {
-		a.autoExtract = enabled
+// FileStore creates a file-based session store that persists conversations to disk.
+// Sessions are stored as JSON files in the specified directory.
+func FileStore(path string) SessionStore {
+	store, err := NewFileSessionStore(path)
+	if err != nil {
+		return nil
 	}
+	return store
 }
 
-// WithAutoDedup enables LLM-based memory deduplication on store.
-// When enabled, before storing a new memory, the agent searches for similar existing
-// memories and asks an LLM to decide whether to ADD, UPDATE, DELETE, or skip.
-// Requires WithMemory to be set.
-func WithAutoDedup(enabled bool) AgentOption {
-	return func(a *Agent) {
-		a.autoDedup = enabled
-	}
+// MemoryStore creates an in-memory session store for ephemeral conversations.
+// Useful for testing or when persistence is not required.
+func MemoryStore() SessionStore {
+	return &memorySessionStore{}
 }
 
-// WithMemoryLLM sets a separate LLM for memory operations (extraction and deduplication).
-// Useful for using a cheaper or faster model for background memory tasks while keeping
-// the main conversation on a more capable model.
-func WithMemoryLLM(memoryLLM llm.LLM) AgentOption {
+// WithSession configures the agent with a session for conversation persistence.
+// The session is automatically loaded if it exists, or created if it doesn't.
+// If not called, the agent operates in stateless mode (no conversation history).
+func WithSession(id string, store SessionStore) AgentOption {
 	return func(a *Agent) {
-		a.memoryLLM = memoryLLM
+		if store == nil {
+			return
+		}
+		ctx := context.Background()
+		exists, err := store.Exists(ctx, id)
+		if err != nil {
+			return
+		}
+		if exists {
+			a.session, _ = store.Load(ctx, id)
+		} else {
+			a.session, _ = store.Create(ctx, id)
+		}
 	}
 }

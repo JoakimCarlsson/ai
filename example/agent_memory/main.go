@@ -142,44 +142,32 @@ func main() {
 		log.Fatal(err)
 	}
 
-	memory, err := NewFileMemory("./memories")
+	fileMemory, err := NewFileMemory("./memories")
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	myAgent := agent.New(llmClient,
-		agent.WithSystemPrompt(`You are a personal assistant with memory capabilities. 
-Use store_memory when users share personal information or preferences.
-Use recall_memories before answering questions that might benefit from user context.
-Use replace_memory when information has changed (first recall to get the memory_id).
-Use delete_memory when users ask you to forget something.`),
-		agent.WithMemory(memory),
-	)
 
 	ctx = context.WithValue(ctx, "user_id", "alice")
 
-	store, err := agent.NewFileSessionStore("./sessions")
-	if err != nil {
-		log.Fatal(err)
-	}
+	agent1 := agent.New(llmClient,
+		agent.WithSystemPrompt(`You are a personal assistant with memory capabilities.`),
+		agent.WithMemory(fileMemory),
+		agent.WithSession("conv-1", agent.FileStore("./sessions")),
+	)
 
-	session, err := agent.GetOrCreateSession(ctx, "conv-1", store)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	response, err := myAgent.Chat(ctx, session, "Hi! My name is Alice and I'm allergic to peanuts.")
+	response, err := agent1.Chat(ctx, "Hi! My name is Alice and I'm allergic to peanuts.")
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(response.Content)
 
-	session2, err := agent.GetOrCreateSession(ctx, "conv-2", store)
-	if err != nil {
-		log.Fatal(err)
-	}
+	agent2 := agent.New(llmClient,
+		agent.WithSystemPrompt(`You are a personal assistant with memory capabilities.`),
+		agent.WithMemory(fileMemory),
+		agent.WithSession("conv-2", agent.FileStore("./sessions")),
+	)
 
-	response, err = myAgent.Chat(ctx, session2, "Can you recommend a restaurant for me?")
+	response, err = agent2.Chat(ctx, "Can you recommend a restaurant for me?")
 	if err != nil {
 		log.Fatal(err)
 	}

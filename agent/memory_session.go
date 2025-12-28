@@ -7,6 +7,37 @@ import (
 	"github.com/joakimcarlsson/ai/message"
 )
 
+type memorySessionStore struct {
+	sessions sync.Map
+}
+
+func (s *memorySessionStore) Exists(ctx context.Context, id string) (bool, error) {
+	_, ok := s.sessions.Load(id)
+	return ok, nil
+}
+
+func (s *memorySessionStore) Create(ctx context.Context, id string) (Session, error) {
+	session := &MemorySession{
+		id:       id,
+		messages: make([]message.Message, 0),
+	}
+	s.sessions.Store(id, session)
+	return session, nil
+}
+
+func (s *memorySessionStore) Load(ctx context.Context, id string) (Session, error) {
+	val, ok := s.sessions.Load(id)
+	if !ok {
+		return nil, nil
+	}
+	return val.(*MemorySession), nil
+}
+
+func (s *memorySessionStore) Delete(ctx context.Context, id string) error {
+	s.sessions.Delete(id)
+	return nil
+}
+
 type MemorySession struct {
 	id       string
 	messages []message.Message
