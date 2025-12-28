@@ -11,7 +11,6 @@ import (
 	"github.com/joakimcarlsson/ai/model"
 	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/tool"
-	"github.com/joakimcarlsson/ai/types"
 )
 
 type weatherTool struct{}
@@ -63,25 +62,20 @@ func main() {
 		log.Fatal(err)
 	}
 
-	response, err := myAgent.Chat(ctx, session, "What's the weather in Tokyo?")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(response.Content)
-
-	streamSession, err := agent.NewFileSession("conv-2", "./sessions")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for event := range myAgent.ChatStream(ctx, streamSession, "What about Paris?") {
-		switch event.Type {
-		case types.EventContentDelta:
-			fmt.Print(event.Content)
-		case types.EventComplete:
-			fmt.Println()
-		case types.EventError:
-			log.Fatal(event.Error)
+	msgs, _ := session.GetMessages(ctx, nil)
+	if len(msgs) == 0 {
+		fmt.Println("New session - run again to see resumption")
+		response, err := myAgent.Chat(ctx, session, "What's the weather in Tokyo? My name is Bob.")
+		if err != nil {
+			log.Fatal(err)
 		}
+		fmt.Println(response.Content)
+	} else {
+		fmt.Printf("Resumed session with %d messages\n", len(msgs))
+		response, err := myAgent.Chat(ctx, session, "What city did I ask about? What's my name?")
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(response.Content)
 	}
 }
