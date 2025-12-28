@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/joakimcarlsson/ai/agent"
+	"github.com/joakimcarlsson/ai/embeddings"
 	"github.com/joakimcarlsson/ai/model"
 	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/types"
@@ -51,7 +52,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	memory, err := NewFileMemory("./data/memories")
+	embedder, err := embeddings.NewEmbedding(model.ProviderOpenAI,
+		embeddings.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+		embeddings.WithModel(model.OpenAIEmbeddingModels[model.TextEmbedding3Small]),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	memory, err := NewVectorMemory("./data/memories", embedder)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,29 +79,30 @@ func main() {
 		agent.WithAutoDedup(true),
 	)
 
-	larrySession, err := agent.GetOrCreateSession(ctx, "larry-session", sessionStore)
-	if err != nil {
-		log.Fatal(err)
-	}
+	larrySession := agent.NewMemorySession("larry")
 
 	expertSession, err := agent.GetOrCreateSession(ctx, "expert-session", sessionStore)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	larryMsg := "Hi! I want to learn about cars!"
+	expertResponse := ""
 
 	for round := 0; round < maxRounds; round++ {
-		fmt.Printf("Larry Barry: %s\n", larryMsg)
+		fmt.Print("Larry Barry: ")
+		var larryMsg string
+		if round == 0 {
+			larryMsg = streamAndCollect(ctx, larry, larrySession, "Start the conversation by introducing yourself and saying you want to learn about cars.")
+		} else {
+			larryMsg = streamAndCollect(ctx, larry, larrySession, expertResponse)
+		}
+		fmt.Println()
+		fmt.Println()
 
 		fmt.Print("Car Expert: ")
-		expertResponse := streamAndCollect(ctx, expert, expertSession, larryMsg)
+		expertResponse = streamAndCollect(ctx, expert, expertSession, larryMsg)
 		fmt.Println()
 		fmt.Println()
-
-		if round < maxRounds-1 {
-			larryMsg = chat(ctx, larry, larrySession, expertResponse)
-		}
 	}
 }
 
@@ -108,12 +118,4 @@ func streamAndCollect(ctx context.Context, a *agent.Agent, session agent.Session
 		}
 	}
 	return sb.String()
-}
-
-func chat(ctx context.Context, a *agent.Agent, session agent.Session, input string) string {
-	resp, err := a.Chat(ctx, session, input)
-	if err != nil {
-		return "Wow, that's interesting! Tell me more!"
-	}
-	return resp.Content
 }
