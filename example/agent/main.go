@@ -13,26 +13,19 @@ import (
 	"github.com/joakimcarlsson/ai/tool"
 )
 
+type weatherParams struct {
+	Location string `json:"location" desc:"The city name"`
+	Units    string `json:"units" desc:"Temperature units" enum:"celsius,fahrenheit" required:"false"`
+}
+
 type weatherTool struct{}
 
 func (w *weatherTool) Info() tool.ToolInfo {
-	return tool.ToolInfo{
-		Name:        "get_weather",
-		Description: "Get the current weather for a location",
-		Parameters: map[string]any{
-			"location": map[string]any{
-				"type":        "string",
-				"description": "The city name",
-			},
-		},
-		Required: []string{"location"},
-	}
+	return tool.NewToolInfo("get_weather", "Get the current weather for a location", weatherParams{})
 }
 
 func (w *weatherTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
-	var input struct {
-		Location string `json:"location"`
-	}
+	var input weatherParams
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
 		return tool.NewTextErrorResponse(err.Error()), nil
 	}
