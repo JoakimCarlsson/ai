@@ -13,4 +13,3 @@ type Session interface {
 	PopMessage(ctx context.Context) (*message.Message, error)
 	Clear(ctx context.Context) error
 }
-

@@ -23,12 +23,11 @@ type ToolExecutionResult struct {
 }
 
 type ChatEvent struct {
-	Type         types.EventType
-	Content      string
-	Thinking     string
-	ToolCall     *message.ToolCall
-	ToolResult   *ToolExecutionResult
-	Response     *ChatResponse
-	Error        error
+	Type       types.EventType
+	Content    string
+	Thinking   string
+	ToolCall   *message.ToolCall
+	ToolResult *ToolExecutionResult
+	Response   *ChatResponse
+	Error      error
 }
-

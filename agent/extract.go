@@ -115,4 +115,3 @@ func (a *Agent) extractAndStoreMemories(ctx context.Context, session Session) er
 
 	return nil
 }
-

@@ -302,4 +302,3 @@ func ParseToolInput[T any](input string) (T, error) {
 	err := json.Unmarshal([]byte(input), &result)
 	return result, err
 }
-

@@ -92,7 +92,12 @@ func (m *VectorMemory) Store(ctx context.Context, userID string, fact string, me
 	return m.save(userID)
 }
 
-func (m *VectorMemory) Search(ctx context.Context, userID string, query string, limit int) ([]agent.MemoryEntry, error) {
+func (m *VectorMemory) Search(
+	ctx context.Context,
+	userID string,
+	query string,
+	limit int,
+) ([]agent.MemoryEntry, error) {
 	resp, err := m.embedder.GenerateEmbeddings(ctx, []string{query})
 	if err != nil {
 		return nil, err

@@ -66,7 +66,9 @@ func httpExample(ctx context.Context) {
 	}
 
 	messages := []message.Message{
-		message.NewUserMessage("Can you help me understand React hooks? Specifically useState and useEffect. Use Context7 to get the latest documentation."),
+		message.NewUserMessage(
+			"Can you help me understand React hooks? Specifically useState and useEffect. Use Context7 to get the latest documentation.",
+		),
 	}
 
 	response, err := client.SendMessages(ctx, messages, mcpTools)
@@ -119,7 +121,9 @@ func stdioExample(ctx context.Context) {
 	}
 
 	messages := []message.Message{
-		message.NewUserMessage("Explain TypeScript utility types like Pick, Omit, and Partial. Use Context7 to fetch the latest TypeScript documentation."),
+		message.NewUserMessage(
+			"Explain TypeScript utility types like Pick, Omit, and Partial. Use Context7 to fetch the latest TypeScript documentation.",
+		),
 	}
 
 	response, err := client.SendMessages(ctx, messages, mcpTools)

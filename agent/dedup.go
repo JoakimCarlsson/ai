@@ -45,7 +45,12 @@ Rules:
 3. Use NONE when the new fact adds no new information
 4. The "text" field should contain the final fact to store (for ADD/UPDATE) or the original fact (for DELETE/NONE)`
 
-func deduplicateMemory(ctx context.Context, llmClient llm.LLM, newFact string, existing []MemoryEntry) (*DedupResult, error) {
+func deduplicateMemory(
+	ctx context.Context,
+	llmClient llm.LLM,
+	newFact string,
+	existing []MemoryEntry,
+) (*DedupResult, error) {
 	if len(existing) == 0 {
 		return &DedupResult{
 			Decisions: []DedupDecision{{
@@ -120,4 +125,3 @@ func (a *Agent) storeWithDedup(ctx context.Context, userID string, fact string, 
 
 	return nil
 }
-
