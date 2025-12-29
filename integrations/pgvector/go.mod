@@ -1,11 +1,11 @@
-module github.com/joakimcarlsson/ai/example/agent_memory_postgres
+module github.com/joakimcarlsson/ai/integrations/pgvector
 
 go 1.24.2
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/joakimcarlsson/ai v0.0.0
-	github.com/joakimcarlsson/ai/integrations/pgvector v0.0.0
-	github.com/joakimcarlsson/ai/integrations/postgres v0.0.0
+	github.com/lib/pq v1.10.9
 )
 
 require (
@@ -39,12 +39,10 @@ require (
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/jsonschema-go v0.3.0 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.7 // indirect
 	github.com/googleapis/gax-go/v2 v2.15.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/lib/pq v1.10.9 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.1.0 // indirect
 	github.com/openai/openai-go v1.12.0 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
@@ -70,7 +68,3 @@ require (
 )
 
 replace github.com/joakimcarlsson/ai => ../..
-
-replace github.com/joakimcarlsson/ai/integrations/postgres => ../../integrations/postgres
-
-replace github.com/joakimcarlsson/ai/integrations/pgvector => ../../integrations/pgvector

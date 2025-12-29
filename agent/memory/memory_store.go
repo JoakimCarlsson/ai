@@ -6,31 +6,29 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/joakimcarlsson/ai/embeddings"
 )
 
-// storedEntry holds a memory entry along with its vector embedding.
-type storedEntry struct {
-	Entry
-	Vector []float32 `json:"vector"`
-}
-
-// memoryStore is an in-memory implementation of Store.
-// Data is lost when the process exits.
 type memoryStore struct {
-	embedder embeddings.Embedding
-	entries  map[string][]storedEntry // keyed by ownerID
-	mu       sync.RWMutex
+	embedder    embeddings.Embedding
+	entries     map[string][]storedEntry
+	mu          sync.RWMutex
+	idGenerator IDGenerator
 }
 
 // MemoryStore creates an in-memory Store that uses the provided embedder
 // for vector similarity search. Data is not persisted and will be lost
 // when the process exits.
-func MemoryStore(embedder embeddings.Embedding) Store {
+func MemoryStore(embedder embeddings.Embedding, opts ...StoreOption) Store {
+	cfg := defaultStoreConfig()
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
 	return &memoryStore{
-		embedder: embedder,
-		entries:  make(map[string][]storedEntry),
+		embedder:    embedder,
+		entries:     make(map[string][]storedEntry),
+		idGenerator: cfg.idGenerator,
 	}
 }
 
@@ -42,7 +40,7 @@ func (s *memoryStore) Store(ctx context.Context, id string, fact string, metadat
 
 	entry := storedEntry{
 		Entry: Entry{
-			ID:        uuid.New().String(),
+			ID:        s.idGenerator(),
 			Content:   fact,
 			OwnerID:   id,
 			CreatedAt: time.Now(),
@@ -161,4 +159,3 @@ func (s *memoryStore) Update(ctx context.Context, memoryID string, fact string, 
 
 	return nil
 }
-

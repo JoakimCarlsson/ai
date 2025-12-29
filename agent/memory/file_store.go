@@ -9,28 +9,32 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/joakimcarlsson/ai/embeddings"
 )
 
-// fileStore is a file-based implementation of Store.
-// Each owner's memories are stored in a separate JSON file.
 type fileStore struct {
-	dir      string
-	embedder embeddings.Embedding
-	mu       sync.RWMutex
+	dir         string
+	embedder    embeddings.Embedding
+	mu          sync.RWMutex
+	idGenerator IDGenerator
 }
 
 // FileStore creates a file-based Store that persists memories to disk.
 // Each owner's memories are stored in a separate JSON file in the specified directory.
 // The embedder is used for vector similarity search.
-func FileStore(dir string, embedder embeddings.Embedding) Store {
+func FileStore(dir string, embedder embeddings.Embedding, opts ...StoreOption) Store {
+	cfg := defaultStoreConfig()
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return nil
 	}
 	return &fileStore{
-		dir:      dir,
-		embedder: embedder,
+		dir:         dir,
+		embedder:    embedder,
+		idGenerator: cfg.idGenerator,
 	}
 }
 
@@ -72,7 +76,7 @@ func (s *fileStore) Store(ctx context.Context, id string, fact string, metadata 
 
 	entry := storedEntry{
 		Entry: Entry{
-			ID:        uuid.New().String(),
+			ID:        s.idGenerator(),
 			Content:   fact,
 			OwnerID:   id,
 			CreatedAt: time.Now(),
@@ -165,7 +169,6 @@ func (s *fileStore) Delete(ctx context.Context, memoryID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// We need to search all files since we don't know which owner this memory belongs to
 	files, err := os.ReadDir(s.dir)
 	if err != nil {
 		return err
@@ -176,7 +179,7 @@ func (s *fileStore) Delete(ctx context.Context, memoryID string) error {
 			continue
 		}
 
-		ownerID := file.Name()[:len(file.Name())-5] // remove .json
+		ownerID := file.Name()[:len(file.Name())-5]
 		entries, err := s.loadEntries(ownerID)
 		if err != nil {
 			continue
@@ -203,7 +206,6 @@ func (s *fileStore) Update(ctx context.Context, memoryID string, fact string, me
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// We need to search all files since we don't know which owner this memory belongs to
 	files, err := os.ReadDir(s.dir)
 	if err != nil {
 		return err
@@ -214,7 +216,7 @@ func (s *fileStore) Update(ctx context.Context, memoryID string, fact string, me
 			continue
 		}
 
-		ownerID := file.Name()[:len(file.Name())-5] // remove .json
+		ownerID := file.Name()[:len(file.Name())-5]
 		entries, err := s.loadEntries(ownerID)
 		if err != nil {
 			continue
@@ -234,4 +236,3 @@ func (s *fileStore) Update(ctx context.Context, memoryID string, fact string, me
 
 	return nil
 }
-

@@ -9,8 +9,9 @@ import (
 
 	"github.com/joakimcarlsson/ai/agent"
 	"github.com/joakimcarlsson/ai/agent/memory"
-	"github.com/joakimcarlsson/ai/agent/session"
 	"github.com/joakimcarlsson/ai/embeddings"
+	"github.com/joakimcarlsson/ai/integrations/pgvector"
+	"github.com/joakimcarlsson/ai/integrations/postgres"
 	"github.com/joakimcarlsson/ai/model"
 	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/types"
@@ -43,10 +44,12 @@ const maxRounds = 15
 func main() {
 	ctx := context.Background()
 
+	connStr := "postgres://postgres:password@localhost:5432/example?sslmode=disable"
+
 	llmClient, err := llm.NewLLM(
 		model.ProviderOpenAI,
 		llm.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-		llm.WithModel(model.OpenAIModels[model.GPT4oMini]),
+		llm.WithModel(model.OpenAIModels[model.GPT5Nano]),
 		llm.WithMaxTokens(1024),
 	)
 	if err != nil {
@@ -61,23 +64,28 @@ func main() {
 		log.Fatal(err)
 	}
 
-	vectorMemory, err := NewVectorMemory("./data/memories", embedder)
+	sessionStore, err := postgres.SessionStore(ctx, connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	memoryStore, err := pgvector.MemoryStore(ctx, connStr, embedder)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	larry := agent.New(llmClient,
 		agent.WithSystemPrompt(larryPrompt),
-		agent.WithSession("larry", session.MemoryStore()),
+		agent.WithSession("larry-session", sessionStore),
 	)
 
 	expert := agent.New(llmClient,
 		agent.WithSystemPrompt(expertPrompt),
-		agent.WithMemory("larry-barry", vectorMemory,
+		agent.WithMemory("larry-barry", memoryStore,
 			memory.AutoExtract(),
 			memory.AutoDedup(),
 		),
-		agent.WithSession("expert-session", session.FileStore("./data/sessions")),
+		agent.WithSession("expert-session", sessionStore),
 	)
 
 	expertResponse := ""

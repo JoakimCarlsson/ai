@@ -1,4 +1,4 @@
-module github.com/joakimcarlsson/ai/example/agent_memory_postgres
+module github.com/joakimcarlsson/ai/example/custom_id_generator
 
 go 1.24.2
 
