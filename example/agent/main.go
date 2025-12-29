@@ -16,7 +16,7 @@ import (
 
 type weatherParams struct {
 	Location string `json:"location" desc:"The city name"`
-	Units    string `json:"units" desc:"Temperature units" enum:"celsius,fahrenheit" required:"false"`
+	Units    string `json:"units"    desc:"Temperature units" enum:"celsius,fahrenheit" required:"false"`
 }
 
 type weatherTool struct{}

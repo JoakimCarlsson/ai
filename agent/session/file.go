@@ -160,4 +160,3 @@ func (s *fileSession) saveMessages(messages []message.Message) error {
 
 	return os.WriteFile(s.filePath, data, 0644)
 }
-

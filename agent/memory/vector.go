@@ -22,4 +22,3 @@ func cosineSimilarity(a, b []float32) float64 {
 
 	return dotProduct / (math.Sqrt(normA) * math.Sqrt(normB))
 }
-

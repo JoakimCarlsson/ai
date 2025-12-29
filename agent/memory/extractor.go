@@ -83,4 +83,3 @@ func ExtractFacts(ctx context.Context, llmClient llm.LLM, messages []message.Mes
 
 	return result.Facts, nil
 }
-

@@ -26,4 +26,3 @@ type Entry struct {
 	CreatedAt time.Time      `json:"created_at"`
 	Metadata  map[string]any `json:"metadata,omitempty"`
 }
-

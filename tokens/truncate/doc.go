@@ -25,4 +25,3 @@
 //   - MinMessages(n): Never remove messages below this count, even if over the
 //     token limit.
 package truncate
-

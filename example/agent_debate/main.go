@@ -94,7 +94,11 @@ func main() {
 		fmt.Print("Larry Barry: ")
 		var larryMsg string
 		if round == 0 {
-			larryMsg = streamAndCollect(ctx, larry, "Start the conversation by introducing yourself and saying you want to learn about cars.")
+			larryMsg = streamAndCollect(
+				ctx,
+				larry,
+				"Start the conversation by introducing yourself and saying you want to learn about cars.",
+			)
 		} else {
 			larryMsg = streamAndCollect(ctx, larry, expertResponse)
 		}

@@ -18,4 +18,3 @@
 //
 //   - KeepLast(n): Number of recent messages to retain. Default is 10.
 package sliding
-

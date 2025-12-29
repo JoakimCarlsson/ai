@@ -11,6 +11,7 @@ import (
 	"github.com/joakimcarlsson/ai/agent/session"
 	"github.com/joakimcarlsson/ai/model"
 	llm "github.com/joakimcarlsson/ai/providers"
+	"github.com/joakimcarlsson/ai/tokens"
 	"github.com/joakimcarlsson/ai/tokens/sliding"
 	"github.com/joakimcarlsson/ai/types"
 )
@@ -35,21 +36,44 @@ func main() {
 	chatAgent := agent.New(llmClient,
 		agent.WithSystemPrompt(systemPrompt),
 		agent.WithSession("demo", sessionStore),
-		agent.WithContextStrategy(sliding.Strategy(sliding.KeepLast(4)), 500),
+		agent.WithContextStrategy(sliding.Strategy(sliding.KeepLast(4)), 300),
 	)
+
+	counter, _ := tokens.NewCounter()
 
 	messages := []string{
 		"My name is Alice.",
 		"I live in New York.",
 		"I work as a software engineer.",
 		"My favorite color is blue.",
+		"I have a cat named Whiskers.",
 		"What do you know about me?",
 	}
 
-	for _, msg := range messages {
+	for i, msg := range messages {
+		fmt.Printf("\n--- Turn %d ---\n", i+1)
 		fmt.Printf("User: %s\n", msg)
+
+		llmMsgs, _ := chatAgent.PeekContextMessages(ctx, msg)
+
 		response := streamAndCollect(ctx, chatAgent, msg)
-		fmt.Printf("Assistant: %s\n\n", response)
+		fmt.Printf("Assistant: %s\n", response)
+
+		sess, _ := sessionStore.Load(ctx, "demo")
+		sessionMsgs, _ := sess.GetMessages(ctx, nil)
+
+		llmCount, _ := counter.CountTokens(ctx, tokens.CountOptions{Messages: llmMsgs, SystemPrompt: systemPrompt})
+		sessionCount, _ := counter.CountTokens(
+			ctx,
+			tokens.CountOptions{Messages: sessionMsgs, SystemPrompt: systemPrompt},
+		)
+		fmt.Printf(
+			"[LLM received: %d msgs, %d tokens] [Session stored: %d msgs, %d tokens]\n",
+			len(llmMsgs),
+			llmCount.TotalTokens,
+			len(sessionMsgs),
+			sessionCount.TotalTokens,
+		)
 	}
 }
 

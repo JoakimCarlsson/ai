@@ -40,7 +40,12 @@ type memoryStore struct {
 // MemoryStore creates a new PostgreSQL-backed memory store with pgvector for semantic search.
 // It automatically creates the memories table and pgvector extension if they don't exist.
 // The vector dimension is determined from the embedder's model configuration.
-func MemoryStore(ctx context.Context, connString string, embedder embeddings.Embedding, opts ...Option) (memory.Store, error) {
+func MemoryStore(
+	ctx context.Context,
+	connString string,
+	embedder embeddings.Embedding,
+	opts ...Option,
+) (memory.Store, error) {
 	options := defaultOptions()
 	for _, opt := range opts {
 		opt(&options)
@@ -167,7 +172,14 @@ func scanEntries(rows *sql.Rows) ([]memory.Entry, error) {
 		var metadataJSON sql.NullString
 		var createdAt time.Time
 
-		if err := rows.Scan(&entry.ID, &entry.OwnerID, &entry.Content, &metadataJSON, &createdAt, &entry.Score); err != nil {
+		if err := rows.Scan(
+			&entry.ID,
+			&entry.OwnerID,
+			&entry.Content,
+			&metadataJSON,
+			&createdAt,
+			&entry.Score,
+		); err != nil {
 			return nil, err
 		}
 

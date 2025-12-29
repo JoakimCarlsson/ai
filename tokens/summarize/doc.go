@@ -32,4 +32,3 @@
 //     Default is 5. These messages are preserved exactly as-is, while older
 //     messages are compressed into a summary.
 package summarize
-

@@ -111,4 +111,3 @@ func (s *memorySession) Clear(ctx context.Context) error {
 	s.messages = make([]message.Message, 0)
 	return nil
 }
-

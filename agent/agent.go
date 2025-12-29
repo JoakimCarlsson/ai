@@ -18,16 +18,16 @@ import (
 // Agent is an AI assistant that can chat with users, use tools, and maintain memory.
 // Create one using New() with functional options.
 type Agent struct {
-	llm             llm.LLM
-	memoryLLM       llm.LLM
-	tools           []tool.BaseTool
-	systemPrompt    string
-	maxIterations   int
-	autoExecute     bool
-	memory          memory.Store
-	memoryID        string
-	autoExtract     bool
-	autoDedup       bool
+	llm              llm.LLM
+	memoryLLM        llm.LLM
+	tools            []tool.BaseTool
+	systemPrompt     string
+	maxIterations    int
+	autoExecute      bool
+	memory           memory.Store
+	memoryID         string
+	autoExtract      bool
+	autoDedup        bool
 	session          session.Session
 	contextStrategy  tokens.Strategy
 	reserveTokens    int64
@@ -81,8 +81,59 @@ func (a *Agent) getTools() []tool.BaseTool {
 
 // BuildContextMessages returns the messages that would be sent to the LLM after applying
 // the context strategy. This is useful for debugging and testing context management.
+// WARNING: This method modifies the session by adding the user message.
 func (a *Agent) BuildContextMessages(ctx context.Context, userMessage string) ([]message.Message, error) {
 	return a.buildMessages(ctx, userMessage)
+}
+
+// PeekContextMessages returns what messages would be sent to the LLM without modifying state.
+func (a *Agent) PeekContextMessages(ctx context.Context, userMessage string) ([]message.Message, error) {
+	var messages []message.Message
+
+	if a.systemPrompt != "" {
+		messages = append(messages, message.NewSystemMessage(a.systemPrompt))
+	}
+
+	if a.session != nil {
+		sessionMessages, err := a.session.GetMessages(ctx, nil)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, sessionMessages...)
+	}
+
+	messages = append(messages, message.NewUserMessage(userMessage))
+
+	if a.contextStrategy != nil {
+		counter, err := tokens.NewCounter()
+		if err != nil {
+			return nil, err
+		}
+
+		maxTokens := a.maxContextTokens
+		if maxTokens == 0 {
+			reserveTokens := a.reserveTokens
+			if reserveTokens == 0 {
+				reserveTokens = 4096
+			}
+			maxTokens = a.llm.Model().ContextWindow - reserveTokens
+		}
+
+		result, err := a.contextStrategy.Fit(ctx, tokens.StrategyInput{
+			Messages:     messages,
+			SystemPrompt: a.systemPrompt,
+			Tools:        a.getTools(),
+			Counter:      counter,
+			MaxTokens:    maxTokens,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		messages = result.Messages
+	}
+
+	return messages, nil
 }
 
 func (a *Agent) buildMessages(ctx context.Context, userMessage string) ([]message.Message, error) {

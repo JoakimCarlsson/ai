@@ -108,4 +108,3 @@ func goTypeToJSONType(t reflect.Type) string {
 		return "string"
 	}
 }
-
