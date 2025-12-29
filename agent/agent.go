@@ -3,12 +3,14 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/joakimcarlsson/ai/agent/memory"
 	"github.com/joakimcarlsson/ai/agent/session"
 	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/providers"
+	"github.com/joakimcarlsson/ai/tokens"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
 )
@@ -16,17 +18,20 @@ import (
 // Agent is an AI assistant that can chat with users, use tools, and maintain memory.
 // Create one using New() with functional options.
 type Agent struct {
-	llm           llm.LLM
-	memoryLLM     llm.LLM
-	tools         []tool.BaseTool
-	systemPrompt  string
-	maxIterations int
-	autoExecute   bool
-	memory        memory.Store
-	memoryID      string
-	autoExtract   bool
-	autoDedup     bool
-	session       session.Session
+	llm             llm.LLM
+	memoryLLM       llm.LLM
+	tools           []tool.BaseTool
+	systemPrompt    string
+	maxIterations   int
+	autoExecute     bool
+	memory          memory.Store
+	memoryID        string
+	autoExtract     bool
+	autoDedup       bool
+	session          session.Session
+	contextStrategy  tokens.Strategy
+	reserveTokens    int64
+	maxContextTokens int64
 }
 
 func (a *Agent) getMemoryLLM() llm.LLM {
@@ -74,6 +79,12 @@ func (a *Agent) getTools() []tool.BaseTool {
 	return allTools
 }
 
+// BuildContextMessages returns the messages that would be sent to the LLM after applying
+// the context strategy. This is useful for debugging and testing context management.
+func (a *Agent) BuildContextMessages(ctx context.Context, userMessage string) ([]message.Message, error) {
+	return a.buildMessages(ctx, userMessage)
+}
+
 func (a *Agent) buildMessages(ctx context.Context, userMessage string) ([]message.Message, error) {
 	var messages []message.Message
 
@@ -107,6 +118,33 @@ func (a *Agent) buildMessages(ctx context.Context, userMessage string) ([]messag
 	if a.session != nil {
 		if err := a.session.AddMessages(ctx, []message.Message{userMsg}); err != nil {
 			return nil, err
+		}
+	}
+
+	if a.contextStrategy != nil {
+		counter, err := tokens.NewCounter()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create token counter: %w", err)
+		}
+
+		maxTokens := a.maxContextTokens
+		if maxTokens == 0 {
+			reserveTokens := a.reserveTokens
+			if reserveTokens == 0 {
+				reserveTokens = 4096
+			}
+			maxTokens = a.llm.Model().ContextWindow - reserveTokens
+		}
+
+		messages, err = a.contextStrategy.Fit(ctx, tokens.StrategyInput{
+			Messages:     messages,
+			SystemPrompt: systemPrompt,
+			Tools:        a.getTools(),
+			Counter:      counter,
+			MaxTokens:    maxTokens,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("context strategy failed: %w", err)
 		}
 	}
 
@@ -236,9 +274,9 @@ func (a *Agent) Chat(ctx context.Context, userMessage string) (*ChatResponse, er
 		}
 
 		if len(resp.ToolCalls) == 0 || !a.autoExecute || iteration >= a.maxIterations {
-			assistantMsg := message.NewAssistantMessage()
-			assistantMsg.AppendContent(resp.Content)
-			if a.session != nil {
+			if a.session != nil && resp.Content != "" {
+				assistantMsg := message.NewAssistantMessage()
+				assistantMsg.AppendContent(resp.Content)
 				if err := a.session.AddMessages(ctx, []message.Message{assistantMsg}); err != nil {
 					return nil, err
 				}
@@ -329,9 +367,9 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 			}
 
 			if len(toolCalls) == 0 || !a.autoExecute || iteration >= a.maxIterations {
-				assistantMsg := message.NewAssistantMessage()
-				assistantMsg.AppendContent(fullContent)
-				if a.session != nil {
+				if a.session != nil && fullContent != "" {
+					assistantMsg := message.NewAssistantMessage()
+					assistantMsg.AppendContent(fullContent)
 					_ = a.session.AddMessages(ctx, []message.Message{assistantMsg})
 				}
 

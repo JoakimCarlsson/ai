@@ -5,6 +5,7 @@ import (
 
 	"github.com/joakimcarlsson/ai/agent/memory"
 	"github.com/joakimcarlsson/ai/agent/session"
+	"github.com/joakimcarlsson/ai/tokens"
 	"github.com/joakimcarlsson/ai/tool"
 )
 
@@ -79,5 +80,29 @@ func WithSession(id string, store session.Store) AgentOption {
 		} else {
 			a.session, _ = store.Create(ctx, id)
 		}
+	}
+}
+
+// WithContextStrategy configures automatic context window management.
+// When the conversation exceeds the token limit, the strategy trims messages to fit.
+//
+// The maxContextTokens parameter sets the maximum tokens allowed for the conversation.
+// When the conversation exceeds this limit, the strategy is applied.
+//
+// Example with truncation:
+//
+//	agent.WithContextStrategy(truncate.Strategy(), 8000)
+//
+// Example with sliding window:
+//
+//	agent.WithContextStrategy(sliding.Strategy(sliding.KeepLast(20)), 8000)
+//
+// Example with summarization:
+//
+//	agent.WithContextStrategy(summarize.Strategy(summaryLLM), 8000)
+func WithContextStrategy(strategy tokens.Strategy, maxContextTokens int64) AgentOption {
+	return func(a *Agent) {
+		a.contextStrategy = strategy
+		a.maxContextTokens = maxContextTokens
 	}
 }
