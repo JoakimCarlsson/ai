@@ -66,4 +66,3 @@
 //
 // Similarity search uses cosine distance (<=>) for efficient nearest-neighbor queries.
 package pgvector
-
