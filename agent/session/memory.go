@@ -82,6 +82,15 @@ func (s *memorySession) AddMessages(ctx context.Context, msgs []message.Message)
 	return nil
 }
 
+func (s *memorySession) SetMessages(ctx context.Context, msgs []message.Message) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.messages = make([]message.Message, len(msgs))
+	copy(s.messages, msgs)
+	return nil
+}
+
 func (s *memorySession) PopMessage(ctx context.Context) (*message.Message, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

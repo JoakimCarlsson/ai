@@ -31,6 +31,9 @@ const (
 	System MessageRole = "system"
 	// Tool represents responses from tool executions.
 	Tool MessageRole = "tool"
+	// Summary represents a summarized conversation history.
+	// Stored in session, converted to User when sending to LLM.
+	Summary MessageRole = "summary"
 )
 
 // Attachment represents a file attachment with its MIME type and binary data.
@@ -182,6 +185,11 @@ func NewSystemMessage(text string) Message {
 // NewAssistantMessage creates a new empty assistant message.
 func NewAssistantMessage() Message {
 	return NewMessage(Assistant, []ContentPart{})
+}
+
+// NewSummaryMessage creates a new summary message with the given text content.
+func NewSummaryMessage(text string) Message {
+	return NewMessage(Summary, []ContentPart{TextContent{Text: text}})
 }
 
 // Content returns the first text content part from the message.

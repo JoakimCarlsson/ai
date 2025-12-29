@@ -31,7 +31,7 @@ func Strategy(l llm.LLM, opts ...Option) tokens.Strategy {
 	}
 }
 
-func (s *summarizeStrategy) Fit(ctx context.Context, input tokens.StrategyInput) ([]message.Message, error) {
+func (s *summarizeStrategy) Fit(ctx context.Context, input tokens.StrategyInput) (*tokens.StrategyResult, error) {
 	count, err := input.Counter.CountTokens(ctx, tokens.CountOptions{
 		Messages:     input.Messages,
 		SystemPrompt: input.SystemPrompt,
@@ -42,39 +42,62 @@ func (s *summarizeStrategy) Fit(ctx context.Context, input tokens.StrategyInput)
 	}
 
 	if count.TotalTokens <= input.MaxTokens {
-		return input.Messages, nil
+		return &tokens.StrategyResult{
+			Messages:      convertSummaryToUser(input.Messages),
+			SessionUpdate: nil,
+		}, nil
 	}
 
-	var systemMsgs, convMsgs []message.Message
+	var systemMsgs, summaryMsgs, convMsgs []message.Message
 	for _, msg := range input.Messages {
-		if msg.Role == message.System {
+		switch msg.Role {
+		case message.System:
 			systemMsgs = append(systemMsgs, msg)
-		} else {
+		case message.Summary:
+			summaryMsgs = append(summaryMsgs, msg)
+		default:
 			convMsgs = append(convMsgs, msg)
 		}
 	}
 
 	splitPoint := len(convMsgs) - s.config.KeepRecent
 	if splitPoint <= 0 {
-		return input.Messages, nil
+		return &tokens.StrategyResult{
+			Messages:      convertSummaryToUser(input.Messages),
+			SessionUpdate: nil,
+		}, nil
 	}
 
 	toSummarize := convMsgs[:splitPoint]
 	toKeep := convMsgs[splitPoint:]
 
-	summary, err := s.generateSummary(ctx, toSummarize)
-	if err != nil {
-		return input.Messages, nil
+	if len(summaryMsgs) > 0 {
+		toSummarize = append(summaryMsgs, toSummarize...)
 	}
 
-	summaryMsg := message.NewUserMessage("Previous conversation summary:\n" + summary)
+	summary, err := s.generateSummary(ctx, toSummarize)
+	if err != nil {
+		return &tokens.StrategyResult{
+			Messages:      convertSummaryToUser(input.Messages),
+			SessionUpdate: nil,
+		}, nil
+	}
 
-	result := make([]message.Message, 0, len(systemMsgs)+1+len(toKeep))
-	result = append(result, systemMsgs...)
-	result = append(result, summaryMsg)
-	result = append(result, toKeep...)
+	summaryContent := "Previous conversation summary:\n" + summary
+	summaryMsgForSession := message.NewSummaryMessage(summaryContent)
+	summaryMsgForLLM := message.NewUserMessage(summaryContent)
 
-	return result, nil
+	llmMessages := make([]message.Message, 0, len(systemMsgs)+1+len(toKeep))
+	llmMessages = append(llmMessages, systemMsgs...)
+	llmMessages = append(llmMessages, summaryMsgForLLM)
+	llmMessages = append(llmMessages, toKeep...)
+
+	return &tokens.StrategyResult{
+		Messages: llmMessages,
+		SessionUpdate: &tokens.SessionUpdate{
+			AddMessages: []message.Message{summaryMsgForSession},
+		},
+	}, nil
 }
 
 func (s *summarizeStrategy) generateSummary(ctx context.Context, msgs []message.Message) (string, error) {
@@ -105,4 +128,21 @@ func (s *summarizeStrategy) generateSummary(ctx context.Context, msgs []message.
 	}
 
 	return resp.Content, nil
+}
+
+func convertSummaryToUser(msgs []message.Message) []message.Message {
+	result := make([]message.Message, len(msgs))
+	for i, msg := range msgs {
+		if msg.Role == message.Summary {
+			result[i] = message.Message{
+				Role:      message.User,
+				Parts:     msg.Parts,
+				Model:     msg.Model,
+				CreatedAt: msg.CreatedAt,
+			}
+		} else {
+			result[i] = msg
+		}
+	}
+	return result
 }

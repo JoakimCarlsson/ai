@@ -74,3 +74,5 @@ replace github.com/joakimcarlsson/ai => ../..
 replace github.com/joakimcarlsson/ai/integrations/postgres => ../../integrations/postgres
 
 replace github.com/joakimcarlsson/ai/integrations/pgvector => ../../integrations/pgvector
+
+

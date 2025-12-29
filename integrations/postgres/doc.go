@@ -47,3 +47,5 @@
 //
 // Messages are stored as JSONB for flexible content part serialization.
 package postgres
+
+

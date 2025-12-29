@@ -98,6 +98,13 @@ func (s *fileSession) AddMessages(ctx context.Context, msgs []message.Message) e
 	return s.saveMessages(existing)
 }
 
+func (s *fileSession) SetMessages(ctx context.Context, msgs []message.Message) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.saveMessages(msgs)
+}
+
 func (s *fileSession) PopMessage(ctx context.Context) (*message.Message, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

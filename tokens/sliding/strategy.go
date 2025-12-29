@@ -16,7 +16,7 @@ func Strategy(opts ...Option) tokens.Strategy {
 	return &slidingStrategy{config: Apply(opts...)}
 }
 
-func (s *slidingStrategy) Fit(ctx context.Context, input tokens.StrategyInput) ([]message.Message, error) {
+func (s *slidingStrategy) Fit(ctx context.Context, input tokens.StrategyInput) (*tokens.StrategyResult, error) {
 	var systemMsgs, convMsgs []message.Message
 
 	for _, msg := range input.Messages {
@@ -31,5 +31,8 @@ func (s *slidingStrategy) Fit(ctx context.Context, input tokens.StrategyInput) (
 		convMsgs = convMsgs[len(convMsgs)-s.config.KeepLast:]
 	}
 
-	return append(systemMsgs, convMsgs...), nil
+	return &tokens.StrategyResult{
+		Messages:      append(systemMsgs, convMsgs...),
+		SessionUpdate: nil,
+	}, nil
 }

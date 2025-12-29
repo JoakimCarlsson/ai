@@ -136,7 +136,7 @@ func (a *Agent) buildMessages(ctx context.Context, userMessage string) ([]messag
 			maxTokens = a.llm.Model().ContextWindow - reserveTokens
 		}
 
-		messages, err = a.contextStrategy.Fit(ctx, tokens.StrategyInput{
+		result, err := a.contextStrategy.Fit(ctx, tokens.StrategyInput{
 			Messages:     messages,
 			SystemPrompt: systemPrompt,
 			Tools:        a.getTools(),
@@ -145,6 +145,14 @@ func (a *Agent) buildMessages(ctx context.Context, userMessage string) ([]messag
 		})
 		if err != nil {
 			return nil, fmt.Errorf("context strategy failed: %w", err)
+		}
+
+		messages = result.Messages
+
+		if result.SessionUpdate != nil && a.session != nil && len(result.SessionUpdate.AddMessages) > 0 {
+			if err := a.session.AddMessages(ctx, result.SessionUpdate.AddMessages); err != nil {
+				return nil, fmt.Errorf("failed to save session update: %w", err)
+			}
 		}
 	}
 

@@ -17,7 +17,7 @@ func Strategy(opts ...Option) tokens.Strategy {
 	return &truncateStrategy{config: Apply(opts...)}
 }
 
-func (s *truncateStrategy) Fit(ctx context.Context, input tokens.StrategyInput) ([]message.Message, error) {
+func (s *truncateStrategy) Fit(ctx context.Context, input tokens.StrategyInput) (*tokens.StrategyResult, error) {
 	result := slices.Clone(input.Messages)
 
 	for len(result) > s.config.MinMessages {
@@ -37,7 +37,10 @@ func (s *truncateStrategy) Fit(ctx context.Context, input tokens.StrategyInput) 
 		result = s.removeOldest(result)
 	}
 
-	return result, nil
+	return &tokens.StrategyResult{
+		Messages:      result,
+		SessionUpdate: nil,
+	}, nil
 }
 
 func (s *truncateStrategy) removeOldest(msgs []message.Message) []message.Message {

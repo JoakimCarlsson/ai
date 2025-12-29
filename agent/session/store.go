@@ -22,4 +22,3 @@ type Store interface {
 	Load(ctx context.Context, id string) (Session, error)
 	Delete(ctx context.Context, id string) error
 }
-
