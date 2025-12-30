@@ -359,7 +359,7 @@ func (a *Agent) Chat(ctx context.Context, userMessage string) (*ChatResponse, er
 
 		toolResults := a.executeTools(ctx, resp.ToolCalls)
 
-		toolMsg := message.Message{Role: message.Tool}
+		toolMsg := message.Message{Role: message.Tool, CreatedAt: time.Now().UnixNano()}
 		for _, result := range toolResults {
 			toolMsg.AddToolResult(message.ToolResult{
 				ToolCallID: result.ToolCallID,
@@ -468,7 +468,7 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 				}
 			}
 
-			toolMsg := message.Message{Role: message.Tool}
+			toolMsg := message.Message{Role: message.Tool, CreatedAt: time.Now().UnixNano()}
 			for _, result := range toolResults {
 				toolMsg.AddToolResult(message.ToolResult{
 					ToolCallID: result.ToolCallID,
