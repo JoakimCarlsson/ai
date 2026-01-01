@@ -245,7 +245,6 @@ func (a *Agent) executeTools(ctx context.Context, toolCalls []message.ToolCall) 
 
 	results := make([]ToolExecutionResult, len(toolCalls))
 
-	// Sequential execution (opt-out case)
 	if !a.parallelTools {
 		for i, tc := range toolCalls {
 			results[i] = a.executeSingleTool(ctx, registry, tc)
@@ -253,7 +252,6 @@ func (a *Agent) executeTools(ctx context.Context, toolCalls []message.ToolCall) 
 		return results
 	}
 
-	// Parallel execution with optional concurrency limit
 	var wg sync.WaitGroup
 	var sem chan struct{}
 
