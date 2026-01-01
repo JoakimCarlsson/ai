@@ -106,3 +106,24 @@ func WithContextStrategy(strategy tokens.Strategy, maxContextTokens int64) Agent
 		a.maxContextTokens = maxContextTokens
 	}
 }
+
+// WithSequentialToolExecution disables parallel tool execution.
+// By default, tools are executed in parallel for better performance.
+// Use this option when tools have dependencies on each other or when
+// you need deterministic execution order.
+func WithSequentialToolExecution() AgentOption {
+	return func(a *Agent) {
+		a.parallelTools = false
+	}
+}
+
+// WithMaxParallelTools sets the maximum number of tools that can execute concurrently.
+// Default is 0 (unlimited). Set to a positive number to limit concurrency.
+// This is useful when tools consume significant resources (e.g., API rate limits).
+func WithMaxParallelTools(max int) AgentOption {
+	return func(a *Agent) {
+		if max > 0 {
+			a.maxParallelTools = max
+		}
+	}
+}
