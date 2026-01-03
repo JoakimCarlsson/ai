@@ -22,13 +22,13 @@ func main() {
 
 	staticTemplateExample(client)
 	dynamicProviderExample(client)
-	optionalPlaceholderExample(client)
+	conditionalExample(client)
 }
 
 func staticTemplateExample(client llm.LLM) {
 	a := agent.New(client,
-		agent.WithSystemPrompt("You are {role}. The user's name is {user_name}. Be helpful and concise."),
-		agent.WithState(map[string]string{
+		agent.WithSystemPrompt("You are {{.role}}. The user's name is {{.user_name}}. Be helpful and concise."),
+		agent.WithState(map[string]any{
 			"role":      "a friendly coding assistant",
 			"user_name": "Alice",
 		}),
@@ -45,14 +45,14 @@ func staticTemplateExample(client llm.LLM) {
 
 func dynamicProviderExample(client llm.LLM) {
 	a := agent.New(client,
-		agent.WithInstructionProvider(func(ctx context.Context, state map[string]string) (string, error) {
-			role := state["role"]
+		agent.WithInstructionProvider(func(ctx context.Context, state map[string]any) (string, error) {
+			role, _ := state["role"].(string)
 			if role == "" {
 				role = "an assistant"
 			}
 			return fmt.Sprintf("You are %s. Current time context: morning. Be brief.", role), nil
 		}),
-		agent.WithState(map[string]string{
+		agent.WithState(map[string]any{
 			"role": "a helpful chef",
 		}),
 	)
@@ -66,10 +66,12 @@ func dynamicProviderExample(client llm.LLM) {
 	fmt.Println()
 }
 
-func optionalPlaceholderExample(client llm.LLM) {
+func conditionalExample(client llm.LLM) {
 	a := agent.New(client,
-		agent.WithSystemPrompt("You are {role}. {extra_context?}Be concise."),
-		agent.WithState(map[string]string{
+		agent.WithSystemPrompt(`You are {{.role}}.
+{{if .extra_context}}Additional context: {{.extra_context}}
+{{end}}Be concise.`),
+		agent.WithState(map[string]any{
 			"role": "a math tutor",
 		}),
 	)

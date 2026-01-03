@@ -35,8 +35,8 @@ type Agent struct {
 	maxContextTokens    int64
 	parallelTools       bool
 	maxParallelTools    int
-	state               map[string]string
-	instructionProvider func(ctx context.Context, state map[string]string) (string, error)
+	state               map[string]any
+	instructionProvider func(ctx context.Context, state map[string]any) (string, error)
 }
 
 func (a *Agent) getMemoryLLM() llm.LLM {

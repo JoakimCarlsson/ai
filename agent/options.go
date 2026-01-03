@@ -129,17 +129,16 @@ func WithMaxParallelTools(max int) AgentOption {
 }
 
 // WithState sets the state map for template variable substitution in the system prompt.
-// Use placeholders like {name} in the system prompt, and they will be replaced with
-// values from this state map. Use {name?} for optional placeholders that won't error
-// if missing.
-func WithState(state map[string]string) AgentOption {
+// Use Go text/template syntax like {{.name}} in the system prompt, and they will be
+// replaced with values from this state map. Supports conditionals, loops, and complex data.
+func WithState(state map[string]any) AgentOption {
 	return func(a *Agent) {
 		a.state = state
 	}
 }
 
 // InstructionProvider is a function that generates the system prompt dynamically.
-type InstructionProvider func(ctx context.Context, state map[string]string) (string, error)
+type InstructionProvider func(ctx context.Context, state map[string]any) (string, error)
 
 // WithInstructionProvider sets a dynamic instruction provider that generates the system
 // prompt at runtime. When set, this takes precedence over the static system prompt.

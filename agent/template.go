@@ -1,45 +1,34 @@
 package agent
 
 import (
-	"fmt"
-	"regexp"
 	"strings"
+	"text/template"
 )
 
-var placeholderRegex = regexp.MustCompile(`\{([a-zA-Z_][a-zA-Z0-9_]*)(\?)?\}`)
+var defaultFuncMap = template.FuncMap{
+	"eq":  func(a, b any) bool { return a == b },
+	"ne":  func(a, b any) bool { return a != b },
+	"neq": func(a, b any) bool { return a != b },
+}
 
-func processTemplate(template string, state map[string]string) (string, error) {
+func processTemplate(tmplStr string, state map[string]any) (string, error) {
 	if state == nil {
-		state = make(map[string]string)
+		state = make(map[string]any)
 	}
 
-	var result strings.Builder
-	lastIndex := 0
-	matches := placeholderRegex.FindAllStringSubmatchIndex(template, -1)
-
-	for _, match := range matches {
-		fullStart, fullEnd := match[0], match[1]
-		nameStart, nameEnd := match[2], match[3]
-		optionalStart, optionalEnd := match[4], match[5]
-
-		result.WriteString(template[lastIndex:fullStart])
-
-		varName := template[nameStart:nameEnd]
-		optional := optionalStart != -1 && optionalEnd != -1
-
-		value, exists := state[varName]
-		if !exists {
-			if optional {
-				lastIndex = fullEnd
-				continue
-			}
-			return "", fmt.Errorf("missing required template variable: %s", varName)
-		}
-
-		result.WriteString(value)
-		lastIndex = fullEnd
+	tmpl, err := template.New("prompt").Funcs(defaultFuncMap).Parse(tmplStr)
+	if err != nil {
+		return "", err
 	}
 
-	result.WriteString(template[lastIndex:])
-	return result.String(), nil
+	var buf strings.Builder
+	if err := tmpl.Execute(&buf, state); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+func ProcessTemplate(tmplStr string, state map[string]any) (string, error) {
+	return processTemplate(tmplStr, state)
 }
