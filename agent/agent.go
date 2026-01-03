@@ -19,22 +19,24 @@ import (
 // Agent is an AI assistant that can chat with users, use tools, and maintain memory.
 // Create one using New() with functional options.
 type Agent struct {
-	llm              llm.LLM
-	memoryLLM        llm.LLM
-	tools            []tool.BaseTool
-	systemPrompt     string
-	maxIterations    int
-	autoExecute      bool
-	memory           memory.Store
-	memoryID         string
-	autoExtract      bool
-	autoDedup        bool
-	session          session.Session
-	contextStrategy  tokens.Strategy
-	reserveTokens    int64
-	maxContextTokens int64
-	parallelTools    bool
-	maxParallelTools int
+	llm                 llm.LLM
+	memoryLLM           llm.LLM
+	tools               []tool.BaseTool
+	systemPrompt        string
+	maxIterations       int
+	autoExecute         bool
+	memory              memory.Store
+	memoryID            string
+	autoExtract         bool
+	autoDedup           bool
+	session             session.Session
+	contextStrategy     tokens.Strategy
+	reserveTokens       int64
+	maxContextTokens    int64
+	parallelTools       bool
+	maxParallelTools    int
+	state               map[string]string
+	instructionProvider func(ctx context.Context, state map[string]string) (string, error)
 }
 
 func (a *Agent) getMemoryLLM() llm.LLM {
@@ -94,8 +96,13 @@ func (a *Agent) BuildContextMessages(ctx context.Context, userMessage string) ([
 func (a *Agent) PeekContextMessages(ctx context.Context, userMessage string) ([]message.Message, error) {
 	var messages []message.Message
 
-	if a.systemPrompt != "" {
-		sysMsg := message.NewSystemMessage(a.systemPrompt)
+	systemPrompt, err := a.resolveSystemPrompt(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve system prompt: %w", err)
+	}
+
+	if systemPrompt != "" {
+		sysMsg := message.NewSystemMessage(systemPrompt)
 		sysMsg.Model = a.llm.Model().ID
 		messages = append(messages, sysMsg)
 	}
@@ -129,7 +136,7 @@ func (a *Agent) PeekContextMessages(ctx context.Context, userMessage string) ([]
 
 		result, err := a.contextStrategy.Fit(ctx, tokens.StrategyInput{
 			Messages:     messages,
-			SystemPrompt: a.systemPrompt,
+			SystemPrompt: systemPrompt,
 			Tools:        a.getTools(),
 			Counter:      counter,
 			MaxTokens:    maxTokens,
@@ -144,10 +151,26 @@ func (a *Agent) PeekContextMessages(ctx context.Context, userMessage string) ([]
 	return messages, nil
 }
 
+func (a *Agent) resolveSystemPrompt(ctx context.Context) (string, error) {
+	if a.instructionProvider != nil {
+		return a.instructionProvider(ctx, a.state)
+	}
+
+	if a.systemPrompt == "" {
+		return "", nil
+	}
+
+	return processTemplate(a.systemPrompt, a.state)
+}
+
 func (a *Agent) buildMessages(ctx context.Context, userMessage string) ([]message.Message, error) {
 	var messages []message.Message
 
-	systemPrompt := a.systemPrompt
+	systemPrompt, err := a.resolveSystemPrompt(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve system prompt: %w", err)
+	}
+
 	if a.memory != nil && a.memoryID != "" {
 		memories, err := a.memory.Search(ctx, a.memoryID, userMessage, 5)
 		if err == nil && len(memories) > 0 {
