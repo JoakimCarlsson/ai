@@ -95,7 +95,9 @@ func (a *Agent) PeekContextMessages(ctx context.Context, userMessage string) ([]
 	var messages []message.Message
 
 	if a.systemPrompt != "" {
-		messages = append(messages, message.NewSystemMessage(a.systemPrompt))
+		sysMsg := message.NewSystemMessage(a.systemPrompt)
+		sysMsg.Model = a.llm.Model().ID
+		messages = append(messages, sysMsg)
 	}
 
 	if a.session != nil {
@@ -106,7 +108,9 @@ func (a *Agent) PeekContextMessages(ctx context.Context, userMessage string) ([]
 		messages = append(messages, sessionMessages...)
 	}
 
-	messages = append(messages, message.NewUserMessage(userMessage))
+	userMsg := message.NewUserMessage(userMessage)
+	userMsg.Model = a.llm.Model().ID
+	messages = append(messages, userMsg)
 
 	if a.contextStrategy != nil {
 		counter, err := tokens.NewCounter()
@@ -155,19 +159,31 @@ func (a *Agent) buildMessages(ctx context.Context, userMessage string) ([]messag
 		}
 	}
 
-	if systemPrompt != "" {
-		messages = append(messages, message.NewSystemMessage(systemPrompt))
-	}
-
+	var sessionMessages []message.Message
 	if a.session != nil {
-		sessionMessages, err := a.session.GetMessages(ctx, nil)
+		var err error
+		sessionMessages, err = a.session.GetMessages(ctx, nil)
 		if err != nil {
 			return nil, err
 		}
-		messages = append(messages, sessionMessages...)
 	}
 
+	if systemPrompt != "" {
+		sysMsg := message.NewSystemMessage(systemPrompt)
+		sysMsg.Model = a.llm.Model().ID
+		messages = append(messages, sysMsg)
+
+		if a.session != nil && len(sessionMessages) == 0 {
+			if err := a.session.AddMessages(ctx, []message.Message{sysMsg}); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	messages = append(messages, sessionMessages...)
+
 	userMsg := message.NewUserMessage(userMessage)
+	userMsg.Model = a.llm.Model().ID
 	messages = append(messages, userMsg)
 
 	if a.session != nil {
@@ -369,6 +385,7 @@ func (a *Agent) Chat(ctx context.Context, userMessage string) (*ChatResponse, er
 		if len(resp.ToolCalls) == 0 || !a.autoExecute || iteration >= a.maxIterations {
 			if a.session != nil && resp.Content != "" {
 				assistantMsg := message.NewAssistantMessage()
+				assistantMsg.Model = a.llm.Model().ID
 				assistantMsg.AppendContent(resp.Content)
 				if err := a.session.AddMessages(ctx, []message.Message{assistantMsg}); err != nil {
 					return nil, err
@@ -388,12 +405,13 @@ func (a *Agent) Chat(ctx context.Context, userMessage string) (*ChatResponse, er
 		}
 
 		assistantMsg := message.NewAssistantMessage()
+		assistantMsg.Model = a.llm.Model().ID
 		assistantMsg.SetToolCalls(resp.ToolCalls)
 		messages = append(messages, assistantMsg)
 
 		toolResults := a.executeTools(ctx, resp.ToolCalls)
 
-		toolMsg := message.Message{Role: message.Tool, CreatedAt: time.Now().UnixNano()}
+		toolMsg := message.Message{Role: message.Tool, Model: a.llm.Model().ID, CreatedAt: time.Now().UnixNano()}
 		for _, result := range toolResults {
 			toolMsg.AddToolResult(message.ToolResult{
 				ToolCallID: result.ToolCallID,
@@ -462,6 +480,7 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 			if len(toolCalls) == 0 || !a.autoExecute || iteration >= a.maxIterations {
 				if a.session != nil && fullContent != "" {
 					assistantMsg := message.NewAssistantMessage()
+					assistantMsg.Model = a.llm.Model().ID
 					assistantMsg.AppendContent(fullContent)
 					_ = a.session.AddMessages(ctx, []message.Message{assistantMsg})
 				}
@@ -489,22 +508,23 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 				return
 			}
 
-		assistantMsg := message.NewAssistantMessage()
-		assistantMsg.SetToolCalls(toolCalls)
-		messages = append(messages, assistantMsg)
+			assistantMsg := message.NewAssistantMessage()
+			assistantMsg.Model = a.llm.Model().ID
+			assistantMsg.SetToolCalls(toolCalls)
+			messages = append(messages, assistantMsg)
 
-		for _, tc := range toolCalls {
-			eventChan <- ChatEvent{
-				Type: types.EventToolUseStart,
-				ToolCall: &message.ToolCall{
-					ID:    tc.ID,
-					Name:  tc.Name,
-					Input: tc.Input,
-				},
+			for _, tc := range toolCalls {
+				eventChan <- ChatEvent{
+					Type: types.EventToolUseStart,
+					ToolCall: &message.ToolCall{
+						ID:    tc.ID,
+						Name:  tc.Name,
+						Input: tc.Input,
+					},
+				}
 			}
-		}
 
-		toolResults := a.executeTools(ctx, toolCalls)
+			toolResults := a.executeTools(ctx, toolCalls)
 
 			for _, result := range toolResults {
 				eventChan <- ChatEvent{
@@ -513,7 +533,7 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 				}
 			}
 
-			toolMsg := message.Message{Role: message.Tool, CreatedAt: time.Now().UnixNano()}
+			toolMsg := message.Message{Role: message.Tool, Model: a.llm.Model().ID, CreatedAt: time.Now().UnixNano()}
 			for _, result := range toolResults {
 				toolMsg.AddToolResult(message.ToolResult{
 					ToolCallID: result.ToolCallID,
