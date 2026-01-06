@@ -17,13 +17,14 @@ import (
 )
 
 type openaiOptions struct {
-	baseURL          string
-	disableCache     bool
-	reasoningEffort  string
-	extraHeaders     map[string]string
-	frequencyPenalty *float64
-	presencePenalty  *float64
-	seed             *int64
+	baseURL           string
+	disableCache      bool
+	reasoningEffort   string
+	extraHeaders      map[string]string
+	frequencyPenalty  *float64
+	presencePenalty   *float64
+	seed              *int64
+	parallelToolCalls *bool
 }
 
 type OpenAIOption func(*openaiOptions)
@@ -221,6 +222,10 @@ func (o *openaiClient) preparedParams(
 		Model:    openai.ChatModel(o.providerOptions.model.APIModel),
 		Messages: messages,
 		Tools:    tools,
+	}
+
+	if o.options.parallelToolCalls != nil {
+		params.ParallelToolCalls = openai.Bool(*o.options.parallelToolCalls)
 	}
 
 	paramBuilder := newParameterBuilder(o.providerOptions)
@@ -486,6 +491,14 @@ func WithOpenAIPresencePenalty(presencePenalty float64) OpenAIOption {
 func WithOpenAISeed(seed int64) OpenAIOption {
 	return func(options *openaiOptions) {
 		options.seed = &seed
+	}
+}
+
+// WithOpenAIParallelToolCalls controls whether OpenAI can return multiple tool calls in a single response.
+// Default is true (parallel tool calls enabled). Set to false to force sequential tool calls from the model.
+func WithOpenAIParallelToolCalls(enabled bool) OpenAIOption {
+	return func(options *openaiOptions) {
+		options.parallelToolCalls = &enabled
 	}
 }
 

@@ -9,11 +9,12 @@ A comprehensive, multi-provider Go library for interacting with various AI model
 
 - **Multi-Provider Support**: Unified interface for 9+ AI providers
 - **LLM Support**: Chat completions, streaming, tool calling, structured output
+- **Agent Framework**: Stateless agents with session management and persistent memory
 - **Embedding Models**: Text, multimodal, and contextualized embeddings
 - **Image Generation**: Text-to-image generation with multiple quality and size options
 - **Rerankers**: Document reranking for improved search relevance
 - **Streaming Responses**: Real-time response streaming via Go channels
-- **Tool Calling**: Native function calling with JSON schema validation
+- **Tool Calling**: Native function calling with struct-tag schema generation
 - **Structured Output**: Constrained generation with JSON schemas
 - **MCP Integration**: Model Context Protocol support for advanced tooling
 - **Multimodal Support**: Text and image inputs across compatible providers
@@ -166,34 +167,69 @@ json.Unmarshal([]byte(*response.StructuredOutput), &analysis)
 ```go
 import "github.com/joakimcarlsson/ai/tool"
 
+// Define parameters with struct tags
+type WeatherParams struct {
+    Location string `json:"location" desc:"City name"`
+    Units    string `json:"units" desc:"Temperature units" enum:"celsius,fahrenheit" required:"false"`
+}
+
 // Define a custom tool
 type WeatherTool struct{}
 
 func (w *WeatherTool) Info() tool.ToolInfo {
-    return tool.ToolInfo{
-        Name:        "get_weather",
-        Description: "Get current weather for a location",
-        Parameters: map[string]any{
-            "location": map[string]any{
-                "type":        "string",
-                "description": "City name",
-            },
-        },
-        Required: []string{"location"},
-    }
+    return tool.NewToolInfo("get_weather", "Get current weather for a location", WeatherParams{})
 }
 
 func (w *WeatherTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
-    return tool.ToolResponse{
-        Type:    tool.ToolResponseTypeText,
-        Content: "Sunny, 22°C",
-    }, nil
+    var input WeatherParams
+    json.Unmarshal([]byte(params.Input), &input)
+    return tool.NewTextResponse("Sunny, 22°C"), nil
 }
 
 weatherTool := &WeatherTool{}
 tools := []tool.BaseTool{weatherTool}
 
 response, err := client.SendMessages(ctx, messages, tools)
+```
+
+#### Struct Tag Schema Generation
+
+Generate JSON schemas automatically from Go structs:
+
+```go
+type SearchParams struct {
+    Query   string   `json:"query" desc:"Search query"`
+    Limit   int      `json:"limit" desc:"Max results" required:"false"`
+    Filters []string `json:"filters" desc:"Filter tags" required:"false"`
+}
+
+// Generates proper JSON schema with types, descriptions, and required fields
+info := tool.NewToolInfo("search", "Search documents", SearchParams{})
+```
+
+Supported tags:
+- `json` - parameter name
+- `desc` - parameter description
+- `required` - "true" or "false" (non-pointer fields default to required)
+- `enum` - comma-separated allowed values
+
+#### Rich Tool Responses
+
+```go
+// Text response
+tool.NewTextResponse("Result text")
+
+// JSON response (auto-marshals any value)
+tool.NewJSONResponse(map[string]any{"status": "ok", "count": 42})
+
+// File/binary response
+tool.NewFileResponse(pdfBytes, "application/pdf")
+
+// Image response (base64)
+tool.NewImageResponse(base64ImageData)
+
+// Error response
+tool.NewTextErrorResponse("Something went wrong")
 ```
 
 ### Multimodal (Images)
@@ -214,6 +250,110 @@ msg.AddAttachment(message.Attachment{
 
 messages := []message.Message{msg}
 response, err := client.SendMessages(ctx, messages, nil)
+```
+
+### Agent Framework
+
+The agent package provides stateless agents with automatic tool execution, session management, and persistent memory.
+
+#### Basic Agent
+
+```go
+import "github.com/joakimcarlsson/ai/agent"
+
+// Create agent with tools
+myAgent := agent.New(llmClient,
+    agent.WithSystemPrompt("You are a helpful assistant."),
+    agent.WithTools(&weatherTool{}),
+)
+
+// Create session store (file-based)
+store, _ := agent.NewFileSessionStore("./sessions")
+
+// Get or create a session
+session, _ := agent.GetOrCreateSession(ctx, "user-123", store)
+
+// Chat (automatically manages history and tool execution)
+response, _ := myAgent.Chat(ctx, session, "What's the weather in Tokyo?")
+fmt.Println(response.Content)
+```
+
+#### Session Management
+
+```go
+// Session store interface - implement for any backend
+type SessionStore interface {
+    Exists(ctx context.Context, id string) (bool, error)
+    Create(ctx context.Context, id string) (Session, error)
+    Load(ctx context.Context, id string) (Session, error)
+    Delete(ctx context.Context, id string) error
+}
+
+// Built-in file session store
+store, _ := agent.NewFileSessionStore("./sessions")
+
+// Session helpers
+session, _ := agent.CreateSession(ctx, "new-session", store)    // Error if exists
+session, _ := agent.LoadSession(ctx, "existing-session", store) // Error if not found
+session, _ := agent.GetOrCreateSession(ctx, "session-id", store) // Create or load
+
+// Session operations
+messages, _ := session.GetMessages(ctx, nil)  // Get all messages
+session.AddMessages(ctx, newMessages)          // Append messages
+session.PopMessage(ctx)                        // Remove last message
+session.Clear(ctx)                             // Clear all messages
+```
+
+#### Persistent Memory
+
+Enable cross-conversation memory for personalization:
+
+```go
+// Implement the Memory interface for your storage backend
+type Memory interface {
+    Store(ctx context.Context, userID, fact string, metadata map[string]any) error
+    Search(ctx context.Context, userID, query string, limit int) ([]MemoryEntry, error)
+    GetAll(ctx context.Context, userID string, limit int) ([]MemoryEntry, error)
+    Delete(ctx context.Context, memoryID string) error
+    Update(ctx context.Context, memoryID, fact string, metadata map[string]any) error
+}
+
+// Create agent with memory
+myAgent := agent.New(llmClient,
+    agent.WithSystemPrompt(`You are a personal assistant.
+Use store_memory when users share personal information.
+Use recall_memories before answering personalized questions.
+Use replace_memory when information changes.
+Use delete_memory when users ask to forget something.`),
+    agent.WithMemory(myMemoryStore),
+    agent.WithAutoExtract(true),  // Auto-extract facts from conversations
+    agent.WithAutoDedup(true),    // LLM-based memory deduplication
+)
+
+// Set user ID in context for memory operations
+ctx = context.WithValue(ctx, "user_id", "alice")
+
+response, _ := myAgent.Chat(ctx, session, "My name is Alice and I'm allergic to peanuts.")
+// Agent automatically stores this fact
+
+// In a new session, agent can recall memories
+response, _ := myAgent.Chat(ctx, newSession, "What restaurants would you recommend?")
+// Agent recalls allergy information and personalizes response
+```
+
+#### Streaming with Agent
+
+```go
+for event := range myAgent.ChatStream(ctx, session, "Tell me a story") {
+    switch event.Type {
+    case types.EventContentDelta:
+        fmt.Print(event.Content)
+    case types.EventToolUseStart:
+        fmt.Printf("\nUsing tool: %s\n", event.ToolCall.Name)
+    case types.EventComplete:
+        fmt.Printf("\nDone! Tokens: %d\n", event.Response.Usage.InputTokens)
+    }
+}
 ```
 
 ### Embeddings
@@ -372,50 +512,63 @@ response, err := client.GenerateImage(
 ## Project Structure
 
 ```
+├── agent/                        # Agent framework
+│   ├── agent.go                 # Core agent with tool execution loop
+│   ├── session.go               # Session interface and helpers
+│   ├── file_session.go          # File-based session storage
+│   ├── memory.go                # Memory interface for persistence
+│   ├── memory_tools.go          # Built-in memory tools
+│   ├── extract.go               # Auto-extraction logic
+│   ├── dedup.go                 # Memory deduplication
+│   └── options.go               # Agent configuration options
 ├── example/
-│   ├── structured_output/        # Structured output example
-│   ├── vision/                   # Multimodal LLM example
-│   ├── embeddings/               # Text embedding example
-│   ├── multimodal_embeddings/    # Multimodal embedding example
+│   ├── agent/                   # Basic agent example
+│   ├── agent_memory/            # Agent with memory example
+│   ├── agent_memory_embedding/  # Agent with vector memory
+│   ├── agent_memory_postgres/   # PostgreSQL session & memory
+│   ├── structured_output/       # Structured output example
+│   ├── vision/                  # Multimodal LLM example
+│   ├── embeddings/              # Text embedding example
+│   ├── multimodal_embeddings/   # Multimodal embedding example
 │   ├── contextualized_embeddings/# Contextualized embedding example
-│   ├── reranker/                 # Document reranking example
-│   ├── image_generation/         # xAI image generation example
-│   ├── image_generation_openai/  # OpenAI image generation example
-│   └── image_generation_gemini/  # Gemini image generation example
-├── image_generation/             # Image generation package
+│   ├── reranker/                # Document reranking example
+│   ├── image_generation/        # xAI image generation example
+│   ├── image_generation_openai/ # OpenAI image generation example
+│   └── image_generation_gemini/ # Gemini image generation example
+├── image_generation/            # Image generation package
 │   ├── image_generation.go      # Main image generation interface
 │   ├── openai.go                # OpenAI/xAI implementation
 │   └── gemini.go                # Gemini implementation
-├── message/                      # Message types and handling
+├── message/                     # Message types and handling
 │   ├── base.go                  # Core message structures
 │   ├── multimodal.go            # Image/attachment support
 │   ├── marshal.go               # Serialization helpers
 │   └── text.go                  # Text message utilities
-├── model/                        # Model definitions and configurations
+├── model/                       # Model definitions and configurations
 │   ├── llm_models.go            # LLM model types
 │   ├── embedding_models.go      # Embedding model types
 │   ├── image_generation_models.go # Image generation model types
-│   ├── voyage.go                # Voyage AI models (embeddings & rerankers)
+│   ├── voyage.go                # Voyage AI models
 │   ├── anthropic.go             # Claude models
 │   ├── openai.go                # GPT and DALL-E models
 │   ├── gemini.go                # Gemini and Imagen models
 │   ├── xai.go                   # xAI Grok models
 │   └── ...                      # Other provider models
-├── providers/                    # AI provider implementations
+├── providers/                   # AI provider implementations
 │   ├── llm.go                   # Main LLM interface
 │   ├── embeddings.go            # Embedding interface
 │   ├── rerankers.go             # Reranker interface
-│   ├── voyage.go                # Voyage embedding implementation
-│   ├── voyage_reranker.go       # Voyage reranker implementation
-│   ├── anthropic.go             # Anthropic LLM implementation
-│   ├── openai.go                # OpenAI LLM implementation
+│   ├── anthropic.go             # Anthropic implementation
+│   ├── openai.go                # OpenAI implementation
+│   ├── voyage.go                # Voyage implementation
 │   ├── retry.go                 # Retry logic
 │   └── ...                      # Other providers
-├── schema/                       # Structured output schemas
-├── tool/                         # Tool calling infrastructure
-│   ├── tool.go                  # Base tool interface
+├── schema/                      # Structured output schemas
+├── tool/                        # Tool calling infrastructure
+│   ├── tool.go                  # Base tool interface and helpers
+│   ├── schema.go                # Struct-tag schema generation
 │   └── mcp-tools.go             # MCP integration
-└── types/                        # Event types for streaming
+└── types/                       # Event types for streaming
 ```
 
 ## Configuration Options

@@ -64,6 +64,16 @@ type ToolInfo struct {
 	Required []string `json:"required"`
 }
 
+func NewToolInfo(name, description string, paramsStruct any) ToolInfo {
+	params, required := GenerateSchema(paramsStruct)
+	return ToolInfo{
+		Name:        name,
+		Description: description,
+		Parameters:  params,
+		Required:    required,
+	}
+}
+
 // ToolCall represents a request to execute a specific tool with parameters.
 type ToolCall struct {
 	// ID is a unique identifier for this tool call instance.
@@ -78,22 +88,20 @@ type ToolCall struct {
 type ToolResponseType string
 
 const (
-	// ToolResponseTypeText indicates the response contains plain text content.
-	ToolResponseTypeText ToolResponseType = "text"
-	// ToolResponseTypeImage indicates the response contains image content.
+	ToolResponseTypeText  ToolResponseType = "text"
 	ToolResponseTypeImage ToolResponseType = "image"
+	ToolResponseTypeFile  ToolResponseType = "file"
+	ToolResponseTypeJSON  ToolResponseType = "json"
 )
 
 // ToolResponse represents the result of a tool execution.
 type ToolResponse struct {
-	// Type indicates the format of the response content.
-	Type ToolResponseType `json:"type"`
-	// Content contains the actual response data (text, base64 image, etc.).
-	Content string `json:"content"`
-	// Metadata contains optional JSON-encoded additional information.
-	Metadata string `json:"metadata,omitempty"`
-	// IsError indicates whether the tool execution resulted in an error.
-	IsError bool `json:"is_error"`
+	Type     ToolResponseType `json:"type"`
+	Content  string           `json:"content"`
+	Data     []byte           `json:"data,omitempty"`
+	MimeType string           `json:"mime_type,omitempty"`
+	Metadata string           `json:"metadata,omitempty"`
+	IsError  bool             `json:"is_error"`
 }
 
 // NewTextResponse creates a successful text response.
@@ -120,6 +128,28 @@ func NewImageResponse(content string) ToolResponse {
 		Type:    ToolResponseTypeImage,
 		Content: content,
 		IsError: false,
+	}
+}
+
+func NewFileResponse(data []byte, mimeType string) ToolResponse {
+	return ToolResponse{
+		Type:     ToolResponseTypeFile,
+		Data:     data,
+		MimeType: mimeType,
+		IsError:  false,
+	}
+}
+
+func NewJSONResponse(v any) ToolResponse {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return NewTextErrorResponse("failed to marshal JSON: " + err.Error())
+	}
+	return ToolResponse{
+		Type:     ToolResponseTypeJSON,
+		Content:  string(data),
+		MimeType: "application/json",
+		IsError:  false,
 	}
 }
 
