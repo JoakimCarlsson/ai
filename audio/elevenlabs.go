@@ -73,13 +73,13 @@ type elevenLabsVoiceResponse struct {
 }
 
 type elevenLabsVoice struct {
-	VoiceID        string            `json:"voice_id"`
-	Name           string            `json:"name"`
-	Category       string            `json:"category"`
-	Description    string            `json:"description"`
-	PreviewURL     string            `json:"preview_url"`
-	Labels         map[string]string `json:"labels"`
-	HighQualityURL string            `json:"high_quality_base_model_ids,omitempty"`
+	VoiceID                 string            `json:"voice_id"`
+	Name                    string            `json:"name"`
+	Category                string            `json:"category"`
+	Description             string            `json:"description"`
+	PreviewURL              string            `json:"preview_url"`
+	Labels                  map[string]string `json:"labels"`
+	HighQualityBaseModelIDs []string          `json:"high_quality_base_model_ids,omitempty"`
 }
 
 type elevenLabsErrorResponse struct {
