@@ -3,22 +3,23 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/joakimcarlsson/ai.svg)](https://pkg.go.dev/github.com/joakimcarlsson/ai)
 [![Go Report Card](https://goreportcard.com/badge/github.com/joakimcarlsson/ai)](https://goreportcard.com/report/github.com/joakimcarlsson/ai)
 
-A comprehensive, multi-provider Go library for interacting with various AI models through unified interfaces. This library supports Large Language Models (LLMs), embedding models, image generation models, and rerankers from multiple providers including Anthropic, OpenAI, Google, AWS, Voyage AI, xAI, and more, with features like streaming responses, tool calling, structured output, and MCP (Model Context Protocol) integration.
+A comprehensive, multi-provider Go library for interacting with various AI models through unified interfaces. This library supports Large Language Models (LLMs), embedding models, image generation models, audio generation (text-to-speech), and rerankers from multiple providers including Anthropic, OpenAI, Google, AWS, Voyage AI, xAI, ElevenLabs, and more, with features like streaming responses, tool calling, structured output, and MCP (Model Context Protocol) integration.
 
 ## Features
 
-- **Multi-Provider Support**: Unified interface for 9+ AI providers
+- **Multi-Provider Support**: Unified interface for 10+ AI providers
 - **LLM Support**: Chat completions, streaming, tool calling, structured output
 - **Agent Framework**: Stateless agents with session management and persistent memory
 - **Embedding Models**: Text, multimodal, and contextualized embeddings
 - **Image Generation**: Text-to-image generation with multiple quality and size options
+- **Audio Generation**: Text-to-speech with voice selection and streaming support
 - **Rerankers**: Document reranking for improved search relevance
 - **Streaming Responses**: Real-time response streaming via Go channels
 - **Tool Calling**: Native function calling with struct-tag schema generation
 - **Structured Output**: Constrained generation with JSON schemas
 - **MCP Integration**: Model Context Protocol support for advanced tooling
 - **Multimodal Support**: Text and image inputs across compatible providers
-- **Cost Tracking**: Built-in token usage and cost calculation
+- **Cost Tracking**: Built-in token and character usage with cost calculation
 - **Retry Logic**: Exponential backoff with configurable retry policies
 - **Type Safety**: Full Go generics support for compile-time safety
 
@@ -52,6 +53,12 @@ A comprehensive, multi-provider Go library for interacting with various AI model
 | OpenAI | DALL-E 2, DALL-E 3, GPT Image 1 | standard, hd, low, medium, high | 256x256 to 1792x1024 |
 | xAI (Grok) | Grok 2 Image | default | default |
 | Google Gemini | Gemini 2.5 Flash Image, Imagen 3, Imagen 4, Imagen 4 Ultra, Imagen 4 Fast | default | Aspect ratios: 1:1, 3:4, 4:3, 9:16, 16:9 |
+
+### Audio Generation Providers (Text-to-Speech)
+
+| Provider | Models | Streaming | Voice Selection | Max Characters |
+|----------|--------|-----------|-----------------|----------------|
+| ElevenLabs | Multilingual v2, Turbo v2.5, Flash v2.5 | ✅ | ✅ | 10,000 - 40,000 |
 
 ## Installation
 
@@ -509,6 +516,95 @@ response, err := client.GenerateImage(
 )
 ```
 
+### Audio Generation (Text-to-Speech)
+
+```go
+import (
+    "github.com/joakimcarlsson/ai/audio"
+    "github.com/joakimcarlsson/ai/model"
+)
+
+// Create audio generation client
+client, err := audio.NewAudioGeneration(
+    model.ProviderElevenLabs,
+    audio.WithAPIKey("your-api-key"),
+    audio.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Generate audio
+response, err := client.GenerateAudio(
+    context.Background(),
+    "Hello! This is a demonstration of text-to-speech.",
+    audio.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Save to file
+os.WriteFile("output.mp3", response.AudioData, 0644)
+fmt.Printf("Characters used: %d\n", response.Usage.Characters)
+```
+
+#### Custom Voice Settings
+
+```go
+// Generate with custom voice settings
+response, err := client.GenerateAudio(
+    context.Background(),
+    "This uses custom voice settings for enhanced expressiveness.",
+    audio.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),
+    audio.WithStability(0.75),              // 0.0-1.0, higher = more consistent
+    audio.WithSimilarityBoost(0.85),        // 0.0-1.0, higher = more similar to original
+    audio.WithStyle(0.5),                   // 0.0-1.0, higher = more expressive
+    audio.WithSpeakerBoost(true),           // Enhanced speaker similarity
+)
+```
+
+#### Streaming Audio
+
+```go
+// Stream audio in chunks for real-time playback
+chunkChan, err := client.StreamAudio(
+    context.Background(),
+    "This is a streaming audio example.",
+    audio.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),
+    audio.WithOptimizeStreamingLatency(3), // 0-4, higher = lower latency
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+file, _ := os.Create("output_stream.mp3")
+defer file.Close()
+
+for chunk := range chunkChan {
+    if chunk.Error != nil {
+        log.Fatal(chunk.Error)
+    }
+    if chunk.Done {
+        break
+    }
+    file.Write(chunk.Data)
+}
+```
+
+#### List Available Voices
+
+```go
+voices, err := client.ListVoices(context.Background())
+if err != nil {
+    log.Fatal(err)
+}
+
+for _, voice := range voices {
+    fmt.Printf("%s (%s) - %s\n", voice.Name, voice.VoiceID, voice.Category)
+}
+```
+
 ## Project Structure
 
 ```
@@ -534,7 +630,12 @@ response, err := client.GenerateImage(
 │   ├── reranker/                # Document reranking example
 │   ├── image_generation/        # xAI image generation example
 │   ├── image_generation_openai/ # OpenAI image generation example
-│   └── image_generation_gemini/ # Gemini image generation example
+│   ├── image_generation_gemini/ # Gemini image generation example
+│   └── audio/                   # Audio generation (TTS) example
+├── audio/                       # Audio generation package
+│   ├── audio.go                 # Main audio generation interface
+│   ├── elevenlabs.go            # ElevenLabs TTS implementation
+│   └── elevenlabs_options.go   # ElevenLabs-specific options
 ├── image_generation/            # Image generation package
 │   ├── image_generation.go      # Main image generation interface
 │   ├── openai.go                # OpenAI/xAI implementation
@@ -548,6 +649,7 @@ response, err := client.GenerateImage(
 │   ├── llm_models.go            # LLM model types
 │   ├── embedding_models.go      # Embedding model types
 │   ├── image_generation_models.go # Image generation model types
+│   ├── audio_models.go          # Audio generation model types
 │   ├── voyage.go                # Voyage AI models
 │   ├── anthropic.go             # Claude models
 │   ├── openai.go                # GPT and DALL-E models
@@ -641,6 +743,20 @@ client, err := image_generation.NewImageGeneration(
     image_generation.WithTimeout(60*time.Second),
     image_generation.WithGeminiOptions(
         image_generation.WithGeminiBackend(genai.BackendVertexAI),
+    ),
+)
+```
+
+### Audio Generation Client Options
+
+```go
+client, err := audio.NewAudioGeneration(
+    model.ProviderElevenLabs,
+    audio.WithAPIKey("your-key"),
+    audio.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
+    audio.WithTimeout(30*time.Second),
+    audio.WithElevenLabsOptions(
+        audio.WithElevenLabsBaseURL("custom-endpoint"),
     ),
 )
 ```
@@ -853,4 +969,21 @@ gptImageModel := model.OpenAIImageGenerationModels[model.GPTImage1]
 lowCost := gptImageModel.Pricing["1024x1024"]["low"]       // $0.011
 mediumCost := gptImageModel.Pricing["1024x1024"]["medium"] // $0.042
 highCost := gptImageModel.Pricing["1024x1024"]["high"]     // $0.167
+```
+
+#### Audio Generation Models
+
+Audio generation models use character-based pricing:
+
+```go
+model := model.ElevenLabsAudioModels[model.ElevenTurboV2_5]
+
+fmt.Printf("Cost per 1M chars: $%.2f\n", model.CostPer1MChars)
+fmt.Printf("Max characters per request: %d\n", model.MaxCharacters)
+fmt.Printf("Supports streaming: %v\n", model.SupportsStreaming)
+
+// Calculate costs from response
+response, err := client.GenerateAudio(ctx, text, audio.WithVoiceID("voice-id"))
+cost := float64(response.Usage.Characters) * model.CostPer1MChars / 1_000_000
+fmt.Printf("Cost: $%.4f\n", cost)
 ```
