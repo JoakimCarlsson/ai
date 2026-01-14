@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 
 	"github.com/joakimcarlsson/ai/audio"
 	"github.com/joakimcarlsson/ai/model"
@@ -27,16 +28,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Example 1: Basic text-to-speech generation")
 	basicExample(client)
-
-	fmt.Println("\nExample 2: Custom voice settings")
 	customVoiceExample(client)
-
-	fmt.Println("\nExample 3: Streaming audio")
 	streamingExample(client)
-
-	fmt.Println("\nExample 4: List available voices")
 	listVoicesExample(client)
 }
 
@@ -49,19 +43,13 @@ func basicExample(client audio.AudioGeneration) {
 		audio.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),
 	)
 	if err != nil {
-		log.Printf("Error generating audio: %v", err)
-		return
+		log.Fatal(err)
 	}
 
 	err = os.WriteFile("output_basic.mp3", response.AudioData, 0644)
 	if err != nil {
-		log.Printf("Error writing file: %v", err)
-		return
+		log.Fatal(err)
 	}
-
-	fmt.Printf("Generated audio saved to output_basic.mp3\n")
-	fmt.Printf("Characters used: %d\n", response.Usage.Characters)
-	fmt.Printf("Model: %s\n", response.Model)
 }
 
 func customVoiceExample(client audio.AudioGeneration) {
@@ -77,18 +65,13 @@ func customVoiceExample(client audio.AudioGeneration) {
 		audio.WithSpeakerBoost(true),
 	)
 	if err != nil {
-		log.Printf("Error generating audio: %v", err)
-		return
+		log.Fatal(err)
 	}
 
 	err = os.WriteFile("output_custom.mp3", response.AudioData, 0644)
 	if err != nil {
-		log.Printf("Error writing file: %v", err)
-		return
+		log.Fatal(err)
 	}
-
-	fmt.Printf("Generated audio with custom settings saved to output_custom.mp3\n")
-	fmt.Printf("Characters used: %d\n", response.Usage.Characters)
 }
 
 func streamingExample(client audio.AudioGeneration) {
@@ -101,58 +84,85 @@ func streamingExample(client audio.AudioGeneration) {
 		audio.WithOptimizeStreamingLatency(3),
 	)
 	if err != nil {
-		log.Printf("Error starting stream: %v", err)
-		return
+		log.Fatal(err)
 	}
 
-	file, err := os.Create("output_stream.mp3")
+	if _, err := exec.LookPath("ffplay"); err == nil {
+		playStreamingAudio(chunkChan)
+	} else {
+		saveStreamingAudio(chunkChan)
+	}
+}
+
+func playStreamingAudio(chunkChan <-chan audio.AudioChunk) {
+	cmd := exec.Command("ffplay", "-nodisp", "-autoexit", "-")
+	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		log.Printf("Error creating file: %v", err)
-		return
+		log.Fatal(err)
 	}
-	defer file.Close()
 
-	chunkCount := 0
-	totalBytes := 0
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
 
 	for chunk := range chunkChan {
 		if chunk.Error != nil {
-			log.Printf("Stream error: %v", chunk.Error)
-			return
+			stdin.Close()
+			cmd.Wait()
+			log.Fatal(chunk.Error)
 		}
 
 		if chunk.Done {
-			fmt.Printf("Stream complete: received %d chunks, %d bytes total\n", chunkCount, totalBytes)
 			break
 		}
 
 		if len(chunk.Data) > 0 {
-			n, err := file.Write(chunk.Data)
-			if err != nil {
-				log.Printf("Error writing chunk: %v", err)
-				return
+			if _, err := stdin.Write(chunk.Data); err != nil {
+				stdin.Close()
+				cmd.Wait()
+				log.Fatal(err)
 			}
-			chunkCount++
-			totalBytes += n
 		}
 	}
 
-	fmt.Printf("Streamed audio saved to output_stream.mp3\n")
+	stdin.Close()
+	cmd.Wait()
+}
+
+func saveStreamingAudio(chunkChan <-chan audio.AudioChunk) {
+	file, err := os.Create("output_stream.mp3")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	for chunk := range chunkChan {
+		if chunk.Error != nil {
+			log.Fatal(chunk.Error)
+		}
+
+		if chunk.Done {
+			break
+		}
+
+		if len(chunk.Data) > 0 {
+			if _, err := file.Write(chunk.Data); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
 }
 
 func listVoicesExample(client audio.AudioGeneration) {
 	voices, err := client.ListVoices(context.Background())
 	if err != nil {
-		log.Printf("Error listing voices: %v", err)
-		return
+		log.Fatal(err)
 	}
 
-	fmt.Printf("Available voices: %d\n", len(voices))
 	for i, voice := range voices {
 		if i >= 5 {
-			fmt.Printf("... and %d more voices\n", len(voices)-5)
 			break
 		}
-		fmt.Printf("  - %s (%s) - %s\n", voice.Name, voice.VoiceID, voice.Category)
+		fmt.Printf("%s (%s) - %s\n", voice.Name, voice.VoiceID, voice.Category)
 	}
 }
