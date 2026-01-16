@@ -6,6 +6,7 @@ const (
 	ElevenMultilingualV2 ModelID = "eleven_multilingual_v2"
 	ElevenTurboV2_5      ModelID = "eleven_turbo_v2_5"
 	ElevenFlashV2_5      ModelID = "eleven_flash_v2_5"
+	ElevenTurboV3        ModelID = "eleven_turbo_v3"
 )
 
 // AudioModel represents an audio generation model with its configuration and capabilities.
@@ -38,35 +39,35 @@ var ElevenLabsAudioModels = map[ModelID]AudioModel{
 		Name:              "Eleven Multilingual v2",
 		Provider:          ProviderElevenLabs,
 		APIModel:          "eleven_multilingual_v2",
-		CostPer1MChars:    30.00,
-		MaxCharacters:     10000,
 		SupportedFormats:  []string{"mp3_44100_128", "mp3_44100_192", "pcm_16000", "pcm_22050", "pcm_24000", "pcm_44100"},
 		DefaultFormat:     "mp3_44100_128",
 		SupportsStreaming: true,
-		LatencyMs:         2000,
 	},
 	ElevenTurboV2_5: {
 		ID:                ElevenTurboV2_5,
 		Name:              "Eleven Turbo v2.5",
 		Provider:          ProviderElevenLabs,
 		APIModel:          "eleven_turbo_v2_5",
-		CostPer1MChars:    10.00,
-		MaxCharacters:     40000,
 		SupportedFormats:  []string{"mp3_44100_128", "mp3_44100_192", "pcm_16000", "pcm_22050", "pcm_24000", "pcm_44100"},
 		DefaultFormat:     "mp3_44100_128",
 		SupportsStreaming: true,
-		LatencyMs:         500,
 	},
 	ElevenFlashV2_5: {
 		ID:                ElevenFlashV2_5,
 		Name:              "Eleven Flash v2.5",
 		Provider:          ProviderElevenLabs,
 		APIModel:          "eleven_flash_v2_5",
-		CostPer1MChars:    3.00,
-		MaxCharacters:     40000,
 		SupportedFormats:  []string{"mp3_44100_128", "mp3_44100_192", "pcm_16000", "pcm_22050", "pcm_24000", "pcm_44100"},
 		DefaultFormat:     "mp3_44100_128",
 		SupportsStreaming: true,
-		LatencyMs:         200,
+	},
+	ElevenTurboV3: {
+		ID:                ElevenTurboV3,
+		Name:              "Eleven Turbo v3",
+		Provider:          ProviderElevenLabs,
+		APIModel:          "eleven_turbo_v3",
+		SupportedFormats:  []string{"mp3_44100_128", "mp3_44100_192", "pcm_16000", "pcm_22050", "pcm_24000", "pcm_44100"},
+		DefaultFormat:     "mp3_44100_128",
+		SupportsStreaming: true,
 	},
 }
