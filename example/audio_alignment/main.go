@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	apiKey := "sk_d3db1d738742edda91935c8a8ce919935e7efd26063d3915"
+	apiKey := os.Getenv("ELEVENLABS_API_KEY")
 	if apiKey == "" {
 		log.Fatal("ELEVENLABS_API_KEY environment variable is required")
 	}
