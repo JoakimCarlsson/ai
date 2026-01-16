@@ -366,6 +366,18 @@ func (c ElevenLabsClient) stream(
 		opt(opts)
 	}
 
+	if opts.EnableAlignment {
+		return c.streamWithTimestamps(ctx, text, opts)
+	}
+
+	return c.streamStandard(ctx, text, opts)
+}
+
+func (c ElevenLabsClient) streamStandard(
+	ctx context.Context,
+	text string,
+	opts *GenerationOptions,
+) (<-chan AudioChunk, error) {
 	voiceID := defaultVoiceID
 	if opts.VoiceID != "" {
 		voiceID = opts.VoiceID
@@ -462,6 +474,154 @@ func (c ElevenLabsClient) stream(
 			if err != nil {
 				chunkChan <- AudioChunk{Error: fmt.Errorf("stream read error: %w", err)}
 				break
+			}
+
+			select {
+			case <-ctx.Done():
+				chunkChan <- AudioChunk{Error: ctx.Err()}
+				return
+			default:
+			}
+		}
+	}()
+
+	return chunkChan, nil
+}
+
+type elevenLabsStreamChunkWithTimestamps struct {
+	AudioBase64         string                      `json:"audio_base64"`
+	Alignment           elevenLabsAlignmentResponse `json:"alignment"`
+	NormalizedAlignment elevenLabsAlignmentResponse `json:"normalized_alignment"`
+}
+
+func (c ElevenLabsClient) streamWithTimestamps(
+	ctx context.Context,
+	text string,
+	opts *GenerationOptions,
+) (<-chan AudioChunk, error) {
+	voiceID := defaultVoiceID
+	if opts.VoiceID != "" {
+		voiceID = opts.VoiceID
+	}
+
+	outputFormat := "mp3_44100_128"
+	if opts.OutputFormat != "" {
+		outputFormat = opts.OutputFormat
+	}
+
+	reqBody := elevenLabsTTSRequest{
+		Text:         text,
+		ModelID:      c.model,
+		OutputFormat: outputFormat,
+	}
+
+	if opts.Stability != nil || opts.SimilarityBoost != nil || opts.Style != nil || opts.SpeakerBoost != nil {
+		reqBody.VoiceSettings = &voiceSettings{}
+		if opts.Stability != nil {
+			reqBody.VoiceSettings.Stability = *opts.Stability
+		}
+		if opts.SimilarityBoost != nil {
+			reqBody.VoiceSettings.SimilarityBoost = *opts.SimilarityBoost
+		}
+		if opts.Style != nil {
+			reqBody.VoiceSettings.Style = *opts.Style
+		}
+		if opts.SpeakerBoost != nil {
+			reqBody.VoiceSettings.SpeakerBoost = *opts.SpeakerBoost
+		}
+	}
+
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		ch := make(chan AudioChunk, 1)
+		ch <- AudioChunk{Error: fmt.Errorf("failed to marshal request: %w", err)}
+		close(ch)
+		return ch, nil
+	}
+
+	url := fmt.Sprintf("%s/text-to-speech/%s/stream/with-timestamps", c.baseURL, voiceID)
+	if opts.OptimizeStreamingLatency != nil {
+		url = fmt.Sprintf("%s?optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		ch := make(chan AudioChunk, 1)
+		ch <- AudioChunk{Error: fmt.Errorf("failed to create request: %w", err)}
+		close(ch)
+		return ch, nil
+	}
+
+	req.Header.Set("xi-api-key", c.apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		ch := make(chan AudioChunk, 1)
+		ch <- AudioChunk{Error: fmt.Errorf("request failed: %w", err)}
+		close(ch)
+		return ch, nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		defer resp.Body.Close()
+		ch := make(chan AudioChunk, 1)
+		ch <- AudioChunk{Error: c.parseError(resp)}
+		close(ch)
+		return ch, nil
+	}
+
+	chunkChan := make(chan AudioChunk, 10)
+
+	go func() {
+		defer close(chunkChan)
+		defer resp.Body.Close()
+
+		decoder := json.NewDecoder(resp.Body)
+		for {
+			var chunk elevenLabsStreamChunkWithTimestamps
+			err := decoder.Decode(&chunk)
+
+			if err == io.EOF {
+				chunkChan <- AudioChunk{Done: true}
+				break
+			}
+
+			if err != nil {
+				chunkChan <- AudioChunk{Error: fmt.Errorf("stream decode error: %w", err)}
+				break
+			}
+
+			audioData, err := base64.StdEncoding.DecodeString(chunk.AudioBase64)
+			if err != nil {
+				chunkChan <- AudioChunk{Error: fmt.Errorf("failed to decode base64 audio: %w", err)}
+				break
+			}
+
+			var alignment, normalizedAlignment *AlignmentData
+
+			if len(chunk.Alignment.Characters) > 0 {
+				alignment = &AlignmentData{
+					Characters:                 chunk.Alignment.Characters,
+					CharacterStartTimesSeconds: chunk.Alignment.CharacterStartTimesSeconds,
+					CharacterEndTimesSeconds:   chunk.Alignment.CharacterEndTimesSeconds,
+				}
+			}
+
+			if len(chunk.NormalizedAlignment.Characters) > 0 {
+				normalizedAlignment = &AlignmentData{
+					Characters:                 chunk.NormalizedAlignment.Characters,
+					CharacterStartTimesSeconds: chunk.NormalizedAlignment.CharacterStartTimesSeconds,
+					CharacterEndTimesSeconds:   chunk.NormalizedAlignment.CharacterEndTimesSeconds,
+				}
+			}
+
+			chunkChan <- AudioChunk{
+				Data:                audioData,
+				Done:                false,
+				Alignment:           alignment,
+				NormalizedAlignment: normalizedAlignment,
 			}
 
 			select {

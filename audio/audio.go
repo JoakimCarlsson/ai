@@ -100,6 +100,10 @@ type AudioChunk struct {
 	Error error
 	// Done indicates if this is the final chunk.
 	Done bool
+	// Alignment contains character-level timing information for this chunk (if alignment is enabled).
+	Alignment *AlignmentData
+	// NormalizedAlignment contains normalized character-level timing information for this chunk (if alignment is enabled).
+	NormalizedAlignment *AlignmentData
 }
 
 // Voice represents an available voice for audio generation.
