@@ -3,10 +3,12 @@ package model
 const (
 	ProviderElevenLabs ModelProvider = "elevenlabs"
 
+	ElevenV3             ModelID = "eleven_v3"
 	ElevenMultilingualV2 ModelID = "eleven_multilingual_v2"
-	ElevenTurboV2_5      ModelID = "eleven_turbo_v2_5"
 	ElevenFlashV2_5      ModelID = "eleven_flash_v2_5"
-	ElevenTurboV3        ModelID = "eleven_turbo_v3"
+	ElevenFlashV2        ModelID = "eleven_flash_v2"
+	ElevenTurboV2_5      ModelID = "eleven_turbo_v2_5"
+	ElevenTurboV2        ModelID = "eleven_turbo_v2"
 )
 
 // AudioModel represents an audio generation model with its configuration and capabilities.
@@ -34,20 +36,22 @@ type AudioModel struct {
 }
 
 var ElevenLabsAudioModels = map[ModelID]AudioModel{
+	ElevenV3: {
+		ID:                ElevenV3,
+		Name:              "Eleven v3",
+		Provider:          ProviderElevenLabs,
+		APIModel:          "eleven_v3",
+		MaxCharacters:     5000,
+		SupportedFormats:  []string{"mp3_44100_128", "mp3_44100_192", "pcm_16000", "pcm_22050", "pcm_24000", "pcm_44100"},
+		DefaultFormat:     "mp3_44100_128",
+		SupportsStreaming: true,
+	},
 	ElevenMultilingualV2: {
 		ID:                ElevenMultilingualV2,
 		Name:              "Eleven Multilingual v2",
 		Provider:          ProviderElevenLabs,
 		APIModel:          "eleven_multilingual_v2",
-		SupportedFormats:  []string{"mp3_44100_128", "mp3_44100_192", "pcm_16000", "pcm_22050", "pcm_24000", "pcm_44100"},
-		DefaultFormat:     "mp3_44100_128",
-		SupportsStreaming: true,
-	},
-	ElevenTurboV2_5: {
-		ID:                ElevenTurboV2_5,
-		Name:              "Eleven Turbo v2.5",
-		Provider:          ProviderElevenLabs,
-		APIModel:          "eleven_turbo_v2_5",
+		MaxCharacters:     10000,
 		SupportedFormats:  []string{"mp3_44100_128", "mp3_44100_192", "pcm_16000", "pcm_22050", "pcm_24000", "pcm_44100"},
 		DefaultFormat:     "mp3_44100_128",
 		SupportsStreaming: true,
@@ -57,15 +61,37 @@ var ElevenLabsAudioModels = map[ModelID]AudioModel{
 		Name:              "Eleven Flash v2.5",
 		Provider:          ProviderElevenLabs,
 		APIModel:          "eleven_flash_v2_5",
+		MaxCharacters:     40000,
 		SupportedFormats:  []string{"mp3_44100_128", "mp3_44100_192", "pcm_16000", "pcm_22050", "pcm_24000", "pcm_44100"},
 		DefaultFormat:     "mp3_44100_128",
 		SupportsStreaming: true,
 	},
-	ElevenTurboV3: {
-		ID:                ElevenTurboV3,
-		Name:              "Eleven Turbo v3",
+	ElevenFlashV2: {
+		ID:                ElevenFlashV2,
+		Name:              "Eleven Flash v2",
 		Provider:          ProviderElevenLabs,
-		APIModel:          "eleven_turbo_v3",
+		APIModel:          "eleven_flash_v2",
+		MaxCharacters:     30000,
+		SupportedFormats:  []string{"mp3_44100_128", "mp3_44100_192", "pcm_16000", "pcm_22050", "pcm_24000", "pcm_44100"},
+		DefaultFormat:     "mp3_44100_128",
+		SupportsStreaming: true,
+	},
+	ElevenTurboV2_5: {
+		ID:                ElevenTurboV2_5,
+		Name:              "Eleven Turbo v2.5",
+		Provider:          ProviderElevenLabs,
+		APIModel:          "eleven_turbo_v2_5",
+		MaxCharacters:     40000,
+		SupportedFormats:  []string{"mp3_44100_128", "mp3_44100_192", "pcm_16000", "pcm_22050", "pcm_24000", "pcm_44100"},
+		DefaultFormat:     "mp3_44100_128",
+		SupportsStreaming: true,
+	},
+	ElevenTurboV2: {
+		ID:                ElevenTurboV2,
+		Name:              "Eleven Turbo v2",
+		Provider:          ProviderElevenLabs,
+		APIModel:          "eleven_turbo_v2",
+		MaxCharacters:     30000,
 		SupportedFormats:  []string{"mp3_44100_128", "mp3_44100_192", "pcm_16000", "pcm_22050", "pcm_24000", "pcm_44100"},
 		DefaultFormat:     "mp3_44100_128",
 		SupportsStreaming: true,
