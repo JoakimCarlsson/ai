@@ -47,6 +47,35 @@ type AudioUsage struct {
 	Characters int64
 }
 
+// AlignmentData contains character-level timing information for generated audio.
+type AlignmentData struct {
+	Characters                 []string
+	CharacterStartTimesSeconds []float64
+	CharacterEndTimesSeconds   []float64
+}
+
+// CharAlignment represents timing information for a single character.
+type CharAlignment struct {
+	Text  string
+	Start float64
+	End   float64
+}
+
+// WordAlignment represents timing information for a single word.
+type WordAlignment struct {
+	Text  string
+	Start float64
+	End   float64
+	Loss  float64
+}
+
+// ForcedAlignmentData contains the response from forced alignment operations.
+type ForcedAlignmentData struct {
+	Characters []CharAlignment
+	Words      []WordAlignment
+	Loss       float64
+}
+
 // AudioResponse contains the generated audio and metadata from an audio generation request.
 type AudioResponse struct {
 	// AudioData contains the audio file data as bytes.
@@ -57,6 +86,10 @@ type AudioResponse struct {
 	Usage AudioUsage
 	// Model identifies which audio generation model was used.
 	Model string
+	// Alignment contains character-level timing information aligned to the original input text.
+	Alignment *AlignmentData
+	// NormalizedAlignment contains character-level timing information aligned to normalized text.
+	NormalizedAlignment *AlignmentData
 }
 
 // AudioChunk represents a piece of streaming audio data.
@@ -109,6 +142,18 @@ type AudioGeneration interface {
 
 	// Model returns the audio generation model configuration being used.
 	Model() model.AudioModel
+}
+
+// ForcedAlignmentProvider defines the interface for providers that support forced alignment.
+// Forced alignment matches existing audio with a transcript to produce timing data.
+type ForcedAlignmentProvider interface {
+	// GenerateForcedAlignment aligns an existing audio file with its transcript.
+	// Returns character-level and word-level timing information.
+	GenerateForcedAlignment(
+		ctx context.Context,
+		audioFile []byte,
+		transcript string,
+	) (*ForcedAlignmentData, error)
 }
 
 type audioGenerationClientOptions struct {
@@ -236,6 +281,8 @@ type GenerationOptions struct {
 	SpeakerBoost *bool
 	// OptimizeStreamingLatency optimizes for lower latency (0-4).
 	OptimizeStreamingLatency *int
+	// EnableAlignment enables character-level timing data in the response.
+	EnableAlignment bool
 }
 
 // GenerationOption is a function that configures GenerationOptions.
@@ -292,5 +339,15 @@ func WithSpeakerBoost(enabled bool) GenerationOption {
 func WithOptimizeStreamingLatency(level int) GenerationOption {
 	return func(options *GenerationOptions) {
 		options.OptimizeStreamingLatency = &level
+	}
+}
+
+// WithAlignmentEnabled enables or disables character-level timing data in the response.
+// When enabled, the audio generation will use the /with-timestamps endpoint and populate
+// the Alignment and NormalizedAlignment fields in the AudioResponse.
+// This is useful for subtitles, word highlighting, lip sync, and other timing-dependent features.
+func WithAlignmentEnabled(enabled bool) GenerationOption {
+	return func(options *GenerationOptions) {
+		options.EnableAlignment = enabled
 	}
 }
