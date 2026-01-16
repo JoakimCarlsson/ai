@@ -36,7 +36,7 @@ func newElevenLabsClient(options audioGenerationClientOptions) ElevenLabsClient 
 		}
 	}
 
-	timeout := 30 * time.Second
+	timeout := 10 * time.Minute
 	if options.timeout != nil {
 		timeout = *options.timeout
 	}
