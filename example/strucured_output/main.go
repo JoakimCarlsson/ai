@@ -12,32 +12,12 @@ import (
 	"github.com/joakimcarlsson/ai/types"
 )
 
-type CodeAnalysis struct{}
-
-func (c *CodeAnalysis) Info() schema.StructuredOutputInfo {
-	return schema.StructuredOutputInfo{
-		Name:        "code_analysis",
-		Description: "Analyze Go code and extract key information",
-		Parameters: map[string]any{
-			"language": map[string]any{
-				"type":        "string",
-				"description": "Programming language",
-			},
-			"functions": map[string]any{
-				"type": "array",
-				"items": map[string]any{
-					"type": "string",
-				},
-				"description": "List of function names",
-			},
-			"complexity": map[string]any{
-				"type":        "string",
-				"description": "Code complexity level",
-				"enum":        []string{"low", "medium", "high"},
-			},
-		},
-		Required: []string{"language", "functions", "complexity"},
-	}
+// CodeAnalysis represents the structured output for code analysis.
+// Using struct tags to define the JSON schema is the recommended approach.
+type CodeAnalysis struct {
+	Language   string   `json:"language" desc:"Programming language"`
+	Functions  []string `json:"functions" desc:"List of function names"`
+	Complexity string   `json:"complexity" desc:"Code complexity level" enum:"low,medium,high"`
 }
 
 func main() {
@@ -57,8 +37,37 @@ func main() {
 		log.Fatal("No structured output support")
 	}
 
-	codeAnalyzer := &CodeAnalysis{}
-	outputSchema := codeAnalyzer.Info()
+	// Recommended: Use struct-based schema generation
+	outputSchema := schema.NewStructuredOutputFromStruct(
+		"code_analysis",
+		"Analyze Go code and extract key information",
+		CodeAnalysis{},
+	)
+
+	// Alternative (manual approach, for advanced use cases):
+	// outputSchema := schema.NewStructuredOutputInfo(
+	//     "code_analysis",
+	//     "Analyze Go code and extract key information",
+	//     map[string]any{
+	//         "language": map[string]any{
+	//             "type":        "string",
+	//             "description": "Programming language",
+	//         },
+	//         "functions": map[string]any{
+	//             "type": "array",
+	//             "items": map[string]any{
+	//                 "type": "string",
+	//             },
+	//             "description": "List of function names",
+	//         },
+	//         "complexity": map[string]any{
+	//             "type":        "string",
+	//             "description": "Code complexity level",
+	//             "enum":        []string{"low", "medium", "high"},
+	//         },
+	//     },
+	//     []string{"language", "functions", "complexity"},
+	// )
 
 	messages := []message.Message{
 		message.NewUserMessage(`func calculateSum(a, b int) int {
@@ -75,28 +84,28 @@ func main() {
 		}`),
 	}
 
-	regularExample(ctx, client, messages, &outputSchema)
-	streamExample(ctx, client, messages, &outputSchema)
+	regularExample(ctx, client, messages, outputSchema)
+	streamExample(ctx, client, messages, outputSchema)
 }
 
 func regularExample(
 	ctx context.Context,
 	client llm.LLM,
 	messages []message.Message,
-	schema *schema.StructuredOutputInfo,
+	outputSchema *schema.StructuredOutputInfo,
 ) {
 	response, err := client.SendMessagesWithStructuredOutput(
 		ctx,
 		messages,
 		nil,
-		schema,
+		outputSchema,
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if response.StructuredOutput != nil {
-		fmt.Println(*response.StructuredOutput)
+		fmt.Println("Regular response:", *response.StructuredOutput)
 	}
 }
 
@@ -104,22 +113,23 @@ func streamExample(
 	ctx context.Context,
 	client llm.LLM,
 	messages []message.Message,
-	schema *schema.StructuredOutputInfo,
+	outputSchema *schema.StructuredOutputInfo,
 ) {
 	stream := client.StreamResponseWithStructuredOutput(
 		ctx,
 		messages,
 		nil,
-		schema,
+		outputSchema,
 	)
 
+	fmt.Println("\nStreaming response:")
 	for event := range stream {
 		switch event.Type {
 		case types.EventContentDelta:
 			fmt.Print(event.Content)
 		case types.EventComplete:
 			if event.Response.StructuredOutput != nil {
-				fmt.Println(*event.Response.StructuredOutput)
+				fmt.Println("\nFinal structured output:", *event.Response.StructuredOutput)
 			}
 		case types.EventError:
 			log.Fatal(event.Error)

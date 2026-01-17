@@ -34,3 +34,32 @@ func NewStructuredOutputInfo(
 		Required:    required,
 	}
 }
+
+// NewStructuredOutputFromStruct creates a new structured output schema from a Go struct.
+// It uses reflection to automatically generate the JSON schema from struct fields and tags.
+//
+// Supported struct tags:
+//   - json: field name in JSON (e.g., `json:"field_name"`)
+//   - desc: field description (e.g., `desc:"The field description"`)
+//   - enum: comma-separated enum values (e.g., `enum:"value1,value2"`)
+//   - required: explicitly mark as required or not (e.g., `required:"true"` or `required:"false"`)
+//
+// Example:
+//
+//	type Person struct {
+//	    Name string `json:"name" desc:"Person's full name"`
+//	    Age  int    `json:"age" desc:"Person's age in years"`
+//	}
+//	schema := NewStructuredOutputFromStruct("person", "A person object", Person{})
+func NewStructuredOutputFromStruct(
+	name, description string,
+	structType any,
+) *StructuredOutputInfo {
+	parameters, required := GenerateSchema(structType)
+	return &StructuredOutputInfo{
+		Name:        name,
+		Description: description,
+		Parameters:  parameters,
+		Required:    required,
+	}
+}
