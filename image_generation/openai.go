@@ -12,13 +12,23 @@ import (
 )
 
 type OpenAIClient struct {
-	client  openai.Client
-	options imageGenerationClientOptions
+	client     openai.Client
+	options    imageGenerationClientOptions
+	openaiOpts openaiOptions
 }
 
 type openaiOptions struct {
-	baseURL      string
-	extraHeaders map[string]string
+	baseURL          string
+	extraHeaders     map[string]string
+	streamingOptions OpenAIStreamingOptions
+}
+
+// OpenAIStreamingOptions contains OpenAI-specific options for streaming image generation.
+type OpenAIStreamingOptions struct {
+	// PartialImages specifies the number of partial images to receive during streaming (0-3).
+	// If set to 0, only the final image will be received.
+	// You may receive fewer partial images than requested if the full image is generated quickly.
+	PartialImages int
 }
 
 // OpenAIOption is a function that configures OpenAI-specific options.
@@ -38,10 +48,21 @@ func WithOpenAIExtraHeaders(headers map[string]string) OpenAIOption {
 	}
 }
 
+// WithOpenAIStreamingOptions sets OpenAI-specific streaming configuration.
+// Use this to configure the number of partial images to receive during streaming.
+func WithOpenAIStreamingOptions(opts OpenAIStreamingOptions) OpenAIOption {
+	return func(options *openaiOptions) {
+		options.streamingOptions = opts
+	}
+}
+
 func newOpenAIClient(opts imageGenerationClientOptions) OpenAIClient {
 	openaiOpts := openaiOptions{
 		baseURL:      "",
 		extraHeaders: make(map[string]string),
+		streamingOptions: OpenAIStreamingOptions{
+			PartialImages: 2,
+		},
 	}
 
 	for _, o := range opts.openaiOptions {
@@ -63,8 +84,9 @@ func newOpenAIClient(opts imageGenerationClientOptions) OpenAIClient {
 	client := openai.NewClient(clientOpts...)
 
 	return OpenAIClient{
-		client:  client,
-		options: opts,
+		client:     client,
+		options:    opts,
+		openaiOpts: openaiOpts,
 	}
 }
 
@@ -91,7 +113,7 @@ func (o OpenAIClient) generate(
 	}
 
 	if genOpts.ResponseFormat != "" && o.options.model.APIModel != "gpt-image-1" &&
-		o.options.model.APIModel != "gpt-image-1.5" {
+		o.options.model.APIModel != "gpt-image-1.5" && o.options.model.APIModel != "gpt-image-1-mini" {
 		params.ResponseFormat = openai.ImageGenerateParamsResponseFormat(
 			genOpts.ResponseFormat,
 		)
@@ -141,6 +163,84 @@ func (o OpenAIClient) generate(
 		},
 		Model: o.options.model.APIModel,
 	}, nil
+}
+
+func (o OpenAIClient) generateStreaming(
+	ctx context.Context,
+	prompt string,
+	callback StreamCallback,
+	options ...GenerationOption,
+) error {
+	if !o.options.model.SupportsStreaming {
+		return ErrStreamingNotSupported
+	}
+
+	genOpts := GenerationOptions{
+		Size:    o.options.model.DefaultSize,
+		Quality: o.options.model.DefaultQuality,
+		N:       1,
+	}
+
+	for _, opt := range options {
+		opt(&genOpts)
+	}
+
+	params := openai.ImageGenerateParams{
+		Prompt:        prompt,
+		Model:         openai.ImageModel(o.options.model.APIModel),
+		N:             openai.Int(int64(genOpts.N)),
+		PartialImages: openai.Int(int64(o.openaiOpts.streamingOptions.PartialImages)),
+	}
+
+	if genOpts.Size != "" && len(o.options.model.SupportedSizes) > 0 {
+		params.Size = openai.ImageGenerateParamsSize(genOpts.Size)
+	}
+
+	if genOpts.Quality != "" && genOpts.Quality != "default" &&
+		len(o.options.model.SupportedQualities) > 1 {
+		params.Quality = openai.ImageGenerateParamsQuality(genOpts.Quality)
+	}
+
+	if o.options.timeout != nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, *o.options.timeout)
+		defer cancel()
+	}
+
+	stream := o.client.Images.GenerateStreaming(ctx, params)
+
+	for stream.Next() {
+		event := stream.Current()
+
+		switch event.Type {
+		case "image_generation.partial_image":
+			if err := callback(ImageStreamEvent{
+				Type:              EventPartialImage,
+				ImageBase64:       event.B64JSON,
+				PartialImageIndex: int(event.PartialImageIndex),
+				Size:              event.Size,
+				Quality:           event.Quality,
+			}); err != nil {
+				return fmt.Errorf("callback error on partial image: %w", err)
+			}
+
+		case "image_generation.completed":
+			if err := callback(ImageStreamEvent{
+				Type:        EventCompleted,
+				ImageBase64: event.B64JSON,
+				Size:        event.Size,
+				Quality:     event.Quality,
+			}); err != nil {
+				return fmt.Errorf("callback error on completed image: %w", err)
+			}
+		}
+	}
+
+	if err := stream.Err(); err != nil {
+		return fmt.Errorf("streaming error: %w", err)
+	}
+
+	return nil
 }
 
 // DownloadImage downloads an image from a URL and returns its binary data.

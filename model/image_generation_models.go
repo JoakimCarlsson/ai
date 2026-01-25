@@ -24,4 +24,6 @@ type ImageGenerationModel struct {
 	SupportedQualities []string `json:"supported_qualities,omitempty"`
 	// DefaultQuality is the default quality level if not specified.
 	DefaultQuality string `json:"default_quality,omitempty"`
+	// SupportsStreaming indicates if this model supports streaming partial images during generation.
+	SupportsStreaming bool `json:"supports_streaming,omitempty"`
 }

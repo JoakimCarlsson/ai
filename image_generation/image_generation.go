@@ -34,6 +34,7 @@ package image_generation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -66,6 +67,36 @@ type ImageGenerationResponse struct {
 	Model string
 }
 
+// ImageStreamEventType identifies the type of streaming event during image generation.
+type ImageStreamEventType string
+
+const (
+	// EventPartialImage is emitted when a partial image is available during streaming.
+	EventPartialImage ImageStreamEventType = "partial_image"
+	// EventCompleted is emitted when image generation is complete and the final image is available.
+	EventCompleted ImageStreamEventType = "completed"
+)
+
+// ImageStreamEvent represents a streaming event during image generation.
+type ImageStreamEvent struct {
+	// Type identifies the kind of streaming event.
+	Type ImageStreamEventType `json:"type"`
+	// ImageBase64 contains the base64-encoded image data.
+	ImageBase64 string `json:"image_base64"`
+	// PartialImageIndex is the 0-based index of the partial image (only for partial_image events).
+	PartialImageIndex int `json:"partial_image_index,omitempty"`
+	// Size is the dimensions of the image.
+	Size string `json:"size,omitempty"`
+	// Quality is the quality setting of the image.
+	Quality string `json:"quality,omitempty"`
+}
+
+// StreamCallback is called for each streaming event during image generation.
+type StreamCallback func(ImageStreamEvent) error
+
+// ErrStreamingNotSupported is returned when streaming is requested but the model doesn't support it.
+var ErrStreamingNotSupported = errors.New("streaming not supported by this model")
+
 // ImageGeneration defines the interface for generating images from text prompts.
 type ImageGeneration interface {
 	// GenerateImage creates one or more images from a text prompt.
@@ -75,6 +106,16 @@ type ImageGeneration interface {
 		prompt string,
 		options ...GenerationOption,
 	) (*ImageGenerationResponse, error)
+
+	// GenerateImageStreaming streams partial images during generation.
+	// The callback is invoked for each partial image and the final completed image.
+	// Returns ErrStreamingNotSupported if the model doesn't support streaming.
+	GenerateImageStreaming(
+		ctx context.Context,
+		prompt string,
+		callback StreamCallback,
+		options ...GenerationOption,
+	) error
 
 	// Model returns the image generation model configuration being used.
 	Model() model.ImageGenerationModel
@@ -97,6 +138,16 @@ type ImageGenerationClient interface {
 		prompt string,
 		options ...GenerationOption,
 	) (*ImageGenerationResponse, error)
+}
+
+// StreamingImageGenerationClient is an optional interface for clients that support streaming.
+type StreamingImageGenerationClient interface {
+	generateStreaming(
+		ctx context.Context,
+		prompt string,
+		callback StreamCallback,
+		options ...GenerationOption,
+	) error
 }
 
 type baseImageGeneration[C ImageGenerationClient] struct {
@@ -149,6 +200,19 @@ func (i *baseImageGeneration[C]) GenerateImage(
 	options ...GenerationOption,
 ) (*ImageGenerationResponse, error) {
 	return i.client.generate(ctx, prompt, options...)
+}
+
+func (i *baseImageGeneration[C]) GenerateImageStreaming(
+	ctx context.Context,
+	prompt string,
+	callback StreamCallback,
+	options ...GenerationOption,
+) error {
+	// Check if the client supports streaming
+	if streamingClient, ok := any(i.client).(StreamingImageGenerationClient); ok {
+		return streamingClient.generateStreaming(ctx, prompt, callback, options...)
+	}
+	return ErrStreamingNotSupported
 }
 
 func (i *baseImageGeneration[C]) Model() model.ImageGenerationModel {
