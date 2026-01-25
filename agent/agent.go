@@ -10,6 +10,7 @@ import (
 	"github.com/joakimcarlsson/ai/agent/memory"
 	"github.com/joakimcarlsson/ai/agent/session"
 	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/prompt"
 	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/tokens"
 	"github.com/joakimcarlsson/ai/tool"
@@ -160,7 +161,7 @@ func (a *Agent) resolveSystemPrompt(ctx context.Context) (string, error) {
 		return "", nil
 	}
 
-	return processTemplate(a.systemPrompt, a.state)
+	return prompt.Process(a.systemPrompt, a.state)
 }
 
 func (a *Agent) buildMessages(ctx context.Context, userMessage string) ([]message.Message, error) {
