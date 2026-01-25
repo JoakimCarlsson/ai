@@ -35,10 +35,11 @@ const (
 	TextEmbedding3Small ModelID = "text-embedding-3-small"
 	AdaEmbedding002     ModelID = "text-embedding-ada-002"
 
-	DALLE2     ModelID = "dall-e-2"
-	DALLE3     ModelID = "dall-e-3"
-	GPTImage1  ModelID = "gpt-image-1"
-	GPTImage15 ModelID = "gpt-image-1.5"
+	DALLE2        ModelID = "dall-e-2"
+	DALLE3        ModelID = "dall-e-3"
+	GPTImage1     ModelID = "gpt-image-1"
+	GPTImage15    ModelID = "gpt-image-1.5"
+	GPTImage1Mini ModelID = "gpt-image-1-mini"
 )
 
 var OpenAIModels = map[ModelID]Model{
@@ -557,6 +558,7 @@ var OpenAIImageGenerationModels = map[ModelID]ImageGenerationModel{
 		DefaultSize:        "1024x1024",
 		SupportedQualities: []string{"low", "medium", "high"},
 		DefaultQuality:     "medium",
+		SupportsStreaming:  true,
 	},
 	GPTImage15: {
 		ID:       GPTImage15,
@@ -585,5 +587,35 @@ var OpenAIImageGenerationModels = map[ModelID]ImageGenerationModel{
 		DefaultSize:        "1024x1024",
 		SupportedQualities: []string{"low", "medium", "high"},
 		DefaultQuality:     "medium",
+		SupportsStreaming:  true,
+	},
+	GPTImage1Mini: {
+		ID:       GPTImage1Mini,
+		Name:     "GPT Image 1 Mini",
+		Provider: ProviderOpenAI,
+		APIModel: "gpt-image-1-mini",
+		Pricing: map[string]map[string]float64{
+			"1024x1024": {
+				"low":    0.007,
+				"medium": 0.028,
+				"high":   0.111,
+			},
+			"1024x1536": {
+				"low":    0.011,
+				"medium": 0.042,
+				"high":   0.167,
+			},
+			"1536x1024": {
+				"low":    0.011,
+				"medium": 0.042,
+				"high":   0.167,
+			},
+		},
+		MaxPromptTokens:    4000,
+		SupportedSizes:     []string{"1024x1024", "1024x1536", "1536x1024"},
+		DefaultSize:        "1024x1024",
+		SupportedQualities: []string{"low", "medium", "high"},
+		DefaultQuality:     "medium",
+		SupportsStreaming:  true,
 	},
 }
