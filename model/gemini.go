@@ -4,6 +4,7 @@ const (
 	ProviderGemini ModelProvider = "gemini"
 
 	Gemini3Pro        ModelID = "gemini-3-pro"
+	Gemini3Flash      ModelID = "gemini-3-flash"
 	Gemini25Flash     ModelID = "gemini-2.5-flash"
 	Gemini25FlashLite ModelID = "gemini-2.5-flash-lite"
 	Gemini25          ModelID = "gemini-2.5"
@@ -33,15 +34,29 @@ var GeminiModels = map[ModelID]Model{
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 	},
+	Gemini3Flash: {
+		ID:                    Gemini3Flash,
+		Name:                  "Gemini 3 Flash",
+		Provider:              ProviderGemini,
+		APIModel:              "gemini-3-flash-preview",
+		CostPer1MIn:           0.50,
+		CostPer1MInCached:     0.05,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          3.00,
+		ContextWindow:         1000000,
+		DefaultMaxTokens:      65000,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
 	Gemini25Flash: {
 		ID:                    Gemini25Flash,
 		Name:                  "Gemini 2.5 Flash",
 		Provider:              ProviderGemini,
 		APIModel:              "gemini-2.5-flash",
-		CostPer1MIn:           0.15,
-		CostPer1MInCached:     0.0375,
+		CostPer1MIn:           0.30,
+		CostPer1MInCached:     0.03,
 		CostPer1MOutCached:    0,
-		CostPer1MOut:          0.60,
+		CostPer1MOut:          2.50,
 		ContextWindow:         1000000,
 		DefaultMaxTokens:      50000,
 		SupportsAttachments:   true,
@@ -95,7 +110,7 @@ var GeminiModels = map[ModelID]Model{
 		Name:                  "Gemini 2.0 Flash Lite",
 		Provider:              ProviderGemini,
 		APIModel:              "gemini-2.0-flash-lite",
-		CostPer1MIn:           0.05,
+		CostPer1MIn:           0.075,
 		CostPer1MInCached:     0,
 		CostPer1MOutCached:    0,
 		CostPer1MOut:          0.30,
