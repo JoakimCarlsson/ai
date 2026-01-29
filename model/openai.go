@@ -19,8 +19,6 @@ const (
 	GPT5Mini        ModelID = "gpt-5-mini"
 	GPT5Nano        ModelID = "gpt-5-nano"
 	GPT51           ModelID = "gpt-5.1"
-	GPT51Mini       ModelID = "gpt-5.1-mini"
-	GPT51Nano       ModelID = "gpt-5.1-nano"
 	GPT51ChatLatest ModelID = "gpt-5.1-chat-latest"
 	GPT5ChatLatest  ModelID = "gpt-5-chat-latest"
 	GPT51Codex      ModelID = "gpt-5.1-codex"
@@ -262,36 +260,6 @@ var OpenAIModels = map[ModelID]Model{
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 	},
-	GPT51Mini: {
-		ID:                    GPT51Mini,
-		Name:                  "GPT-5.1 mini",
-		Provider:              ProviderOpenAI,
-		APIModel:              "gpt-5.1-mini",
-		CostPer1MIn:           0.25,
-		CostPer1MInCached:     0.025,
-		CostPer1MOutCached:    0.0,
-		CostPer1MOut:          2.00,
-		ContextWindow:         200_000,
-		DefaultMaxTokens:      50000,
-		CanReason:             true,
-		SupportsAttachments:   true,
-		SupportsStructuredOut: true,
-	},
-	GPT51Nano: {
-		ID:                    GPT51Nano,
-		Name:                  "GPT-5.1 nano",
-		Provider:              ProviderOpenAI,
-		APIModel:              "gpt-5.1-nano",
-		CostPer1MIn:           0.05,
-		CostPer1MInCached:     0.005,
-		CostPer1MOutCached:    0.0,
-		CostPer1MOut:          0.40,
-		ContextWindow:         200_000,
-		DefaultMaxTokens:      50000,
-		CanReason:             true,
-		SupportsAttachments:   true,
-		SupportsStructuredOut: true,
-	},
 	GPT51ChatLatest: {
 		ID:                    GPT51ChatLatest,
 		Name:                  "GPT-5.1 chat latest",
@@ -432,9 +400,9 @@ var OpenAIModels = map[ModelID]Model{
 		Name:                  "o3 pro",
 		Provider:              ProviderOpenAI,
 		APIModel:              "o3-pro",
-		CostPer1MIn:           10.00,
-		CostPer1MInCached:     2.50,
-		CostPer1MOut:          40.00,
+		CostPer1MIn:           20.00,
+		CostPer1MInCached:     5.00,
+		CostPer1MOut:          80.00,
 		CostPer1MOutCached:    0.0,
 		ContextWindow:         200_000,
 		DefaultMaxTokens:      100000,

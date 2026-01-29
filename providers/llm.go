@@ -355,6 +355,14 @@ func NewLLM(
 			options: clientOptions,
 			client:  newOpenAIClient(clientOptions),
 		}, nil
+	case model.ProviderMistral:
+		clientOptions.openaiOptions = append(clientOptions.openaiOptions,
+			WithOpenAIBaseURL("https://api.mistral.ai/v1"),
+		)
+		return &baseLLM[OpenAIClient]{
+			options: clientOptions,
+			client:  newOpenAIClient(clientOptions),
+		}, nil
 	}
 
 	if config, exists := getCustomProvider(llmProvider); exists {

@@ -121,6 +121,13 @@ func GeminiRetryConfig() RetryConfig {
 	return config
 }
 
+// MistralRetryConfig provides retry settings optimized for Mistral API behavior
+func MistralRetryConfig() RetryConfig {
+	config := DefaultRetryConfig()
+	config.RetryStatusCodes = []int{429, 500, 502, 503}
+	return config
+}
+
 // ShouldRetry determines if an operation should be retried based on the error and configuration
 func ShouldRetry(
 	attempts int,
