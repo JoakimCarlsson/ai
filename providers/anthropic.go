@@ -67,7 +67,7 @@ func (a *anthropicClient) convertMessages(
 ) (anthropicMessages []anthropic.MessageParam, systemMessages []string) {
 	for i, msg := range messages {
 		cache := false
-		if i > len(messages)-3 {
+		if i == len(messages)-1 && !a.options.disableCache {
 			cache = true
 		}
 		switch msg.Role {
@@ -75,7 +75,7 @@ func (a *anthropicClient) convertMessages(
 			systemMessages = append(systemMessages, msg.Content().String())
 		case message.User:
 			content := anthropic.NewTextBlock(msg.Content().String())
-			if cache && !a.options.disableCache {
+			if cache {
 				content.OfText.CacheControl = anthropic.CacheControlEphemeralParam{
 					Type: "ephemeral",
 				}
@@ -111,11 +111,6 @@ func (a *anthropicClient) convertMessages(
 			blocks := []anthropic.ContentBlockParamUnion{}
 			if msg.Content().String() != "" {
 				content := anthropic.NewTextBlock(msg.Content().String())
-				if cache && !a.options.disableCache {
-					content.OfText.CacheControl = anthropic.CacheControlEphemeralParam{
-						Type: "ephemeral",
-					}
-				}
 				blocks = append(blocks, content)
 			}
 
@@ -272,12 +267,15 @@ func (a *anthropicClient) preparedMessages(
 	if len(systemMessages) > 0 {
 		systemBlocks := make([]anthropic.TextBlockParam, len(systemMessages))
 		for i, sysMsg := range systemMessages {
-			systemBlocks[i] = anthropic.TextBlockParam{
+			block := anthropic.TextBlockParam{
 				Text: sysMsg,
-				CacheControl: anthropic.CacheControlEphemeralParam{
-					Type: "ephemeral",
-				},
 			}
+			if i == len(systemMessages)-1 && !a.options.disableCache {
+				block.CacheControl = anthropic.CacheControlEphemeralParam{
+					Type: "ephemeral",
+				}
+			}
+			systemBlocks[i] = block
 		}
 		params.System = systemBlocks
 	}

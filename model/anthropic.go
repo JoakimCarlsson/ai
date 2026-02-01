@@ -149,7 +149,7 @@ var AnthropicModels = map[ModelID]Model{
 		ID:                    Claude45Haiku,
 		Name:                  "Claude 4.5 Haiku",
 		Provider:              ProviderAnthropic,
-		APIModel:              "claude-haiku-4-5-latest",
+		APIModel:              "claude-haiku-4-5-20251001",
 		CostPer1MIn:           1.0,
 		CostPer1MInCached:     1.25,
 		CostPer1MOutCached:    0.10,
