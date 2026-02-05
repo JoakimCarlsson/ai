@@ -27,6 +27,8 @@ const (
 	OpenRouterClaude35Haiku     ModelID = "openrouter.claude-3.5-haiku"
 	OpenRouterClaude3Opus       ModelID = "openrouter.claude-3-opus"
 	OpenRouterClaude45Opus      ModelID = "openrouter.claude-4.5-opus"
+	OpenRouterClaude46Opus      ModelID = "openrouter.claude-4.6-opus"
+	OpenRouterGPT52Codex        ModelID = "openrouter.gpt-5.2-codex"
 	OpenRouterMistralLarge3     ModelID = "openrouter.mistral-large-3"
 	OpenRouterMistralMedium3    ModelID = "openrouter.mistral-medium-3"
 	OpenRouterMixtral8x7B       ModelID = "openrouter.mixtral-8x7b"
@@ -374,7 +376,35 @@ var OpenRouterModels = map[ModelID]Model{
 		ContextWindow:         AnthropicModels[Claude45Opus].ContextWindow,
 		DefaultMaxTokens:      AnthropicModels[Claude45Opus].DefaultMaxTokens,
 		CanReason:             AnthropicModels[Claude45Opus].CanReason,
-		SupportsStructuredOut: false,
+		SupportsStructuredOut: AnthropicModels[Claude45Opus].SupportsStructuredOut,
+	},
+	OpenRouterClaude46Opus: {
+		ID:                    OpenRouterClaude46Opus,
+		Name:                  "OpenRouter – Claude 4.6 Opus",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "anthropic/claude-opus-4-6-20260205",
+		CostPer1MIn:           AnthropicModels[Claude46Opus].CostPer1MIn,
+		CostPer1MInCached:     AnthropicModels[Claude46Opus].CostPer1MInCached,
+		CostPer1MOut:          AnthropicModels[Claude46Opus].CostPer1MOut,
+		CostPer1MOutCached:    AnthropicModels[Claude46Opus].CostPer1MOutCached,
+		ContextWindow:         AnthropicModels[Claude46Opus].ContextWindow,
+		DefaultMaxTokens:      AnthropicModels[Claude46Opus].DefaultMaxTokens,
+		CanReason:             AnthropicModels[Claude46Opus].CanReason,
+		SupportsStructuredOut: AnthropicModels[Claude46Opus].SupportsStructuredOut,
+	},
+	OpenRouterGPT52Codex: {
+		ID:                    OpenRouterGPT52Codex,
+		Name:                  "OpenRouter – GPT-5.2 Codex",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "openai/gpt-5.2-codex",
+		CostPer1MIn:           OpenAIModels[GPT52Codex].CostPer1MIn,
+		CostPer1MInCached:     OpenAIModels[GPT52Codex].CostPer1MInCached,
+		CostPer1MOut:          OpenAIModels[GPT52Codex].CostPer1MOut,
+		CostPer1MOutCached:    OpenAIModels[GPT52Codex].CostPer1MOutCached,
+		ContextWindow:         OpenAIModels[GPT52Codex].ContextWindow,
+		DefaultMaxTokens:      OpenAIModels[GPT52Codex].DefaultMaxTokens,
+		CanReason:             OpenAIModels[GPT52Codex].CanReason,
+		SupportsStructuredOut: OpenAIModels[GPT52Codex].SupportsStructuredOut,
 	},
 	OpenRouterMistralLarge3: {
 		ID:                    OpenRouterMistralLarge3,

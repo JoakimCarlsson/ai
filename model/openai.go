@@ -3,31 +3,35 @@ package model
 const (
 	ProviderOpenAI ModelProvider = "openai"
 
-	GPT41           ModelID = "gpt-4.1"
-	GPT41Mini       ModelID = "gpt-4.1-mini"
-	GPT41Nano       ModelID = "gpt-4.1-nano"
-	GPT4o           ModelID = "gpt-4o"
-	GPT4oMini       ModelID = "gpt-4o-mini"
-	O1              ModelID = "o1"
-	O1Pro           ModelID = "o1-pro"
-	O1Mini          ModelID = "o1-mini"
-	O3              ModelID = "o3"
-	O3Pro           ModelID = "o3-pro"
-	O3Mini          ModelID = "o3-mini"
-	O4Mini          ModelID = "o4-mini"
-	GPT5            ModelID = "gpt-5"
-	GPT5Mini        ModelID = "gpt-5-mini"
-	GPT5Nano        ModelID = "gpt-5-nano"
-	GPT51           ModelID = "gpt-5.1"
-	GPT51ChatLatest ModelID = "gpt-5.1-chat-latest"
-	GPT5ChatLatest  ModelID = "gpt-5-chat-latest"
-	GPT51Codex      ModelID = "gpt-5.1-codex"
-	GPT5Codex       ModelID = "gpt-5-codex"
-	GPT51CodexMini  ModelID = "gpt-5.1-codex-mini"
-	GPT5Pro         ModelID = "gpt-5-pro"
-	GPT52           ModelID = "gpt-5.2"
-	GPT52Pro        ModelID = "gpt-5.2-pro"
-	GPT52Instant    ModelID = "gpt-5.2-chat-latest"
+	GPT41              ModelID = "gpt-4.1"
+	GPT41Mini          ModelID = "gpt-4.1-mini"
+	GPT41Nano          ModelID = "gpt-4.1-nano"
+	GPT4o              ModelID = "gpt-4o"
+	GPT4oMini          ModelID = "gpt-4o-mini"
+	O1                 ModelID = "o1"
+	O1Pro              ModelID = "o1-pro"
+	O1Mini             ModelID = "o1-mini"
+	O3                 ModelID = "o3"
+	O3Pro              ModelID = "o3-pro"
+	O3Mini             ModelID = "o3-mini"
+	O4Mini             ModelID = "o4-mini"
+	GPT5               ModelID = "gpt-5"
+	GPT5Mini           ModelID = "gpt-5-mini"
+	GPT5Nano           ModelID = "gpt-5-nano"
+	GPT51              ModelID = "gpt-5.1"
+	GPT51ChatLatest    ModelID = "gpt-5.1-chat-latest"
+	GPT5ChatLatest     ModelID = "gpt-5-chat-latest"
+	GPT51Codex         ModelID = "gpt-5.1-codex"
+	GPT5Codex          ModelID = "gpt-5-codex"
+	GPT51CodexMini     ModelID = "gpt-5.1-codex-mini"
+	GPT5Pro            ModelID = "gpt-5-pro"
+	GPT52              ModelID = "gpt-5.2"
+	GPT52Pro           ModelID = "gpt-5.2-pro"
+	GPT52Instant       ModelID = "gpt-5.2-chat-latest"
+	GPT52Codex         ModelID = "gpt-5.2-codex"
+	GPT51CodexMax      ModelID = "gpt-5.1-codex-max"
+	O3DeepResearch     ModelID = "o3-deep-research"
+	O4MiniDeepResearch ModelID = "o4-mini-deep-research"
 
 	TextEmbedding3Large ModelID = "text-embedding-3-large"
 	TextEmbedding3Small ModelID = "text-embedding-3-small"
@@ -410,6 +414,66 @@ var OpenAIModels = map[ModelID]Model{
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 	},
+	GPT52Codex: {
+		ID:                    GPT52Codex,
+		Name:                  "GPT-5.2 Codex",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5.2-codex",
+		CostPer1MIn:           1.75,
+		CostPer1MInCached:     0.175,
+		CostPer1MOut:          14.00,
+		CostPer1MOutCached:    0.0,
+		ContextWindow:         400_000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	GPT51CodexMax: {
+		ID:                    GPT51CodexMax,
+		Name:                  "GPT-5.1 Codex Max",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5.1-codex-max",
+		CostPer1MIn:           1.25,
+		CostPer1MInCached:     0.125,
+		CostPer1MOut:          10.00,
+		CostPer1MOutCached:    0.0,
+		ContextWindow:         200_000,
+		DefaultMaxTokens:      50000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	O3DeepResearch: {
+		ID:                    O3DeepResearch,
+		Name:                  "o3 deep research",
+		Provider:              ProviderOpenAI,
+		APIModel:              "o3-deep-research",
+		CostPer1MIn:           10.00,
+		CostPer1MInCached:     2.50,
+		CostPer1MOut:          40.00,
+		CostPer1MOutCached:    0.0,
+		ContextWindow:         200_000,
+		DefaultMaxTokens:      100000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	O4MiniDeepResearch: {
+		ID:                    O4MiniDeepResearch,
+		Name:                  "o4 mini deep research",
+		Provider:              ProviderOpenAI,
+		APIModel:              "o4-mini-deep-research",
+		CostPer1MIn:           2.00,
+		CostPer1MInCached:     0.50,
+		CostPer1MOut:          8.00,
+		CostPer1MOutCached:    0.0,
+		ContextWindow:         200_000,
+		DefaultMaxTokens:      50000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
 }
 
 var OpenAIEmbeddingModels = map[ModelID]EmbeddingModel{
@@ -564,19 +628,19 @@ var OpenAIImageGenerationModels = map[ModelID]ImageGenerationModel{
 		APIModel: "gpt-image-1-mini",
 		Pricing: map[string]map[string]float64{
 			"1024x1024": {
-				"low":    0.007,
-				"medium": 0.028,
-				"high":   0.111,
+				"low":    0.005,
+				"medium": 0.011,
+				"high":   0.036,
 			},
 			"1024x1536": {
-				"low":    0.011,
-				"medium": 0.042,
-				"high":   0.167,
+				"low":    0.006,
+				"medium": 0.015,
+				"high":   0.052,
 			},
 			"1536x1024": {
-				"low":    0.011,
-				"medium": 0.042,
-				"high":   0.167,
+				"low":    0.006,
+				"medium": 0.015,
+				"high":   0.052,
 			},
 		},
 		MaxPromptTokens:    4000,

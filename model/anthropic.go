@@ -13,6 +13,7 @@ const (
 	Claude45Sonnet ModelID = "claude-4.5-sonnet"
 	Claude45Opus   ModelID = "claude-4.5-opus"
 	Claude45Haiku  ModelID = "claude-4.5-haiku"
+	Claude46Opus   ModelID = "claude-4.6-opus"
 )
 
 var AnthropicModels = map[ModelID]Model{
@@ -97,7 +98,8 @@ var AnthropicModels = map[ModelID]Model{
 		CostPer1MOutCached:    1.50,
 		CostPer1MOut:          75.0,
 		ContextWindow:         200000,
-		DefaultMaxTokens:      4096,
+		DefaultMaxTokens:      50000,
+		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: false,
 	},
@@ -128,7 +130,7 @@ var AnthropicModels = map[ModelID]Model{
 		DefaultMaxTokens:      50000,
 		CanReason:             true,
 		SupportsAttachments:   true,
-		SupportsStructuredOut: false,
+		SupportsStructuredOut: true,
 	},
 	Claude45Opus: {
 		ID:                    Claude45Opus,
@@ -140,10 +142,10 @@ var AnthropicModels = map[ModelID]Model{
 		CostPer1MOutCached:    0.50,
 		CostPer1MOut:          25.0,
 		ContextWindow:         200000,
-		DefaultMaxTokens:      4096,
+		DefaultMaxTokens:      50000,
 		CanReason:             true,
 		SupportsAttachments:   true,
-		SupportsStructuredOut: false,
+		SupportsStructuredOut: true,
 	},
 	Claude45Haiku: {
 		ID:                    Claude45Haiku,
@@ -155,8 +157,24 @@ var AnthropicModels = map[ModelID]Model{
 		CostPer1MOutCached:    0.10,
 		CostPer1MOut:          5.0,
 		ContextWindow:         200000,
-		DefaultMaxTokens:      4096,
+		DefaultMaxTokens:      50000,
+		CanReason:             true,
 		SupportsAttachments:   true,
-		SupportsStructuredOut: false,
+		SupportsStructuredOut: true,
+	},
+	Claude46Opus: {
+		ID:                    Claude46Opus,
+		Name:                  "Claude 4.6 Opus",
+		Provider:              ProviderAnthropic,
+		APIModel:              "claude-opus-4-6-20260205",
+		CostPer1MIn:           5.0,
+		CostPer1MInCached:     6.25,
+		CostPer1MOutCached:    0.50,
+		CostPer1MOut:          25.0,
+		ContextWindow:         200000,
+		DefaultMaxTokens:      64000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 }
