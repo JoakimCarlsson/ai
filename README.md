@@ -13,6 +13,7 @@ A comprehensive, multi-provider Go library for interacting with various AI model
 - **Embedding Models**: Text, multimodal, and contextualized embeddings
 - **Image Generation**: Text-to-image generation with multiple quality and size options
 - **Audio Generation**: Text-to-speech with voice selection and streaming support
+- **Speech-to-Text**: Audio transcription and translation with timestamp support
 - **Rerankers**: Document reranking for improved search relevance
 - **Streaming Responses**: Real-time response streaming via Go channels
 - **Tool Calling**: Native function calling with struct-tag schema generation
@@ -59,6 +60,12 @@ A comprehensive, multi-provider Go library for interacting with various AI model
 | Provider | Models | Streaming | Voice Selection | Max Characters |
 |----------|--------|-----------|-----------------|----------------|
 | ElevenLabs | Multilingual v2, Turbo v2.5, Flash v2.5 | ✅ | ✅ | 10,000 - 40,000 |
+
+### Speech-to-Text Providers (Transcription)
+
+| Provider | Models | Streaming | Translation | Timestamps | Diarization |
+|----------|--------|-----------|-------------|------------|-------------|
+| OpenAI | Whisper-1, GPT-4o Transcribe, GPT-4o Mini Transcribe | ✅ | ✅ | ✅ | ✅ |
 
 ## Installation
 
@@ -605,6 +612,65 @@ for _, voice := range voices {
 }
 ```
 
+### Speech-to-Text (Transcription)
+
+```go
+import (
+    "github.com/joakimcarlsson/ai/transcription"
+    "github.com/joakimcarlsson/ai/model"
+)
+
+client, err := transcription.NewSpeechToText(
+    model.ProviderOpenAI,
+    transcription.WithAPIKey("your-api-key"),
+    transcription.WithModel(model.OpenAITranscriptionModels[model.Whisper1]),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+audioData, err := os.ReadFile("audio.mp3")
+if err != nil {
+    log.Fatal(err)
+}
+
+response, err := client.Transcribe(context.Background(), audioData)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println(response.Text)
+```
+
+#### Transcription with Options
+
+```go
+response, err := client.Transcribe(ctx, audioData,
+    transcription.WithLanguage("en"),
+    transcription.WithResponseFormat("verbose_json"),
+    transcription.WithTimestampGranularities("word", "segment"),
+    transcription.WithTemperature(0.2),
+)
+
+for _, segment := range response.Segments {
+    fmt.Printf("[%.2fs - %.2fs] %s\n", segment.Start, segment.End, segment.Text)
+}
+
+for _, word := range response.Words {
+    fmt.Printf("%s (%.2fs) ", word.Word, word.Start)
+}
+```
+
+#### Translation (to English)
+
+```go
+response, err := client.Translate(ctx, audioData,
+    transcription.WithPrompt("Translate this Swedish audio to English"),
+)
+
+fmt.Println(response.Text)
+```
+
 ## Project Structure
 
 ```
@@ -631,11 +697,15 @@ for _, voice := range voices {
 │   ├── image_generation/        # xAI image generation example
 │   ├── image_generation_openai/ # OpenAI image generation example
 │   ├── image_generation_gemini/ # Gemini image generation example
-│   └── audio/                   # Audio generation (TTS) example
+│   ├── audio/                   # Audio generation (TTS) example
+│   └── transcription/           # Speech-to-text example
 ├── audio/                       # Audio generation package
 │   ├── audio.go                 # Main audio generation interface
 │   ├── elevenlabs.go            # ElevenLabs TTS implementation
 │   └── elevenlabs_options.go   # ElevenLabs-specific options
+├── transcription/               # Speech-to-text package
+│   ├── transcription.go         # Main speech-to-text interface
+│   └── openai.go                # OpenAI Whisper implementation
 ├── image_generation/            # Image generation package
 │   ├── image_generation.go      # Main image generation interface
 │   ├── openai.go                # OpenAI/xAI implementation
@@ -758,6 +828,17 @@ client, err := audio.NewAudioGeneration(
     audio.WithElevenLabsOptions(
         audio.WithElevenLabsBaseURL("custom-endpoint"),
     ),
+)
+```
+
+### Speech-to-Text Client Options
+
+```go
+client, err := transcription.NewSpeechToText(
+    model.ProviderOpenAI,
+    transcription.WithAPIKey("your-key"),
+    transcription.WithModel(model.OpenAITranscriptionModels[model.GPT4oTranscribe]),
+    transcription.WithTimeout(30*time.Second),
 )
 ```
 
