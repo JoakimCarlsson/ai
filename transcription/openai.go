@@ -50,6 +50,13 @@ func newOpenAIClient(opts transcriptionClientOptions) OpenAIClient {
 		)
 	}
 
+	if openaiOpts.baseURL != "" {
+		openaiClientOptions = append(
+			openaiClientOptions,
+			option.WithBaseURL(openaiOpts.baseURL),
+		)
+	}
+
 	client := openai.NewClient(openaiClientOptions...)
 	return &openaiClient{
 		providerOptions: opts,
