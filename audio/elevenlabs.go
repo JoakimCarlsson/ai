@@ -157,9 +157,8 @@ func (c ElevenLabsClient) generateStandard(
 	}
 
 	reqBody := elevenLabsTTSRequest{
-		Text:         text,
-		ModelID:      c.model,
-		OutputFormat: outputFormat,
+		Text:    text,
+		ModelID: c.model,
 	}
 
 	if opts.Stability != nil || opts.SimilarityBoost != nil || opts.Style != nil || opts.SpeakerBoost != nil {
@@ -183,9 +182,9 @@ func (c ElevenLabsClient) generateStandard(
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	url := fmt.Sprintf("%s/text-to-speech/%s", c.baseURL, voiceID)
+	url := fmt.Sprintf("%s/text-to-speech/%s?output_format=%s", c.baseURL, voiceID, outputFormat)
 	if opts.OptimizeStreamingLatency != nil {
-		url = fmt.Sprintf("%s?optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
+		url = fmt.Sprintf("%s&optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
@@ -195,7 +194,6 @@ func (c ElevenLabsClient) generateStandard(
 
 	req.Header.Set("xi-api-key", c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "audio/mpeg")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -250,9 +248,8 @@ func (c ElevenLabsClient) generateWithTimestamps(
 	}
 
 	reqBody := elevenLabsTTSRequest{
-		Text:         text,
-		ModelID:      c.model,
-		OutputFormat: outputFormat,
+		Text:    text,
+		ModelID: c.model,
 	}
 
 	if opts.Stability != nil || opts.SimilarityBoost != nil || opts.Style != nil || opts.SpeakerBoost != nil {
@@ -276,9 +273,9 @@ func (c ElevenLabsClient) generateWithTimestamps(
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	url := fmt.Sprintf("%s/text-to-speech/%s/with-timestamps", c.baseURL, voiceID)
+	url := fmt.Sprintf("%s/text-to-speech/%s/with-timestamps?output_format=%s", c.baseURL, voiceID, outputFormat)
 	if opts.OptimizeStreamingLatency != nil {
-		url = fmt.Sprintf("%s?optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
+		url = fmt.Sprintf("%s&optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
@@ -389,9 +386,8 @@ func (c ElevenLabsClient) streamStandard(
 	}
 
 	reqBody := elevenLabsTTSRequest{
-		Text:         text,
-		ModelID:      c.model,
-		OutputFormat: outputFormat,
+		Text:    text,
+		ModelID: c.model,
 	}
 
 	if opts.Stability != nil || opts.SimilarityBoost != nil || opts.Style != nil || opts.SpeakerBoost != nil {
@@ -418,9 +414,9 @@ func (c ElevenLabsClient) streamStandard(
 		return ch, nil
 	}
 
-	url := fmt.Sprintf("%s/text-to-speech/%s/stream", c.baseURL, voiceID)
+	url := fmt.Sprintf("%s/text-to-speech/%s/stream?output_format=%s", c.baseURL, voiceID, outputFormat)
 	if opts.OptimizeStreamingLatency != nil {
-		url = fmt.Sprintf("%s?optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
+		url = fmt.Sprintf("%s&optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
@@ -433,7 +429,6 @@ func (c ElevenLabsClient) streamStandard(
 
 	req.Header.Set("xi-api-key", c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "audio/mpeg")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -510,9 +505,8 @@ func (c ElevenLabsClient) streamWithTimestamps(
 	}
 
 	reqBody := elevenLabsTTSRequest{
-		Text:         text,
-		ModelID:      c.model,
-		OutputFormat: outputFormat,
+		Text:    text,
+		ModelID: c.model,
 	}
 
 	if opts.Stability != nil || opts.SimilarityBoost != nil || opts.Style != nil || opts.SpeakerBoost != nil {
@@ -539,9 +533,9 @@ func (c ElevenLabsClient) streamWithTimestamps(
 		return ch, nil
 	}
 
-	url := fmt.Sprintf("%s/text-to-speech/%s/stream/with-timestamps", c.baseURL, voiceID)
+	url := fmt.Sprintf("%s/text-to-speech/%s/stream/with-timestamps?output_format=%s", c.baseURL, voiceID, outputFormat)
 	if opts.OptimizeStreamingLatency != nil {
-		url = fmt.Sprintf("%s?optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
+		url = fmt.Sprintf("%s&optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
