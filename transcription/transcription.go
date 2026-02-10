@@ -270,4 +270,11 @@ func WithFilename(filename string) TranscriptionOption {
 type OpenAIOption func(*openaiOptions)
 
 type openaiOptions struct {
+	baseURL string
+}
+
+func WithOpenAIBaseURL(baseURL string) OpenAIOption {
+	return func(o *openaiOptions) {
+		o.baseURL = baseURL
+	}
 }
