@@ -3,6 +3,7 @@ package transcription
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -93,7 +94,7 @@ func (o *openaiClient) transcribe(
 	if opts.ResponseFormat != "" {
 		params.ResponseFormat = openai.AudioResponseFormat(opts.ResponseFormat)
 	} else {
-		params.ResponseFormat = openai.AudioResponseFormatJSON
+		params.ResponseFormat = openai.AudioResponseFormat("verbose_json")
 	}
 
 	if opts.Temperature != nil {
@@ -171,6 +172,28 @@ func (o *openaiClient) convertTranslationResponse(response *openai.Translation) 
 	}
 }
 
+type verboseTranscription struct {
+	Text     string  `json:"text"`
+	Language string  `json:"language"`
+	Duration float64 `json:"duration"`
+	Segments []struct {
+		ID               int     `json:"id"`
+		Start            float64 `json:"start"`
+		End              float64 `json:"end"`
+		Text             string  `json:"text"`
+		Tokens           []int   `json:"tokens"`
+		Temperature      float64 `json:"temperature"`
+		AvgLogprob       float64 `json:"avg_logprob"`
+		CompressionRatio float64 `json:"compression_ratio"`
+		NoSpeechProb     float64 `json:"no_speech_prob"`
+	} `json:"segments"`
+	Words []struct {
+		Word  string  `json:"word"`
+		Start float64 `json:"start"`
+		End   float64 `json:"end"`
+	} `json:"words"`
+}
+
 func (o *openaiClient) convertTranscriptionResponse(response *openai.Transcription) *TranscriptionResponse {
 	result := &TranscriptionResponse{
 		Text:  response.Text,
@@ -185,6 +208,35 @@ func (o *openaiClient) convertTranscriptionResponse(response *openai.Transcripti
 		result.Usage.TextTokens = response.Usage.InputTokenDetails.TextTokens
 	} else if response.Usage.Type == "duration" {
 		result.Usage.DurationSec = response.Usage.Seconds
+	}
+
+	raw := response.RawJSON()
+	if raw != "" {
+		var verbose verboseTranscription
+		if err := json.Unmarshal([]byte(raw), &verbose); err == nil {
+			result.Language = verbose.Language
+			result.Duration = verbose.Duration
+			for _, s := range verbose.Segments {
+				result.Segments = append(result.Segments, TranscriptionSegment{
+					ID:               s.ID,
+					Start:            s.Start,
+					End:              s.End,
+					Text:             s.Text,
+					Tokens:           s.Tokens,
+					Temperature:      s.Temperature,
+					AvgLogprob:       s.AvgLogprob,
+					CompressionRatio: s.CompressionRatio,
+					NoSpeechProb:     s.NoSpeechProb,
+				})
+			}
+			for _, w := range verbose.Words {
+				result.Words = append(result.Words, TranscriptionWord{
+					Word:  w.Word,
+					Start: w.Start,
+					End:   w.End,
+				})
+			}
+		}
 	}
 
 	return result
