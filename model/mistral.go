@@ -19,7 +19,9 @@ const (
 	DevstralMedium   ModelID = "devstral-medium"
 	MistralLarge2411 ModelID = "mistral-large-2411"
 	Mixtral8x7B      ModelID = "mixtral-8x7b"
-	Mistral7B        ModelID = "mistral-7b"
+	Mistral7B         ModelID = "mistral-7b"
+	MagistralMedium12 ModelID = "magistral-medium-1.2"
+	MagistralSmall12  ModelID = "magistral-small-1.2"
 )
 
 var MistralModels = map[ModelID]Model{
@@ -260,5 +262,35 @@ var MistralModels = map[ModelID]Model{
 		DefaultMaxTokens:      4096,
 		SupportsAttachments:   false,
 		SupportsStructuredOut: false,
+	},
+	MagistralMedium12: {
+		ID:                    MagistralMedium12,
+		Name:                  "Magistral Medium 1.2",
+		Provider:              ProviderMistral,
+		APIModel:              "magistral-medium-2509",
+		CostPer1MIn:           2.00,
+		CostPer1MOut:          5.00,
+		CostPer1MInCached:     0.0,
+		CostPer1MOutCached:    0.0,
+		ContextWindow:         128_000,
+		DefaultMaxTokens:      8192,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	MagistralSmall12: {
+		ID:                    MagistralSmall12,
+		Name:                  "Magistral Small 1.2",
+		Provider:              ProviderMistral,
+		APIModel:              "magistral-small-2509",
+		CostPer1MIn:           0.50,
+		CostPer1MOut:          1.50,
+		CostPer1MInCached:     0.0,
+		CostPer1MOutCached:    0.0,
+		ContextWindow:         128_000,
+		DefaultMaxTokens:      8192,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
 	},
 }

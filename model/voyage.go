@@ -33,6 +33,12 @@ const (
 	Voyage01             ModelID = "voyage-01"
 	VoyageLite01         ModelID = "voyage-lite-01"
 	VoyageLite01Instruct ModelID = "voyage-lite-01-instruct"
+
+	Voyage4Large  ModelID = "voyage-4-large"
+	Voyage4       ModelID = "voyage-4"
+	Voyage4Lite   ModelID = "voyage-4-lite"
+	Voyage4Nano   ModelID = "voyage-4-nano"
+	VoyageMulti35 ModelID = "voyage-multimodal-3.5"
 )
 
 var VoyageEmbeddingModels = map[ModelID]EmbeddingModel{
@@ -135,6 +141,70 @@ var VoyageEmbeddingModels = map[ModelID]EmbeddingModel{
 		MaxBatchSize:        1000,
 		SupportsOutputDtype: true,
 		MaxTokensPerBatch:   120000,
+	},
+	Voyage4Large: {
+		ID:                  Voyage4Large,
+		Name:                "Voyage 4 Large",
+		Provider:            ProviderVoyage,
+		APIModel:            "voyage-4-large",
+		CostPer1MTokens:     0.12,
+		MaxInputTokens:      32000,
+		EmbeddingDims:       1024,
+		SupportedDimensions: []int{256, 512, 1024, 2048},
+		MaxBatchSize:        1000,
+		SupportsOutputDtype: true,
+		MaxTokensPerBatch:   120000,
+	},
+	Voyage4: {
+		ID:                  Voyage4,
+		Name:                "Voyage 4",
+		Provider:            ProviderVoyage,
+		APIModel:            "voyage-4",
+		CostPer1MTokens:     0.06,
+		MaxInputTokens:      32000,
+		EmbeddingDims:       1024,
+		SupportedDimensions: []int{256, 512, 1024, 2048},
+		MaxBatchSize:        1000,
+		SupportsOutputDtype: true,
+		MaxTokensPerBatch:   320000,
+	},
+	Voyage4Lite: {
+		ID:                  Voyage4Lite,
+		Name:                "Voyage 4 Lite",
+		Provider:            ProviderVoyage,
+		APIModel:            "voyage-4-lite",
+		CostPer1MTokens:     0.02,
+		MaxInputTokens:      32000,
+		EmbeddingDims:       1024,
+		SupportedDimensions: []int{256, 512, 1024, 2048},
+		MaxBatchSize:        1000,
+		SupportsOutputDtype: true,
+		MaxTokensPerBatch:   1000000,
+	},
+	Voyage4Nano: {
+		ID:                  Voyage4Nano,
+		Name:                "Voyage 4 Nano",
+		Provider:            ProviderVoyage,
+		APIModel:            "voyage-4-nano",
+		CostPer1MTokens:     0.00,
+		MaxInputTokens:      32000,
+		EmbeddingDims:       1024,
+		SupportedDimensions: []int{256, 512, 1024, 2048},
+		MaxBatchSize:        1000,
+		SupportsOutputDtype: true,
+		MaxTokensPerBatch:   1000000,
+	},
+	VoyageMulti35: {
+		ID:                  VoyageMulti35,
+		Name:                "Voyage Multimodal 3.5",
+		Provider:            ProviderVoyage,
+		APIModel:            "voyage-multimodal-3.5",
+		CostPer1MTokens:     0.12,
+		MaxInputTokens:      32000,
+		EmbeddingDims:       1024,
+		SupportedDimensions: []int{1024},
+		MaxBatchSize:        1000,
+		MaxTokensPerBatch:   320000,
 	},
 	// Older models (still supported)
 	Voyage3: {
