@@ -9,6 +9,10 @@ const (
 	Llama4Maverick            ModelID = "meta-llama/llama-4-maverick-17b-128e-instruct"
 	Llama3_3_70BVersatile     ModelID = "llama-3.3-70b-versatile"
 	DeepseekR1DistillLlama70b ModelID = "deepseek-r1-distill-llama-70b"
+	GPTOss120B                ModelID = "openai/gpt-oss-120b"
+	GPTOss20B                 ModelID = "openai/gpt-oss-20b"
+	Qwen3_32BGroq             ModelID = "qwen/qwen3-32b"
+	KimiK2                    ModelID = "moonshotai/kimi-k2-instruct-0905"
 )
 
 var GroqModels = map[ModelID]Model{
@@ -81,6 +85,66 @@ var GroqModels = map[ModelID]Model{
 		CostPer1MOut:          0.99,
 		ContextWindow:         128_000,
 		CanReason:             true,
+		SupportsAttachments:   false,
+		SupportsStructuredOut: false,
+	},
+	GPTOss120B: {
+		ID:                    GPTOss120B,
+		Name:                  "GPT-OSS 120B",
+		Provider:              ProviderGROQ,
+		APIModel:              "openai/gpt-oss-120b",
+		CostPer1MIn:           0.15,
+		CostPer1MInCached:     0,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          0.60,
+		ContextWindow:         131_072,
+		DefaultMaxTokens:      65536,
+		CanReason:             true,
+		SupportsAttachments:   false,
+		SupportsStructuredOut: false,
+	},
+	GPTOss20B: {
+		ID:                    GPTOss20B,
+		Name:                  "GPT-OSS 20B",
+		Provider:              ProviderGROQ,
+		APIModel:              "openai/gpt-oss-20b",
+		CostPer1MIn:           0.075,
+		CostPer1MInCached:     0,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          0.30,
+		ContextWindow:         131_072,
+		DefaultMaxTokens:      65536,
+		CanReason:             true,
+		SupportsAttachments:   false,
+		SupportsStructuredOut: false,
+	},
+	Qwen3_32BGroq: {
+		ID:                    Qwen3_32BGroq,
+		Name:                  "Qwen3 32B",
+		Provider:              ProviderGROQ,
+		APIModel:              "qwen/qwen3-32b",
+		CostPer1MIn:           0.29,
+		CostPer1MInCached:     0,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          0.59,
+		ContextWindow:         131_072,
+		DefaultMaxTokens:      40960,
+		CanReason:             false,
+		SupportsAttachments:   false,
+		SupportsStructuredOut: false,
+	},
+	KimiK2: {
+		ID:                    KimiK2,
+		Name:                  "Kimi K2",
+		Provider:              ProviderGROQ,
+		APIModel:              "moonshotai/kimi-k2-instruct-0905",
+		CostPer1MIn:           1.00,
+		CostPer1MInCached:     0,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          3.00,
+		ContextWindow:         262_144,
+		DefaultMaxTokens:      16384,
+		CanReason:             false,
 		SupportsAttachments:   false,
 		SupportsStructuredOut: false,
 	},

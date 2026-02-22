@@ -5,6 +5,7 @@ const (
 
 	Gemini3Pro        ModelID = "gemini-3-pro"
 	Gemini3Flash      ModelID = "gemini-3-flash"
+	Gemini31Pro       ModelID = "gemini-3.1-pro"
 	Gemini25Flash     ModelID = "gemini-2.5-flash"
 	Gemini25FlashLite ModelID = "gemini-2.5-flash-lite"
 	Gemini25          ModelID = "gemini-2.5"
@@ -12,6 +13,7 @@ const (
 	Gemini20FlashLite ModelID = "gemini-2.0-flash-lite"
 
 	Gemini25FlashImage ModelID = "gemini-2.5-flash-image"
+	Gemini3ProImage    ModelID = "gemini-3-pro-image"
 	Imagen3            ModelID = "imagen-3.0"
 	Imagen4            ModelID = "imagen-4.0"
 	Imagen4Ultra       ModelID = "imagen-4.0-ultra"
@@ -45,6 +47,21 @@ var GeminiModels = map[ModelID]Model{
 		CostPer1MOut:          3.00,
 		ContextWindow:         1000000,
 		DefaultMaxTokens:      65000,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	Gemini31Pro: {
+		ID:                    Gemini31Pro,
+		Name:                  "Gemini 3.1 Pro",
+		Provider:              ProviderGemini,
+		APIModel:              "gemini-3.1-pro-preview",
+		CostPer1MIn:           2.00,
+		CostPer1MInCached:     0.20,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          12.00,
+		ContextWindow:         1_048_576,
+		DefaultMaxTokens:      65536,
+		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 	},
@@ -142,6 +159,34 @@ var GeminiImageGenerationModels = map[ModelID]ImageGenerationModel{
 			},
 			"16:9": {
 				"default": 0.039,
+			},
+		},
+		MaxPromptTokens:    4000,
+		SupportedSizes:     []string{"1:1", "3:4", "4:3", "9:16", "16:9"},
+		DefaultSize:        "1:1",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	Gemini3ProImage: {
+		ID:       Gemini3ProImage,
+		Name:     "Gemini 3 Pro Image",
+		Provider: ProviderGemini,
+		APIModel: "gemini-3-pro-image-preview",
+		Pricing: map[string]map[string]float64{
+			"1:1": {
+				"default": 0.134,
+			},
+			"3:4": {
+				"default": 0.134,
+			},
+			"4:3": {
+				"default": 0.134,
+			},
+			"9:16": {
+				"default": 0.134,
+			},
+			"16:9": {
+				"default": 0.134,
 			},
 		},
 		MaxPromptTokens:    4000,
