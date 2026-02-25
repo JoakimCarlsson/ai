@@ -44,12 +44,12 @@ var DefaultFuncMap = template.FuncMap{
 	"squote":  squote,
 }
 
-func eq(a, b any) bool  { return a == b }
-func ne(a, b any) bool  { return a != b }
-func lt(a, b any) bool  { return toFloat(a) < toFloat(b) }
-func le(a, b any) bool  { return toFloat(a) <= toFloat(b) }
-func gt(a, b any) bool  { return toFloat(a) > toFloat(b) }
-func ge(a, b any) bool  { return toFloat(a) >= toFloat(b) }
+func eq(a, b any) bool { return a == b }
+func ne(a, b any) bool { return a != b }
+func lt(a, b any) bool { return toFloat(a) < toFloat(b) }
+func le(a, b any) bool { return toFloat(a) <= toFloat(b) }
+func gt(a, b any) bool { return toFloat(a) > toFloat(b) }
+func ge(a, b any) bool { return toFloat(a) >= toFloat(b) }
 
 func toFloat(v any) float64 {
 	switch n := v.(type) {
