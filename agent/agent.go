@@ -543,17 +543,6 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 			assistantMsg.AppendToolCalls(toolCalls)
 			messages = append(messages, assistantMsg)
 
-			for _, tc := range toolCalls {
-				eventChan <- ChatEvent{
-					Type: types.EventToolUseStart,
-					ToolCall: &message.ToolCall{
-						ID:    tc.ID,
-						Name:  tc.Name,
-						Input: tc.Input,
-					},
-				}
-			}
-
 			toolResults := a.executeTools(ctx, toolCalls)
 
 			for _, result := range toolResults {
