@@ -430,7 +430,10 @@ func (a *Agent) Chat(ctx context.Context, userMessage string) (*ChatResponse, er
 
 		assistantMsg := message.NewAssistantMessage()
 		assistantMsg.Model = a.llm.Model().ID
-		assistantMsg.SetToolCalls(resp.ToolCalls)
+		if resp.Content != "" {
+			assistantMsg.AppendContent(resp.Content)
+		}
+		assistantMsg.AppendToolCalls(resp.ToolCalls)
 		messages = append(messages, assistantMsg)
 
 		toolResults := a.executeTools(ctx, resp.ToolCalls)
@@ -534,7 +537,10 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 
 			assistantMsg := message.NewAssistantMessage()
 			assistantMsg.Model = a.llm.Model().ID
-			assistantMsg.SetToolCalls(toolCalls)
+			if fullContent != "" {
+				assistantMsg.AppendContent(fullContent)
+			}
+			assistantMsg.AppendToolCalls(toolCalls)
 			messages = append(messages, assistantMsg)
 
 			for _, tc := range toolCalls {
