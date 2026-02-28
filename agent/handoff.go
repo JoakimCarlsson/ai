@@ -9,10 +9,17 @@ import (
 	"github.com/joakimcarlsson/ai/tool"
 )
 
+// HandoffConfig configures a handoff target that the current agent can transfer
+// control to. When a handoff triggers, the target agent takes over the conversation
+// with its own system prompt and tools, inheriting the full message history.
+// A "transfer_to_<Name>" tool is automatically registered on the source agent.
 type HandoffConfig struct {
-	Name        string
+	// Name identifies the target agent. The generated tool name is "transfer_to_<Name>".
+	Name string
+	// Description explains when this handoff should be used, shown to the LLM.
 	Description string
-	Agent       *Agent
+	// Agent is the target agent that receives control after the handoff.
+	Agent *Agent
 }
 
 type handoffInput struct {

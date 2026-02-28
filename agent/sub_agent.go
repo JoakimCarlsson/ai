@@ -8,10 +8,16 @@ import (
 	"github.com/joakimcarlsson/ai/tool"
 )
 
+// SubAgentConfig configures a sub-agent tool that the parent agent can delegate
+// tasks to. Unlike handoffs, sub-agents run independently and return their result
+// to the parent. They can run synchronously or in the background.
 type SubAgentConfig struct {
-	Name        string
+	// Name is the tool name the parent agent uses to invoke this sub-agent.
+	Name string
+	// Description is the tool description shown to the LLM.
 	Description string
-	Agent       *Agent
+	// Agent is the sub-agent instance that handles delegated tasks.
+	Agent *Agent
 }
 
 type subAgentInput struct {

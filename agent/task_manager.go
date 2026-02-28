@@ -8,12 +8,17 @@ import (
 	"time"
 )
 
+// TaskStatus represents the lifecycle state of a background task.
 type TaskStatus string
 
 const (
-	TaskRunning   TaskStatus = "running"
+	// TaskRunning indicates the task is currently executing.
+	TaskRunning TaskStatus = "running"
+	// TaskCompleted indicates the task finished successfully.
 	TaskCompleted TaskStatus = "completed"
-	TaskFailed    TaskStatus = "failed"
+	// TaskFailed indicates the task encountered an error.
+	TaskFailed TaskStatus = "failed"
+	// TaskCancelled indicates the task was explicitly cancelled.
 	TaskCancelled TaskStatus = "cancelled"
 )
 
@@ -27,6 +32,9 @@ type backgroundTask struct {
 	cancel    context.CancelFunc
 }
 
+// TaskManager coordinates background sub-agent tasks. It tracks task lifecycle,
+// supports blocking and non-blocking result retrieval with optional timeouts,
+// and provides bulk cancellation for cleanup when the parent agent finishes.
 type TaskManager struct {
 	mu    sync.RWMutex
 	tasks map[string]*backgroundTask
@@ -40,6 +48,8 @@ func newTaskManager() *TaskManager {
 	}
 }
 
+// Launch starts a background task that runs the given agent with the provided task message.
+// It returns a unique task ID that can be used with GetResult, Stop, or ListAll.
 func (tm *TaskManager) Launch(
 	ctx context.Context,
 	agentName string,
@@ -89,6 +99,8 @@ func (tm *TaskManager) Launch(
 	return id
 }
 
+// GetResult retrieves the current state of a background task. If wait is true, it blocks
+// until the task completes or the timeout expires. A zero timeout means wait indefinitely.
 func (tm *TaskManager) GetResult(
 	ctx context.Context,
 	taskID string,
@@ -128,6 +140,7 @@ func (tm *TaskManager) GetResult(
 	return &snapshot, nil
 }
 
+// Stop cancels a running background task by its ID.
 func (tm *TaskManager) Stop(taskID string) error {
 	tm.mu.RLock()
 	bt, ok := tm.tasks[taskID]
@@ -140,6 +153,7 @@ func (tm *TaskManager) Stop(taskID string) error {
 	return nil
 }
 
+// ListAll returns a snapshot of all tracked background tasks regardless of status.
 func (tm *TaskManager) ListAll() []*backgroundTask {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
@@ -152,6 +166,7 @@ func (tm *TaskManager) ListAll() []*backgroundTask {
 	return result
 }
 
+// CancelAll cancels every tracked background task.
 func (tm *TaskManager) CancelAll() {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
@@ -160,6 +175,7 @@ func (tm *TaskManager) CancelAll() {
 	}
 }
 
+// WaitAll blocks until every tracked background task has finished.
 func (tm *TaskManager) WaitAll() {
 	tm.wg.Wait()
 }

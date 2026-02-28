@@ -10,10 +10,17 @@ import (
 	"github.com/joakimcarlsson/ai/tool"
 )
 
+// FanOutConfig configures a fan-out tool that distributes multiple tasks to
+// parallel instances of the same agent. The parent agent invokes this tool with
+// a list of tasks, and each task is sent to a separate Chat() call concurrently.
 type FanOutConfig struct {
-	Name           string
-	Description    string
-	Agent          *Agent
+	// Name is the tool name the parent agent uses to invoke this fan-out.
+	Name string
+	// Description is the tool description shown to the LLM.
+	Description string
+	// Agent is the agent instance that handles each individual task.
+	Agent *Agent
+	// MaxConcurrency limits parallel task execution. 0 means unlimited.
 	MaxConcurrency int
 }
 
