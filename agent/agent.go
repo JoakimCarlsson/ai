@@ -62,7 +62,7 @@ func New(llmClient llm.LLM, opts ...AgentOption) *Agent {
 	a := &Agent{
 		llm:           llmClient,
 		tools:         make([]tool.BaseTool, 0),
-		maxIterations: 10,
+		maxIterations: 0,
 		autoExecute:   true,
 		parallelTools: true,
 	}
@@ -406,7 +406,7 @@ func (a *Agent) Chat(ctx context.Context, userMessage string) (*ChatResponse, er
 			return nil, err
 		}
 
-		if len(resp.ToolCalls) == 0 || !a.autoExecute || iteration >= a.maxIterations {
+		if len(resp.ToolCalls) == 0 || !a.autoExecute || (a.maxIterations > 0 && iteration >= a.maxIterations) {
 			if a.session != nil && resp.Content != "" {
 				assistantMsg := message.NewAssistantMessage()
 				assistantMsg.Model = a.llm.Model().ID
@@ -504,7 +504,7 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 				}
 			}
 
-			if len(toolCalls) == 0 || !a.autoExecute || iteration >= a.maxIterations {
+			if len(toolCalls) == 0 || !a.autoExecute || (a.maxIterations > 0 && iteration >= a.maxIterations) {
 				if a.session != nil && fullContent != "" {
 					assistantMsg := message.NewAssistantMessage()
 					assistantMsg.Model = a.llm.Model().ID
