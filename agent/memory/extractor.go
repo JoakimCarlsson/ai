@@ -42,7 +42,11 @@ type factExtractionResult struct {
 
 // ExtractFacts extracts facts from a conversation using an LLM.
 // It only extracts facts from user messages, ignoring system and assistant messages.
-func ExtractFacts(ctx context.Context, llmClient llm.LLM, messages []message.Message) ([]string, error) {
+func ExtractFacts(
+	ctx context.Context,
+	llmClient llm.LLM,
+	messages []message.Message,
+) ([]string, error) {
 	var conversationBuilder strings.Builder
 	for _, msg := range messages {
 		if msg.Role == message.System {
@@ -62,7 +66,9 @@ func ExtractFacts(ctx context.Context, llmClient llm.LLM, messages []message.Mes
 
 	extractionMessages := []message.Message{
 		message.NewSystemMessage(factExtractionPrompt),
-		message.NewUserMessage("Extract facts from this conversation:\n\n" + conversation),
+		message.NewUserMessage(
+			"Extract facts from this conversation:\n\n" + conversation,
+		),
 	}
 
 	resp, err := llmClient.SendMessages(ctx, extractionMessages, nil)

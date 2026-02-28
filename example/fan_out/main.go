@@ -24,12 +24,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	researcher := agent.New(llmClient,
-		agent.WithSystemPrompt("You are a concise research assistant. When given a topic, provide a brief 2-3 sentence summary of the key facts."),
+	researcher := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You are a concise research assistant. When given a topic, provide a brief 2-3 sentence summary of the key facts.",
+		),
 	)
 
-	orchestrator := agent.New(llmClient,
-		agent.WithSystemPrompt("You are a research coordinator. When asked to compare topics, use the parallel_research tool to investigate all topics simultaneously, then synthesize the results into a comparison."),
+	orchestrator := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You are a research coordinator. When asked to compare topics, use the parallel_research tool to investigate all topics simultaneously, then synthesize the results into a comparison.",
+		),
 		agent.WithFanOut(agent.FanOutConfig{
 			Name:           "parallel_research",
 			Description:    "Research multiple topics in parallel. Each task string should be a specific research question.",
@@ -38,7 +44,10 @@ func main() {
 		}),
 	)
 
-	response, err := orchestrator.Chat(ctx, "Compare these programming languages: Go, Rust, and Zig. Research each one.")
+	response, err := orchestrator.Chat(
+		ctx,
+		"Compare these programming languages: Go, Rust, and Zig. Research each one.",
+	)
 	if err != nil {
 		log.Fatal(err)
 	}

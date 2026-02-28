@@ -40,7 +40,13 @@ func newTaskManager() *TaskManager {
 	}
 }
 
-func (tm *TaskManager) Launch(ctx context.Context, agentName string, a *Agent, task string, opts ...ChatOption) string {
+func (tm *TaskManager) Launch(
+	ctx context.Context,
+	agentName string,
+	a *Agent,
+	task string,
+	opts ...ChatOption,
+) string {
 	id := fmt.Sprintf("task-%d", tm.idGen.Add(1))
 
 	taskCtx, cancel := context.WithCancel(ctx)
@@ -83,7 +89,12 @@ func (tm *TaskManager) Launch(ctx context.Context, agentName string, a *Agent, t
 	return id
 }
 
-func (tm *TaskManager) GetResult(ctx context.Context, taskID string, wait bool, timeout time.Duration) (*backgroundTask, error) {
+func (tm *TaskManager) GetResult(
+	ctx context.Context,
+	taskID string,
+	wait bool,
+	timeout time.Duration,
+) (*backgroundTask, error) {
 	tm.mu.RLock()
 	bt, ok := tm.tasks[taskID]
 	tm.mu.RUnlock()

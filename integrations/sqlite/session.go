@@ -18,7 +18,11 @@ type sessionStore struct {
 
 // SessionStore creates a new SQLite-backed session store using the provided database connection.
 // It automatically creates the required tables if they don't exist.
-func SessionStore(ctx context.Context, db *sql.DB, opts ...Option) (session.Store, error) {
+func SessionStore(
+	ctx context.Context,
+	db *sql.DB,
+	opts ...Option,
+) (session.Store, error) {
 	options := defaultOptions()
 	for _, opt := range opts {
 		opt(&options)
@@ -47,7 +51,8 @@ func SessionStore(ctx context.Context, db *sql.DB, opts ...Option) (session.Stor
 
 	createIndexSQL := fmt.Sprintf(
 		`CREATE INDEX IF NOT EXISTS idx_%smessages_session ON %s(session_id, id)`,
-		prefix, messagesTable,
+		prefix,
+		messagesTable,
 	)
 
 	if _, err := db.ExecContext(ctx, createSessionsSQL); err != nil {
@@ -64,14 +69,23 @@ func SessionStore(ctx context.Context, db *sql.DB, opts ...Option) (session.Stor
 }
 
 func (s *sessionStore) Exists(ctx context.Context, id string) (bool, error) {
-	query := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %ssessions WHERE id = ?)", s.prefix)
+	query := fmt.Sprintf(
+		"SELECT EXISTS(SELECT 1 FROM %ssessions WHERE id = ?)",
+		s.prefix,
+	)
 	var exists bool
 	err := s.db.QueryRowContext(ctx, query, id).Scan(&exists)
 	return exists, err
 }
 
-func (s *sessionStore) Create(ctx context.Context, id string) (session.Session, error) {
-	query := fmt.Sprintf("INSERT INTO %ssessions (id, created_at) VALUES (?, ?)", s.prefix)
+func (s *sessionStore) Create(
+	ctx context.Context,
+	id string,
+) (session.Session, error) {
+	query := fmt.Sprintf(
+		"INSERT INTO %ssessions (id, created_at) VALUES (?, ?)",
+		s.prefix,
+	)
 	_, err := s.db.ExecContext(ctx, query, id, time.Now().UnixNano())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create session: %w", err)
@@ -79,7 +93,10 @@ func (s *sessionStore) Create(ctx context.Context, id string) (session.Session, 
 	return &sqliteSession{db: s.db, id: id, prefix: s.prefix}, nil
 }
 
-func (s *sessionStore) Load(ctx context.Context, id string) (session.Session, error) {
+func (s *sessionStore) Load(
+	ctx context.Context,
+	id string,
+) (session.Session, error) {
 	return &sqliteSession{db: s.db, id: id, prefix: s.prefix}, nil
 }
 
@@ -99,7 +116,10 @@ func (s *sqliteSession) ID() string {
 	return s.id
 }
 
-func (s *sqliteSession) GetMessages(ctx context.Context, limit *int) ([]message.Message, error) {
+func (s *sqliteSession) GetMessages(
+	ctx context.Context,
+	limit *int,
+) ([]message.Message, error) {
 	table := s.prefix + "messages"
 
 	var query string
@@ -144,7 +164,10 @@ func (s *sqliteSession) GetMessages(ctx context.Context, limit *int) ([]message.
 	return messages, rows.Err()
 }
 
-func (s *sqliteSession) AddMessages(ctx context.Context, msgs []message.Message) error {
+func (s *sqliteSession) AddMessages(
+	ctx context.Context,
+	msgs []message.Message,
+) error {
 	table := s.prefix + "messages"
 	query := fmt.Sprintf(
 		"INSERT INTO %s (session_id, role, parts, model, created_at) VALUES (?, ?, ?, ?, ?)",
@@ -167,7 +190,9 @@ func (s *sqliteSession) AddMessages(ctx context.Context, msgs []message.Message)
 	return nil
 }
 
-func (s *sqliteSession) PopMessage(ctx context.Context) (*message.Message, error) {
+func (s *sqliteSession) PopMessage(
+	ctx context.Context,
+) (*message.Message, error) {
 	table := s.prefix + "messages"
 
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -179,8 +204,12 @@ func (s *sqliteSession) PopMessage(ctx context.Context) (*message.Message, error
 	var rowID int64
 	var msgJSON []byte
 
-	err = tx.QueryRowContext(ctx,
-		fmt.Sprintf("SELECT id, parts FROM %s WHERE session_id = ? ORDER BY id DESC LIMIT 1", table),
+	err = tx.QueryRowContext(
+		ctx,
+		fmt.Sprintf(
+			"SELECT id, parts FROM %s WHERE session_id = ? ORDER BY id DESC LIMIT 1",
+			table,
+		),
 		s.id,
 	).Scan(&rowID, &msgJSON)
 
@@ -212,7 +241,10 @@ func (s *sqliteSession) PopMessage(ctx context.Context) (*message.Message, error
 }
 
 func (s *sqliteSession) Clear(ctx context.Context) error {
-	query := fmt.Sprintf("DELETE FROM %s WHERE session_id = ?", s.prefix+"messages")
+	query := fmt.Sprintf(
+		"DELETE FROM %s WHERE session_id = ?",
+		s.prefix+"messages",
+	)
 	_, err := s.db.ExecContext(ctx, query, s.id)
 	return err
 }

@@ -15,9 +15,9 @@ type SubAgentConfig struct {
 }
 
 type subAgentInput struct {
-	Task       string `json:"task" desc:"The task or question to send to the sub-agent"`
-	Background bool   `json:"background" desc:"If true, run in background and return a task ID immediately" required:"false"`
-	MaxTurns   int    `json:"max_turns" desc:"Maximum number of tool-execution turns. 0 uses the agent default." required:"false"`
+	Task       string `json:"task"       desc:"The task or question to send to the sub-agent"`
+	Background bool   `json:"background" desc:"If true, run in background and return a task ID immediately"       required:"false"`
+	MaxTurns   int    `json:"max_turns"  desc:"Maximum number of tool-execution turns. 0 uses the agent default." required:"false"`
 }
 
 type subAgentTool struct {
@@ -29,13 +29,22 @@ func newSubAgentTool(config SubAgentConfig) *subAgentTool {
 }
 
 func (t *subAgentTool) Info() tool.ToolInfo {
-	return tool.NewToolInfo(t.config.Name, t.config.Description, subAgentInput{})
+	return tool.NewToolInfo(
+		t.config.Name,
+		t.config.Description,
+		subAgentInput{},
+	)
 }
 
-func (t *subAgentTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+func (t *subAgentTool) Run(
+	ctx context.Context,
+	params tool.ToolCall,
+) (tool.ToolResponse, error) {
 	var input subAgentInput
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
-		return tool.NewTextErrorResponse("invalid sub-agent parameters: " + err.Error()), nil
+		return tool.NewTextErrorResponse(
+			"invalid sub-agent parameters: " + err.Error(),
+		), nil
 	}
 
 	if input.Task == "" {
@@ -52,7 +61,12 @@ func (t *subAgentTool) Run(ctx context.Context, params tool.ToolCall) (tool.Tool
 		if tm == nil {
 			return t.runSync(ctx, input.Task, opts...)
 		}
-		taskID := tm.Launch(ctx, t.config.Name, t.config.Agent, input.Task, opts...)
+		taskID := tm.Launch(
+			ctx,
+			t.config.Name,
+			t.config.Agent,
+			input.Task,
+			opts...)
 
 		type launchOutput struct {
 			TaskID    string `json:"task_id"`
@@ -69,10 +83,16 @@ func (t *subAgentTool) Run(ctx context.Context, params tool.ToolCall) (tool.Tool
 	return t.runSync(ctx, input.Task, opts...)
 }
 
-func (t *subAgentTool) runSync(ctx context.Context, task string, opts ...ChatOption) (tool.ToolResponse, error) {
+func (t *subAgentTool) runSync(
+	ctx context.Context,
+	task string,
+	opts ...ChatOption,
+) (tool.ToolResponse, error) {
 	resp, err := t.config.Agent.Chat(ctx, task, opts...)
 	if err != nil {
-		return tool.NewTextErrorResponse(fmt.Sprintf("sub-agent %q failed: %s", t.config.Name, err.Error())), nil
+		return tool.NewTextErrorResponse(
+			fmt.Sprintf("sub-agent %q failed: %s", t.config.Name, err.Error()),
+		), nil
 	}
 	return tool.NewTextResponse(resp.Content), nil
 }

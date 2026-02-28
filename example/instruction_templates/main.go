@@ -26,8 +26,11 @@ func main() {
 }
 
 func staticTemplateExample(client llm.LLM) {
-	a := agent.New(client,
-		agent.WithSystemPrompt("You are {{.role}}. The user's name is {{.user_name}}. Be helpful and concise."),
+	a := agent.New(
+		client,
+		agent.WithSystemPrompt(
+			"You are {{.role}}. The user's name is {{.user_name}}. Be helpful and concise.",
+		),
 		agent.WithState(map[string]any{
 			"role":      "a friendly coding assistant",
 			"user_name": "Alice",
@@ -44,20 +47,29 @@ func staticTemplateExample(client llm.LLM) {
 }
 
 func dynamicProviderExample(client llm.LLM) {
-	a := agent.New(client,
-		agent.WithInstructionProvider(func(ctx context.Context, state map[string]any) (string, error) {
-			role, _ := state["role"].(string)
-			if role == "" {
-				role = "an assistant"
-			}
-			return fmt.Sprintf("You are %s. Current time context: morning. Be brief.", role), nil
-		}),
+	a := agent.New(
+		client,
+		agent.WithInstructionProvider(
+			func(ctx context.Context, state map[string]any) (string, error) {
+				role, _ := state["role"].(string)
+				if role == "" {
+					role = "an assistant"
+				}
+				return fmt.Sprintf(
+					"You are %s. Current time context: morning. Be brief.",
+					role,
+				), nil
+			},
+		),
 		agent.WithState(map[string]any{
 			"role": "a helpful chef",
 		}),
 	)
 
-	resp, err := a.Chat(context.Background(), "What should I make for breakfast?")
+	resp, err := a.Chat(
+		context.Background(),
+		"What should I make for breakfast?",
+	)
 	if err != nil {
 		panic(err)
 	}

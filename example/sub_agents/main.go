@@ -20,15 +20,27 @@ type searchParams struct {
 type searchTool struct{}
 
 func (s *searchTool) Info() tool.ToolInfo {
-	return tool.NewToolInfo("web_search", "Search the web for information", searchParams{})
+	return tool.NewToolInfo(
+		"web_search",
+		"Search the web for information",
+		searchParams{},
+	)
 }
 
-func (s *searchTool) Run(_ context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+func (s *searchTool) Run(
+	_ context.Context,
+	params tool.ToolCall,
+) (tool.ToolResponse, error) {
 	var input searchParams
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
 		return tool.NewTextErrorResponse(err.Error()), nil
 	}
-	return tool.NewTextResponse(fmt.Sprintf("Search results for %q: [Result 1: relevant info] [Result 2: more details]", input.Query)), nil
+	return tool.NewTextResponse(
+		fmt.Sprintf(
+			"Search results for %q: [Result 1: relevant info] [Result 2: more details]",
+			input.Query,
+		),
+	), nil
 }
 
 func main() {
@@ -44,17 +56,26 @@ func main() {
 		log.Fatal(err)
 	}
 
-	researcher := agent.New(llmClient,
-		agent.WithSystemPrompt("You are a research assistant. Use the web_search tool to find information, then summarize your findings concisely."),
+	researcher := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You are a research assistant. Use the web_search tool to find information, then summarize your findings concisely.",
+		),
 		agent.WithTools(&searchTool{}),
 	)
 
-	writer := agent.New(llmClient,
-		agent.WithSystemPrompt("You are a skilled writer. Take the provided information and write a clear, engaging summary."),
+	writer := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You are a skilled writer. Take the provided information and write a clear, engaging summary.",
+		),
 	)
 
-	orchestrator := agent.New(llmClient,
-		agent.WithSystemPrompt("You are a coordinator. When asked about a topic, first use the researcher to gather information, then use the writer to produce a polished summary."),
+	orchestrator := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You are a coordinator. When asked about a topic, first use the researcher to gather information, then use the writer to produce a polished summary.",
+		),
 		agent.WithSubAgents(
 			agent.SubAgentConfig{
 				Name:        "researcher",
@@ -69,7 +90,10 @@ func main() {
 		),
 	)
 
-	response, err := orchestrator.Chat(ctx, "Tell me about the Go programming language.")
+	response, err := orchestrator.Chat(
+		ctx,
+		"Tell me about the Go programming language.",
+	)
 	if err != nil {
 		log.Fatal(err)
 	}

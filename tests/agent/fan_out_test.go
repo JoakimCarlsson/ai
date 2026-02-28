@@ -22,7 +22,12 @@ func TestFanOut_Basic(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "parallel_work", Input: `{"tasks":["task 1","task 2","task 3"]}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "parallel_work",
+					Input: `{"tasks":["task 1","task 2","task 3"]}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "all tasks done"},
@@ -46,7 +51,10 @@ func TestFanOut_Basic(t *testing.T) {
 	}
 
 	if workerLLM.CallCount() != 3 {
-		t.Errorf("expected worker to be called 3 times, got %d", workerLLM.CallCount())
+		t.Errorf(
+			"expected worker to be called 3 times, got %d",
+			workerLLM.CallCount(),
+		)
 	}
 }
 
@@ -57,7 +65,12 @@ func TestFanOut_EmptyTasks(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "parallel_work", Input: `{"tasks":[]}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "parallel_work",
+					Input: `{"tasks":[]}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "handled empty"},
@@ -92,7 +105,12 @@ func TestFanOut_InvalidInput(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "parallel_work", Input: `bad json`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "parallel_work",
+					Input: `bad json`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "handled bad input"},
@@ -126,7 +144,12 @@ func TestFanOut_PartialFailure(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "parallel_work", Input: `{"tasks":["succeed","fail"]}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "parallel_work",
+					Input: `{"tasks":["succeed","fail"]}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "partial results handled"},
@@ -165,7 +188,12 @@ func TestFanOut_Concurrency(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "parallel_work", Input: `{"tasks":["a","b","c","d","e"]}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "parallel_work",
+					Input: `{"tasks":["a","b","c","d","e"]}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "done"},
@@ -190,7 +218,10 @@ func TestFanOut_Concurrency(t *testing.T) {
 	}
 
 	if maxConcurrent.Load() > 2 {
-		t.Errorf("max concurrency exceeded: got %d, expected <= 2", maxConcurrent.Load())
+		t.Errorf(
+			"max concurrency exceeded: got %d, expected <= 2",
+			maxConcurrent.Load(),
+		)
 	}
 }
 
@@ -206,7 +237,12 @@ func TestFanOut_ResultsAggregated(t *testing.T) {
 		base: newMockLLM(
 			mockResponse{
 				ToolCalls: []message.ToolCall{
-					{ID: "tc-1", Name: "parallel_work", Input: `{"tasks":["alpha","beta"]}`, Type: "function"},
+					{
+						ID:    "tc-1",
+						Name:  "parallel_work",
+						Input: `{"tasks":["alpha","beta"]}`,
+						Type:  "function",
+					},
 				},
 			},
 			mockResponse{Content: "done"},
@@ -255,7 +291,12 @@ func TestFanOut_Stream(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "fan", Input: `{"tasks":["t1","t2"]}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "fan",
+					Input: `{"tasks":["t1","t2"]}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "fan-out streamed"},

@@ -49,7 +49,11 @@ func WithAutoExecute(auto bool) AgentOption {
 // Use memory.AutoExtract() to enable automatic fact extraction from conversations.
 // Use memory.AutoDedup() to enable LLM-based memory deduplication.
 // Use memory.LLM() to set a separate LLM for memory operations.
-func WithMemory(id string, store memory.Store, opts ...memory.Option) AgentOption {
+func WithMemory(
+	id string,
+	store memory.Store,
+	opts ...memory.Option,
+) AgentOption {
 	return func(a *Agent) {
 		a.memoryID = id
 		a.memory = store
@@ -100,7 +104,10 @@ func WithSession(id string, store session.Store) AgentOption {
 // Example with summarization:
 //
 //	agent.WithContextStrategy(summarize.Strategy(summaryLLM), 8000)
-func WithContextStrategy(strategy tokens.Strategy, maxContextTokens int64) AgentOption {
+func WithContextStrategy(
+	strategy tokens.Strategy,
+	maxContextTokens int64,
+) AgentOption {
 	return func(a *Agent) {
 		a.contextStrategy = strategy
 		a.maxContextTokens = maxContextTokens

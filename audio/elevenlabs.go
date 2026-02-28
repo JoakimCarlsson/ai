@@ -26,7 +26,9 @@ type ElevenLabsClient struct {
 	model      string
 }
 
-func newElevenLabsClient(options audioGenerationClientOptions) ElevenLabsClient {
+func newElevenLabsClient(
+	options audioGenerationClientOptions,
+) ElevenLabsClient {
 	baseURL := defaultElevenLabsBaseURL
 	for _, opt := range options.elevenLabsOptions {
 		opts := &elevenLabsOptions{}
@@ -161,7 +163,9 @@ func (c ElevenLabsClient) generateStandard(
 		ModelID: c.model,
 	}
 
-	if opts.Stability != nil || opts.SimilarityBoost != nil || opts.Style != nil || opts.SpeakerBoost != nil {
+	if opts.Stability != nil || opts.SimilarityBoost != nil ||
+		opts.Style != nil ||
+		opts.SpeakerBoost != nil {
 		reqBody.VoiceSettings = &voiceSettings{}
 		if opts.Stability != nil {
 			reqBody.VoiceSettings.Stability = *opts.Stability
@@ -182,12 +186,26 @@ func (c ElevenLabsClient) generateStandard(
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	url := fmt.Sprintf("%s/text-to-speech/%s?output_format=%s", c.baseURL, voiceID, outputFormat)
+	url := fmt.Sprintf(
+		"%s/text-to-speech/%s?output_format=%s",
+		c.baseURL,
+		voiceID,
+		outputFormat,
+	)
 	if opts.OptimizeStreamingLatency != nil {
-		url = fmt.Sprintf("%s&optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
+		url = fmt.Sprintf(
+			"%s&optimize_streaming_latency=%d",
+			url,
+			*opts.OptimizeStreamingLatency,
+		)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		url,
+		bytes.NewBuffer(jsonData),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -252,7 +270,9 @@ func (c ElevenLabsClient) generateWithTimestamps(
 		ModelID: c.model,
 	}
 
-	if opts.Stability != nil || opts.SimilarityBoost != nil || opts.Style != nil || opts.SpeakerBoost != nil {
+	if opts.Stability != nil || opts.SimilarityBoost != nil ||
+		opts.Style != nil ||
+		opts.SpeakerBoost != nil {
 		reqBody.VoiceSettings = &voiceSettings{}
 		if opts.Stability != nil {
 			reqBody.VoiceSettings.Stability = *opts.Stability
@@ -273,12 +293,26 @@ func (c ElevenLabsClient) generateWithTimestamps(
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	url := fmt.Sprintf("%s/text-to-speech/%s/with-timestamps?output_format=%s", c.baseURL, voiceID, outputFormat)
+	url := fmt.Sprintf(
+		"%s/text-to-speech/%s/with-timestamps?output_format=%s",
+		c.baseURL,
+		voiceID,
+		outputFormat,
+	)
 	if opts.OptimizeStreamingLatency != nil {
-		url = fmt.Sprintf("%s&optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
+		url = fmt.Sprintf(
+			"%s&optimize_streaming_latency=%d",
+			url,
+			*opts.OptimizeStreamingLatency,
+		)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		url,
+		bytes.NewBuffer(jsonData),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -303,7 +337,9 @@ func (c ElevenLabsClient) generateWithTimestamps(
 	}
 
 	// Decode base64 audio data
-	audioData, err := base64.StdEncoding.DecodeString(timestampsResp.AudioBase64)
+	audioData, err := base64.StdEncoding.DecodeString(
+		timestampsResp.AudioBase64,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode base64 audio: %w", err)
 	}
@@ -390,7 +426,9 @@ func (c ElevenLabsClient) streamStandard(
 		ModelID: c.model,
 	}
 
-	if opts.Stability != nil || opts.SimilarityBoost != nil || opts.Style != nil || opts.SpeakerBoost != nil {
+	if opts.Stability != nil || opts.SimilarityBoost != nil ||
+		opts.Style != nil ||
+		opts.SpeakerBoost != nil {
 		reqBody.VoiceSettings = &voiceSettings{}
 		if opts.Stability != nil {
 			reqBody.VoiceSettings.Stability = *opts.Stability
@@ -414,12 +452,26 @@ func (c ElevenLabsClient) streamStandard(
 		return ch, nil
 	}
 
-	url := fmt.Sprintf("%s/text-to-speech/%s/stream?output_format=%s", c.baseURL, voiceID, outputFormat)
+	url := fmt.Sprintf(
+		"%s/text-to-speech/%s/stream?output_format=%s",
+		c.baseURL,
+		voiceID,
+		outputFormat,
+	)
 	if opts.OptimizeStreamingLatency != nil {
-		url = fmt.Sprintf("%s&optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
+		url = fmt.Sprintf(
+			"%s&optimize_streaming_latency=%d",
+			url,
+			*opts.OptimizeStreamingLatency,
+		)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		url,
+		bytes.NewBuffer(jsonData),
+	)
 	if err != nil {
 		ch := make(chan AudioChunk, 1)
 		ch <- AudioChunk{Error: fmt.Errorf("failed to create request: %w", err)}
@@ -509,7 +561,9 @@ func (c ElevenLabsClient) streamWithTimestamps(
 		ModelID: c.model,
 	}
 
-	if opts.Stability != nil || opts.SimilarityBoost != nil || opts.Style != nil || opts.SpeakerBoost != nil {
+	if opts.Stability != nil || opts.SimilarityBoost != nil ||
+		opts.Style != nil ||
+		opts.SpeakerBoost != nil {
 		reqBody.VoiceSettings = &voiceSettings{}
 		if opts.Stability != nil {
 			reqBody.VoiceSettings.Stability = *opts.Stability
@@ -533,12 +587,26 @@ func (c ElevenLabsClient) streamWithTimestamps(
 		return ch, nil
 	}
 
-	url := fmt.Sprintf("%s/text-to-speech/%s/stream/with-timestamps?output_format=%s", c.baseURL, voiceID, outputFormat)
+	url := fmt.Sprintf(
+		"%s/text-to-speech/%s/stream/with-timestamps?output_format=%s",
+		c.baseURL,
+		voiceID,
+		outputFormat,
+	)
 	if opts.OptimizeStreamingLatency != nil {
-		url = fmt.Sprintf("%s&optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
+		url = fmt.Sprintf(
+			"%s&optimize_streaming_latency=%d",
+			url,
+			*opts.OptimizeStreamingLatency,
+		)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		url,
+		bytes.NewBuffer(jsonData),
+	)
 	if err != nil {
 		ch := make(chan AudioChunk, 1)
 		ch <- AudioChunk{Error: fmt.Errorf("failed to create request: %w", err)}
@@ -718,7 +786,10 @@ func (c ElevenLabsClient) GenerateForcedAlignment(
 
 	var alignmentResp elevenLabsForcedAlignmentResponse
 	if err := json.NewDecoder(resp.Body).Decode(&alignmentResp); err != nil {
-		return nil, fmt.Errorf("failed to decode forced alignment response: %w", err)
+		return nil, fmt.Errorf(
+			"failed to decode forced alignment response: %w",
+			err,
+		)
 	}
 
 	characters := make([]CharAlignment, len(alignmentResp.Characters))
@@ -750,12 +821,19 @@ func (c ElevenLabsClient) GenerateForcedAlignment(
 func (c ElevenLabsClient) parseError(resp *http.Response) error {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("audio generation failed with status %d", resp.StatusCode)
+		return fmt.Errorf(
+			"audio generation failed with status %d",
+			resp.StatusCode,
+		)
 	}
 
 	var errResp elevenLabsErrorResponse
 	if err := json.Unmarshal(body, &errResp); err != nil {
-		return fmt.Errorf("audio generation failed with status %d: %s", resp.StatusCode, string(body))
+		return fmt.Errorf(
+			"audio generation failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	if errResp.Detail.Message != "" {

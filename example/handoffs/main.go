@@ -24,16 +24,25 @@ func main() {
 		log.Fatal(err)
 	}
 
-	billing := agent.New(llmClient,
-		agent.WithSystemPrompt("You are a billing specialist. Help users with invoices, payments, and account balances. Be concise and helpful."),
+	billing := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You are a billing specialist. Help users with invoices, payments, and account balances. Be concise and helpful.",
+		),
 	)
 
-	support := agent.New(llmClient,
-		agent.WithSystemPrompt("You are a technical support specialist. Help users troubleshoot issues and solve technical problems. Be concise and helpful."),
+	support := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You are a technical support specialist. Help users troubleshoot issues and solve technical problems. Be concise and helpful.",
+		),
 	)
 
-	triage := agent.New(llmClient,
-		agent.WithSystemPrompt("You are a triage agent. Route users to the appropriate specialist:\n- For billing, payments, or invoice questions: transfer to billing\n- For technical issues or troubleshooting: transfer to support\nDo NOT answer questions yourself — always transfer to a specialist."),
+	triage := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You are a triage agent. Route users to the appropriate specialist:\n- For billing, payments, or invoice questions: transfer to billing\n- For technical issues or troubleshooting: transfer to support\nDo NOT answer questions yourself — always transfer to a specialist.",
+		),
 		agent.WithHandoffs(
 			agent.HandoffConfig{
 				Name:        "billing",

@@ -39,10 +39,15 @@ func (t *fanOutTool) Info() tool.ToolInfo {
 	return tool.NewToolInfo(t.config.Name, t.config.Description, fanOutInput{})
 }
 
-func (t *fanOutTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+func (t *fanOutTool) Run(
+	ctx context.Context,
+	params tool.ToolCall,
+) (tool.ToolResponse, error) {
 	var input fanOutInput
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
-		return tool.NewTextErrorResponse("invalid fan-out parameters: " + err.Error()), nil
+		return tool.NewTextErrorResponse(
+			"invalid fan-out parameters: " + err.Error(),
+		), nil
 	}
 
 	if len(input.Tasks) == 0 {

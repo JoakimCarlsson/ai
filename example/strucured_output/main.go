@@ -15,9 +15,9 @@ import (
 // CodeAnalysis represents the structured output for code analysis.
 // Using struct tags to define the JSON schema is the recommended approach.
 type CodeAnalysis struct {
-	Language   string   `json:"language" desc:"Programming language"`
-	Functions  []string `json:"functions" desc:"List of function names"`
-	Complexity string   `json:"complexity" desc:"Code complexity level" enum:"low,medium,high"`
+	Language   string   `json:"language"   desc:"Programming language"`
+	Functions  []string `json:"functions"  desc:"List of function names"`
+	Complexity string   `json:"complexity" desc:"Code complexity level"  enum:"low,medium,high"`
 }
 
 func main() {
@@ -129,7 +129,10 @@ func streamExample(
 			fmt.Print(event.Content)
 		case types.EventComplete:
 			if event.Response.StructuredOutput != nil {
-				fmt.Println("\nFinal structured output:", *event.Response.StructuredOutput)
+				fmt.Println(
+					"\nFinal structured output:",
+					*event.Response.StructuredOutput,
+				)
 			}
 		case types.EventError:
 			log.Fatal(event.Error)

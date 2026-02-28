@@ -59,7 +59,11 @@ func (m *mockLLM) CallCount() int {
 	return len(m.calls)
 }
 
-func (m *mockLLM) SendMessages(_ context.Context, msgs []message.Message, _ []tool.BaseTool) (*llm.LLMResponse, error) {
+func (m *mockLLM) SendMessages(
+	_ context.Context,
+	msgs []message.Message,
+	_ []tool.BaseTool,
+) (*llm.LLMResponse, error) {
 	m.recordCall(msgs)
 	resp := m.nextResponse()
 	if resp.Err != nil {
@@ -72,11 +76,20 @@ func (m *mockLLM) SendMessages(_ context.Context, msgs []message.Message, _ []to
 	}, nil
 }
 
-func (m *mockLLM) SendMessagesWithStructuredOutput(_ context.Context, _ []message.Message, _ []tool.BaseTool, _ *schema.StructuredOutputInfo) (*llm.LLMResponse, error) {
+func (m *mockLLM) SendMessagesWithStructuredOutput(
+	_ context.Context,
+	_ []message.Message,
+	_ []tool.BaseTool,
+	_ *schema.StructuredOutputInfo,
+) (*llm.LLMResponse, error) {
 	return nil, nil
 }
 
-func (m *mockLLM) StreamResponse(_ context.Context, msgs []message.Message, _ []tool.BaseTool) <-chan llm.LLMEvent {
+func (m *mockLLM) StreamResponse(
+	_ context.Context,
+	msgs []message.Message,
+	_ []tool.BaseTool,
+) <-chan llm.LLMEvent {
 	m.recordCall(msgs)
 	ch := make(chan llm.LLMEvent)
 	go func() {
@@ -101,7 +114,12 @@ func (m *mockLLM) StreamResponse(_ context.Context, msgs []message.Message, _ []
 	return ch
 }
 
-func (m *mockLLM) StreamResponseWithStructuredOutput(_ context.Context, _ []message.Message, _ []tool.BaseTool, _ *schema.StructuredOutputInfo) <-chan llm.LLMEvent {
+func (m *mockLLM) StreamResponseWithStructuredOutput(
+	_ context.Context,
+	_ []message.Message,
+	_ []tool.BaseTool,
+	_ *schema.StructuredOutputInfo,
+) <-chan llm.LLMEvent {
 	ch := make(chan llm.LLMEvent)
 	close(ch)
 	return ch
@@ -122,7 +140,11 @@ type concurrencyTrackingLLM struct {
 	delay             time.Duration
 }
 
-func (m *concurrencyTrackingLLM) SendMessages(ctx context.Context, msgs []message.Message, tools []tool.BaseTool) (*llm.LLMResponse, error) {
+func (m *concurrencyTrackingLLM) SendMessages(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+) (*llm.LLMResponse, error) {
 	cur := m.currentConcurrent.Add(1)
 	defer m.currentConcurrent.Add(-1)
 
@@ -143,15 +165,29 @@ func (m *concurrencyTrackingLLM) SendMessages(ctx context.Context, msgs []messag
 	return m.base.SendMessages(ctx, msgs, tools)
 }
 
-func (m *concurrencyTrackingLLM) SendMessagesWithStructuredOutput(ctx context.Context, msgs []message.Message, tools []tool.BaseTool, info *schema.StructuredOutputInfo) (*llm.LLMResponse, error) {
+func (m *concurrencyTrackingLLM) SendMessagesWithStructuredOutput(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+	info *schema.StructuredOutputInfo,
+) (*llm.LLMResponse, error) {
 	return m.base.SendMessagesWithStructuredOutput(ctx, msgs, tools, info)
 }
 
-func (m *concurrencyTrackingLLM) StreamResponse(ctx context.Context, msgs []message.Message, tools []tool.BaseTool) <-chan llm.LLMEvent {
+func (m *concurrencyTrackingLLM) StreamResponse(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+) <-chan llm.LLMEvent {
 	return m.base.StreamResponse(ctx, msgs, tools)
 }
 
-func (m *concurrencyTrackingLLM) StreamResponseWithStructuredOutput(ctx context.Context, msgs []message.Message, tools []tool.BaseTool, info *schema.StructuredOutputInfo) <-chan llm.LLMEvent {
+func (m *concurrencyTrackingLLM) StreamResponseWithStructuredOutput(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+	info *schema.StructuredOutputInfo,
+) <-chan llm.LLMEvent {
 	return m.base.StreamResponseWithStructuredOutput(ctx, msgs, tools, info)
 }
 
@@ -168,25 +204,43 @@ type toolResultCapturingLLM struct {
 	onCall func(msgs []message.Message)
 }
 
-func (m *toolResultCapturingLLM) SendMessages(ctx context.Context, msgs []message.Message, tools []tool.BaseTool) (*llm.LLMResponse, error) {
+func (m *toolResultCapturingLLM) SendMessages(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+) (*llm.LLMResponse, error) {
 	if m.onCall != nil {
 		m.onCall(msgs)
 	}
 	return m.base.SendMessages(ctx, msgs, tools)
 }
 
-func (m *toolResultCapturingLLM) SendMessagesWithStructuredOutput(ctx context.Context, msgs []message.Message, tools []tool.BaseTool, info *schema.StructuredOutputInfo) (*llm.LLMResponse, error) {
+func (m *toolResultCapturingLLM) SendMessagesWithStructuredOutput(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+	info *schema.StructuredOutputInfo,
+) (*llm.LLMResponse, error) {
 	return m.base.SendMessagesWithStructuredOutput(ctx, msgs, tools, info)
 }
 
-func (m *toolResultCapturingLLM) StreamResponse(ctx context.Context, msgs []message.Message, tools []tool.BaseTool) <-chan llm.LLMEvent {
+func (m *toolResultCapturingLLM) StreamResponse(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+) <-chan llm.LLMEvent {
 	if m.onCall != nil {
 		m.onCall(msgs)
 	}
 	return m.base.StreamResponse(ctx, msgs, tools)
 }
 
-func (m *toolResultCapturingLLM) StreamResponseWithStructuredOutput(ctx context.Context, msgs []message.Message, tools []tool.BaseTool, info *schema.StructuredOutputInfo) <-chan llm.LLMEvent {
+func (m *toolResultCapturingLLM) StreamResponseWithStructuredOutput(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+	info *schema.StructuredOutputInfo,
+) <-chan llm.LLMEvent {
 	return m.base.StreamResponseWithStructuredOutput(ctx, msgs, tools, info)
 }
 
@@ -206,6 +260,9 @@ func (t *echoTool) Info() tool.ToolInfo {
 	}{})
 }
 
-func (t *echoTool) Run(_ context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+func (t *echoTool) Run(
+	_ context.Context,
+	params tool.ToolCall,
+) (tool.ToolResponse, error) {
 	return tool.NewTextResponse("echo: " + params.Input), nil
 }

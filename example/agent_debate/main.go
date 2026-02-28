@@ -56,9 +56,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	embedder, err := embeddings.NewEmbedding(model.ProviderOpenAI,
+	embedder, err := embeddings.NewEmbedding(
+		model.ProviderOpenAI,
 		embeddings.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-		embeddings.WithModel(model.OpenAIEmbeddingModels[model.TextEmbedding3Small]),
+		embeddings.WithModel(
+			model.OpenAIEmbeddingModels[model.TextEmbedding3Small],
+		),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -112,7 +115,11 @@ func main() {
 	}
 }
 
-func streamAndCollect(ctx context.Context, a *agent.Agent, input string) string {
+func streamAndCollect(
+	ctx context.Context,
+	a *agent.Agent,
+	input string,
+) string {
 	var sb strings.Builder
 	for event := range a.ChatStream(ctx, input) {
 		switch event.Type {

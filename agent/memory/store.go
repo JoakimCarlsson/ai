@@ -10,11 +10,26 @@ import (
 // (e.g., pgvector, Qdrant, Pinecone) as memory requires embeddings
 // for semantic search to work correctly.
 type Store interface {
-	Store(ctx context.Context, id string, fact string, metadata map[string]any) error
-	Search(ctx context.Context, id string, query string, limit int) ([]Entry, error)
+	Store(
+		ctx context.Context,
+		id string,
+		fact string,
+		metadata map[string]any,
+	) error
+	Search(
+		ctx context.Context,
+		id string,
+		query string,
+		limit int,
+	) ([]Entry, error)
 	GetAll(ctx context.Context, id string, limit int) ([]Entry, error)
 	Delete(ctx context.Context, memoryID string) error
-	Update(ctx context.Context, memoryID string, fact string, metadata map[string]any) error
+	Update(
+		ctx context.Context,
+		memoryID string,
+		fact string,
+		metadata map[string]any,
+	) error
 }
 
 // Entry represents a single memory entry.

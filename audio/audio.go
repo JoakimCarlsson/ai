@@ -231,7 +231,9 @@ func (a *baseAudioGeneration[C]) StreamAudio(
 	return a.client.stream(ctx, text, options...)
 }
 
-func (a *baseAudioGeneration[C]) ListVoices(ctx context.Context) ([]Voice, error) {
+func (a *baseAudioGeneration[C]) ListVoices(
+	ctx context.Context,
+) ([]Voice, error) {
 	return a.client.listVoices(ctx)
 }
 

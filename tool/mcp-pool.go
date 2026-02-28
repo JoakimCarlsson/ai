@@ -14,11 +14,17 @@ type sessionWrapper struct {
 	session *mcp.ClientSession
 }
 
-func (s *sessionWrapper) ListTools(ctx context.Context, params *mcp.ListToolsParams) (*mcp.ListToolsResult, error) {
+func (s *sessionWrapper) ListTools(
+	ctx context.Context,
+	params *mcp.ListToolsParams,
+) (*mcp.ListToolsResult, error) {
 	return s.session.ListTools(ctx, params)
 }
 
-func (s *sessionWrapper) CallTool(ctx context.Context, params *mcp.CallToolParams) (*mcp.CallToolResult, error) {
+func (s *sessionWrapper) CallTool(
+	ctx context.Context,
+	params *mcp.CallToolParams,
+) (*mcp.CallToolResult, error) {
 	return s.session.CallTool(ctx, params)
 }
 

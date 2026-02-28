@@ -12,7 +12,10 @@ type ValidationError struct {
 
 // Error implements the error interface.
 func (e *ValidationError) Error() string {
-	return fmt.Sprintf("missing required variables: %s", strings.Join(e.Missing, ", "))
+	return fmt.Sprintf(
+		"missing required variables: %s",
+		strings.Join(e.Missing, ", "),
+	)
 }
 
 func validateRequired(data map[string]any, required []string) error {

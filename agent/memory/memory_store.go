@@ -32,7 +32,12 @@ func MemoryStore(embedder embeddings.Embedding, opts ...StoreOption) Store {
 	}
 }
 
-func (s *memoryStore) Store(ctx context.Context, id string, fact string, metadata map[string]any) error {
+func (s *memoryStore) Store(
+	ctx context.Context,
+	id string,
+	fact string,
+	metadata map[string]any,
+) error {
 	resp, err := s.embedder.GenerateEmbeddings(ctx, []string{fact})
 	if err != nil {
 		return err
@@ -56,7 +61,12 @@ func (s *memoryStore) Store(ctx context.Context, id string, fact string, metadat
 	return nil
 }
 
-func (s *memoryStore) Search(ctx context.Context, id string, query string, limit int) ([]Entry, error) {
+func (s *memoryStore) Search(
+	ctx context.Context,
+	id string,
+	query string,
+	limit int,
+) ([]Entry, error) {
 	resp, err := s.embedder.GenerateEmbeddings(ctx, []string{query})
 	if err != nil {
 		return nil, err
@@ -101,7 +111,11 @@ func (s *memoryStore) Search(ctx context.Context, id string, query string, limit
 	return results, nil
 }
 
-func (s *memoryStore) GetAll(ctx context.Context, id string, limit int) ([]Entry, error) {
+func (s *memoryStore) GetAll(
+	ctx context.Context,
+	id string,
+	limit int,
+) ([]Entry, error) {
 	s.mu.RLock()
 	userEntries := s.entries[id]
 	s.mu.RUnlock()
@@ -134,7 +148,12 @@ func (s *memoryStore) Delete(ctx context.Context, memoryID string) error {
 	return nil
 }
 
-func (s *memoryStore) Update(ctx context.Context, memoryID string, fact string, metadata map[string]any) error {
+func (s *memoryStore) Update(
+	ctx context.Context,
+	memoryID string,
+	fact string,
+	metadata map[string]any,
+) error {
 	resp, err := s.embedder.GenerateEmbeddings(ctx, []string{fact})
 	if err != nil {
 		return err

@@ -25,7 +25,12 @@ func TestBackground_Launch(t *testing.T) {
 	parentBase := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"do work","background":true}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"do work","background":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "background launched"},
@@ -63,7 +68,10 @@ func TestBackground_Launch(t *testing.T) {
 	}
 
 	if !strings.Contains(capturedToolResult, `"status":"launched"`) {
-		t.Errorf("expected status:launched in tool result, got: %s", capturedToolResult)
+		t.Errorf(
+			"expected status:launched in tool result, got: %s",
+			capturedToolResult,
+		)
 	}
 	if !strings.Contains(capturedToolResult, `"task_id"`) {
 		t.Errorf("expected task_id in tool result, got: %s", capturedToolResult)
@@ -79,12 +87,22 @@ func TestBackground_GetResultWait(t *testing.T) {
 	parentBase := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "researcher", Input: `{"task":"research topic","background":true}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "researcher",
+					Input: `{"task":"research topic","background":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "get_task_result", Input: `{"task_id":"task-1","wait":true}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "get_task_result",
+					Input: `{"task_id":"task-1","wait":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "final answer"},
@@ -127,7 +145,10 @@ func TestBackground_GetResultWait(t *testing.T) {
 	defer mu.Unlock()
 
 	if len(allToolResults) < 2 {
-		t.Fatalf("expected at least 2 tool results, got %d", len(allToolResults))
+		t.Fatalf(
+			"expected at least 2 tool results, got %d",
+			len(allToolResults),
+		)
 	}
 
 	var foundResult bool
@@ -137,7 +158,10 @@ func TestBackground_GetResultWait(t *testing.T) {
 		}
 	}
 	if !foundResult {
-		t.Errorf("expected child result 'research findings' in get_task_result output, got: %v", allToolResults)
+		t.Errorf(
+			"expected child result 'research findings' in get_task_result output, got: %v",
+			allToolResults,
+		)
 	}
 }
 
@@ -151,13 +175,23 @@ func TestBackground_GetResultNoWait(t *testing.T) {
 	parentBase := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"slow work","background":true}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"slow work","background":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		// Poll without wait — might get "running" or "completed" depending on timing
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "get_task_result", Input: `{"task_id":"task-1","wait":false}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "get_task_result",
+					Input: `{"task_id":"task-1","wait":false}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "done polling"},
@@ -211,7 +245,10 @@ func TestBackground_GetResultNoWait(t *testing.T) {
 
 func TestBackground_StopTask(t *testing.T) {
 	// Child that blocks until context is cancelled
-	blockingLLM := &blockingMockLLM{delay: 5 * time.Second, fallback: newMockLLM(mockResponse{Content: "should not complete"})}
+	blockingLLM := &blockingMockLLM{
+		delay:    5 * time.Second,
+		fallback: newMockLLM(mockResponse{Content: "should not complete"}),
+	}
 	child := agent.New(blockingLLM)
 
 	var toolResults []string
@@ -219,17 +256,32 @@ func TestBackground_StopTask(t *testing.T) {
 	parentBase := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"slow","background":true}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"slow","background":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "stop_task", Input: `{"task_id":"task-1"}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "stop_task",
+					Input: `{"task_id":"task-1"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-3", Name: "get_task_result", Input: `{"task_id":"task-1","wait":true}`, Type: "function"},
+				{
+					ID:    "tc-3",
+					Name:  "get_task_result",
+					Input: `{"task_id":"task-1","wait":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "task stopped"},
@@ -296,15 +348,35 @@ func TestBackground_MultipleTasks(t *testing.T) {
 		// Launch both in one turn
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "agent_a", Input: `{"task":"task A","background":true}`, Type: "function"},
-				{ID: "tc-2", Name: "agent_b", Input: `{"task":"task B","background":true}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "agent_a",
+					Input: `{"task":"task A","background":true}`,
+					Type:  "function",
+				},
+				{
+					ID:    "tc-2",
+					Name:  "agent_b",
+					Input: `{"task":"task B","background":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		// Collect both results
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-3", Name: "get_task_result", Input: `{"task_id":"task-1","wait":true}`, Type: "function"},
-				{ID: "tc-4", Name: "get_task_result", Input: `{"task_id":"task-2","wait":true}`, Type: "function"},
+				{
+					ID:    "tc-3",
+					Name:  "get_task_result",
+					Input: `{"task_id":"task-1","wait":true}`,
+					Type:  "function",
+				},
+				{
+					ID:    "tc-4",
+					Name:  "get_task_result",
+					Input: `{"task_id":"task-2","wait":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "both results collected"},
@@ -328,8 +400,16 @@ func TestBackground_MultipleTasks(t *testing.T) {
 
 	parent := agent.New(parentLLM,
 		agent.WithSubAgents(
-			agent.SubAgentConfig{Name: "agent_a", Description: "Agent A", Agent: childA},
-			agent.SubAgentConfig{Name: "agent_b", Description: "Agent B", Agent: childB},
+			agent.SubAgentConfig{
+				Name:        "agent_a",
+				Description: "Agent A",
+				Agent:       childA,
+			},
+			agent.SubAgentConfig{
+				Name:        "agent_b",
+				Description: "Agent B",
+				Agent:       childB,
+			},
 		),
 	)
 
@@ -369,7 +449,12 @@ func TestBackground_SyncUnchanged(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"do work"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"do work"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "sync done"},
@@ -393,7 +478,10 @@ func TestBackground_SyncUnchanged(t *testing.T) {
 	}
 
 	if childLLM.CallCount() != 1 {
-		t.Errorf("expected child to be called once, got %d", childLLM.CallCount())
+		t.Errorf(
+			"expected child to be called once, got %d",
+			childLLM.CallCount(),
+		)
 	}
 }
 
@@ -405,7 +493,12 @@ func TestBackground_TaskNotFound(t *testing.T) {
 	parentBase := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "get_task_result", Input: `{"task_id":"nonexistent","wait":false}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "get_task_result",
+					Input: `{"task_id":"nonexistent","wait":false}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "handled not found"},
@@ -443,7 +536,10 @@ func TestBackground_TaskNotFound(t *testing.T) {
 	}
 
 	if !strings.Contains(capturedToolResult, "not found") {
-		t.Errorf("expected 'not found' error in tool result, got: %s", capturedToolResult)
+		t.Errorf(
+			"expected 'not found' error in tool result, got: %s",
+			capturedToolResult,
+		)
 	}
 }
 
@@ -465,7 +561,12 @@ func TestBackground_CleanupOnChatReturn(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"long work","background":true}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"long work","background":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		// Parent finishes without collecting the result
@@ -504,12 +605,22 @@ func TestBackground_Stream(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"stream work","background":true}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"stream work","background":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "get_task_result", Input: `{"task_id":"task-1","wait":true}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "get_task_result",
+					Input: `{"task_id":"task-1","wait":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "stream final"},
@@ -530,7 +641,10 @@ func TestBackground_Stream(t *testing.T) {
 			finalContent = event.Response.Content
 		}
 		if event.ToolResult != nil {
-			toolResultContents = append(toolResultContents, event.ToolResult.Output)
+			toolResultContents = append(
+				toolResultContents,
+				event.ToolResult.Output,
+			)
 		}
 	}
 
@@ -607,7 +721,10 @@ func TestBackground_TaskToolsAutoRegistered(t *testing.T) {
 
 func TestBackground_GetResultTimeout(t *testing.T) {
 	// Child that blocks for a long time
-	blockingLLM := &blockingMockLLM{delay: 5 * time.Second, fallback: newMockLLM(mockResponse{Content: "slow result"})}
+	blockingLLM := &blockingMockLLM{
+		delay:    5 * time.Second,
+		fallback: newMockLLM(mockResponse{Content: "slow result"}),
+	}
 	child := agent.New(blockingLLM)
 
 	var toolResults []string
@@ -616,13 +733,23 @@ func TestBackground_GetResultTimeout(t *testing.T) {
 		// Launch background task
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"slow work","background":true}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"slow work","background":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		// Wait with a short timeout — should return "running" since task won't finish in 100ms
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "get_task_result", Input: `{"task_id":"task-1","wait":true,"timeout":100}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "get_task_result",
+					Input: `{"task_id":"task-1","wait":true,"timeout":100}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "timed out polling"},
@@ -682,7 +809,10 @@ func TestBackground_GetResultTimeout(t *testing.T) {
 		}
 	}
 	if !foundRunning {
-		t.Errorf("expected status:running after timeout in at least one tool result, got: %v", toolResults)
+		t.Errorf(
+			"expected status:running after timeout in at least one tool result, got: %v",
+			toolResults,
+		)
 	}
 }
 
@@ -696,7 +826,12 @@ func TestBackground_ListTasks(t *testing.T) {
 		// Launch a background task
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"some work","background":true}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"some work","background":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		// List all tasks
@@ -753,13 +888,20 @@ func TestBackground_ListTasks(t *testing.T) {
 		t.Errorf("expected agent_name in list result, got: %s", listResult)
 	}
 	if !strings.Contains(listResult, `"worker"`) {
-		t.Errorf("expected agent name 'worker' in list result, got: %s", listResult)
+		t.Errorf(
+			"expected agent name 'worker' in list result, got: %s",
+			listResult,
+		)
 	}
 
 	// Verify it's a valid JSON array
 	var tasks []json.RawMessage
 	if err := json.Unmarshal([]byte(listResult), &tasks); err != nil {
-		t.Errorf("expected valid JSON array from list_tasks, got error: %v, content: %s", err, listResult)
+		t.Errorf(
+			"expected valid JSON array from list_tasks, got error: %v, content: %s",
+			err,
+			listResult,
+		)
 	}
 	if len(tasks) != 1 {
 		t.Errorf("expected 1 task in list, got %d", len(tasks))
@@ -767,7 +909,10 @@ func TestBackground_ListTasks(t *testing.T) {
 }
 
 func TestBackground_StopTaskJSON(t *testing.T) {
-	blockingLLM := &blockingMockLLM{delay: 5 * time.Second, fallback: newMockLLM(mockResponse{Content: "blocked"})}
+	blockingLLM := &blockingMockLLM{
+		delay:    5 * time.Second,
+		fallback: newMockLLM(mockResponse{Content: "blocked"}),
+	}
 	child := agent.New(blockingLLM)
 
 	var stopResult string
@@ -775,12 +920,22 @@ func TestBackground_StopTaskJSON(t *testing.T) {
 	parentBase := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"slow","background":true}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"slow","background":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "stop_task", Input: `{"task_id":"task-1"}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "stop_task",
+					Input: `{"task_id":"task-1"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "stopped"},
@@ -821,7 +976,11 @@ func TestBackground_StopTaskJSON(t *testing.T) {
 	// Verify stop_task returns structured JSON
 	var result map[string]string
 	if err := json.Unmarshal([]byte(stopResult), &result); err != nil {
-		t.Fatalf("expected valid JSON from stop_task, got error: %v, content: %s", err, stopResult)
+		t.Fatalf(
+			"expected valid JSON from stop_task, got error: %v, content: %s",
+			err,
+			stopResult,
+		)
 	}
 	if result["task_id"] != "task-1" {
 		t.Errorf("expected task_id 'task-1', got %q", result["task_id"])
@@ -874,7 +1033,10 @@ func TestBackground_TaskToolsAutoRegisteredWithListTasks(t *testing.T) {
 	}
 
 	if !hasListTasks {
-		t.Errorf("expected list_tasks tool to be auto-registered, got tools: %v", receivedToolNames)
+		t.Errorf(
+			"expected list_tasks tool to be auto-registered, got tools: %v",
+			receivedToolNames,
+		)
 	}
 }
 
@@ -882,11 +1044,56 @@ func TestSubAgent_MaxTurns(t *testing.T) {
 	// Child LLM that keeps requesting tool calls forever (5 responses with tools, then text).
 	// Without max_turns, it would loop all 5. With max_turns=2, it stops after 2 tool iterations.
 	childLLM := newMockLLM(
-		mockResponse{ToolCalls: []message.ToolCall{{ID: "c1", Name: "echo", Input: `{"text":"1"}`, Type: "function"}}},
-		mockResponse{ToolCalls: []message.ToolCall{{ID: "c2", Name: "echo", Input: `{"text":"2"}`, Type: "function"}}},
-		mockResponse{ToolCalls: []message.ToolCall{{ID: "c3", Name: "echo", Input: `{"text":"3"}`, Type: "function"}}},
-		mockResponse{ToolCalls: []message.ToolCall{{ID: "c4", Name: "echo", Input: `{"text":"4"}`, Type: "function"}}},
-		mockResponse{ToolCalls: []message.ToolCall{{ID: "c5", Name: "echo", Input: `{"text":"5"}`, Type: "function"}}},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "c1",
+					Name:  "echo",
+					Input: `{"text":"1"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "c2",
+					Name:  "echo",
+					Input: `{"text":"2"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "c3",
+					Name:  "echo",
+					Input: `{"text":"3"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "c4",
+					Name:  "echo",
+					Input: `{"text":"4"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "c5",
+					Name:  "echo",
+					Input: `{"text":"5"}`,
+					Type:  "function",
+				},
+			},
+		},
 		mockResponse{Content: "child done"},
 	)
 	child := agent.New(childLLM, agent.WithTools(&echoTool{}))
@@ -895,7 +1102,12 @@ func TestSubAgent_MaxTurns(t *testing.T) {
 		// Parent calls sub-agent with max_turns: 2
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"loop test","max_turns":2}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"loop test","max_turns":2}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "parent done"},
@@ -923,15 +1135,36 @@ func TestSubAgent_MaxTurns(t *testing.T) {
 	// call 1 → tool call → execute (iteration 1→2)
 	// call 2 → tool call → iteration(2) >= maxIter(2) → EXIT
 	if childLLM.CallCount() != 3 {
-		t.Errorf("expected child to make 3 LLM calls with max_turns=2, got %d", childLLM.CallCount())
+		t.Errorf(
+			"expected child to make 3 LLM calls with max_turns=2, got %d",
+			childLLM.CallCount(),
+		)
 	}
 }
 
 func TestSubAgent_MaxTurnsDefault(t *testing.T) {
 	// Without max_turns, child runs to completion (all tool calls + final text)
 	childLLM := newMockLLM(
-		mockResponse{ToolCalls: []message.ToolCall{{ID: "c1", Name: "echo", Input: `{"text":"1"}`, Type: "function"}}},
-		mockResponse{ToolCalls: []message.ToolCall{{ID: "c2", Name: "echo", Input: `{"text":"2"}`, Type: "function"}}},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "c1",
+					Name:  "echo",
+					Input: `{"text":"1"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "c2",
+					Name:  "echo",
+					Input: `{"text":"2"}`,
+					Type:  "function",
+				},
+			},
+		},
 		mockResponse{Content: "child finished naturally"},
 	)
 	child := agent.New(childLLM, agent.WithTools(&echoTool{}))
@@ -939,7 +1172,12 @@ func TestSubAgent_MaxTurnsDefault(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"no limit"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"no limit"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "parent done"},
@@ -964,17 +1202,56 @@ func TestSubAgent_MaxTurnsDefault(t *testing.T) {
 
 	// Without max_turns, child completes naturally: 2 tool iterations + 1 final = 3 calls
 	if childLLM.CallCount() != 3 {
-		t.Errorf("expected child to make 3 LLM calls (natural completion), got %d", childLLM.CallCount())
+		t.Errorf(
+			"expected child to make 3 LLM calls (natural completion), got %d",
+			childLLM.CallCount(),
+		)
 	}
 }
 
 func TestBackground_MaxTurns(t *testing.T) {
 	// Same as TestSubAgent_MaxTurns but via background execution
 	childLLM := newMockLLM(
-		mockResponse{ToolCalls: []message.ToolCall{{ID: "c1", Name: "echo", Input: `{"text":"1"}`, Type: "function"}}},
-		mockResponse{ToolCalls: []message.ToolCall{{ID: "c2", Name: "echo", Input: `{"text":"2"}`, Type: "function"}}},
-		mockResponse{ToolCalls: []message.ToolCall{{ID: "c3", Name: "echo", Input: `{"text":"3"}`, Type: "function"}}},
-		mockResponse{ToolCalls: []message.ToolCall{{ID: "c4", Name: "echo", Input: `{"text":"4"}`, Type: "function"}}},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "c1",
+					Name:  "echo",
+					Input: `{"text":"1"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "c2",
+					Name:  "echo",
+					Input: `{"text":"2"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "c3",
+					Name:  "echo",
+					Input: `{"text":"3"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "c4",
+					Name:  "echo",
+					Input: `{"text":"4"}`,
+					Type:  "function",
+				},
+			},
+		},
 		mockResponse{Content: "child done"},
 	)
 	child := agent.New(childLLM, agent.WithTools(&echoTool{}))
@@ -982,12 +1259,22 @@ func TestBackground_MaxTurns(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"bg loop","max_turns":1,"background":true}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"bg loop","max_turns":1,"background":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "get_task_result", Input: `{"task_id":"task-1","wait":true}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "get_task_result",
+					Input: `{"task_id":"task-1","wait":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "parent done"},
@@ -1014,29 +1301,66 @@ func TestBackground_MaxTurns(t *testing.T) {
 	// call 0 → tool call → execute (iteration 0→1)
 	// call 1 → tool call → iteration(1) >= maxIter(1) → EXIT
 	if childLLM.CallCount() != 2 {
-		t.Errorf("expected child to make 2 LLM calls with max_turns=1, got %d", childLLM.CallCount())
+		t.Errorf(
+			"expected child to make 2 LLM calls with max_turns=1, got %d",
+			childLLM.CallCount(),
+		)
 	}
 }
 
 func TestChatOption_DirectCall(t *testing.T) {
 	// Test WithMaxTurns directly on Chat() without sub-agents
 	llmClient := newMockLLM(
-		mockResponse{ToolCalls: []message.ToolCall{{ID: "c1", Name: "echo", Input: `{"text":"1"}`, Type: "function"}}},
-		mockResponse{ToolCalls: []message.ToolCall{{ID: "c2", Name: "echo", Input: `{"text":"2"}`, Type: "function"}}},
-		mockResponse{ToolCalls: []message.ToolCall{{ID: "c3", Name: "echo", Input: `{"text":"3"}`, Type: "function"}}},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "c1",
+					Name:  "echo",
+					Input: `{"text":"1"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "c2",
+					Name:  "echo",
+					Input: `{"text":"2"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "c3",
+					Name:  "echo",
+					Input: `{"text":"3"}`,
+					Type:  "function",
+				},
+			},
+		},
 		mockResponse{Content: "final"},
 	)
 
 	a := agent.New(llmClient, agent.WithTools(&echoTool{}))
 
-	resp, err := a.Chat(context.Background(), "test direct", agent.WithMaxTurns(1))
+	resp, err := a.Chat(
+		context.Background(),
+		"test direct",
+		agent.WithMaxTurns(1),
+	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
 	// With max_turns=1: call 0 → tool → execute (iteration 0→1), call 1 → tool → EXIT
 	if llmClient.CallCount() != 2 {
-		t.Errorf("expected 2 LLM calls with WithMaxTurns(1), got %d", llmClient.CallCount())
+		t.Errorf(
+			"expected 2 LLM calls with WithMaxTurns(1), got %d",
+			llmClient.CallCount(),
+		)
 	}
 
 	// Without max_turns, it would do all 3 tool calls + final = 4 calls
@@ -1051,7 +1375,11 @@ type blockingMockLLM struct {
 	onCancel func()
 }
 
-func (m *blockingMockLLM) SendMessages(ctx context.Context, msgs []message.Message, tools []tool.BaseTool) (*llm.LLMResponse, error) {
+func (m *blockingMockLLM) SendMessages(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+) (*llm.LLMResponse, error) {
 	select {
 	case <-time.After(m.delay):
 		return m.fallback.SendMessages(ctx, msgs, tools)
@@ -1063,15 +1391,29 @@ func (m *blockingMockLLM) SendMessages(ctx context.Context, msgs []message.Messa
 	}
 }
 
-func (m *blockingMockLLM) SendMessagesWithStructuredOutput(ctx context.Context, msgs []message.Message, tools []tool.BaseTool, info *schema.StructuredOutputInfo) (*llm.LLMResponse, error) {
+func (m *blockingMockLLM) SendMessagesWithStructuredOutput(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+	info *schema.StructuredOutputInfo,
+) (*llm.LLMResponse, error) {
 	return m.fallback.SendMessagesWithStructuredOutput(ctx, msgs, tools, info)
 }
 
-func (m *blockingMockLLM) StreamResponse(ctx context.Context, msgs []message.Message, tools []tool.BaseTool) <-chan llm.LLMEvent {
+func (m *blockingMockLLM) StreamResponse(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+) <-chan llm.LLMEvent {
 	return m.fallback.StreamResponse(ctx, msgs, tools)
 }
 
-func (m *blockingMockLLM) StreamResponseWithStructuredOutput(ctx context.Context, msgs []message.Message, tools []tool.BaseTool, info *schema.StructuredOutputInfo) <-chan llm.LLMEvent {
+func (m *blockingMockLLM) StreamResponseWithStructuredOutput(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+	info *schema.StructuredOutputInfo,
+) <-chan llm.LLMEvent {
 	return m.fallback.StreamResponseWithStructuredOutput(ctx, msgs, tools, info)
 }
 
@@ -1090,7 +1432,11 @@ type toolCapturingLLM struct {
 	onTools func(toolNames []string)
 }
 
-func (m *toolCapturingLLM) SendMessages(ctx context.Context, msgs []message.Message, tools []tool.BaseTool) (*llm.LLMResponse, error) {
+func (m *toolCapturingLLM) SendMessages(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+) (*llm.LLMResponse, error) {
 	if m.onTools != nil {
 		var names []string
 		for _, t := range tools {
@@ -1101,15 +1447,29 @@ func (m *toolCapturingLLM) SendMessages(ctx context.Context, msgs []message.Mess
 	return m.base.SendMessages(ctx, msgs, tools)
 }
 
-func (m *toolCapturingLLM) SendMessagesWithStructuredOutput(ctx context.Context, msgs []message.Message, tools []tool.BaseTool, info *schema.StructuredOutputInfo) (*llm.LLMResponse, error) {
+func (m *toolCapturingLLM) SendMessagesWithStructuredOutput(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+	info *schema.StructuredOutputInfo,
+) (*llm.LLMResponse, error) {
 	return m.base.SendMessagesWithStructuredOutput(ctx, msgs, tools, info)
 }
 
-func (m *toolCapturingLLM) StreamResponse(ctx context.Context, msgs []message.Message, tools []tool.BaseTool) <-chan llm.LLMEvent {
+func (m *toolCapturingLLM) StreamResponse(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+) <-chan llm.LLMEvent {
 	return m.base.StreamResponse(ctx, msgs, tools)
 }
 
-func (m *toolCapturingLLM) StreamResponseWithStructuredOutput(ctx context.Context, msgs []message.Message, tools []tool.BaseTool, info *schema.StructuredOutputInfo) <-chan llm.LLMEvent {
+func (m *toolCapturingLLM) StreamResponseWithStructuredOutput(
+	ctx context.Context,
+	msgs []message.Message,
+	tools []tool.BaseTool,
+	info *schema.StructuredOutputInfo,
+) <-chan llm.LLMEvent {
 	return m.base.StreamResponseWithStructuredOutput(ctx, msgs, tools, info)
 }
 

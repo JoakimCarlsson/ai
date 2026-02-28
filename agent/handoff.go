@@ -29,11 +29,18 @@ func newHandoffTool(config HandoffConfig) *handoffTool {
 
 func (t *handoffTool) Info() tool.ToolInfo {
 	toolName := "transfer_to_" + t.config.Name
-	description := fmt.Sprintf("Transfer control to %s. %s", t.config.Name, t.config.Description)
+	description := fmt.Sprintf(
+		"Transfer control to %s. %s",
+		t.config.Name,
+		t.config.Description,
+	)
 	return tool.NewToolInfo(toolName, description, handoffInput{})
 }
 
-func (t *handoffTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+func (t *handoffTool) Run(
+	ctx context.Context,
+	params tool.ToolCall,
+) (tool.ToolResponse, error) {
 	var input handoffInput
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
 		input.Reason = ""
@@ -47,7 +54,10 @@ func (t *handoffTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolR
 	return tool.NewTextResponse(msg), nil
 }
 
-func detectHandoff(toolCalls []message.ToolCall, handoffs []HandoffConfig) *HandoffConfig {
+func detectHandoff(
+	toolCalls []message.ToolCall,
+	handoffs []HandoffConfig,
+) *HandoffConfig {
 	for _, tc := range toolCalls {
 		if h := isHandoffTool(tc.Name, handoffs); h != nil {
 			return h
@@ -65,7 +75,11 @@ func isHandoffTool(name string, handoffs []HandoffConfig) *HandoffConfig {
 	return nil
 }
 
-func rebuildMessagesForHandoff(ctx context.Context, newAgent *Agent, messages []message.Message) ([]message.Message, error) {
+func rebuildMessagesForHandoff(
+	ctx context.Context,
+	newAgent *Agent,
+	messages []message.Message,
+) ([]message.Message, error) {
 	systemPrompt, err := newAgent.resolveSystemPrompt(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve system prompt: %w", err)

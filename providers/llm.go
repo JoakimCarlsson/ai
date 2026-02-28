@@ -129,7 +129,10 @@ type CustomProviderConfig struct {
 //	})
 //
 //	client, _ := llm.NewLLM(custom, llm.WithAPIKey("bearer-token"))
-func RegisterCustomProvider(name string, config CustomProviderConfig) model.ModelProvider {
+func RegisterCustomProvider(
+	name string,
+	config CustomProviderConfig,
+) model.ModelProvider {
 	customProvidersMu.Lock()
 	defer customProvidersMu.Unlock()
 
@@ -139,7 +142,9 @@ func RegisterCustomProvider(name string, config CustomProviderConfig) model.Mode
 }
 
 // getCustomProvider safely retrieves a custom provider configuration.
-func getCustomProvider(provider model.ModelProvider) (CustomProviderConfig, bool) {
+func getCustomProvider(
+	provider model.ModelProvider,
+) (CustomProviderConfig, bool) {
 	customProvidersMu.RLock()
 	defer customProvidersMu.RUnlock()
 

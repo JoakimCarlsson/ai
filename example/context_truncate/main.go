@@ -33,10 +33,17 @@ func main() {
 
 	sessionStore := session.MemoryStore()
 
-	chatAgent := agent.New(llmClient,
+	chatAgent := agent.New(
+		llmClient,
 		agent.WithSystemPrompt(systemPrompt),
 		agent.WithSession("demo", sessionStore),
-		agent.WithContextStrategy(truncate.Strategy(truncate.PreservePairs(), truncate.MinMessages(2)), 300),
+		agent.WithContextStrategy(
+			truncate.Strategy(
+				truncate.PreservePairs(),
+				truncate.MinMessages(2),
+			),
+			300,
+		),
 	)
 
 	counter, _ := tokens.NewCounter()
@@ -62,10 +69,16 @@ func main() {
 		sess, _ := sessionStore.Load(ctx, "demo")
 		sessionMsgs, _ := sess.GetMessages(ctx, nil)
 
-		llmCount, _ := counter.CountTokens(ctx, tokens.CountOptions{Messages: llmMsgs, SystemPrompt: systemPrompt})
+		llmCount, _ := counter.CountTokens(
+			ctx,
+			tokens.CountOptions{Messages: llmMsgs, SystemPrompt: systemPrompt},
+		)
 		sessionCount, _ := counter.CountTokens(
 			ctx,
-			tokens.CountOptions{Messages: sessionMsgs, SystemPrompt: systemPrompt},
+			tokens.CountOptions{
+				Messages:     sessionMsgs,
+				SystemPrompt: systemPrompt,
+			},
 		)
 		fmt.Printf(
 			"[LLM received: %d msgs, %d tokens] [Session stored: %d msgs, %d tokens]\n",
@@ -77,7 +90,11 @@ func main() {
 	}
 }
 
-func streamAndCollect(ctx context.Context, a *agent.Agent, input string) string {
+func streamAndCollect(
+	ctx context.Context,
+	a *agent.Agent,
+	input string,
+) string {
 	var sb strings.Builder
 	for event := range a.ChatStream(ctx, input) {
 		switch event.Type {

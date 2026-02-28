@@ -95,7 +95,9 @@ type ImageStreamEvent struct {
 type StreamCallback func(ImageStreamEvent) error
 
 // ErrStreamingNotSupported is returned when streaming is requested but the model doesn't support it.
-var ErrStreamingNotSupported = errors.New("streaming not supported by this model")
+var ErrStreamingNotSupported = errors.New(
+	"streaming not supported by this model",
+)
 
 // ImageGeneration defines the interface for generating images from text prompts.
 type ImageGeneration interface {
@@ -210,7 +212,11 @@ func (i *baseImageGeneration[C]) GenerateImageStreaming(
 ) error {
 	// Check if the client supports streaming
 	if streamingClient, ok := any(i.client).(StreamingImageGenerationClient); ok {
-		return streamingClient.generateStreaming(ctx, prompt, callback, options...)
+		return streamingClient.generateStreaming(
+			ctx,
+			prompt,
+			callback,
+			options...)
 	}
 	return ErrStreamingNotSupported
 }

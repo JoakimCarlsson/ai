@@ -11,12 +11,20 @@ import (
 
 func TestHandoff_Basic(t *testing.T) {
 	billingLLM := newMockLLM(mockResponse{Content: "Your bill is $42."})
-	billing := agent.New(billingLLM, agent.WithSystemPrompt("You handle billing."))
+	billing := agent.New(
+		billingLLM,
+		agent.WithSystemPrompt("You handle billing."),
+	)
 
 	triageLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "transfer_to_billing", Input: `{"reason":"billing question"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "transfer_to_billing",
+					Input: `{"reason":"billing question"}`,
+					Type:  "function",
+				},
 			},
 		},
 	)
@@ -44,7 +52,10 @@ func TestHandoff_Basic(t *testing.T) {
 	}
 
 	if billingLLM.CallCount() != 1 {
-		t.Errorf("expected billing LLM to be called once, got %d", billingLLM.CallCount())
+		t.Errorf(
+			"expected billing LLM to be called once, got %d",
+			billingLLM.CallCount(),
+		)
 	}
 }
 
@@ -55,7 +66,12 @@ func TestHandoff_NoMatch(t *testing.T) {
 	triageLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "some_other_tool", Input: `{}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "some_other_tool",
+					Input: `{}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "handled internally"},
@@ -96,7 +112,12 @@ func TestHandoff_Chain(t *testing.T) {
 	middleLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "transfer_to_final", Input: `{}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "transfer_to_final",
+					Input: `{}`,
+					Type:  "function",
+				},
 			},
 		},
 	)
@@ -112,7 +133,12 @@ func TestHandoff_Chain(t *testing.T) {
 	firstLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "transfer_to_middle", Input: `{}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "transfer_to_middle",
+					Input: `{}`,
+					Type:  "function",
+				},
 			},
 		},
 	)
@@ -142,7 +168,12 @@ func TestHandoff_ReasonOptional(t *testing.T) {
 	sourceLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "transfer_to_target", Input: `{}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "transfer_to_target",
+					Input: `{}`,
+					Type:  "function",
+				},
 			},
 		},
 	)
@@ -165,13 +196,20 @@ func TestHandoff_ReasonOptional(t *testing.T) {
 }
 
 func TestHandoff_Stream(t *testing.T) {
-	billingLLM := newMockLLM(mockResponse{Content: "billing response via stream"})
+	billingLLM := newMockLLM(
+		mockResponse{Content: "billing response via stream"},
+	)
 	billing := agent.New(billingLLM, agent.WithSystemPrompt("Billing"))
 
 	triageLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "transfer_to_billing", Input: `{}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "transfer_to_billing",
+					Input: `{}`,
+					Type:  "function",
+				},
 			},
 		},
 	)
@@ -217,7 +255,12 @@ func TestHandoff_AgentNameInStreamResponse(t *testing.T) {
 	sourceLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "transfer_to_target", Input: `{}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "transfer_to_target",
+					Input: `{}`,
+					Type:  "function",
+				},
 			},
 		},
 	)

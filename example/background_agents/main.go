@@ -25,15 +25,21 @@ func main() {
 		log.Fatal(err)
 	}
 
-	researcher := agent.New(llmClient,
-		agent.WithSystemPrompt("You are a concise research assistant. When given a topic, provide a brief 2-3 sentence summary of the key facts."),
+	researcher := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You are a concise research assistant. When given a topic, provide a brief 2-3 sentence summary of the key facts.",
+		),
 	)
 
-	orchestrator := agent.New(llmClient,
-		agent.WithSystemPrompt(`You are a research coordinator. When asked to compare topics:
+	orchestrator := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			`You are a research coordinator. When asked to compare topics:
 1. Launch background research tasks for each topic using background: true
 2. Then collect all results using get_task_result with wait: true
-3. Finally, synthesize the results into a comparison`),
+3. Finally, synthesize the results into a comparison`,
+		),
 		agent.WithSubAgents(
 			agent.SubAgentConfig{
 				Name:        "researcher",
@@ -53,7 +59,11 @@ func main() {
 			log.Fatal(event.Error)
 		}
 		if event.ToolResult != nil {
-			fmt.Printf("\n[Tool: %s → %s]\n", event.ToolResult.ToolName, truncate(event.ToolResult.Output, 120))
+			fmt.Printf(
+				"\n[Tool: %s → %s]\n",
+				event.ToolResult.ToolName,
+				truncate(event.ToolResult.Output, 120),
+			)
 		}
 	}
 	fmt.Println()

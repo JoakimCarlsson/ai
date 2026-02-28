@@ -80,7 +80,11 @@ func (t *Template) Process(data map[string]any) (string, error) {
 }
 
 // Process is a convenience function for one-shot template processing.
-func Process(source string, data map[string]any, opts ...Option) (string, error) {
+func Process(
+	source string,
+	data map[string]any,
+	opts ...Option,
+) (string, error) {
 	tmpl, err := New(source, opts...)
 	if err != nil {
 		return "", err

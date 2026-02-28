@@ -20,9 +20,12 @@ func main() {
 
 	connString := "postgres://postgres:password@localhost:5432/example?sslmode=disable"
 
-	embedder, err := embeddings.NewEmbedding(model.ProviderOpenAI,
+	embedder, err := embeddings.NewEmbedding(
+		model.ProviderOpenAI,
 		embeddings.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-		embeddings.WithModel(model.OpenAIEmbeddingModels[model.TextEmbedding3Small]),
+		embeddings.WithModel(
+			model.OpenAIEmbeddingModels[model.TextEmbedding3Small],
+		),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -48,8 +51,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	agent1 := agent.New(llmClient,
-		agent.WithSystemPrompt(`You are a personal assistant with memory capabilities.`),
+	agent1 := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			`You are a personal assistant with memory capabilities.`,
+		),
 		agent.WithMemory("alice", memoryStore,
 			memory.AutoExtract(),
 			memory.AutoDedup(),
@@ -57,14 +63,20 @@ func main() {
 		agent.WithSession("conv-1", sessionStore),
 	)
 
-	response, err := agent1.Chat(ctx, "Hi! My name is Alice and I love Italian food.")
+	response, err := agent1.Chat(
+		ctx,
+		"Hi! My name is Alice and I love Italian food.",
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(response.Content)
 
-	agent2 := agent.New(llmClient,
-		agent.WithSystemPrompt(`You are a personal assistant with memory capabilities.`),
+	agent2 := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			`You are a personal assistant with memory capabilities.`,
+		),
 		agent.WithMemory("alice", memoryStore,
 			memory.AutoExtract(),
 			memory.AutoDedup(),

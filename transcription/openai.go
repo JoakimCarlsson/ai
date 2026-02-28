@@ -80,7 +80,10 @@ func (o *openaiClient) transcribe(
 
 	params := openai.AudioTranscriptionNewParams{
 		Model: openai.AudioModel(o.providerOptions.model.APIModel),
-		File:  &namedReader{reader: bytes.NewReader(audioFile), name: opts.Filename},
+		File: &namedReader{
+			reader: bytes.NewReader(audioFile),
+			name:   opts.Filename,
+		},
 	}
 
 	if opts.Language != "" {
@@ -127,7 +130,10 @@ func (o *openaiClient) translate(
 
 	params := openai.AudioTranslationNewParams{
 		Model: openai.AudioModel(o.providerOptions.model.APIModel),
-		File:  &namedReader{reader: bytes.NewReader(audioFile), name: opts.Filename},
+		File: &namedReader{
+			reader: bytes.NewReader(audioFile),
+			name:   opts.Filename,
+		},
 	}
 
 	if opts.Prompt != "" {
@@ -165,7 +171,9 @@ func (o *openaiClient) translate(
 	return o.convertTranslationResponse(response), nil
 }
 
-func (o *openaiClient) convertTranslationResponse(response *openai.Translation) *TranscriptionResponse {
+func (o *openaiClient) convertTranslationResponse(
+	response *openai.Translation,
+) *TranscriptionResponse {
 	return &TranscriptionResponse{
 		Text:  response.Text,
 		Model: o.providerOptions.model.APIModel,
@@ -194,7 +202,9 @@ type verboseTranscription struct {
 	} `json:"words"`
 }
 
-func (o *openaiClient) convertTranscriptionResponse(response *openai.Transcription) *TranscriptionResponse {
+func (o *openaiClient) convertTranscriptionResponse(
+	response *openai.Transcription,
+) *TranscriptionResponse {
 	result := &TranscriptionResponse{
 		Text:  response.Text,
 		Model: o.providerOptions.model.APIModel,

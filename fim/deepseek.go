@@ -101,7 +101,10 @@ type deepseekFIMStreamResponse struct {
 	Usage   *deepseekFIMUsage         `json:"usage,omitempty"`
 }
 
-func (d *deepseekClient) buildRequest(req FIMRequest, stream bool) deepseekFIMRequest {
+func (d *deepseekClient) buildRequest(
+	req FIMRequest,
+	stream bool,
+) deepseekFIMRequest {
 	fimReq := deepseekFIMRequest{
 		Model:  d.providerOptions.model.APIModel,
 		Prompt: req.Prompt,
@@ -168,7 +171,12 @@ func (d *deepseekClient) complete(
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, deepseekFIMBaseURL, bytes.NewReader(body))
+	httpReq, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		deepseekFIMBaseURL,
+		bytes.NewReader(body),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -184,7 +192,11 @@ func (d *deepseekClient) complete(
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("deepseek fim api error (status %d): %s", resp.StatusCode, string(bodyBytes))
+		return nil, fmt.Errorf(
+			"deepseek fim api error (status %d): %s",
+			resp.StatusCode,
+			string(bodyBytes),
+		)
 	}
 
 	var fimResp deepseekFIMResponse
@@ -222,7 +234,12 @@ func (d *deepseekClient) stream(
 			return
 		}
 
-		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, deepseekFIMBaseURL, bytes.NewReader(body))
+		httpReq, err := http.NewRequestWithContext(
+			ctx,
+			http.MethodPost,
+			deepseekFIMBaseURL,
+			bytes.NewReader(body),
+		)
 		if err != nil {
 			eventChan <- FIMEvent{Type: EventError, Error: fmt.Errorf("failed to create request: %w", err)}
 			return

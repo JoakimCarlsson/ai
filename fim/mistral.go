@@ -104,7 +104,10 @@ type mistralFIMStreamResponse struct {
 	Usage   *mistralFIMUsage         `json:"usage,omitempty"`
 }
 
-func (m *mistralClient) buildRequest(req FIMRequest, stream bool) mistralFIMRequest {
+func (m *mistralClient) buildRequest(
+	req FIMRequest,
+	stream bool,
+) mistralFIMRequest {
 	fimReq := mistralFIMRequest{
 		Model:  m.providerOptions.model.APIModel,
 		Prompt: req.Prompt,
@@ -167,7 +170,12 @@ func (m *mistralClient) complete(
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, mistralFIMBaseURL, bytes.NewReader(body))
+	httpReq, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		mistralFIMBaseURL,
+		bytes.NewReader(body),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -183,7 +191,11 @@ func (m *mistralClient) complete(
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("mistral fim api error (status %d): %s", resp.StatusCode, string(bodyBytes))
+		return nil, fmt.Errorf(
+			"mistral fim api error (status %d): %s",
+			resp.StatusCode,
+			string(bodyBytes),
+		)
 	}
 
 	var fimResp mistralFIMResponse
@@ -221,7 +233,12 @@ func (m *mistralClient) stream(
 			return
 		}
 
-		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, mistralFIMBaseURL, bytes.NewReader(body))
+		httpReq, err := http.NewRequestWithContext(
+			ctx,
+			http.MethodPost,
+			mistralFIMBaseURL,
+			bytes.NewReader(body),
+		)
 		if err != nil {
 			eventChan <- FIMEvent{Type: EventError, Error: fmt.Errorf("failed to create request: %w", err)}
 			return

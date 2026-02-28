@@ -11,7 +11,7 @@ import (
 
 type getTaskResultInput struct {
 	TaskID  string `json:"task_id" desc:"The ID of the background task to check"`
-	Wait    bool   `json:"wait" desc:"If true, block until the task completes" required:"false"`
+	Wait    bool   `json:"wait"    desc:"If true, block until the task completes"            required:"false"`
 	Timeout int    `json:"timeout" desc:"Max wait time in milliseconds. 0 means no timeout." required:"false"`
 }
 
@@ -25,10 +25,15 @@ func (t *getTaskResultTool) Info() tool.ToolInfo {
 	)
 }
 
-func (t *getTaskResultTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+func (t *getTaskResultTool) Run(
+	ctx context.Context,
+	params tool.ToolCall,
+) (tool.ToolResponse, error) {
 	var input getTaskResultInput
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
-		return tool.NewTextErrorResponse("invalid parameters: " + err.Error()), nil
+		return tool.NewTextErrorResponse(
+			"invalid parameters: " + err.Error(),
+		), nil
 	}
 	if input.TaskID == "" {
 		return tool.NewTextErrorResponse("task_id is required"), nil
@@ -39,9 +44,16 @@ func (t *getTaskResultTool) Run(ctx context.Context, params tool.ToolCall) (tool
 		return tool.NewTextErrorResponse("no task manager available"), nil
 	}
 
-	bt, err := tm.GetResult(ctx, input.TaskID, input.Wait, time.Duration(input.Timeout)*time.Millisecond)
+	bt, err := tm.GetResult(
+		ctx,
+		input.TaskID,
+		input.Wait,
+		time.Duration(input.Timeout)*time.Millisecond,
+	)
 	if err != nil {
-		return tool.NewTextErrorResponse(fmt.Sprintf("failed to get task result: %s", err.Error())), nil
+		return tool.NewTextErrorResponse(
+			fmt.Sprintf("failed to get task result: %s", err.Error()),
+		), nil
 	}
 
 	type taskResultOutput struct {
@@ -75,10 +87,15 @@ func (t *stopTaskTool) Info() tool.ToolInfo {
 	)
 }
 
-func (t *stopTaskTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+func (t *stopTaskTool) Run(
+	ctx context.Context,
+	params tool.ToolCall,
+) (tool.ToolResponse, error) {
 	var input stopTaskInput
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
-		return tool.NewTextErrorResponse("invalid parameters: " + err.Error()), nil
+		return tool.NewTextErrorResponse(
+			"invalid parameters: " + err.Error(),
+		), nil
 	}
 	if input.TaskID == "" {
 		return tool.NewTextErrorResponse("task_id is required"), nil
@@ -90,7 +107,9 @@ func (t *stopTaskTool) Run(ctx context.Context, params tool.ToolCall) (tool.Tool
 	}
 
 	if err := tm.Stop(input.TaskID); err != nil {
-		return tool.NewTextErrorResponse(fmt.Sprintf("failed to stop task: %s", err.Error())), nil
+		return tool.NewTextErrorResponse(
+			fmt.Sprintf("failed to stop task: %s", err.Error()),
+		), nil
 	}
 
 	type stopTaskOutput struct {
@@ -118,7 +137,10 @@ func (t *listTasksTool) Info() tool.ToolInfo {
 	)
 }
 
-func (t *listTasksTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+func (t *listTasksTool) Run(
+	ctx context.Context,
+	params tool.ToolCall,
+) (tool.ToolResponse, error) {
 	tm := taskManagerFromContext(ctx)
 	if tm == nil {
 		return tool.NewTextErrorResponse("no task manager available"), nil

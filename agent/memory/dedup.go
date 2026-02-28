@@ -70,7 +70,11 @@ func Deduplicate(
 		existingStr += fmt.Sprintf("- [id:%s] %s\n", m.ID, m.Content)
 	}
 
-	userPrompt := fmt.Sprintf("Existing memories:\n%s\nNew fact to process: %s", existingStr, newFact)
+	userPrompt := fmt.Sprintf(
+		"Existing memories:\n%s\nNew fact to process: %s",
+		existingStr,
+		newFact,
+	)
 
 	messages := []message.Message{
 		message.NewSystemMessage(dedupSystemPrompt),

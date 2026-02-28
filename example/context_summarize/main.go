@@ -35,10 +35,14 @@ func main() {
 
 	sessionStore := session.FileStore("./sessions")
 
-	chatAgent := agent.New(llmClient,
+	chatAgent := agent.New(
+		llmClient,
 		agent.WithSystemPrompt(systemPrompt),
 		agent.WithSession("summarize-demo", sessionStore),
-		agent.WithContextStrategy(summarize.Strategy(llmClient, summarize.KeepRecent(2)), 300),
+		agent.WithContextStrategy(
+			summarize.Strategy(llmClient, summarize.KeepRecent(2)),
+			300,
+		),
 	)
 
 	counter, _ := tokens.NewCounter()
@@ -62,9 +66,18 @@ func main() {
 		sess, _ := sessionStore.Load(ctx, "summarize-demo")
 		sessionMsgs, _ := sess.GetMessages(ctx, nil)
 
-		allMsgs := append([]message.Message{message.NewSystemMessage(systemPrompt)}, sessionMsgs...)
-		count, _ := counter.CountTokens(ctx, tokens.CountOptions{Messages: allMsgs, SystemPrompt: systemPrompt})
-		fmt.Printf("[Session: %d messages, %d tokens, limit: 300]\n", len(sessionMsgs), count.TotalTokens)
+		allMsgs := append(
+			[]message.Message{message.NewSystemMessage(systemPrompt)},
+			sessionMsgs...)
+		count, _ := counter.CountTokens(
+			ctx,
+			tokens.CountOptions{Messages: allMsgs, SystemPrompt: systemPrompt},
+		)
+		fmt.Printf(
+			"[Session: %d messages, %d tokens, limit: 300]\n",
+			len(sessionMsgs),
+			count.TotalTokens,
+		)
 	}
 
 	fmt.Println("\n=== FINAL SESSION STATE ===")
@@ -84,7 +97,11 @@ func main() {
 	fmt.Println("\nSession saved to ./sessions/summarize-demo.json")
 }
 
-func streamAndCollect(ctx context.Context, a *agent.Agent, input string) string {
+func streamAndCollect(
+	ctx context.Context,
+	a *agent.Agent,
+	input string,
+) string {
 	var sb strings.Builder
 	for event := range a.ChatStream(ctx, input) {
 		switch event.Type {

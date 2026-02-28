@@ -40,9 +40,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	embedder, err := embeddings.NewEmbedding(model.ProviderOpenAI,
+	embedder, err := embeddings.NewEmbedding(
+		model.ProviderOpenAI,
 		embeddings.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-		embeddings.WithModel(model.OpenAIEmbeddingModels[model.TextEmbedding3Small]),
+		embeddings.WithModel(
+			model.OpenAIEmbeddingModels[model.TextEmbedding3Small],
+		),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -62,8 +65,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	myAgent := agent.New(llmClient,
-		agent.WithSystemPrompt("You are a helpful assistant with memory capabilities."),
+	myAgent := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You are a helpful assistant with memory capabilities.",
+		),
 		agent.WithMemory("user-alice", memoryStore,
 			memory.AutoExtract(),
 			memory.AutoDedup(),
@@ -71,7 +77,10 @@ func main() {
 		agent.WithSession("conv-custom-ids", sessionStore),
 	)
 
-	response, err := myAgent.Chat(ctx, "Hi! My name is Alice and I'm a software engineer who loves Go.")
+	response, err := myAgent.Chat(
+		ctx,
+		"Hi! My name is Alice and I'm a software engineer who loves Go.",
+	)
 	if err != nil {
 		log.Fatal(err)
 	}

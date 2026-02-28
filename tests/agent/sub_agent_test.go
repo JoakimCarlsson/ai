@@ -15,7 +15,12 @@ func TestSubAgentTool_Run(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "researcher", Input: `{"task":"Research Go programming"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "researcher",
+					Input: `{"task":"Research Go programming"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "Based on the research: Go is great."},
@@ -40,7 +45,10 @@ func TestSubAgentTool_Run(t *testing.T) {
 	}
 
 	if childLLM.CallCount() != 1 {
-		t.Errorf("expected child LLM to be called once, got %d", childLLM.CallCount())
+		t.Errorf(
+			"expected child LLM to be called once, got %d",
+			childLLM.CallCount(),
+		)
 	}
 }
 
@@ -51,7 +59,12 @@ func TestSubAgentTool_EmptyTask(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "researcher", Input: `{"task":""}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "researcher",
+					Input: `{"task":""}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "handled empty task"},
@@ -86,7 +99,12 @@ func TestSubAgentTool_InvalidInput(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "researcher", Input: `not json`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "researcher",
+					Input: `not json`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "handled invalid input"},
@@ -121,7 +139,12 @@ func TestSubAgentTool_ChildError(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "researcher", Input: `{"task":"do something"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "researcher",
+					Input: `{"task":"do something"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "child failed gracefully"},
@@ -155,12 +178,22 @@ func TestSubAgent_MultipleSubAgents(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "researcher", Input: `{"task":"research AI"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "researcher",
+					Input: `{"task":"research AI"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "writer", Input: `{"task":"write about AI"}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "writer",
+					Input: `{"task":"write about AI"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "final orchestrated result"},
@@ -168,8 +201,16 @@ func TestSubAgent_MultipleSubAgents(t *testing.T) {
 
 	parent := agent.New(parentLLM,
 		agent.WithSubAgents(
-			agent.SubAgentConfig{Name: "researcher", Description: "Researches topics", Agent: researcher},
-			agent.SubAgentConfig{Name: "writer", Description: "Writes articles", Agent: writer},
+			agent.SubAgentConfig{
+				Name:        "researcher",
+				Description: "Researches topics",
+				Agent:       researcher,
+			},
+			agent.SubAgentConfig{
+				Name:        "writer",
+				Description: "Writes articles",
+				Agent:       writer,
+			},
 		),
 	)
 
@@ -183,10 +224,16 @@ func TestSubAgent_MultipleSubAgents(t *testing.T) {
 	}
 
 	if researchLLM.CallCount() != 1 {
-		t.Errorf("expected researcher to be called once, got %d", researchLLM.CallCount())
+		t.Errorf(
+			"expected researcher to be called once, got %d",
+			researchLLM.CallCount(),
+		)
 	}
 	if writerLLM.CallCount() != 1 {
-		t.Errorf("expected writer to be called once, got %d", writerLLM.CallCount())
+		t.Errorf(
+			"expected writer to be called once, got %d",
+			writerLLM.CallCount(),
+		)
 	}
 }
 
@@ -197,7 +244,12 @@ func TestSubAgent_Stream(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"do work"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"do work"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "done with streaming"},
