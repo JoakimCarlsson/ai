@@ -398,7 +398,9 @@ func (a *Agent) storeWithDedup(ctx context.Context, fact string, metadata map[st
 // If memory is configured, relevant memories are injected into the context.
 // If a session is configured, the conversation history is persisted.
 // If handoffs are configured, the active agent may change mid-conversation.
-func (a *Agent) Chat(ctx context.Context, userMessage string) (*ChatResponse, error) {
+func (a *Agent) Chat(ctx context.Context, userMessage string, opts ...ChatOption) (*ChatResponse, error) {
+	cfg := applyChatOptions(opts)
+
 	if a.taskManager != nil {
 		ctx = withTaskManager(ctx, a.taskManager)
 		defer func() {
@@ -416,13 +418,18 @@ func (a *Agent) Chat(ctx context.Context, userMessage string) (*ChatResponse, er
 	allTools := activeAgent.getTools()
 	iteration := 0
 
+	maxIter := activeAgent.maxIterations
+	if cfg.maxIterations > 0 {
+		maxIter = cfg.maxIterations
+	}
+
 	for {
 		resp, err := activeAgent.llm.SendMessages(ctx, messages, allTools)
 		if err != nil {
 			return nil, err
 		}
 
-		if len(resp.ToolCalls) == 0 || !activeAgent.autoExecute || (activeAgent.maxIterations > 0 && iteration >= activeAgent.maxIterations) {
+		if len(resp.ToolCalls) == 0 || !activeAgent.autoExecute || (maxIter > 0 && iteration >= maxIter) {
 			if activeAgent.session != nil && resp.Content != "" {
 				assistantMsg := message.NewAssistantMessage()
 				assistantMsg.Model = activeAgent.llm.Model().ID
@@ -493,7 +500,7 @@ func (a *Agent) Chat(ctx context.Context, userMessage string) (*ChatResponse, er
 // ChatStream sends a message to the agent and returns a channel of streaming events.
 // Events include content deltas, tool calls, handoff notifications, and the final response.
 // The channel is closed when the response is complete or an error occurs.
-func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatEvent {
+func (a *Agent) ChatStream(ctx context.Context, userMessage string, opts ...ChatOption) <-chan ChatEvent {
 	eventChan := make(chan ChatEvent)
 
 	go func() {
@@ -513,9 +520,16 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 			return
 		}
 
+		cfg := applyChatOptions(opts)
+
 		activeAgent := a
 		allTools := activeAgent.getTools()
 		iteration := 0
+
+		maxIter := activeAgent.maxIterations
+		if cfg.maxIterations > 0 {
+			maxIter = cfg.maxIterations
+		}
 
 		for {
 			var fullContent string
@@ -544,7 +558,7 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 				}
 			}
 
-			if len(toolCalls) == 0 || !activeAgent.autoExecute || (activeAgent.maxIterations > 0 && iteration >= activeAgent.maxIterations) {
+			if len(toolCalls) == 0 || !activeAgent.autoExecute || (maxIter > 0 && iteration >= maxIter) {
 				if activeAgent.session != nil && fullContent != "" {
 					assistantMsg := message.NewAssistantMessage()
 					assistantMsg.Model = activeAgent.llm.Model().ID

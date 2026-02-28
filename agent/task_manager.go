@@ -40,7 +40,7 @@ func newTaskManager() *TaskManager {
 	}
 }
 
-func (tm *TaskManager) Launch(ctx context.Context, agentName string, a *Agent, task string) string {
+func (tm *TaskManager) Launch(ctx context.Context, agentName string, a *Agent, task string, opts ...ChatOption) string {
 	id := fmt.Sprintf("task-%d", tm.idGen.Add(1))
 
 	taskCtx, cancel := context.WithCancel(ctx)
@@ -61,7 +61,7 @@ func (tm *TaskManager) Launch(ctx context.Context, agentName string, a *Agent, t
 		defer tm.wg.Done()
 		defer close(bt.done)
 
-		resp, err := a.Chat(taskCtx, task)
+		resp, err := a.Chat(taskCtx, task, opts...)
 
 		tm.mu.Lock()
 		defer tm.mu.Unlock()

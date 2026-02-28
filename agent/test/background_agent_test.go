@@ -878,6 +878,171 @@ func TestBackground_TaskToolsAutoRegisteredWithListTasks(t *testing.T) {
 	}
 }
 
+func TestSubAgent_MaxTurns(t *testing.T) {
+	// Child LLM that keeps requesting tool calls forever (5 responses with tools, then text).
+	// Without max_turns, it would loop all 5. With max_turns=2, it stops after 2 tool iterations.
+	childLLM := newMockLLM(
+		mockResponse{ToolCalls: []message.ToolCall{{ID: "c1", Name: "echo", Input: `{"text":"1"}`, Type: "function"}}},
+		mockResponse{ToolCalls: []message.ToolCall{{ID: "c2", Name: "echo", Input: `{"text":"2"}`, Type: "function"}}},
+		mockResponse{ToolCalls: []message.ToolCall{{ID: "c3", Name: "echo", Input: `{"text":"3"}`, Type: "function"}}},
+		mockResponse{ToolCalls: []message.ToolCall{{ID: "c4", Name: "echo", Input: `{"text":"4"}`, Type: "function"}}},
+		mockResponse{ToolCalls: []message.ToolCall{{ID: "c5", Name: "echo", Input: `{"text":"5"}`, Type: "function"}}},
+		mockResponse{Content: "child done"},
+	)
+	child := agent.New(childLLM, agent.WithTools(&echoTool{}))
+
+	parentLLM := newMockLLM(
+		// Parent calls sub-agent with max_turns: 2
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{ID: "tc-1", Name: "worker", Input: `{"task":"loop test","max_turns":2}`, Type: "function"},
+			},
+		},
+		mockResponse{Content: "parent done"},
+	)
+
+	parent := agent.New(parentLLM,
+		agent.WithSubAgents(agent.SubAgentConfig{
+			Name:        "worker",
+			Description: "Does work",
+			Agent:       child,
+		}),
+	)
+
+	resp, err := parent.Chat(context.Background(), "test max turns")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if resp.Content != "parent done" {
+		t.Errorf("unexpected response: %q", resp.Content)
+	}
+
+	// With max_turns=2, child should make 3 LLM calls:
+	// call 0 → tool call → execute (iteration 0→1)
+	// call 1 → tool call → execute (iteration 1→2)
+	// call 2 → tool call → iteration(2) >= maxIter(2) → EXIT
+	if childLLM.CallCount() != 3 {
+		t.Errorf("expected child to make 3 LLM calls with max_turns=2, got %d", childLLM.CallCount())
+	}
+}
+
+func TestSubAgent_MaxTurnsDefault(t *testing.T) {
+	// Without max_turns, child runs to completion (all tool calls + final text)
+	childLLM := newMockLLM(
+		mockResponse{ToolCalls: []message.ToolCall{{ID: "c1", Name: "echo", Input: `{"text":"1"}`, Type: "function"}}},
+		mockResponse{ToolCalls: []message.ToolCall{{ID: "c2", Name: "echo", Input: `{"text":"2"}`, Type: "function"}}},
+		mockResponse{Content: "child finished naturally"},
+	)
+	child := agent.New(childLLM, agent.WithTools(&echoTool{}))
+
+	parentLLM := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{ID: "tc-1", Name: "worker", Input: `{"task":"no limit"}`, Type: "function"},
+			},
+		},
+		mockResponse{Content: "parent done"},
+	)
+
+	parent := agent.New(parentLLM,
+		agent.WithSubAgents(agent.SubAgentConfig{
+			Name:        "worker",
+			Description: "Does work",
+			Agent:       child,
+		}),
+	)
+
+	resp, err := parent.Chat(context.Background(), "test default")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if resp.Content != "parent done" {
+		t.Errorf("unexpected response: %q", resp.Content)
+	}
+
+	// Without max_turns, child completes naturally: 2 tool iterations + 1 final = 3 calls
+	if childLLM.CallCount() != 3 {
+		t.Errorf("expected child to make 3 LLM calls (natural completion), got %d", childLLM.CallCount())
+	}
+}
+
+func TestBackground_MaxTurns(t *testing.T) {
+	// Same as TestSubAgent_MaxTurns but via background execution
+	childLLM := newMockLLM(
+		mockResponse{ToolCalls: []message.ToolCall{{ID: "c1", Name: "echo", Input: `{"text":"1"}`, Type: "function"}}},
+		mockResponse{ToolCalls: []message.ToolCall{{ID: "c2", Name: "echo", Input: `{"text":"2"}`, Type: "function"}}},
+		mockResponse{ToolCalls: []message.ToolCall{{ID: "c3", Name: "echo", Input: `{"text":"3"}`, Type: "function"}}},
+		mockResponse{ToolCalls: []message.ToolCall{{ID: "c4", Name: "echo", Input: `{"text":"4"}`, Type: "function"}}},
+		mockResponse{Content: "child done"},
+	)
+	child := agent.New(childLLM, agent.WithTools(&echoTool{}))
+
+	parentLLM := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{ID: "tc-1", Name: "worker", Input: `{"task":"bg loop","max_turns":1,"background":true}`, Type: "function"},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{ID: "tc-2", Name: "get_task_result", Input: `{"task_id":"task-1","wait":true}`, Type: "function"},
+			},
+		},
+		mockResponse{Content: "parent done"},
+	)
+
+	parent := agent.New(parentLLM,
+		agent.WithSubAgents(agent.SubAgentConfig{
+			Name:        "worker",
+			Description: "Does work",
+			Agent:       child,
+		}),
+	)
+
+	resp, err := parent.Chat(context.Background(), "bg max turns")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if resp.Content != "parent done" {
+		t.Errorf("unexpected response: %q", resp.Content)
+	}
+
+	// With max_turns=1, child should make 2 LLM calls:
+	// call 0 → tool call → execute (iteration 0→1)
+	// call 1 → tool call → iteration(1) >= maxIter(1) → EXIT
+	if childLLM.CallCount() != 2 {
+		t.Errorf("expected child to make 2 LLM calls with max_turns=1, got %d", childLLM.CallCount())
+	}
+}
+
+func TestChatOption_DirectCall(t *testing.T) {
+	// Test WithMaxTurns directly on Chat() without sub-agents
+	llmClient := newMockLLM(
+		mockResponse{ToolCalls: []message.ToolCall{{ID: "c1", Name: "echo", Input: `{"text":"1"}`, Type: "function"}}},
+		mockResponse{ToolCalls: []message.ToolCall{{ID: "c2", Name: "echo", Input: `{"text":"2"}`, Type: "function"}}},
+		mockResponse{ToolCalls: []message.ToolCall{{ID: "c3", Name: "echo", Input: `{"text":"3"}`, Type: "function"}}},
+		mockResponse{Content: "final"},
+	)
+
+	a := agent.New(llmClient, agent.WithTools(&echoTool{}))
+
+	resp, err := a.Chat(context.Background(), "test direct", agent.WithMaxTurns(1))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// With max_turns=1: call 0 → tool → execute (iteration 0→1), call 1 → tool → EXIT
+	if llmClient.CallCount() != 2 {
+		t.Errorf("expected 2 LLM calls with WithMaxTurns(1), got %d", llmClient.CallCount())
+	}
+
+	// Without max_turns, it would do all 3 tool calls + final = 4 calls
+	_ = resp
+}
+
 // -- Test helper: blockingMockLLM that respects context cancellation --
 
 type blockingMockLLM struct {

@@ -17,6 +17,7 @@ type SubAgentConfig struct {
 type subAgentInput struct {
 	Task       string `json:"task" desc:"The task or question to send to the sub-agent"`
 	Background bool   `json:"background" desc:"If true, run in background and return a task ID immediately" required:"false"`
+	MaxTurns   int    `json:"max_turns" desc:"Maximum number of tool-execution turns. 0 uses the agent default." required:"false"`
 }
 
 type subAgentTool struct {
@@ -41,12 +42,17 @@ func (t *subAgentTool) Run(ctx context.Context, params tool.ToolCall) (tool.Tool
 		return tool.NewTextErrorResponse("task is required"), nil
 	}
 
+	var opts []ChatOption
+	if input.MaxTurns > 0 {
+		opts = append(opts, WithMaxTurns(input.MaxTurns))
+	}
+
 	if input.Background {
 		tm := taskManagerFromContext(ctx)
 		if tm == nil {
-			return t.runSync(ctx, input.Task)
+			return t.runSync(ctx, input.Task, opts...)
 		}
-		taskID := tm.Launch(ctx, t.config.Name, t.config.Agent, input.Task)
+		taskID := tm.Launch(ctx, t.config.Name, t.config.Agent, input.Task, opts...)
 
 		type launchOutput struct {
 			TaskID    string `json:"task_id"`
@@ -60,11 +66,11 @@ func (t *subAgentTool) Run(ctx context.Context, params tool.ToolCall) (tool.Tool
 		}), nil
 	}
 
-	return t.runSync(ctx, input.Task)
+	return t.runSync(ctx, input.Task, opts...)
 }
 
-func (t *subAgentTool) runSync(ctx context.Context, task string) (tool.ToolResponse, error) {
-	resp, err := t.config.Agent.Chat(ctx, task)
+func (t *subAgentTool) runSync(ctx context.Context, task string, opts ...ChatOption) (tool.ToolResponse, error) {
+	resp, err := t.config.Agent.Chat(ctx, task, opts...)
 	if err != nil {
 		return tool.NewTextErrorResponse(fmt.Sprintf("sub-agent %q failed: %s", t.config.Name, err.Error())), nil
 	}
