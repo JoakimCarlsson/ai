@@ -29,6 +29,7 @@ const (
 	GPT52Pro           ModelID = "gpt-5.2-pro"
 	GPT52Instant       ModelID = "gpt-5.2-chat-latest"
 	GPT52Codex         ModelID = "gpt-5.2-codex"
+	GPT53Codex         ModelID = "gpt-5.3-codex"
 	GPT51CodexMax      ModelID = "gpt-5.1-codex-max"
 	O3DeepResearch     ModelID = "o3-deep-research"
 	O4MiniDeepResearch ModelID = "o4-mini-deep-research"
@@ -422,6 +423,21 @@ var OpenAIModels = map[ModelID]Model{
 		CostPer1MIn:           1.75,
 		CostPer1MInCached:     0.175,
 		CostPer1MOut:          14.00,
+		CostPer1MOutCached:    0.0,
+		ContextWindow:         400_000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	GPT53Codex: {
+		ID:                    GPT53Codex,
+		Name:                  "GPT-5.3 Codex",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5.3-codex",
+		CostPer1MIn:           2.00,
+		CostPer1MInCached:     0.20,
+		CostPer1MOut:          16.00,
 		CostPer1MOutCached:    0.0,
 		ContextWindow:         400_000,
 		DefaultMaxTokens:      128000,
