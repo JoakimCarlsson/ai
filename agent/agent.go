@@ -426,6 +426,10 @@ func (a *Agent) Chat(
 	opts ...ChatOption,
 ) (*ChatResponse, error) {
 	cfg := applyChatOptions(opts)
+	startTime := time.Now()
+	var totalUsage llm.TokenUsage
+	var totalToolCalls int
+	var turns int
 
 	if a.taskManager != nil {
 		ctx = withTaskManager(ctx, a.taskManager)
@@ -454,6 +458,8 @@ func (a *Agent) Chat(
 		if err != nil {
 			return nil, err
 		}
+		turns++
+		totalUsage.Add(resp.Usage)
 
 		if len(resp.ToolCalls) == 0 || !activeAgent.autoExecute ||
 			(maxIter > 0 && iteration >= maxIter) {
@@ -471,16 +477,21 @@ func (a *Agent) Chat(
 			}
 
 			chatResp := &ChatResponse{
-				Content:      resp.Content,
-				ToolCalls:    resp.ToolCalls,
-				Usage:        resp.Usage,
-				FinishReason: resp.FinishReason,
+				Content:        resp.Content,
+				ToolCalls:      resp.ToolCalls,
+				Usage:          totalUsage,
+				FinishReason:   resp.FinishReason,
+				TotalToolCalls: totalToolCalls,
+				TotalDuration:  time.Since(startTime),
+				TotalTurns:     turns,
 			}
 			if activeAgent != a {
 				chatResp.AgentName = findAgentName(a, activeAgent)
 			}
 			return chatResp, nil
 		}
+
+		totalToolCalls += len(resp.ToolCalls)
 
 		assistantMsg := message.NewAssistantMessage()
 		assistantMsg.Model = activeAgent.llm.Model().ID
@@ -549,6 +560,11 @@ func (a *Agent) ChatStream(
 	go func() {
 		defer close(eventChan)
 
+		startTime := time.Now()
+		var totalUsage llm.TokenUsage
+		var totalToolCalls int
+		var turns int
+
 		if a.taskManager != nil {
 			ctx = withTaskManager(ctx, a.taskManager)
 			defer func() {
@@ -603,6 +619,11 @@ func (a *Agent) ChatStream(
 				}
 			}
 
+			turns++
+			if finalResponse != nil {
+				totalUsage.Add(finalResponse.Usage)
+			}
+
 			if len(toolCalls) == 0 || !activeAgent.autoExecute ||
 				(maxIter > 0 && iteration >= maxIter) {
 				if activeAgent.session != nil && fullContent != "" {
@@ -619,18 +640,19 @@ func (a *Agent) ChatStream(
 					go activeAgent.extractAndStoreMemories(context.Background())
 				}
 
-				var usage llm.TokenUsage
 				var finishReason message.FinishReason
 				if finalResponse != nil {
-					usage = finalResponse.Usage
 					finishReason = finalResponse.FinishReason
 				}
 
 				chatResp := &ChatResponse{
-					Content:      fullContent,
-					ToolCalls:    toolCalls,
-					Usage:        usage,
-					FinishReason: finishReason,
+					Content:        fullContent,
+					ToolCalls:      toolCalls,
+					Usage:          totalUsage,
+					FinishReason:   finishReason,
+					TotalToolCalls: totalToolCalls,
+					TotalDuration:  time.Since(startTime),
+					TotalTurns:     turns,
 				}
 				if activeAgent != a {
 					chatResp.AgentName = findAgentName(a, activeAgent)
@@ -642,6 +664,8 @@ func (a *Agent) ChatStream(
 				}
 				return
 			}
+
+			totalToolCalls += len(toolCalls)
 
 			assistantMsg := message.NewAssistantMessage()
 			assistantMsg.Model = activeAgent.llm.Model().ID

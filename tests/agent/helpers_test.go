@@ -22,6 +22,7 @@ type mockResponse struct {
 	Content      string
 	ToolCalls    []message.ToolCall
 	FinishReason message.FinishReason
+	Usage        llm.TokenUsage
 	Err          error
 }
 
@@ -73,6 +74,7 @@ func (m *mockLLM) SendMessages(
 		Content:      resp.Content,
 		ToolCalls:    resp.ToolCalls,
 		FinishReason: resp.FinishReason,
+		Usage:        resp.Usage,
 	}, nil
 }
 
@@ -108,6 +110,7 @@ func (m *mockLLM) StreamResponse(
 				Content:      resp.Content,
 				ToolCalls:    resp.ToolCalls,
 				FinishReason: resp.FinishReason,
+				Usage:        resp.Usage,
 			},
 		}
 	}()

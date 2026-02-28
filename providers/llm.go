@@ -164,6 +164,15 @@ type TokenUsage struct {
 	CacheReadTokens int64
 }
 
+// Add accumulates token counts from another TokenUsage into this one.
+// This is used to aggregate usage across multiple LLM calls in an agent loop.
+func (u *TokenUsage) Add(other TokenUsage) {
+	u.InputTokens += other.InputTokens
+	u.OutputTokens += other.OutputTokens
+	u.CacheCreationTokens += other.CacheCreationTokens
+	u.CacheReadTokens += other.CacheReadTokens
+}
+
 // LLMResponse represents the complete response from an LLM provider.
 type LLMResponse struct {
 	// Content is the generated text response from the model.
