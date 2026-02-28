@@ -38,6 +38,8 @@ type Agent struct {
 	maxParallelTools    int
 	state               map[string]any
 	instructionProvider func(ctx context.Context, state map[string]any) (string, error)
+	handoffs            []HandoffConfig
+	taskManager         *TaskManager
 }
 
 func (a *Agent) getMemoryLLM() llm.LLM {
@@ -81,6 +83,10 @@ func (a *Agent) getTools() []tool.BaseTool {
 	if a.memory != nil && !a.autoExtract && a.memoryID != "" {
 		memoryTools := createMemoryTools(a.memory, a.memoryID)
 		allTools = append(allTools, memoryTools...)
+	}
+
+	if a.taskManager != nil {
+		allTools = append(allTools, createTaskTools()...)
 	}
 
 	return allTools
@@ -391,54 +397,68 @@ func (a *Agent) storeWithDedup(ctx context.Context, fact string, metadata map[st
 // If the agent has tools configured, it will automatically execute them.
 // If memory is configured, relevant memories are injected into the context.
 // If a session is configured, the conversation history is persisted.
+// If handoffs are configured, the active agent may change mid-conversation.
 func (a *Agent) Chat(ctx context.Context, userMessage string) (*ChatResponse, error) {
+	if a.taskManager != nil {
+		ctx = withTaskManager(ctx, a.taskManager)
+		defer func() {
+			a.taskManager.CancelAll()
+			a.taskManager.WaitAll()
+		}()
+	}
+
 	messages, err := a.buildMessages(ctx, userMessage)
 	if err != nil {
 		return nil, err
 	}
 
-	allTools := a.getTools()
+	activeAgent := a
+	allTools := activeAgent.getTools()
 	iteration := 0
 
 	for {
-		resp, err := a.llm.SendMessages(ctx, messages, allTools)
+		resp, err := activeAgent.llm.SendMessages(ctx, messages, allTools)
 		if err != nil {
 			return nil, err
 		}
 
-		if len(resp.ToolCalls) == 0 || !a.autoExecute || (a.maxIterations > 0 && iteration >= a.maxIterations) {
-			if a.session != nil && resp.Content != "" {
+		if len(resp.ToolCalls) == 0 || !activeAgent.autoExecute || (activeAgent.maxIterations > 0 && iteration >= activeAgent.maxIterations) {
+			if activeAgent.session != nil && resp.Content != "" {
 				assistantMsg := message.NewAssistantMessage()
-				assistantMsg.Model = a.llm.Model().ID
+				assistantMsg.Model = activeAgent.llm.Model().ID
 				assistantMsg.AppendContent(resp.Content)
-				if err := a.session.AddMessages(ctx, []message.Message{assistantMsg}); err != nil {
+				if err := activeAgent.session.AddMessages(ctx, []message.Message{assistantMsg}); err != nil {
 					return nil, err
 				}
 			}
 
-			if a.autoExtract && a.session != nil {
-				go a.extractAndStoreMemories(context.Background())
+			if activeAgent.autoExtract && activeAgent.session != nil {
+				go activeAgent.extractAndStoreMemories(context.Background())
 			}
 
-			return &ChatResponse{
+			chatResp := &ChatResponse{
 				Content:      resp.Content,
 				ToolCalls:    resp.ToolCalls,
 				Usage:        resp.Usage,
 				FinishReason: resp.FinishReason,
-			}, nil
+			}
+			if activeAgent != a {
+				chatResp.AgentName = findAgentName(a, activeAgent)
+			}
+			return chatResp, nil
 		}
 
 		assistantMsg := message.NewAssistantMessage()
-		assistantMsg.Model = a.llm.Model().ID
+		assistantMsg.Model = activeAgent.llm.Model().ID
 		if resp.Content != "" {
 			assistantMsg.AppendContent(resp.Content)
 		}
 		assistantMsg.AppendToolCalls(resp.ToolCalls)
 		messages = append(messages, assistantMsg)
 
-		toolResults := a.executeTools(ctx, resp.ToolCalls)
+		toolResults := activeAgent.executeTools(ctx, resp.ToolCalls)
 
-		toolMsg := message.Message{Role: message.Tool, Model: a.llm.Model().ID, CreatedAt: time.Now().UnixNano()}
+		toolMsg := message.Message{Role: message.Tool, Model: activeAgent.llm.Model().ID, CreatedAt: time.Now().UnixNano()}
 		for _, result := range toolResults {
 			toolMsg.AddToolResult(message.ToolResult{
 				ToolCallID: result.ToolCallID,
@@ -449,10 +469,21 @@ func (a *Agent) Chat(ctx context.Context, userMessage string) (*ChatResponse, er
 		}
 		messages = append(messages, toolMsg)
 
-		if a.session != nil {
-			if err := a.session.AddMessages(ctx, []message.Message{assistantMsg, toolMsg}); err != nil {
+		if activeAgent.session != nil {
+			if err := activeAgent.session.AddMessages(ctx, []message.Message{assistantMsg, toolMsg}); err != nil {
 				return nil, err
 			}
+		}
+
+		if handoff := detectHandoff(resp.ToolCalls, activeAgent.handoffs); handoff != nil {
+			activeAgent = handoff.Agent
+			messages, err = rebuildMessagesForHandoff(ctx, activeAgent, messages)
+			if err != nil {
+				return nil, fmt.Errorf("handoff to %s failed: %w", handoff.Name, err)
+			}
+			allTools = activeAgent.getTools()
+			iteration = 0
+			continue
 		}
 
 		iteration++
@@ -460,7 +491,7 @@ func (a *Agent) Chat(ctx context.Context, userMessage string) (*ChatResponse, er
 }
 
 // ChatStream sends a message to the agent and returns a channel of streaming events.
-// Events include content deltas, tool calls, and the final response.
+// Events include content deltas, tool calls, handoff notifications, and the final response.
 // The channel is closed when the response is complete or an error occurs.
 func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatEvent {
 	eventChan := make(chan ChatEvent)
@@ -468,13 +499,22 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 	go func() {
 		defer close(eventChan)
 
+		if a.taskManager != nil {
+			ctx = withTaskManager(ctx, a.taskManager)
+			defer func() {
+				a.taskManager.CancelAll()
+				a.taskManager.WaitAll()
+			}()
+		}
+
 		messages, err := a.buildMessages(ctx, userMessage)
 		if err != nil {
 			eventChan <- ChatEvent{Type: types.EventError, Error: err}
 			return
 		}
 
-		allTools := a.getTools()
+		activeAgent := a
+		allTools := activeAgent.getTools()
 		iteration := 0
 
 		for {
@@ -482,7 +522,7 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 			var toolCalls []message.ToolCall
 			var finalResponse *llm.LLMResponse
 
-			for event := range a.llm.StreamResponse(ctx, messages, allTools) {
+			for event := range activeAgent.llm.StreamResponse(ctx, messages, allTools) {
 				switch event.Type {
 				case types.EventContentDelta:
 					fullContent += event.Content
@@ -504,16 +544,16 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 				}
 			}
 
-			if len(toolCalls) == 0 || !a.autoExecute || (a.maxIterations > 0 && iteration >= a.maxIterations) {
-				if a.session != nil && fullContent != "" {
+			if len(toolCalls) == 0 || !activeAgent.autoExecute || (activeAgent.maxIterations > 0 && iteration >= activeAgent.maxIterations) {
+				if activeAgent.session != nil && fullContent != "" {
 					assistantMsg := message.NewAssistantMessage()
-					assistantMsg.Model = a.llm.Model().ID
+					assistantMsg.Model = activeAgent.llm.Model().ID
 					assistantMsg.AppendContent(fullContent)
-					_ = a.session.AddMessages(ctx, []message.Message{assistantMsg})
+					_ = activeAgent.session.AddMessages(ctx, []message.Message{assistantMsg})
 				}
 
-				if a.autoExtract && a.session != nil {
-					go a.extractAndStoreMemories(context.Background())
+				if activeAgent.autoExtract && activeAgent.session != nil {
+					go activeAgent.extractAndStoreMemories(context.Background())
 				}
 
 				var usage llm.TokenUsage
@@ -523,27 +563,32 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 					finishReason = finalResponse.FinishReason
 				}
 
+				chatResp := &ChatResponse{
+					Content:      fullContent,
+					ToolCalls:    toolCalls,
+					Usage:        usage,
+					FinishReason: finishReason,
+				}
+				if activeAgent != a {
+					chatResp.AgentName = findAgentName(a, activeAgent)
+				}
+
 				eventChan <- ChatEvent{
-					Type: types.EventComplete,
-					Response: &ChatResponse{
-						Content:      fullContent,
-						ToolCalls:    toolCalls,
-						Usage:        usage,
-						FinishReason: finishReason,
-					},
+					Type:     types.EventComplete,
+					Response: chatResp,
 				}
 				return
 			}
 
 			assistantMsg := message.NewAssistantMessage()
-			assistantMsg.Model = a.llm.Model().ID
+			assistantMsg.Model = activeAgent.llm.Model().ID
 			if fullContent != "" {
 				assistantMsg.AppendContent(fullContent)
 			}
 			assistantMsg.AppendToolCalls(toolCalls)
 			messages = append(messages, assistantMsg)
 
-			toolResults := a.executeTools(ctx, toolCalls)
+			toolResults := activeAgent.executeTools(ctx, toolCalls)
 
 			for _, result := range toolResults {
 				eventChan <- ChatEvent{
@@ -552,7 +597,7 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 				}
 			}
 
-			toolMsg := message.Message{Role: message.Tool, Model: a.llm.Model().ID, CreatedAt: time.Now().UnixNano()}
+			toolMsg := message.Message{Role: message.Tool, Model: activeAgent.llm.Model().ID, CreatedAt: time.Now().UnixNano()}
 			for _, result := range toolResults {
 				toolMsg.AddToolResult(message.ToolResult{
 					ToolCallID: result.ToolCallID,
@@ -563,8 +608,25 @@ func (a *Agent) ChatStream(ctx context.Context, userMessage string) <-chan ChatE
 			}
 			messages = append(messages, toolMsg)
 
-			if a.session != nil {
-				_ = a.session.AddMessages(ctx, []message.Message{assistantMsg, toolMsg})
+			if activeAgent.session != nil {
+				_ = activeAgent.session.AddMessages(ctx, []message.Message{assistantMsg, toolMsg})
+			}
+
+			if handoff := detectHandoff(toolCalls, activeAgent.handoffs); handoff != nil {
+				eventChan <- ChatEvent{
+					Type:      types.EventHandoff,
+					AgentName: handoff.Name,
+				}
+
+				activeAgent = handoff.Agent
+				messages, err = rebuildMessagesForHandoff(ctx, activeAgent, messages)
+				if err != nil {
+					eventChan <- ChatEvent{Type: types.EventError, Error: err}
+					return
+				}
+				allTools = activeAgent.getTools()
+				iteration = 0
+				continue
 			}
 
 			iteration++

@@ -185,15 +185,18 @@ func (o *openaiClient) convertTools(
 
 	for i, tool := range tools {
 		info := tool.Info()
+		params := openai.FunctionParameters{
+			"type":       "object",
+			"properties": info.Parameters,
+		}
+		if len(info.Required) > 0 {
+			params["required"] = info.Required
+		}
 		openaiTools[i] = openai.ChatCompletionToolParam{
 			Function: openai.FunctionDefinitionParam{
 				Name:        info.Name,
 				Description: openai.String(info.Description),
-				Parameters: openai.FunctionParameters{
-					"type":       "object",
-					"properties": info.Parameters,
-					"required":   info.Required,
-				},
+				Parameters:  params,
 			},
 		}
 	}
@@ -520,8 +523,10 @@ func (o *openaiClient) sendWithStructuredOutput(
 	schemaMap := map[string]any{
 		"type":                 "object",
 		"properties":           outputSchema.Parameters,
-		"required":             outputSchema.Required,
 		"additionalProperties": false,
+	}
+	if len(outputSchema.Required) > 0 {
+		schemaMap["required"] = outputSchema.Required
 	}
 
 	params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
@@ -592,8 +597,10 @@ func (o *openaiClient) streamWithStructuredOutput(
 	schemaMap := map[string]any{
 		"type":                 "object",
 		"properties":           outputSchema.Parameters,
-		"required":             outputSchema.Required,
 		"additionalProperties": false,
+	}
+	if len(outputSchema.Required) > 0 {
+		schemaMap["required"] = outputSchema.Required
 	}
 
 	params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{

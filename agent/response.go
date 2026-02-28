@@ -12,6 +12,7 @@ type ChatResponse struct {
 	ToolResults  []ToolExecutionResult
 	Usage        llm.TokenUsage
 	FinishReason message.FinishReason
+	AgentName    string
 }
 
 type ToolExecutionResult struct {
@@ -30,4 +31,5 @@ type ChatEvent struct {
 	ToolResult *ToolExecutionResult
 	Response   *ChatResponse
 	Error      error
+	AgentName  string
 }
