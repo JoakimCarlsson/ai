@@ -55,11 +55,16 @@ func NewCounter() (*Counter, error) {
 }
 
 // CountTokens counts tokens for messages, system prompt, and tools.
-func (c *Counter) CountTokens(ctx context.Context, opts CountOptions) (*TokenCount, error) {
+func (c *Counter) CountTokens(
+	ctx context.Context,
+	opts CountOptions,
+) (*TokenCount, error) {
 	var result TokenCount
 
 	if opts.SystemPrompt != "" {
-		result.SystemTokens = int64(c.tokenizer.Count(opts.SystemPrompt)) + SystemMessageOverhead
+		result.SystemTokens = int64(
+			c.tokenizer.Count(opts.SystemPrompt),
+		) + SystemMessageOverhead
 	}
 
 	for _, msg := range opts.Messages {
@@ -142,7 +147,9 @@ func (c *Counter) countParameterTokens(params map[string]any) int64 {
 		}
 
 		if nested, ok := schema["properties"].(map[string]any); ok {
-			tokens += c.countParameterTokens(map[string]any{"properties": nested})
+			tokens += c.countParameterTokens(
+				map[string]any{"properties": nested},
+			)
 		}
 
 		if items, ok := schema["items"].(map[string]any); ok {

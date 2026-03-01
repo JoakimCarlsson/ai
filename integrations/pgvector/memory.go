@@ -69,10 +69,19 @@ func MemoryStore(
 
 	db.ExecContext(ctx, createHNSWIndexSQL)
 
-	return &memoryStore{db: db, embedder: embedder, idGenerator: options.idGenerator}, nil
+	return &memoryStore{
+		db:          db,
+		embedder:    embedder,
+		idGenerator: options.idGenerator,
+	}, nil
 }
 
-func (s *memoryStore) Store(ctx context.Context, id string, fact string, metadata map[string]any) error {
+func (s *memoryStore) Store(
+	ctx context.Context,
+	id string,
+	fact string,
+	metadata map[string]any,
+) error {
 	resp, err := s.embedder.GenerateEmbeddings(ctx, []string{fact})
 	if err != nil {
 		return fmt.Errorf("failed to generate embedding: %w", err)
@@ -96,7 +105,12 @@ func (s *memoryStore) Store(ctx context.Context, id string, fact string, metadat
 	return err
 }
 
-func (s *memoryStore) Search(ctx context.Context, id string, query string, limit int) ([]memory.Entry, error) {
+func (s *memoryStore) Search(
+	ctx context.Context,
+	id string,
+	query string,
+	limit int,
+) ([]memory.Entry, error) {
 	resp, err := s.embedder.GenerateEmbeddings(ctx, []string{query})
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate embedding: %w", err)
@@ -119,7 +133,11 @@ func (s *memoryStore) Search(ctx context.Context, id string, query string, limit
 	return scanEntries(rows)
 }
 
-func (s *memoryStore) GetAll(ctx context.Context, id string, limit int) ([]memory.Entry, error) {
+func (s *memoryStore) GetAll(
+	ctx context.Context,
+	id string,
+	limit int,
+) ([]memory.Entry, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT id, owner_id, content, metadata, created_at, 0 as score
 		FROM memories
@@ -136,11 +154,20 @@ func (s *memoryStore) GetAll(ctx context.Context, id string, limit int) ([]memor
 }
 
 func (s *memoryStore) Delete(ctx context.Context, memoryID string) error {
-	_, err := s.db.ExecContext(ctx, "DELETE FROM memories WHERE id = $1", memoryID)
+	_, err := s.db.ExecContext(
+		ctx,
+		"DELETE FROM memories WHERE id = $1",
+		memoryID,
+	)
 	return err
 }
 
-func (s *memoryStore) Update(ctx context.Context, memoryID string, fact string, metadata map[string]any) error {
+func (s *memoryStore) Update(
+	ctx context.Context,
+	memoryID string,
+	fact string,
+	metadata map[string]any,
+) error {
 	resp, err := s.embedder.GenerateEmbeddings(ctx, []string{fact})
 	if err != nil {
 		return fmt.Errorf("failed to generate embedding: %w", err)

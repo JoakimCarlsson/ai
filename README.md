@@ -9,7 +9,7 @@ A comprehensive, multi-provider Go library for interacting with various AI model
 
 - **Multi-Provider Support**: Unified interface for 10+ AI providers
 - **LLM Support**: Chat completions, streaming, tool calling, structured output
-- **Agent Framework**: Stateless agents with session management and persistent memory
+- **Agent Framework**: Multi-agent orchestration with sub-agents, handoffs, fan-out, session management, persistent memory, and context strategies
 - **Embedding Models**: Text, multimodal, and contextualized embeddings
 - **Image Generation**: Text-to-image generation with multiple quality and size options
 - **Audio Generation**: Text-to-speech with voice selection and streaming support
@@ -268,54 +268,49 @@ response, err := client.SendMessages(ctx, messages, nil)
 
 ### Agent Framework
 
-The agent package provides stateless agents with automatic tool execution, session management, and persistent memory.
+The agent package provides multi-agent orchestration with automatic tool execution, session management, persistent memory, sub-agents, handoffs, fan-out, and context strategies.
 
 #### Basic Agent
 
 ```go
-import "github.com/joakimcarlsson/ai/agent"
+import (
+    "github.com/joakimcarlsson/ai/agent"
+    "github.com/joakimcarlsson/ai/agent/session"
+)
 
-// Create agent with tools
+// Create agent with tools and session persistence
 myAgent := agent.New(llmClient,
     agent.WithSystemPrompt("You are a helpful assistant."),
     agent.WithTools(&weatherTool{}),
+    agent.WithSession("user-123", session.FileStore("./sessions")),
 )
 
-// Create session store (file-based)
-store, _ := agent.NewFileSessionStore("./sessions")
-
-// Get or create a session
-session, _ := agent.GetOrCreateSession(ctx, "user-123", store)
-
 // Chat (automatically manages history and tool execution)
-response, _ := myAgent.Chat(ctx, session, "What's the weather in Tokyo?")
+response, _ := myAgent.Chat(ctx, "What's the weather in Tokyo?")
 fmt.Println(response.Content)
 ```
 
 #### Session Management
 
 ```go
+import "github.com/joakimcarlsson/ai/agent/session"
+
 // Session store interface - implement for any backend
-type SessionStore interface {
+type Store interface {
     Exists(ctx context.Context, id string) (bool, error)
     Create(ctx context.Context, id string) (Session, error)
     Load(ctx context.Context, id string) (Session, error)
     Delete(ctx context.Context, id string) error
 }
 
-// Built-in file session store
-store, _ := agent.NewFileSessionStore("./sessions")
+// Built-in stores
+store := session.FileStore("./sessions")   // Persistent JSON files
+store := session.MemoryStore()             // In-memory (ephemeral)
 
-// Session helpers
-session, _ := agent.CreateSession(ctx, "new-session", store)    // Error if exists
-session, _ := agent.LoadSession(ctx, "existing-session", store) // Error if not found
-session, _ := agent.GetOrCreateSession(ctx, "session-id", store) // Create or load
-
-// Session operations
-messages, _ := session.GetMessages(ctx, nil)  // Get all messages
-session.AddMessages(ctx, newMessages)          // Append messages
-session.PopMessage(ctx)                        // Remove last message
-session.Clear(ctx)                             // Clear all messages
+// Configure via agent option
+myAgent := agent.New(llmClient,
+    agent.WithSession("conversation-id", store),
+)
 ```
 
 #### Persistent Memory
@@ -323,42 +318,29 @@ session.Clear(ctx)                             // Clear all messages
 Enable cross-conversation memory for personalization:
 
 ```go
-// Implement the Memory interface for your storage backend
-type Memory interface {
-    Store(ctx context.Context, userID, fact string, metadata map[string]any) error
-    Search(ctx context.Context, userID, query string, limit int) ([]MemoryEntry, error)
-    GetAll(ctx context.Context, userID string, limit int) ([]MemoryEntry, error)
-    Delete(ctx context.Context, memoryID string) error
-    Update(ctx context.Context, memoryID, fact string, metadata map[string]any) error
-}
+import "github.com/joakimcarlsson/ai/agent/memory"
+
+// Built-in stores (vector-based semantic search)
+store := memory.MemoryStore(embedder)                // In-memory
+store := memory.FileStore("./memories", embedder)    // File-persisted
 
 // Create agent with memory
 myAgent := agent.New(llmClient,
-    agent.WithSystemPrompt(`You are a personal assistant.
-Use store_memory when users share personal information.
-Use recall_memories before answering personalized questions.
-Use replace_memory when information changes.
-Use delete_memory when users ask to forget something.`),
-    agent.WithMemory(myMemoryStore),
-    agent.WithAutoExtract(true),  // Auto-extract facts from conversations
-    agent.WithAutoDedup(true),    // LLM-based memory deduplication
+    agent.WithSystemPrompt("You are a personal assistant."),
+    agent.WithMemory("user-123", store,
+        memory.AutoExtract(),  // Auto-extract facts from conversations
+        memory.AutoDedup(),    // LLM-based memory deduplication
+    ),
 )
 
-// Set user ID in context for memory operations
-ctx = context.WithValue(ctx, "user_id", "alice")
-
-response, _ := myAgent.Chat(ctx, session, "My name is Alice and I'm allergic to peanuts.")
-// Agent automatically stores this fact
-
-// In a new session, agent can recall memories
-response, _ := myAgent.Chat(ctx, newSession, "What restaurants would you recommend?")
-// Agent recalls allergy information and personalizes response
+response, _ := myAgent.Chat(ctx, "My name is Alice and I'm allergic to peanuts.")
+// Agent automatically stores this fact and recalls it in future conversations
 ```
 
-#### Streaming with Agent
+#### Streaming
 
 ```go
-for event := range myAgent.ChatStream(ctx, session, "Tell me a story") {
+for event := range myAgent.ChatStream(ctx, "Tell me a story") {
     switch event.Type {
     case types.EventContentDelta:
         fmt.Print(event.Content)
@@ -368,6 +350,145 @@ for event := range myAgent.ChatStream(ctx, session, "Tell me a story") {
         fmt.Printf("\nDone! Tokens: %d\n", event.Response.Usage.InputTokens)
     }
 }
+```
+
+#### Sub-Agents
+
+Delegate tasks to specialized child agents:
+
+```go
+researcher := agent.New(llmClient,
+    agent.WithSystemPrompt("You are a research specialist."),
+    agent.WithTools(&webSearchTool{}),
+)
+
+writer := agent.New(llmClient,
+    agent.WithSystemPrompt("You are a content writer."),
+)
+
+orchestrator := agent.New(llmClient,
+    agent.WithSystemPrompt("You coordinate research and writing tasks."),
+    agent.WithSubAgents(
+        agent.SubAgentConfig{Name: "researcher", Description: "Researches topics", Agent: researcher},
+        agent.SubAgentConfig{Name: "writer", Description: "Writes content", Agent: writer},
+    ),
+)
+
+response, _ := orchestrator.Chat(ctx, "Research and write about quantum computing")
+```
+
+#### Handoffs
+
+Transfer control between peer agents:
+
+```go
+billing := agent.New(llmClient,
+    agent.WithSystemPrompt("You handle billing inquiries."),
+)
+
+support := agent.New(llmClient,
+    agent.WithSystemPrompt("You handle technical support."),
+)
+
+triage := agent.New(llmClient,
+    agent.WithSystemPrompt("Route the user to the right specialist."),
+    agent.WithHandoffs(
+        agent.HandoffConfig{Name: "billing", Description: "Billing questions", Agent: billing},
+        agent.HandoffConfig{Name: "support", Description: "Technical issues", Agent: support},
+    ),
+)
+
+// Triage auto-generates transfer_to_billing and transfer_to_support tools
+response, _ := triage.Chat(ctx, "I was charged twice on my last invoice")
+fmt.Println(response.AgentName) // "billing"
+```
+
+#### Fan-Out
+
+Distribute tasks in parallel to worker agents:
+
+```go
+researcher := agent.New(llmClient,
+    agent.WithSystemPrompt("Research the given topic thoroughly."),
+)
+
+coordinator := agent.New(llmClient,
+    agent.WithSystemPrompt("You coordinate parallel research tasks."),
+    agent.WithFanOut(agent.FanOutConfig{
+        Name:           "research",
+        Description:    "Research multiple topics in parallel",
+        Agent:          researcher,
+        MaxConcurrency: 3,
+    }),
+)
+
+response, _ := coordinator.Chat(ctx, "Compare AI, blockchain, and quantum computing")
+```
+
+#### Continue/Resume
+
+Manually execute tools and resume the agent loop:
+
+```go
+myAgent := agent.New(llmClient,
+    agent.WithAutoExecute(false), // Don't auto-execute tools
+    agent.WithSession("conv-1", session.MemoryStore()),
+)
+
+// First call returns pending tool calls
+response, _ := myAgent.Chat(ctx, "Search for flights to Tokyo")
+
+// Execute tools externally
+results := []message.ToolResult{
+    {ToolCallID: response.ToolCalls[0].ID, Name: "search_flights", Content: `{"flights": [...]}`},
+}
+
+// Resume with results
+response, _ = myAgent.Continue(ctx, results)
+fmt.Println(response.Content)
+```
+
+#### Context Strategies
+
+Automatic context window management when conversations exceed token limits:
+
+```go
+import (
+    "github.com/joakimcarlsson/ai/tokens/sliding"
+    "github.com/joakimcarlsson/ai/tokens/truncate"
+    "github.com/joakimcarlsson/ai/tokens/summarize"
+)
+
+// Sliding window - keep last N messages
+agent.WithContextStrategy(sliding.Strategy(sliding.KeepLast(10)), 0)
+
+// Truncate - remove oldest messages to fit token budget
+agent.WithContextStrategy(truncate.Strategy(), 0)
+
+// Summarize - LLM-compress older messages
+agent.WithContextStrategy(summarize.Strategy(llmClient), 0)
+```
+
+#### Instruction Templates
+
+Dynamic system prompts with template variables:
+
+```go
+// Static templates with handlebars syntax
+myAgent := agent.New(llmClient,
+    agent.WithSystemPrompt("You are {{.role}}. Help {{.user_name}} with their tasks."),
+    agent.WithState(map[string]any{
+        "role":      "a coding assistant",
+        "user_name": "Alice",
+    }),
+)
+
+// Dynamic provider for runtime-generated prompts
+myAgent := agent.New(llmClient,
+    agent.WithInstructionProvider(func(ctx context.Context, state map[string]any) (string, error) {
+        return fmt.Sprintf("Current time: %s\nYou are a helpful assistant.", time.Now().Format(time.RFC3339)), nil
+    }),
+)
 ```
 
 ### Embeddings
@@ -675,20 +796,48 @@ fmt.Println(response.Text)
 
 ```
 ├── agent/                        # Agent framework
-│   ├── agent.go                 # Core agent with tool execution loop
-│   ├── session.go               # Session interface and helpers
-│   ├── file_session.go          # File-based session storage
-│   ├── memory.go                # Memory interface for persistence
-│   ├── memory_tools.go          # Built-in memory tools
-│   ├── extract.go               # Auto-extraction logic
-│   ├── dedup.go                 # Memory deduplication
-│   └── options.go               # Agent configuration options
+│   ├── agent.go                 # Agent struct, constructor, helpers
+│   ├── chat.go                  # Chat, Continue, runLoop
+│   ├── stream.go                # ChatStream, ContinueStream, runLoopStream
+│   ├── messages.go              # Message building and context assembly
+│   ├── tools.go                 # Tool execution (parallel/sequential)
+│   ├── options.go               # Agent configuration options
+│   ├── chat_options.go          # Per-call chat options (WithMaxTurns)
+│   ├── response.go              # ChatResponse, ChatEvent, ToolExecutionResult
+│   ├── memory.go                # Auto-extraction and deduplication logic
+│   ├── memory_tools.go          # LLM-facing memory tools
+│   ├── fan_out.go               # Fan-out configuration and execution
+│   ├── handoff.go               # Handoff configuration and detection
+│   ├── sub_agent.go             # Sub-agent configuration and tools
+│   ├── task_manager.go          # Background task lifecycle management
+│   ├── task_tools.go            # LLM-facing task management tools
+│   ├── doc.go                   # Package documentation
+│   ├── memory/                  # Memory subsystem
+│   │   ├── store.go             # Store interface and Entry type
+│   │   ├── memory_store.go      # In-memory vector store
+│   │   ├── file_store.go        # File-persisted vector store
+│   │   ├── extractor.go         # LLM fact extraction
+│   │   └── dedup.go             # LLM deduplication
+│   └── session/                 # Session subsystem
+│       ├── store.go             # Session and Store interfaces
+│       ├── memory.go            # In-memory session store
+│       └── file.go              # File-based session store
 ├── example/
-│   ├── agent/                   # Basic agent example
-│   ├── agent_memory/            # Agent with memory example
+│   ├── agent/                   # Basic agent with tools
+│   ├── agent_debate/            # Multi-agent debate
 │   ├── agent_memory_embedding/  # Agent with vector memory
 │   ├── agent_memory_postgres/   # PostgreSQL session & memory
-│   ├── structured_output/       # Structured output example
+│   ├── background_agents/       # Async background task execution
+│   ├── byom/                    # Bring Your Own Model (Ollama, etc.)
+│   ├── context_strategy/        # Context window management
+│   ├── context_summarize/       # Summarization context strategy
+│   ├── context_truncate/        # Truncation context strategy
+│   ├── continue/                # Manual tool execution and Continue
+│   ├── fan_out/                 # Parallel fan-out to worker agents
+│   ├── handoffs/                # Agent-to-agent handoffs
+│   ├── instruction_templates/   # Dynamic system prompt templates
+│   ├── sub_agents/              # Orchestrator with sub-agents
+│   ├── strucured_output/        # Structured output example
 │   ├── vision/                  # Multimodal LLM example
 │   ├── embeddings/              # Text embedding example
 │   ├── multimodal_embeddings/   # Multimodal embedding example
@@ -699,6 +848,12 @@ fmt.Println(response.Text)
 │   ├── image_generation_gemini/ # Gemini image generation example
 │   ├── audio/                   # Audio generation (TTS) example
 │   └── transcription/           # Speech-to-text example
+├── tokens/                       # Token counting and context strategies
+│   ├── counter.go               # BPE tokenizer-based counter
+│   ├── strategy.go              # Strategy interface
+│   ├── truncate/                # Truncation strategy
+│   ├── sliding/                 # Sliding window strategy
+│   └── summarize/               # LLM summarization strategy
 ├── audio/                       # Audio generation package
 │   ├── audio.go                 # Main audio generation interface
 │   ├── elevenlabs.go            # ElevenLabs TTS implementation

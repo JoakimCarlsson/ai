@@ -36,7 +36,9 @@ func main() {
 	}
 
 	messages := []message.Message{
-		message.NewUserMessage("Explain what BYOM means in a very detailed way in a ai scenario."),
+		message.NewUserMessage(
+			"Explain what BYOM means in a very detailed way in a ai scenario.",
+		),
 	}
 
 	stream := client.StreamResponse(ctx, messages, nil)

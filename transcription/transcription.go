@@ -198,7 +198,9 @@ func WithTimeout(timeout time.Duration) TranscriptionClientOption {
 }
 
 // WithOpenAIOptions applies OpenAI-specific configuration options.
-func WithOpenAIOptions(openaiOptions ...OpenAIOption) TranscriptionClientOption {
+func WithOpenAIOptions(
+	openaiOptions ...OpenAIOption,
+) TranscriptionClientOption {
 	return func(options *transcriptionClientOptions) {
 		options.openaiOptions = openaiOptions
 	}
@@ -253,7 +255,10 @@ func WithTimestampGranularities(granularities ...string) TranscriptionOption {
 }
 
 // WithKnownSpeakers provides speaker names and reference audio samples for diarization.
-func WithKnownSpeakers(names []string, references []string) TranscriptionOption {
+func WithKnownSpeakers(
+	names []string,
+	references []string,
+) TranscriptionOption {
 	return func(options *TranscriptionOptions) {
 		options.KnownSpeakerNames = names
 		options.KnownSpeakerReferences = references

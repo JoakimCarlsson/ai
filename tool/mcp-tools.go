@@ -128,7 +128,11 @@ func newMcpTool(
 	}
 }
 
-func getTools(ctx context.Context, name string, m MCPServer) ([]BaseTool, error) {
+func getTools(
+	ctx context.Context,
+	name string,
+	m MCPServer,
+) ([]BaseTool, error) {
 	var stdioTools []BaseTool
 	c, err := pool.getClient(ctx, name, m)
 	if err != nil {

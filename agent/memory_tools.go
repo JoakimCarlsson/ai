@@ -29,8 +29,14 @@ func (t *storeMemoryTool) Info() tool.ToolInfo {
 				"description": "The fact to remember about the user",
 			},
 			"category": map[string]any{
-				"type":        "string",
-				"enum":        []string{"preference", "personal", "health", "professional", "other"},
+				"type": "string",
+				"enum": []string{
+					"preference",
+					"personal",
+					"health",
+					"professional",
+					"other",
+				},
 				"description": "Category of the memory",
 			},
 		},
@@ -38,13 +44,18 @@ func (t *storeMemoryTool) Info() tool.ToolInfo {
 	}
 }
 
-func (t *storeMemoryTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+func (t *storeMemoryTool) Run(
+	ctx context.Context,
+	params tool.ToolCall,
+) (tool.ToolResponse, error) {
 	var input struct {
 		Fact     string `json:"fact"`
 		Category string `json:"category"`
 	}
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
-		return tool.NewTextErrorResponse("invalid parameters: " + err.Error()), nil
+		return tool.NewTextErrorResponse(
+			"invalid parameters: " + err.Error(),
+		), nil
 	}
 
 	metadata := map[string]any{}
@@ -53,7 +64,9 @@ func (t *storeMemoryTool) Run(ctx context.Context, params tool.ToolCall) (tool.T
 	}
 
 	if err := t.store.Store(ctx, t.memoryID, input.Fact, metadata); err != nil {
-		return tool.NewTextErrorResponse("failed to store memory: " + err.Error()), nil
+		return tool.NewTextErrorResponse(
+			"failed to store memory: " + err.Error(),
+		), nil
 	}
 
 	return tool.NewTextResponse("Memory stored successfully"), nil
@@ -64,7 +77,10 @@ type recallMemoriesTool struct {
 	memoryID string
 }
 
-func newRecallMemoriesTool(store memory.Store, memoryID string) *recallMemoriesTool {
+func newRecallMemoriesTool(
+	store memory.Store,
+	memoryID string,
+) *recallMemoriesTool {
 	return &recallMemoriesTool{store: store, memoryID: memoryID}
 }
 
@@ -82,17 +98,24 @@ func (t *recallMemoriesTool) Info() tool.ToolInfo {
 	}
 }
 
-func (t *recallMemoriesTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+func (t *recallMemoriesTool) Run(
+	ctx context.Context,
+	params tool.ToolCall,
+) (tool.ToolResponse, error) {
 	var input struct {
 		Query string `json:"query"`
 	}
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
-		return tool.NewTextErrorResponse("invalid parameters: " + err.Error()), nil
+		return tool.NewTextErrorResponse(
+			"invalid parameters: " + err.Error(),
+		), nil
 	}
 
 	memories, err := t.store.Search(ctx, t.memoryID, input.Query, 5)
 	if err != nil {
-		return tool.NewTextErrorResponse("failed to search memories: " + err.Error()), nil
+		return tool.NewTextErrorResponse(
+			"failed to search memories: " + err.Error(),
+		), nil
 	}
 
 	if len(memories) == 0 {
@@ -112,7 +135,10 @@ type deleteMemoryTool struct {
 	memoryID string
 }
 
-func newDeleteMemoryTool(store memory.Store, memoryID string) *deleteMemoryTool {
+func newDeleteMemoryTool(
+	store memory.Store,
+	memoryID string,
+) *deleteMemoryTool {
 	return &deleteMemoryTool{store: store, memoryID: memoryID}
 }
 
@@ -134,17 +160,24 @@ func (t *deleteMemoryTool) Info() tool.ToolInfo {
 	}
 }
 
-func (t *deleteMemoryTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+func (t *deleteMemoryTool) Run(
+	ctx context.Context,
+	params tool.ToolCall,
+) (tool.ToolResponse, error) {
 	var input struct {
 		MemoryID string `json:"memory_id"`
 		Reason   string `json:"reason"`
 	}
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
-		return tool.NewTextErrorResponse("invalid parameters: " + err.Error()), nil
+		return tool.NewTextErrorResponse(
+			"invalid parameters: " + err.Error(),
+		), nil
 	}
 
 	if err := t.store.Delete(ctx, input.MemoryID); err != nil {
-		return tool.NewTextErrorResponse("failed to delete memory: " + err.Error()), nil
+		return tool.NewTextErrorResponse(
+			"failed to delete memory: " + err.Error(),
+		), nil
 	}
 
 	return tool.NewTextResponse("Memory deleted successfully"), nil
@@ -155,7 +188,10 @@ type replaceMemoryTool struct {
 	memoryID string
 }
 
-func newReplaceMemoryTool(store memory.Store, memoryID string) *replaceMemoryTool {
+func newReplaceMemoryTool(
+	store memory.Store,
+	memoryID string,
+) *replaceMemoryTool {
 	return &replaceMemoryTool{store: store, memoryID: memoryID}
 }
 
@@ -173,8 +209,14 @@ func (t *replaceMemoryTool) Info() tool.ToolInfo {
 				"description": "The updated fact to store",
 			},
 			"category": map[string]any{
-				"type":        "string",
-				"enum":        []string{"preference", "personal", "health", "professional", "other"},
+				"type": "string",
+				"enum": []string{
+					"preference",
+					"personal",
+					"health",
+					"professional",
+					"other",
+				},
 				"description": "Category of the memory",
 			},
 		},
@@ -182,14 +224,19 @@ func (t *replaceMemoryTool) Info() tool.ToolInfo {
 	}
 }
 
-func (t *replaceMemoryTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+func (t *replaceMemoryTool) Run(
+	ctx context.Context,
+	params tool.ToolCall,
+) (tool.ToolResponse, error) {
 	var input struct {
 		MemoryID string `json:"memory_id"`
 		Fact     string `json:"fact"`
 		Category string `json:"category"`
 	}
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
-		return tool.NewTextErrorResponse("invalid parameters: " + err.Error()), nil
+		return tool.NewTextErrorResponse(
+			"invalid parameters: " + err.Error(),
+		), nil
 	}
 
 	metadata := map[string]any{}
@@ -198,7 +245,9 @@ func (t *replaceMemoryTool) Run(ctx context.Context, params tool.ToolCall) (tool
 	}
 
 	if err := t.store.Update(ctx, input.MemoryID, input.Fact, metadata); err != nil {
-		return tool.NewTextErrorResponse("failed to replace memory: " + err.Error()), nil
+		return tool.NewTextErrorResponse(
+			"failed to replace memory: " + err.Error(),
+		), nil
 	}
 
 	return tool.NewTextResponse("Memory replaced successfully"), nil

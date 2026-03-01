@@ -129,7 +129,10 @@ type CustomProviderConfig struct {
 //	})
 //
 //	client, _ := llm.NewLLM(custom, llm.WithAPIKey("bearer-token"))
-func RegisterCustomProvider(name string, config CustomProviderConfig) model.ModelProvider {
+func RegisterCustomProvider(
+	name string,
+	config CustomProviderConfig,
+) model.ModelProvider {
 	customProvidersMu.Lock()
 	defer customProvidersMu.Unlock()
 
@@ -139,7 +142,9 @@ func RegisterCustomProvider(name string, config CustomProviderConfig) model.Mode
 }
 
 // getCustomProvider safely retrieves a custom provider configuration.
-func getCustomProvider(provider model.ModelProvider) (CustomProviderConfig, bool) {
+func getCustomProvider(
+	provider model.ModelProvider,
+) (CustomProviderConfig, bool) {
 	customProvidersMu.RLock()
 	defer customProvidersMu.RUnlock()
 
@@ -157,6 +162,15 @@ type TokenUsage struct {
 	CacheCreationTokens int64
 	// CacheReadTokens is the number of tokens read from cache.
 	CacheReadTokens int64
+}
+
+// Add accumulates token counts from another TokenUsage into this one.
+// This is used to aggregate usage across multiple LLM calls in an agent loop.
+func (u *TokenUsage) Add(other TokenUsage) {
+	u.InputTokens += other.InputTokens
+	u.OutputTokens += other.OutputTokens
+	u.CacheCreationTokens += other.CacheCreationTokens
+	u.CacheReadTokens += other.CacheReadTokens
 }
 
 // LLMResponse represents the complete response from an LLM provider.

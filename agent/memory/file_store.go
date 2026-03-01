@@ -22,7 +22,11 @@ type fileStore struct {
 // FileStore creates a file-based Store that persists memories to disk.
 // Each owner's memories are stored in a separate JSON file in the specified directory.
 // The embedder is used for vector similarity search.
-func FileStore(dir string, embedder embeddings.Embedding, opts ...StoreOption) Store {
+func FileStore(
+	dir string,
+	embedder embeddings.Embedding,
+	opts ...StoreOption,
+) Store {
 	cfg := defaultStoreConfig()
 	for _, opt := range opts {
 		opt(&cfg)
@@ -68,7 +72,12 @@ func (s *fileStore) saveEntries(ownerID string, entries []storedEntry) error {
 	return os.WriteFile(s.filePath(ownerID), data, 0644)
 }
 
-func (s *fileStore) Store(ctx context.Context, id string, fact string, metadata map[string]any) error {
+func (s *fileStore) Store(
+	ctx context.Context,
+	id string,
+	fact string,
+	metadata map[string]any,
+) error {
 	resp, err := s.embedder.GenerateEmbeddings(ctx, []string{fact})
 	if err != nil {
 		return err
@@ -97,7 +106,12 @@ func (s *fileStore) Store(ctx context.Context, id string, fact string, metadata 
 	return s.saveEntries(id, entries)
 }
 
-func (s *fileStore) Search(ctx context.Context, id string, query string, limit int) ([]Entry, error) {
+func (s *fileStore) Search(
+	ctx context.Context,
+	id string,
+	query string,
+	limit int,
+) ([]Entry, error) {
 	resp, err := s.embedder.GenerateEmbeddings(ctx, []string{query})
 	if err != nil {
 		return nil, err
@@ -145,7 +159,11 @@ func (s *fileStore) Search(ctx context.Context, id string, query string, limit i
 	return results, nil
 }
 
-func (s *fileStore) GetAll(ctx context.Context, id string, limit int) ([]Entry, error) {
+func (s *fileStore) GetAll(
+	ctx context.Context,
+	id string,
+	limit int,
+) ([]Entry, error) {
 	s.mu.RLock()
 	entries, err := s.loadEntries(id)
 	s.mu.RUnlock()
@@ -196,7 +214,12 @@ func (s *fileStore) Delete(ctx context.Context, memoryID string) error {
 	return nil
 }
 
-func (s *fileStore) Update(ctx context.Context, memoryID string, fact string, metadata map[string]any) error {
+func (s *fileStore) Update(
+	ctx context.Context,
+	memoryID string,
+	fact string,
+	metadata map[string]any,
+) error {
 	resp, err := s.embedder.GenerateEmbeddings(ctx, []string{fact})
 	if err != nil {
 		return err

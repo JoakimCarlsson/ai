@@ -112,8 +112,10 @@ func (o OpenAIClient) generate(
 		N:      openai.Int(int64(genOpts.N)),
 	}
 
-	if genOpts.ResponseFormat != "" && o.options.model.APIModel != "gpt-image-1" &&
-		o.options.model.APIModel != "gpt-image-1.5" && o.options.model.APIModel != "gpt-image-1-mini" {
+	if genOpts.ResponseFormat != "" &&
+		o.options.model.APIModel != "gpt-image-1" &&
+		o.options.model.APIModel != "gpt-image-1.5" &&
+		o.options.model.APIModel != "gpt-image-1-mini" {
 		params.ResponseFormat = openai.ImageGenerateParamsResponseFormat(
 			genOpts.ResponseFormat,
 		)
@@ -186,10 +188,12 @@ func (o OpenAIClient) generateStreaming(
 	}
 
 	params := openai.ImageGenerateParams{
-		Prompt:        prompt,
-		Model:         openai.ImageModel(o.options.model.APIModel),
-		N:             openai.Int(int64(genOpts.N)),
-		PartialImages: openai.Int(int64(o.openaiOpts.streamingOptions.PartialImages)),
+		Prompt: prompt,
+		Model:  openai.ImageModel(o.options.model.APIModel),
+		N:      openai.Int(int64(genOpts.N)),
+		PartialImages: openai.Int(
+			int64(o.openaiOpts.streamingOptions.PartialImages),
+		),
 	}
 
 	if genOpts.Size != "" && len(o.options.model.SupportedSizes) > 0 {

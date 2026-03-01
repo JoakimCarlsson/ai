@@ -33,4 +33,6 @@ const (
 	EventError EventType = "error"
 	// EventWarning indicates a warning occurred during streaming.
 	EventWarning EventType = "warning"
+	// EventHandoff indicates control is being transferred to a different agent.
+	EventHandoff EventType = "handoff"
 )

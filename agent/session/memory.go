@@ -55,7 +55,10 @@ func (s *memorySession) ID() string {
 	return s.id
 }
 
-func (s *memorySession) GetMessages(ctx context.Context, limit *int) ([]message.Message, error) {
+func (s *memorySession) GetMessages(
+	ctx context.Context,
+	limit *int,
+) ([]message.Message, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -74,7 +77,10 @@ func (s *memorySession) GetMessages(ctx context.Context, limit *int) ([]message.
 	return result, nil
 }
 
-func (s *memorySession) AddMessages(ctx context.Context, msgs []message.Message) error {
+func (s *memorySession) AddMessages(
+	ctx context.Context,
+	msgs []message.Message,
+) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -82,7 +88,10 @@ func (s *memorySession) AddMessages(ctx context.Context, msgs []message.Message)
 	return nil
 }
 
-func (s *memorySession) SetMessages(ctx context.Context, msgs []message.Message) error {
+func (s *memorySession) SetMessages(
+	ctx context.Context,
+	msgs []message.Message,
+) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -91,7 +100,9 @@ func (s *memorySession) SetMessages(ctx context.Context, msgs []message.Message)
 	return nil
 }
 
-func (s *memorySession) PopMessage(ctx context.Context) (*message.Message, error) {
+func (s *memorySession) PopMessage(
+	ctx context.Context,
+) (*message.Message, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

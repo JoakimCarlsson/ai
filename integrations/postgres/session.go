@@ -35,7 +35,11 @@ type sessionStore struct {
 
 // SessionStore creates a new PostgreSQL-backed session store.
 // It automatically creates the sessions and messages tables if they don't exist.
-func SessionStore(ctx context.Context, connString string, opts ...Option) (session.Store, error) {
+func SessionStore(
+	ctx context.Context,
+	connString string,
+	opts ...Option,
+) (session.Store, error) {
 	options := defaultOptions()
 	for _, opt := range opts {
 		opt(&options)
@@ -67,7 +71,10 @@ func (s *sessionStore) Exists(ctx context.Context, id string) (bool, error) {
 	return exists, err
 }
 
-func (s *sessionStore) Create(ctx context.Context, id string) (session.Session, error) {
+func (s *sessionStore) Create(
+	ctx context.Context,
+	id string,
+) (session.Session, error) {
 	_, err := s.db.ExecContext(ctx,
 		"INSERT INTO sessions (id) VALUES ($1)", id,
 	)
@@ -77,7 +84,10 @@ func (s *sessionStore) Create(ctx context.Context, id string) (session.Session, 
 	return &pgSession{db: s.db, id: id, idGenerator: s.idGenerator}, nil
 }
 
-func (s *sessionStore) Load(ctx context.Context, id string) (session.Session, error) {
+func (s *sessionStore) Load(
+	ctx context.Context,
+	id string,
+) (session.Session, error) {
 	return &pgSession{db: s.db, id: id, idGenerator: s.idGenerator}, nil
 }
 
@@ -96,7 +106,10 @@ func (s *pgSession) ID() string {
 	return s.id
 }
 
-func (s *pgSession) GetMessages(ctx context.Context, limit *int) ([]message.Message, error) {
+func (s *pgSession) GetMessages(
+	ctx context.Context,
+	limit *int,
+) ([]message.Message, error) {
 	query := `
 		SELECT parts
 		FROM messages
@@ -144,7 +157,10 @@ func (s *pgSession) GetMessages(ctx context.Context, limit *int) ([]message.Mess
 	return messages, rows.Err()
 }
 
-func (s *pgSession) AddMessages(ctx context.Context, msgs []message.Message) error {
+func (s *pgSession) AddMessages(
+	ctx context.Context,
+	msgs []message.Message,
+) error {
 	for _, msg := range msgs {
 		msgJSON, err := json.Marshal(msg)
 		if err != nil {
@@ -205,6 +221,10 @@ func (s *pgSession) PopMessage(ctx context.Context) (*message.Message, error) {
 }
 
 func (s *pgSession) Clear(ctx context.Context) error {
-	_, err := s.db.ExecContext(ctx, "DELETE FROM messages WHERE session_id = $1", s.id)
+	_, err := s.db.ExecContext(
+		ctx,
+		"DELETE FROM messages WHERE session_id = $1",
+		s.id,
+	)
 	return err
 }

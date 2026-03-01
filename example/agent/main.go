@@ -22,15 +22,24 @@ type weatherParams struct {
 type weatherTool struct{}
 
 func (w *weatherTool) Info() tool.ToolInfo {
-	return tool.NewToolInfo("get_weather", "Get the current weather for a location", weatherParams{})
+	return tool.NewToolInfo(
+		"get_weather",
+		"Get the current weather for a location",
+		weatherParams{},
+	)
 }
 
-func (w *weatherTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+func (w *weatherTool) Run(
+	ctx context.Context,
+	params tool.ToolCall,
+) (tool.ToolResponse, error) {
 	var input weatherParams
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
 		return tool.NewTextErrorResponse(err.Error()), nil
 	}
-	return tool.NewTextResponse(fmt.Sprintf("The weather in %s is sunny, 22°C", input.Location)), nil
+	return tool.NewTextResponse(
+		fmt.Sprintf("The weather in %s is sunny, 22°C", input.Location),
+	), nil
 }
 
 func main() {
@@ -46,13 +55,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	myAgent := agent.New(llmClient,
-		agent.WithSystemPrompt("You are a helpful assistant with access to weather tools."),
+	myAgent := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You are a helpful assistant with access to weather tools.",
+		),
 		agent.WithTools(&weatherTool{}),
 		agent.WithSession("conv-1", session.FileStore("./sessions")),
 	)
 
-	response, err := myAgent.Chat(ctx, "What's the weather in Tokyo? My name is Bob.")
+	response, err := myAgent.Chat(
+		ctx,
+		"What's the weather in Tokyo? My name is Bob.",
+	)
 	if err != nil {
 		log.Fatal(err)
 	}

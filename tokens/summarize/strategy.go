@@ -31,7 +31,10 @@ func Strategy(l llm.LLM, opts ...Option) tokens.Strategy {
 	}
 }
 
-func (s *summarizeStrategy) Fit(ctx context.Context, input tokens.StrategyInput) (*tokens.StrategyResult, error) {
+func (s *summarizeStrategy) Fit(
+	ctx context.Context,
+	input tokens.StrategyInput,
+) (*tokens.StrategyResult, error) {
 	count, err := input.Counter.CountTokens(ctx, tokens.CountOptions{
 		Messages:     input.Messages,
 		SystemPrompt: input.SystemPrompt,
@@ -100,7 +103,10 @@ func (s *summarizeStrategy) Fit(ctx context.Context, input tokens.StrategyInput)
 	}, nil
 }
 
-func (s *summarizeStrategy) generateSummary(ctx context.Context, msgs []message.Message) (string, error) {
+func (s *summarizeStrategy) generateSummary(
+	ctx context.Context,
+	msgs []message.Message,
+) (string, error) {
 	var sb strings.Builder
 	for _, msg := range msgs {
 		sb.WriteString(fmt.Sprintf("[%s]: ", msg.Role))

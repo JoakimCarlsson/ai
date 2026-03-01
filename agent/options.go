@@ -49,7 +49,11 @@ func WithAutoExecute(auto bool) AgentOption {
 // Use memory.AutoExtract() to enable automatic fact extraction from conversations.
 // Use memory.AutoDedup() to enable LLM-based memory deduplication.
 // Use memory.LLM() to set a separate LLM for memory operations.
-func WithMemory(id string, store memory.Store, opts ...memory.Option) AgentOption {
+func WithMemory(
+	id string,
+	store memory.Store,
+	opts ...memory.Option,
+) AgentOption {
 	return func(a *Agent) {
 		a.memoryID = id
 		a.memory = store
@@ -100,7 +104,10 @@ func WithSession(id string, store session.Store) AgentOption {
 // Example with summarization:
 //
 //	agent.WithContextStrategy(summarize.Strategy(summaryLLM), 8000)
-func WithContextStrategy(strategy tokens.Strategy, maxContextTokens int64) AgentOption {
+func WithContextStrategy(
+	strategy tokens.Strategy,
+	maxContextTokens int64,
+) AgentOption {
 	return func(a *Agent) {
 		a.contextStrategy = strategy
 		a.maxContextTokens = maxContextTokens
@@ -146,5 +153,53 @@ type InstructionProvider func(ctx context.Context, state map[string]any) (string
 func WithInstructionProvider(provider InstructionProvider) AgentOption {
 	return func(a *Agent) {
 		a.instructionProvider = provider
+	}
+}
+
+// WithSubAgents registers child agents that the parent agent can invoke as tools.
+// Each sub-agent appears as a callable tool to the LLM. When invoked, the sub-agent
+// runs its own Chat() loop with a fresh context window and returns the result.
+//
+// Sub-agents support background execution: the LLM can pass background: true to launch
+// a sub-agent asynchronously and collect results later via the auto-registered
+// get_task_result and stop_task tools.
+//
+// Sub-agents do NOT inherit the parent's conversation history, tools, or system prompt.
+// They operate as independent agents configured at creation time.
+func WithSubAgents(configs ...SubAgentConfig) AgentOption {
+	return func(a *Agent) {
+		for _, cfg := range configs {
+			a.tools = append(a.tools, newSubAgentTool(cfg))
+		}
+		if a.taskManager == nil {
+			a.taskManager = newTaskManager()
+		}
+	}
+}
+
+// WithHandoffs registers peer agents that this agent can transfer control to.
+// When the LLM calls a transfer tool, the conversation continues with the new agent.
+// The new agent inherits the full message history but uses its own system prompt and tools.
+//
+// Handoff agents can themselves have handoffs, enabling chains like A -> B -> C.
+func WithHandoffs(configs ...HandoffConfig) AgentOption {
+	return func(a *Agent) {
+		a.handoffs = append(a.handoffs, configs...)
+		for _, cfg := range configs {
+			a.tools = append(a.tools, newHandoffTool(cfg))
+		}
+	}
+}
+
+// WithFanOut registers a fan-out tool that spawns multiple sub-agents in parallel.
+// The LLM calls this tool with a list of tasks, and each task is dispatched to a
+// separate execution of the template agent. Results are aggregated into a single response.
+//
+// Note: The template agent should not use sessions, as concurrent Chat() calls would race.
+func WithFanOut(configs ...FanOutConfig) AgentOption {
+	return func(a *Agent) {
+		for _, cfg := range configs {
+			a.tools = append(a.tools, newFanOutTool(cfg))
+		}
 	}
 }

@@ -26,7 +26,10 @@ func main() {
 	case "http":
 		httpExample(ctx)
 	default:
-		log.Fatalf("Invalid connection method: %s. Use 'stdio' or 'http'", connectionMethod)
+		log.Fatalf(
+			"Invalid connection method: %s. Use 'stdio' or 'http'",
+			connectionMethod,
+		)
 	}
 }
 

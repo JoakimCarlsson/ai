@@ -54,8 +54,11 @@ func GenerateSchema(v any) (map[string]any, []string) {
 			prop["enum"] = strings.Split(enum, ",")
 		}
 
-		if field.Type.Kind() == reflect.Struct && field.Type != reflect.TypeOf(struct{}{}) {
-			nested, nestedReq := GenerateSchema(reflect.New(field.Type).Elem().Interface())
+		if field.Type.Kind() == reflect.Struct &&
+			field.Type != reflect.TypeOf(struct{}{}) {
+			nested, nestedReq := GenerateSchema(
+				reflect.New(field.Type).Elem().Interface(),
+			)
 			if nested != nil {
 				prop["type"] = "object"
 				prop["properties"] = nested
@@ -69,7 +72,9 @@ func GenerateSchema(v any) (map[string]any, []string) {
 			elemType := field.Type.Elem()
 			items := map[string]any{"type": goTypeToJSONType(elemType)}
 			if elemType.Kind() == reflect.Struct {
-				nested, nestedReq := GenerateSchema(reflect.New(elemType).Elem().Interface())
+				nested, nestedReq := GenerateSchema(
+					reflect.New(elemType).Elem().Interface(),
+				)
 				if nested != nil {
 					items["type"] = "object"
 					items["properties"] = nested

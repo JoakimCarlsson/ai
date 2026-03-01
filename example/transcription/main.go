@@ -21,7 +21,9 @@ func main() {
 	client, err := transcription.NewSpeechToText(
 		model.ProviderOpenAI,
 		transcription.WithAPIKey(apiKey),
-		transcription.WithModel(model.OpenAITranscriptionModels[model.Whisper1]),
+		transcription.WithModel(
+			model.OpenAITranscriptionModels[model.Whisper1],
+		),
 	)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
