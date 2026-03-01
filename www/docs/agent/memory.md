@@ -68,4 +68,42 @@ When `AutoExtract` is enabled:
 3. If `AutoDedup` is enabled, the LLM checks for existing similar memories
 4. New facts are stored, duplicates are merged or skipped
 
-When `AutoExtract` is disabled, the agent gets memory tools (`store_memory`, `recall_memories`, `replace_memory`, `delete_memory`) that the LLM can call directly.
+## Manual Memory Tools
+
+When `AutoExtract` is disabled, the agent gets four memory tools that the LLM can call directly:
+
+### store_memory
+
+Store a fact about the user for future conversations.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `fact` | string | yes | The fact to remember |
+| `category` | string | no | One of: `preference`, `personal`, `health`, `professional`, `other` |
+
+### recall_memories
+
+Search for relevant memories. Returns memory IDs for use with replace/delete.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | yes | What to search for |
+
+### replace_memory
+
+Update an existing memory with corrected or updated information.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `memory_id` | string | yes | ID from `recall_memories` results |
+| `fact` | string | yes | The updated fact |
+| `category` | string | no | One of: `preference`, `personal`, `health`, `professional`, `other` |
+
+### delete_memory
+
+Remove a memory that is no longer accurate or relevant.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `memory_id` | string | yes | ID from `recall_memories` results |
+| `reason` | string | no | Why the memory is being deleted |

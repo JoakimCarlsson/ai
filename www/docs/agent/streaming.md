@@ -42,17 +42,33 @@ for event := range myAgent.ContinueStream(ctx, toolResults) {
 }
 ```
 
+## Event Types
+
+| Event | Field | Description |
+|-------|-------|-------------|
+| `EventContentStart` | — | Content generation is beginning |
+| `EventContentDelta` | `Content` | Partial text token |
+| `EventContentStop` | — | Content generation finished |
+| `EventToolUseStart` | `ToolCall` | Tool invocation starting (name, ID) |
+| `EventToolUseDelta` | `ToolCall` | Partial tool input JSON |
+| `EventToolUseStop` | `ToolResult` | Tool execution completed with result |
+| `EventThinkingDelta` | `Thinking` | Chain-of-thought reasoning (if model supports it) |
+| `EventHandoff` | `AgentName` | Control transferred to another agent |
+| `EventComplete` | `Response` | Streaming finished — contains the full `ChatResponse` |
+| `EventError` | `Error` | An error occurred during streaming |
+| `EventWarning` | `Error` | A non-fatal warning |
+
 ## ChatEvent
 
 ```go
 type ChatEvent struct {
     Type       types.EventType
-    Content    string
-    Thinking   string
-    ToolCall   *message.ToolCall
-    ToolResult *ToolExecutionResult
-    Response   *ChatResponse
-    Error      error
-    AgentName  string
+    Content    string              // EventContentDelta
+    Thinking   string              // EventThinkingDelta
+    ToolCall   *message.ToolCall   // EventToolUseStart/Delta
+    ToolResult *ToolExecutionResult // EventToolUseStop
+    Response   *ChatResponse       // EventComplete
+    Error      error               // EventError, EventWarning
+    AgentName  string              // EventHandoff
 }
 ```

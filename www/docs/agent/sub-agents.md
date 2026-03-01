@@ -44,4 +44,25 @@ type SubAgentConfig struct {
 
 ## Background Execution
 
-Sub-agents can also run as background tasks using the task manager. See the `example/background_agents/` example.
+Sub-agents can run asynchronously by passing `background: true`. The orchestrator gets a `task_id` immediately and can check status or wait for results later.
+
+```go
+orchestrator := agent.New(llmClient,
+    agent.WithSystemPrompt(`Launch background tasks, then collect results.`),
+    agent.WithSubAgents(
+        agent.SubAgentConfig{
+            Name:        "researcher",
+            Description: "Research a topic. Supports background: true for async execution.",
+            Agent:       researcher,
+        },
+    ),
+)
+```
+
+When the LLM calls the sub-agent with `background: true`:
+
+1. The task launches in a goroutine and returns `{"task_id": "task-1", "status": "launched"}`
+2. Three task management tools are automatically available: `get_task_result`, `stop_task`, `list_tasks`
+3. The orchestrator uses `get_task_result` with `wait: true` to collect results
+
+See [Background Agents](background-agents.md) for the full tool reference and examples.

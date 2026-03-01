@@ -52,12 +52,14 @@ nav:
     - Speech-to-Text: providers/speech-to-text.md
     - Rerankers: providers/rerankers.md
     - Fill-in-the-Middle: providers/fim.md
+    - Vision: providers/vision.md
   - Agent Framework:
     - Overview: agent/overview.md
     - Session Management: agent/sessions.md
     - Persistent Memory: agent/memory.md
     - Streaming: agent/streaming.md
     - Sub-Agents: agent/sub-agents.md
+    - Background Agents: agent/background-agents.md
     - Handoffs: agent/handoffs.md
     - Fan-Out: agent/fan-out.md
     - Continue/Resume: agent/continue.md

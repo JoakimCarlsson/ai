@@ -108,10 +108,51 @@ func main() {
 }
 ```
 
+## StreamableHTTP Connection
+
+The newer MCP transport for HTTP-based servers:
+
+```go
+mcpServers := map[string]tool.MCPServer{
+    "remote": {
+        Type: tool.MCPStreamableHTTP,
+        URL:  "https://your-mcp-server.com/mcp",
+        Headers: map[string]string{
+            "Authorization": "Bearer your-token",
+        },
+    },
+}
+
+mcpTools, err := tool.GetMcpTools(ctx, mcpServers)
+defer tool.CloseMCPPool()
+```
+
+## Transport Types
+
+| Type | Constant | Use Case |
+|------|----------|----------|
+| Stdio | `tool.MCPStdio` | Local subprocess (e.g., `npx` commands) |
+| SSE | `tool.MCPSse` | HTTP server with Server-Sent Events |
+| StreamableHTTP | `tool.MCPStreamableHTTP` | HTTP server with streamable responses |
+
+## MCPServer Config
+
+```go
+type MCPServer struct {
+    Command string            // Stdio: command to run
+    Args    []string          // Stdio: command arguments
+    Env     []string          // Stdio: environment variables
+    Type    MCPType           // Transport type
+    URL     string            // SSE/StreamableHTTP: server URL
+    Headers map[string]string // SSE/StreamableHTTP: custom HTTP headers
+}
+```
+
 ## Features
 
-- Supports both stdio (subprocess) and SSE (HTTP) transports
+- Supports stdio, SSE, and StreamableHTTP transports
 - Connection pooling for efficient reuse of MCP server connections
+- Custom HTTP headers for authentication on remote servers
 - Automatic tool discovery and registration
 - Compatible with all official MCP servers
 - Tools are namespaced with server name (e.g., `context7_search`)

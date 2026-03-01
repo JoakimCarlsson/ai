@@ -55,6 +55,7 @@ When you call `Chat()`, the agent:
 type ChatResponse struct {
     Content        string
     ToolCalls      []message.ToolCall
+    ToolResults    []ToolExecutionResult
     Usage          llm.TokenUsage
     FinishReason   message.FinishReason
     AgentName      string         // Set when a handoff occurred
@@ -63,3 +64,26 @@ type ChatResponse struct {
     TotalTurns     int
 }
 ```
+
+All metrics are aggregated across the full agent loop, not just the final LLM call:
+
+| Field | Description |
+|-------|-------------|
+| `TotalTurns` | Number of LLM round-trips (API calls) made |
+| `TotalDuration` | Wall-clock time from `Chat()` entry to return |
+| `TotalToolCalls` | Total tool invocations across all iterations |
+| `ToolResults` | Results of every tool execution during the conversation |
+
+## Debug APIs
+
+Inspect the messages that would be sent to the LLM after applying context strategies:
+
+```go
+// Non-destructive — does not modify the session
+messages, err := myAgent.PeekContextMessages(ctx, "Hello")
+
+// Modifying — adds the user message to the session
+messages, err := myAgent.BuildContextMessages(ctx, "Hello")
+```
+
+Use `PeekContextMessages` to debug context window management without side effects.

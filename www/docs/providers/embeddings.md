@@ -53,6 +53,28 @@ multimodalInputs := []embeddings.MultimodalInput{
 response, err := embedder.GenerateMultimodalEmbeddings(context.Background(), multimodalInputs)
 ```
 
+## Contextualized Embeddings
+
+Embed document chunks with awareness of their surrounding context. Each chunk embedding incorporates information from the full document, improving retrieval for chunks that lack standalone meaning.
+
+```go
+documentChunks := [][]string{
+    { // Document 1
+        "Introduction to quantum computing...",
+        "Qubits differ from classical bits...",
+        "Quantum entanglement enables...",
+    },
+    { // Document 2
+        "Machine learning overview...",
+        "Neural networks consist of...",
+    },
+}
+
+response, err := embedder.GenerateContextualizedEmbeddings(context.Background(), documentChunks)
+
+// response.DocumentEmbeddings[0][1] = embedding for "Qubits differ..." with context from Document 1
+```
+
 ## Client Options
 
 ```go
@@ -61,6 +83,7 @@ embedder, err := embeddings.NewEmbedding(
     embeddings.WithAPIKey(""),
     embeddings.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
     embeddings.WithBatchSize(100),
+    embeddings.WithDimensions(1024),
     embeddings.WithTimeout(30*time.Second),
     embeddings.WithVoyageOptions(
         embeddings.WithInputType("document"),
@@ -68,4 +91,15 @@ embedder, err := embeddings.NewEmbedding(
         embeddings.WithOutputDtype("float"),
     ),
 )
+```
+
+## Embedding Interface
+
+```go
+type Embedding interface {
+    GenerateEmbeddings(ctx, texts, inputType...) (*EmbeddingResponse, error)
+    GenerateMultimodalEmbeddings(ctx, inputs, inputType...) (*EmbeddingResponse, error)
+    GenerateContextualizedEmbeddings(ctx, documentChunks, inputType...) (*ContextualizedEmbeddingResponse, error)
+    Model() model.EmbeddingModel
+}
 ```
