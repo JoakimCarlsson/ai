@@ -62,6 +62,10 @@ nav:
     - Continue/Resume: agent/continue.md
     - Context Strategies: agent/context-strategies.md
     - Instruction Templates: agent/instruction-templates.md
+  - Integrations:
+    - PostgreSQL: integrations/postgres.md
+    - SQLite: integrations/sqlite.md
+    - pgvector: integrations/pgvector.md
   - Advanced:
     - BYOM: advanced/byom.md
     - MCP Integration: advanced/mcp.md

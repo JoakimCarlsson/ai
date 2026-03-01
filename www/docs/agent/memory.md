@@ -39,6 +39,12 @@ store := memory.FileStore("./memories", embedder)
 | `memory.AutoDedup()` | Use LLM to deduplicate similar memories before storing |
 | `memory.LLM(l)` | Use a separate (cheaper) LLM for extraction and deduplication |
 
+## Database Stores
+
+Ready-to-use stores for production backends:
+
+- [pgvector](../integrations/pgvector.md) — `pgvector.MemoryStore(ctx, connString, embedder)` — PostgreSQL with HNSW vector search
+
 ## Store Interface
 
 Implement for any vector database backend:

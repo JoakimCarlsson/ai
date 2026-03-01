@@ -23,9 +23,16 @@ store := session.FileStore("./sessions")
 store := session.MemoryStore()
 ```
 
+## Database Stores
+
+Ready-to-use stores for production backends:
+
+- [PostgreSQL](../integrations/postgres.md) — `postgres.SessionStore(ctx, connString)`
+- [SQLite](../integrations/sqlite.md) — `sqlite.SessionStore(ctx, db)`
+
 ## Store Interface
 
-Implement this interface to use any backend (PostgreSQL, Redis, etc.):
+Implement this interface to use any backend:
 
 ```go
 type Store interface {
