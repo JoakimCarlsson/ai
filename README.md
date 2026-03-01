@@ -43,7 +43,7 @@ import (
 func main() {
     client, err := llm.NewLLM(
         model.ProviderOpenAI,
-        llm.WithAPIKey("your-api-key"),
+        llm.WithAPIKey("api-key"),
         llm.WithModel(model.OpenAIModels[model.GPT4o]),
     )
     if err != nil {
