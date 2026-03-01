@@ -1,0 +1,71 @@
+site_name: Go AI Client Library
+site_url: https://joakimcarlsson.github.io/ai
+repo_url: https://github.com/joakimcarlsson/ai
+repo_name: joakimcarlsson/ai
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to light mode
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to dark mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - content.code.annotate
+    - search.highlight
+    - search.suggest
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - tables
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quick-start.md
+  - Providers:
+    - Overview: providers/overview.md
+    - LLM: providers/llm.md
+    - Embeddings: providers/embeddings.md
+    - Image Generation: providers/image-generation.md
+    - Audio: providers/audio.md
+    - Speech-to-Text: providers/speech-to-text.md
+    - Rerankers: providers/rerankers.md
+  - Agent Framework:
+    - Overview: agent/overview.md
+    - Session Management: agent/sessions.md
+    - Persistent Memory: agent/memory.md
+    - Streaming: agent/streaming.md
+    - Sub-Agents: agent/sub-agents.md
+    - Handoffs: agent/handoffs.md
+    - Fan-Out: agent/fan-out.md
+    - Continue/Resume: agent/continue.md
+    - Context Strategies: agent/context-strategies.md
+    - Instruction Templates: agent/instruction-templates.md
+  - Advanced:
+    - BYOM: advanced/byom.md
+    - MCP Integration: advanced/mcp.md
+    - Tool Calling: advanced/tools.md
+    - Structured Output: advanced/structured-output.md
+    - Cost Tracking: advanced/cost-tracking.md
+    - Configuration: advanced/configuration.md
