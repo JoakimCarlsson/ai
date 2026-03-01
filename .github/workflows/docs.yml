@@ -5,8 +5,6 @@ on:
     branches:
       - main
       - task/docs
-    paths:
-      - 'www/**'
   workflow_dispatch:
 
 permissions:
