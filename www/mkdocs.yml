@@ -51,6 +51,7 @@ nav:
     - Audio: providers/audio.md
     - Speech-to-Text: providers/speech-to-text.md
     - Rerankers: providers/rerankers.md
+    - Fill-in-the-Middle: providers/fim.md
   - Agent Framework:
     - Overview: agent/overview.md
     - Session Management: agent/sessions.md
@@ -72,4 +73,5 @@ nav:
     - Tool Calling: advanced/tools.md
     - Structured Output: advanced/structured-output.md
     - Cost Tracking: advanced/cost-tracking.md
+    - Prompt Templates: advanced/prompt-templates.md
     - Configuration: advanced/configuration.md
