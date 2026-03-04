@@ -1,7 +1,7 @@
 module github.com/joakimcarlsson/ai/integrations/sqlite
 
-go 1.24.2
+go 1.25.0
 
-require github.com/joakimcarlsson/ai v0.0.0
+require github.com/joakimcarlsson/ai v0.13.0
 
 replace github.com/joakimcarlsson/ai => ../..

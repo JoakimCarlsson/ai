@@ -48,11 +48,11 @@ stream := client.StreamResponse(ctx, messages, nil)
 
 for event := range stream {
     switch event.Type {
-    case types.EventTypeContentDelta:
+    case types.EventContentDelta:
         fmt.Print(event.Content)
-    case types.EventTypeFinal:
+    case types.EventComplete:
         fmt.Printf("\nTokens used: %d\n", event.Response.Usage.InputTokens)
-    case types.EventTypeError:
+    case types.EventError:
         log.Fatal(event.Error)
     }
 }
