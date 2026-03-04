@@ -502,35 +502,192 @@ func WithAnthropicShouldThinkFn(fn func(string) bool) AnthropicOption {
 	}
 }
 
-// SupportsStructuredOutput checks if the provider supports structured output
 func (a *anthropicClient) supportsStructuredOutput() bool {
-	return false
+	return a.llmOptions.model.SupportsStructuredOut
 }
 
-// SendMessagesWithStructuredOutput sends messages with a structured output schema
+func (a *anthropicClient) buildOutputConfig(outputSchema *schema.StructuredOutputInfo) anthropic.OutputConfigParam {
+	schemaMap := map[string]any{
+		"type":       "object",
+		"properties": outputSchema.Parameters,
+	}
+	if len(outputSchema.Required) > 0 {
+		schemaMap["required"] = outputSchema.Required
+	}
+	return anthropic.OutputConfigParam{
+		Format: anthropic.JSONOutputFormatParam{
+			Schema: schemaMap,
+		},
+	}
+}
+
 func (a *anthropicClient) sendWithStructuredOutput(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
 ) (*LLMResponse, error) {
-	return nil, errors.New(
-		"structured output not supported by Anthropic Claude - use tool-based approach instead",
+	anthropicMessages, systemMessages := a.convertMessages(messages)
+	preparedMessages := a.preparedMessages(
+		anthropicMessages,
+		a.convertTools(tools),
+		systemMessages,
+	)
+	preparedMessages.OutputConfig = a.buildOutputConfig(outputSchema)
+
+	ctx, cancel := withTimeout(ctx, a.llmOptions.timeout)
+	defer cancel()
+
+	return ExecuteWithRetry(
+		ctx,
+		AnthropicRetryConfig(),
+		func() (*LLMResponse, error) {
+			anthropicResponse, err := a.client.Messages.New(
+				ctx,
+				preparedMessages,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			content := ""
+			for _, block := range anthropicResponse.Content {
+				if text, ok := block.AsAny().(anthropic.TextBlock); ok {
+					content += text.Text
+				}
+			}
+
+			return &LLMResponse{
+				Content:                    content,
+				ToolCalls:                  a.toolCalls(*anthropicResponse),
+				Usage:                      a.usage(*anthropicResponse),
+				FinishReason:               a.finishReason(string(anthropicResponse.StopReason)),
+				StructuredOutput:           &content,
+				UsedNativeStructuredOutput: true,
+			}, nil
+		},
 	)
 }
 
-// StreamWithStructuredOutput streams messages with a structured output schema
 func (a *anthropicClient) streamWithStructuredOutput(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
 ) <-chan LLMEvent {
-	errChan := make(chan LLMEvent, 1)
-	errChan <- LLMEvent{
-		Type:  types.EventError,
-		Error: errors.New("structured output not supported by Anthropic Claude - use tool-based approach instead"),
-	}
-	close(errChan)
-	return errChan
+	anthropicMessages, systemMessages := a.convertMessages(messages)
+	preparedMessages := a.preparedMessages(
+		anthropicMessages,
+		a.convertTools(tools),
+		systemMessages,
+	)
+	preparedMessages.OutputConfig = a.buildOutputConfig(outputSchema)
+
+	eventChan := make(chan LLMEvent)
+
+	ctx, cancel := withTimeout(ctx, a.llmOptions.timeout)
+	defer cancel()
+
+	go func() {
+		defer close(eventChan)
+
+		ExecuteStreamWithRetry(ctx, AnthropicRetryConfig(), func() error {
+			anthropicStream := a.client.Messages.NewStreaming(
+				ctx,
+				preparedMessages,
+			)
+			accumulatedMessage := anthropic.Message{}
+
+			currentToolCallID := ""
+			for anthropicStream.Next() {
+				event := anthropicStream.Current()
+				err := accumulatedMessage.Accumulate(event)
+				if err != nil {
+					slog.Warn("Error accumulating message", "error", err)
+					continue
+				}
+
+				switch event := event.AsAny().(type) {
+				case anthropic.ContentBlockStartEvent:
+					switch event.ContentBlock.Type {
+					case "text":
+						eventChan <- LLMEvent{Type: types.EventContentStart}
+					case "tool_use":
+						currentToolCallID = event.ContentBlock.ID
+						eventChan <- LLMEvent{
+							Type: types.EventToolUseStart,
+							ToolCall: &message.ToolCall{
+								ID:       event.ContentBlock.ID,
+								Name:     event.ContentBlock.Name,
+								Finished: false,
+							},
+						}
+					}
+
+				case anthropic.ContentBlockDeltaEvent:
+					if event.Delta.Type == "thinking_delta" && event.Delta.Thinking != "" {
+						eventChan <- LLMEvent{
+							Type:     types.EventThinkingDelta,
+							Thinking: event.Delta.Thinking,
+						}
+					} else if event.Delta.Type == "text_delta" && event.Delta.Text != "" {
+						eventChan <- LLMEvent{
+							Type:    types.EventContentDelta,
+							Content: event.Delta.Text,
+						}
+					} else if event.Delta.Type == "input_json_delta" {
+						if currentToolCallID != "" {
+							eventChan <- LLMEvent{
+								Type: types.EventToolUseDelta,
+								ToolCall: &message.ToolCall{
+									ID:       currentToolCallID,
+									Finished: false,
+									Input:    event.Delta.JSON.PartialJSON.Raw(),
+								},
+							}
+						}
+					}
+				case anthropic.ContentBlockStopEvent:
+					if currentToolCallID != "" {
+						eventChan <- LLMEvent{
+							Type: types.EventToolUseStop,
+							ToolCall: &message.ToolCall{
+								ID: currentToolCallID,
+							},
+						}
+						currentToolCallID = ""
+					} else {
+						eventChan <- LLMEvent{Type: types.EventContentStop}
+					}
+
+				case anthropic.MessageStopEvent:
+					content := ""
+					for _, block := range accumulatedMessage.Content {
+						if text, ok := block.AsAny().(anthropic.TextBlock); ok {
+							content += text.Text
+						}
+					}
+
+					eventChan <- LLMEvent{
+						Type: types.EventComplete,
+						Response: &LLMResponse{
+							Content:                    content,
+							ToolCalls:                  a.toolCalls(accumulatedMessage),
+							Usage:                      a.usage(accumulatedMessage),
+							FinishReason:               a.finishReason(string(accumulatedMessage.StopReason)),
+							StructuredOutput:           &content,
+							UsedNativeStructuredOutput: true,
+						},
+					}
+				}
+			}
+
+			err := anthropicStream.Err()
+			if err == nil || errors.Is(err, io.EOF) {
+				return nil
+			}
+			return err
+		}, eventChan)
+	}()
+	return eventChan
 }
