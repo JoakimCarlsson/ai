@@ -508,8 +508,9 @@ func (a *anthropicClient) supportsStructuredOutput() bool {
 
 func (a *anthropicClient) buildOutputConfig(outputSchema *schema.StructuredOutputInfo) anthropic.OutputConfigParam {
 	schemaMap := map[string]any{
-		"type":       "object",
-		"properties": outputSchema.Parameters,
+		"type":                 "object",
+		"properties":           outputSchema.Parameters,
+		"additionalProperties": false,
 	}
 	if len(outputSchema.Required) > 0 {
 		schemaMap["required"] = outputSchema.Required
