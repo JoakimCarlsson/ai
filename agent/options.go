@@ -166,13 +166,33 @@ func WithInstructionProvider(provider InstructionProvider) AgentOption {
 //
 // Sub-agents do NOT inherit the parent's conversation history, tools, or system prompt.
 // They operate as independent agents configured at creation time.
+//
+// If the parent has an observer set, it is automatically propagated to sub-agents
+// that do not already have their own observer.
 func WithSubAgents(configs ...SubAgentConfig) AgentOption {
 	return func(a *Agent) {
 		for _, cfg := range configs {
+			if a.observer != nil && cfg.Agent.observer == nil {
+				cfg.Agent.observer = a.observer
+			}
 			a.tools = append(a.tools, newSubAgentTool(cfg))
 		}
 		if a.taskManager == nil {
 			a.taskManager = newTaskManager()
+		}
+		if a.observer != nil {
+			a.taskManager.observer = a.observer
+		}
+	}
+}
+
+// WithObserver attaches a runtime observer that receives telemetry events
+// for task lifecycle, turn boundaries, and tool execution.
+func WithObserver(obs Observer) AgentOption {
+	return func(a *Agent) {
+		a.observer = obs
+		if a.taskManager != nil {
+			a.taskManager.observer = obs
 		}
 	}
 }

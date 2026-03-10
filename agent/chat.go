@@ -104,12 +104,32 @@ func (a *Agent) runLoop(
 	}
 
 	for {
+		turnStart := time.Now()
+		activeAgent.emitEvent(ctx, ObserverEvent{
+			Type:      EventTurnStarted,
+			TurnIndex: turns,
+		})
+
 		resp, err := activeAgent.llm.SendMessages(ctx, messages, allTools)
 		if err != nil {
+			activeAgent.emitEvent(ctx, ObserverEvent{
+				Type:      EventTurnErrored,
+				TurnIndex: turns,
+				Duration:  time.Since(turnStart),
+				Error:     err.Error(),
+			})
 			return nil, err
 		}
 		turns++
 		totalUsage.Add(resp.Usage)
+
+		activeAgent.emitEvent(ctx, ObserverEvent{
+			Type:      EventTurnCompleted,
+			TurnIndex: turns - 1,
+			Duration:  time.Since(turnStart),
+			Usage:     resp.Usage,
+			ToolCount: len(resp.ToolCalls),
+		})
 
 		if len(resp.ToolCalls) == 0 || !activeAgent.autoExecute ||
 			(maxIter > 0 && iteration >= maxIter) {

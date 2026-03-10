@@ -132,6 +132,12 @@ func (a *Agent) runLoopStream(
 		var toolCalls []message.ToolCall
 		var finalResponse *llm.LLMResponse
 
+		turnStart := time.Now()
+		activeAgent.emitEvent(ctx, ObserverEvent{
+			Type:      EventTurnStarted,
+			TurnIndex: turns,
+		})
+
 		for event := range activeAgent.llm.StreamResponse(ctx, messages, allTools) {
 			switch event.Type {
 			case types.EventContentDelta:
@@ -151,6 +157,12 @@ func (a *Agent) runLoopStream(
 					toolCalls = event.Response.ToolCalls
 				}
 			case types.EventError:
+				activeAgent.emitEvent(ctx, ObserverEvent{
+					Type:      EventTurnErrored,
+					TurnIndex: turns,
+					Duration:  time.Since(turnStart),
+					Error:     event.Error.Error(),
+				})
 				eventChan <- ChatEvent{Type: types.EventError, Error: event.Error}
 				return
 			}
@@ -159,6 +171,13 @@ func (a *Agent) runLoopStream(
 		turns++
 		if finalResponse != nil {
 			totalUsage.Add(finalResponse.Usage)
+			activeAgent.emitEvent(ctx, ObserverEvent{
+				Type:      EventTurnCompleted,
+				TurnIndex: turns - 1,
+				Duration:  time.Since(turnStart),
+				Usage:     finalResponse.Usage,
+				ToolCount: len(toolCalls),
+			})
 		}
 
 		if len(toolCalls) == 0 || !activeAgent.autoExecute ||

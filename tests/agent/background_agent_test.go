@@ -1405,7 +1405,22 @@ func (m *blockingMockLLM) StreamResponse(
 	msgs []message.Message,
 	tools []tool.BaseTool,
 ) <-chan llm.LLMEvent {
-	return m.fallback.StreamResponse(ctx, msgs, tools)
+	ch := make(chan llm.LLMEvent)
+	go func() {
+		defer close(ch)
+		select {
+		case <-time.After(m.delay):
+			for event := range m.fallback.StreamResponse(ctx, msgs, tools) {
+				ch <- event
+			}
+		case <-ctx.Done():
+			if m.onCancel != nil {
+				m.onCancel()
+			}
+			ch <- llm.LLMEvent{Type: types.EventError, Error: ctx.Err()}
+		}
+	}()
+	return ch
 }
 
 func (m *blockingMockLLM) StreamResponseWithStructuredOutput(

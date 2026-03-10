@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/tool"
@@ -13,23 +14,49 @@ func (a *Agent) executeSingleTool(
 	registry *tool.Registry,
 	tc message.ToolCall,
 ) ToolExecutionResult {
+	a.emitEvent(ctx, ObserverEvent{
+		Type:       EventToolStarted,
+		ToolCallID: tc.ID,
+		ToolName:   tc.Name,
+	})
+
+	start := time.Now()
 	resp, err := registry.Execute(ctx, tool.ToolCall{
 		ID:    tc.ID,
 		Name:  tc.Name,
 		Input: tc.Input,
 	})
+	elapsed := time.Since(start)
 
 	result := ToolExecutionResult{
 		ToolCallID: tc.ID,
 		ToolName:   tc.Name,
 		Input:      tc.Input,
 		IsError:    resp.IsError || err != nil,
+		Duration:   elapsed,
 	}
 
 	if err != nil {
 		result.Output = err.Error()
 	} else {
 		result.Output = resp.Content
+	}
+
+	if result.IsError {
+		a.emitEvent(ctx, ObserverEvent{
+			Type:       EventToolErrored,
+			ToolCallID: tc.ID,
+			ToolName:   tc.Name,
+			Duration:   elapsed,
+			Error:      result.Output,
+		})
+	} else {
+		a.emitEvent(ctx, ObserverEvent{
+			Type:       EventToolSucceeded,
+			ToolCallID: tc.ID,
+			ToolName:   tc.Name,
+			Duration:   elapsed,
+		})
 	}
 
 	return result

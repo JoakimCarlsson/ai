@@ -43,6 +43,8 @@ type ToolExecutionResult struct {
 	Output string
 	// IsError indicates whether the tool execution resulted in an error.
 	IsError bool
+	// Duration is the wall-clock time the tool execution took.
+	Duration time.Duration
 }
 
 // ChatEvent represents a single streaming event emitted during ChatStream.

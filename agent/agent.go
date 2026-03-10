@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/joakimcarlsson/ai/agent/memory"
 	"github.com/joakimcarlsson/ai/agent/session"
@@ -34,6 +35,7 @@ type Agent struct {
 	instructionProvider func(ctx context.Context, state map[string]any) (string, error)
 	handoffs            []HandoffConfig
 	taskManager         *TaskManager
+	observer            Observer
 }
 
 func (a *Agent) getMemoryLLM() llm.LLM {
@@ -92,4 +94,16 @@ func ParseToolInput[T any](input string) (T, error) {
 	var result T
 	err := json.Unmarshal([]byte(input), &result)
 	return result, err
+}
+
+func (a *Agent) emitEvent(ctx context.Context, evt ObserverEvent) {
+	if a.observer == nil {
+		return
+	}
+	evt.Timestamp = time.Now()
+	if taskID, agentName := taskScopeFromContext(ctx); taskID != "" {
+		evt.TaskID = taskID
+		evt.AgentName = agentName
+	}
+	a.observer.OnEvent(evt)
 }
