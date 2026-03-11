@@ -58,6 +58,7 @@ nav:
     - Session Management: agent/sessions.md
     - Persistent Memory: agent/memory.md
     - Streaming: agent/streaming.md
+    - Hooks: agent/hooks.md
     - Sub-Agents: agent/sub-agents.md
     - Background Agents: agent/background-agents.md
     - Handoffs: agent/handoffs.md
