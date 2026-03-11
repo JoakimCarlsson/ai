@@ -166,13 +166,34 @@ func WithInstructionProvider(provider InstructionProvider) AgentOption {
 //
 // Sub-agents do NOT inherit the parent's conversation history, tools, or system prompt.
 // They operate as independent agents configured at creation time.
+//
+// If the parent has hooks set, they are automatically propagated to sub-agents
+// that do not already have their own hooks.
 func WithSubAgents(configs ...SubAgentConfig) AgentOption {
 	return func(a *Agent) {
 		for _, cfg := range configs {
+			if len(a.hooks) > 0 && len(cfg.Agent.hooks) == 0 {
+				cfg.Agent.hooks = a.hooks
+			}
 			a.tools = append(a.tools, newSubAgentTool(cfg))
 		}
 		if a.taskManager == nil {
 			a.taskManager = newTaskManager()
+		}
+		if len(a.hooks) > 0 {
+			a.taskManager.hooks = a.hooks
+		}
+	}
+}
+
+// WithHooks adds hook interceptors to the agent's execution pipeline.
+// Hooks can observe, modify, or block tool calls and model interactions.
+// Multiple calls append to the chain. Hooks run in registration order.
+func WithHooks(hooks ...Hooks) AgentOption {
+	return func(a *Agent) {
+		a.hooks = append(a.hooks, hooks...)
+		if a.taskManager != nil {
+			a.taskManager.hooks = a.hooks
 		}
 	}
 }

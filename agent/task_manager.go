@@ -3,22 +3,22 @@ package agent
 import (
 	"context"
 	"fmt"
+	"runtime/debug"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/joakimcarlsson/ai/types"
 )
 
 // TaskStatus represents the lifecycle state of a background task.
 type TaskStatus string
 
 const (
-	// TaskRunning indicates the task is currently executing.
-	TaskRunning TaskStatus = "running"
-	// TaskCompleted indicates the task finished successfully.
+	TaskRunning   TaskStatus = "running"
 	TaskCompleted TaskStatus = "completed"
-	// TaskFailed indicates the task encountered an error.
-	TaskFailed TaskStatus = "failed"
-	// TaskCancelled indicates the task was explicitly cancelled.
+	TaskFailed    TaskStatus = "failed"
 	TaskCancelled TaskStatus = "cancelled"
 )
 
@@ -28,6 +28,8 @@ type backgroundTask struct {
 	Status    TaskStatus
 	Result    string
 	Error     string
+	StartedAt time.Time
+	EndedAt   time.Time
 	done      chan struct{}
 	cancel    context.CancelFunc
 }
@@ -40,6 +42,7 @@ type TaskManager struct {
 	tasks map[string]*backgroundTask
 	wg    sync.WaitGroup
 	idGen atomic.Int64
+	hooks []Hooks
 }
 
 func newTaskManager() *TaskManager {
@@ -58,12 +61,14 @@ func (tm *TaskManager) Launch(
 	opts ...ChatOption,
 ) string {
 	id := fmt.Sprintf("task-%d", tm.idGen.Add(1))
+	startedAt := time.Now()
 
 	taskCtx, cancel := context.WithCancel(ctx)
 	bt := &backgroundTask{
 		ID:        id,
 		AgentName: agentName,
 		Status:    TaskRunning,
+		StartedAt: startedAt,
 		done:      make(chan struct{}),
 		cancel:    cancel,
 	}
@@ -72,31 +77,130 @@ func (tm *TaskManager) Launch(
 	tm.tasks[id] = bt
 	tm.mu.Unlock()
 
+	_, _, branch := taskScopeFromContext(ctx)
+	runSubagentStart(ctx, tm.hooks, SubagentEventContext{
+		TaskID:    id,
+		AgentName: agentName,
+		Task:      task,
+		Branch:    branch,
+	})
+
 	tm.wg.Add(1)
 	go func() {
 		defer tm.wg.Done()
 		defer close(bt.done)
+		defer func() {
+			if r := recover(); r != nil {
+				endedAt := time.Now()
+				panicMsg := fmt.Sprintf("panic: %v", r)
+				_ = debug.Stack()
 
-		resp, err := a.Chat(taskCtx, task, opts...)
+				tm.mu.Lock()
+				bt.Status = TaskFailed
+				bt.Error = panicMsg
+				bt.EndedAt = endedAt
+				tm.mu.Unlock()
+
+				runSubagentStop(ctx, tm.hooks, SubagentEventContext{
+					TaskID:    id,
+					AgentName: agentName,
+					Task:      task,
+					Branch:    branch,
+					Error:     fmt.Errorf("%s", panicMsg),
+					Duration:  endedAt.Sub(startedAt),
+				})
+			}
+		}()
+
+		scopedCtx := withTaskScope(taskCtx, id, agentName)
+		resp, err := runTaskStream(scopedCtx, a, task, opts...)
+		endedAt := time.Now()
+		duration := endedAt.Sub(startedAt)
 
 		tm.mu.Lock()
-		defer tm.mu.Unlock()
+		bt.EndedAt = endedAt
 
 		if taskCtx.Err() != nil {
 			bt.Status = TaskCancelled
 			bt.Error = "task was cancelled"
+			tm.mu.Unlock()
+
+			runSubagentStop(ctx, tm.hooks, SubagentEventContext{
+				TaskID:    id,
+				AgentName: agentName,
+				Task:      task,
+				Branch:    branch,
+				Error:     fmt.Errorf("task was cancelled"),
+				Duration:  duration,
+			})
 			return
 		}
 		if err != nil {
 			bt.Status = TaskFailed
 			bt.Error = err.Error()
+			tm.mu.Unlock()
+
+			runSubagentStop(ctx, tm.hooks, SubagentEventContext{
+				TaskID:    id,
+				AgentName: agentName,
+				Task:      task,
+				Branch:    branch,
+				Error:     err,
+				Duration:  duration,
+			})
 			return
 		}
 		bt.Status = TaskCompleted
 		bt.Result = resp.Content
+		tm.mu.Unlock()
+
+		runSubagentStop(ctx, tm.hooks, SubagentEventContext{
+			TaskID:    id,
+			AgentName: agentName,
+			Task:      task,
+			Branch:    branch,
+			Result:    resp.Content,
+			Duration:  duration,
+		})
 	}()
 
 	return id
+}
+
+func runTaskStream(
+	ctx context.Context,
+	a *Agent,
+	task string,
+	opts ...ChatOption,
+) (*ChatResponse, error) {
+	var final *ChatResponse
+	var content strings.Builder
+
+	for event := range a.ChatStream(ctx, task, opts...) {
+		switch event.Type {
+		case types.EventContentDelta:
+			content.WriteString(event.Content)
+		case types.EventComplete:
+			if event.Response != nil {
+				final = event.Response
+			}
+		case types.EventError:
+			if event.Error != nil {
+				return nil, event.Error
+			}
+			return nil, fmt.Errorf("background task stream failed")
+		}
+	}
+
+	if final != nil {
+		return final, nil
+	}
+
+	if content.Len() > 0 {
+		return &ChatResponse{Content: content.String()}, nil
+	}
+
+	return nil, fmt.Errorf("background task stream ended without completion")
 }
 
 // GetResult retrieves the current state of a background task. If wait is true, it blocks
@@ -120,7 +224,6 @@ func (tm *TaskManager) GetResult(
 			select {
 			case <-bt.done:
 			case <-time.After(timeout):
-				// Timeout expired — return current snapshot (likely still "running")
 			case <-ctx.Done():
 				return nil, ctx.Err()
 			}

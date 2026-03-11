@@ -104,10 +104,44 @@ func (a *Agent) runLoop(
 	}
 
 	for {
+		turnStart := time.Now()
+
+		taskID, agentName, branch := activeAgent.hookContext(ctx)
+		mcResult, err := runPreModelCall(ctx, activeAgent.hooks, ModelCallContext{
+			Messages:  messages,
+			Tools:     allTools,
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("pre-model-call hook: %w", err)
+		}
+		if mcResult.Action == HookModify {
+			messages = mcResult.Messages
+			allTools = mcResult.Tools
+		}
+
 		resp, err := activeAgent.llm.SendMessages(ctx, messages, allTools)
+
+		mrResult, hookErr := runPostModelCall(ctx, activeAgent.hooks, ModelResponseContext{
+			Response:  resp,
+			Duration:  time.Since(turnStart),
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+			Error:     err,
+		})
 		if err != nil {
 			return nil, err
 		}
+		if hookErr != nil {
+			return nil, fmt.Errorf("post-model-call hook: %w", hookErr)
+		}
+		if mrResult.Action == HookModify && mrResult.Response != nil {
+			resp = mrResult.Response
+		}
+
 		turns++
 		totalUsage.Add(resp.Usage)
 

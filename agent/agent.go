@@ -34,6 +34,7 @@ type Agent struct {
 	instructionProvider func(ctx context.Context, state map[string]any) (string, error)
 	handoffs            []HandoffConfig
 	taskManager         *TaskManager
+	hooks               []Hooks
 }
 
 func (a *Agent) getMemoryLLM() llm.LLM {
@@ -92,4 +93,8 @@ func ParseToolInput[T any](input string) (T, error) {
 	var result T
 	err := json.Unmarshal([]byte(input), &result)
 	return result, err
+}
+
+func (a *Agent) hookContext(ctx context.Context) (taskID, agentName, branch string) {
+	return taskScopeFromContext(ctx)
 }

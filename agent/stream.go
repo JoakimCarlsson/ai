@@ -132,6 +132,25 @@ func (a *Agent) runLoopStream(
 		var toolCalls []message.ToolCall
 		var finalResponse *llm.LLMResponse
 
+		turnStart := time.Now()
+
+		taskID, agentName, branch := activeAgent.hookContext(ctx)
+		mcResult, hookErr := runPreModelCall(ctx, activeAgent.hooks, ModelCallContext{
+			Messages:  messages,
+			Tools:     allTools,
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+		})
+		if hookErr != nil {
+			eventChan <- ChatEvent{Type: types.EventError, Error: fmt.Errorf("pre-model-call hook: %w", hookErr)}
+			return
+		}
+		if mcResult.Action == HookModify {
+			messages = mcResult.Messages
+			allTools = mcResult.Tools
+		}
+
 		for event := range activeAgent.llm.StreamResponse(ctx, messages, allTools) {
 			switch event.Type {
 			case types.EventContentDelta:
@@ -151,6 +170,13 @@ func (a *Agent) runLoopStream(
 					toolCalls = event.Response.ToolCalls
 				}
 			case types.EventError:
+				runPostModelCall(ctx, activeAgent.hooks, ModelResponseContext{
+					Duration:  time.Since(turnStart),
+					AgentName: agentName,
+					TaskID:    taskID,
+					Branch:    branch,
+					Error:     event.Error,
+				})
 				eventChan <- ChatEvent{Type: types.EventError, Error: event.Error}
 				return
 			}
@@ -159,6 +185,21 @@ func (a *Agent) runLoopStream(
 		turns++
 		if finalResponse != nil {
 			totalUsage.Add(finalResponse.Usage)
+			mrResult, hookErr := runPostModelCall(ctx, activeAgent.hooks, ModelResponseContext{
+				Response:  finalResponse,
+				Duration:  time.Since(turnStart),
+				AgentName: agentName,
+				TaskID:    taskID,
+				Branch:    branch,
+			})
+			if hookErr != nil {
+				eventChan <- ChatEvent{Type: types.EventError, Error: fmt.Errorf("post-model-call hook: %w", hookErr)}
+				return
+			}
+			if mrResult.Action == HookModify && mrResult.Response != nil {
+				finalResponse = mrResult.Response
+				toolCalls = finalResponse.ToolCalls
+			}
 		}
 
 		if len(toolCalls) == 0 || !activeAgent.autoExecute ||

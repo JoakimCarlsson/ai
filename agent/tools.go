@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/tool"
@@ -13,23 +14,64 @@ func (a *Agent) executeSingleTool(
 	registry *tool.Registry,
 	tc message.ToolCall,
 ) ToolExecutionResult {
-	resp, err := registry.Execute(ctx, tool.ToolCall{
+	taskID, agentName, branch := a.hookContext(ctx)
+	hookTC := ToolUseContext{
+		ToolCallID: tc.ID,
+		ToolName:   tc.Name,
+		Input:      tc.Input,
+		AgentName:  agentName,
+		TaskID:     taskID,
+		Branch:     branch,
+	}
+
+	preResult, err := runPreToolUse(ctx, a.hooks, hookTC)
+	if err != nil || preResult.Action == HookDeny {
+		reason := preResult.DenyReason
+		if err != nil {
+			reason = err.Error()
+		}
+		return ToolExecutionResult{
+			ToolCallID: tc.ID,
+			ToolName:   tc.Name,
+			Input:      tc.Input,
+			Output:     "Tool call denied: " + reason,
+			IsError:    true,
+		}
+	}
+	if preResult.Action == HookModify {
+		tc.Input = preResult.Input
+	}
+
+	start := time.Now()
+	resp, execErr := registry.Execute(ctx, tool.ToolCall{
 		ID:    tc.ID,
 		Name:  tc.Name,
 		Input: tc.Input,
 	})
+	elapsed := time.Since(start)
 
 	result := ToolExecutionResult{
 		ToolCallID: tc.ID,
 		ToolName:   tc.Name,
 		Input:      tc.Input,
-		IsError:    resp.IsError || err != nil,
+		IsError:    resp.IsError || execErr != nil,
+		Duration:   elapsed,
 	}
 
-	if err != nil {
-		result.Output = err.Error()
+	if execErr != nil {
+		result.Output = execErr.Error()
 	} else {
 		result.Output = resp.Content
+	}
+
+	postResult, _ := runPostToolUse(ctx, a.hooks, PostToolUseContext{
+		ToolUseContext: hookTC,
+		Output:         result.Output,
+		IsError:        result.IsError,
+		Duration:       elapsed,
+	})
+	if postResult.Action == HookModify {
+		result.Output = postResult.Output
 	}
 
 	return result
