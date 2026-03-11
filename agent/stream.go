@@ -133,10 +133,23 @@ func (a *Agent) runLoopStream(
 		var finalResponse *llm.LLMResponse
 
 		turnStart := time.Now()
-		activeAgent.emitEvent(ctx, ObserverEvent{
-			Type:      EventTurnStarted,
-			TurnIndex: turns,
+
+		taskID, agentName, lineage := activeAgent.hookContext(ctx)
+		mcResult, hookErr := runPreModelCall(ctx, activeAgent.hooks, ModelCallContext{
+			Messages:  messages,
+			Tools:     allTools,
+			AgentName: agentName,
+			TaskID:    taskID,
+			Lineage:   lineage,
 		})
+		if hookErr != nil {
+			eventChan <- ChatEvent{Type: types.EventError, Error: fmt.Errorf("pre-model-call hook: %w", hookErr)}
+			return
+		}
+		if mcResult.Action == HookModify {
+			messages = mcResult.Messages
+			allTools = mcResult.Tools
+		}
 
 		for event := range activeAgent.llm.StreamResponse(ctx, messages, allTools) {
 			switch event.Type {
@@ -157,11 +170,12 @@ func (a *Agent) runLoopStream(
 					toolCalls = event.Response.ToolCalls
 				}
 			case types.EventError:
-				activeAgent.emitEvent(ctx, ObserverEvent{
-					Type:      EventTurnErrored,
-					TurnIndex: turns,
+				runPostModelCall(ctx, activeAgent.hooks, ModelResponseContext{
 					Duration:  time.Since(turnStart),
-					Error:     event.Error.Error(),
+					AgentName: agentName,
+					TaskID:    taskID,
+					Lineage:   lineage,
+					Error:     event.Error,
 				})
 				eventChan <- ChatEvent{Type: types.EventError, Error: event.Error}
 				return
@@ -171,13 +185,21 @@ func (a *Agent) runLoopStream(
 		turns++
 		if finalResponse != nil {
 			totalUsage.Add(finalResponse.Usage)
-			activeAgent.emitEvent(ctx, ObserverEvent{
-				Type:      EventTurnCompleted,
-				TurnIndex: turns - 1,
+			mrResult, hookErr := runPostModelCall(ctx, activeAgent.hooks, ModelResponseContext{
+				Response:  finalResponse,
 				Duration:  time.Since(turnStart),
-				Usage:     finalResponse.Usage,
-				ToolCount: len(toolCalls),
+				AgentName: agentName,
+				TaskID:    taskID,
+				Lineage:   lineage,
 			})
+			if hookErr != nil {
+				eventChan <- ChatEvent{Type: types.EventError, Error: fmt.Errorf("post-model-call hook: %w", hookErr)}
+				return
+			}
+			if mrResult.Action == HookModify && mrResult.Response != nil {
+				finalResponse = mrResult.Response
+				toolCalls = finalResponse.ToolCalls
+			}
 		}
 
 		if len(toolCalls) == 0 || !activeAgent.autoExecute ||

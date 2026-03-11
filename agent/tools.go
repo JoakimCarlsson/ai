@@ -14,14 +14,36 @@ func (a *Agent) executeSingleTool(
 	registry *tool.Registry,
 	tc message.ToolCall,
 ) ToolExecutionResult {
-	a.emitEvent(ctx, ObserverEvent{
-		Type:       EventToolStarted,
+	taskID, agentName, lineage := a.hookContext(ctx)
+	hookTC := ToolUseContext{
 		ToolCallID: tc.ID,
 		ToolName:   tc.Name,
-	})
+		Input:      tc.Input,
+		AgentName:  agentName,
+		TaskID:     taskID,
+		Lineage:    lineage,
+	}
+
+	preResult, err := runPreToolUse(ctx, a.hooks, hookTC)
+	if err != nil || preResult.Action == HookDeny {
+		reason := preResult.DenyReason
+		if err != nil {
+			reason = err.Error()
+		}
+		return ToolExecutionResult{
+			ToolCallID: tc.ID,
+			ToolName:   tc.Name,
+			Input:      tc.Input,
+			Output:     "Tool call denied: " + reason,
+			IsError:    true,
+		}
+	}
+	if preResult.Action == HookModify {
+		tc.Input = preResult.Input
+	}
 
 	start := time.Now()
-	resp, err := registry.Execute(ctx, tool.ToolCall{
+	resp, execErr := registry.Execute(ctx, tool.ToolCall{
 		ID:    tc.ID,
 		Name:  tc.Name,
 		Input: tc.Input,
@@ -32,31 +54,24 @@ func (a *Agent) executeSingleTool(
 		ToolCallID: tc.ID,
 		ToolName:   tc.Name,
 		Input:      tc.Input,
-		IsError:    resp.IsError || err != nil,
+		IsError:    resp.IsError || execErr != nil,
 		Duration:   elapsed,
 	}
 
-	if err != nil {
-		result.Output = err.Error()
+	if execErr != nil {
+		result.Output = execErr.Error()
 	} else {
 		result.Output = resp.Content
 	}
 
-	if result.IsError {
-		a.emitEvent(ctx, ObserverEvent{
-			Type:       EventToolErrored,
-			ToolCallID: tc.ID,
-			ToolName:   tc.Name,
-			Duration:   elapsed,
-			Error:      result.Output,
-		})
-	} else {
-		a.emitEvent(ctx, ObserverEvent{
-			Type:       EventToolSucceeded,
-			ToolCallID: tc.ID,
-			ToolName:   tc.Name,
-			Duration:   elapsed,
-		})
+	postResult, _ := runPostToolUse(ctx, a.hooks, PostToolUseContext{
+		ToolUseContext: hookTC,
+		Output:         result.Output,
+		IsError:        result.IsError,
+		Duration:       elapsed,
+	})
+	if postResult.Action == HookModify {
+		result.Output = postResult.Output
 	}
 
 	return result

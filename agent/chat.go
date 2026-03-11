@@ -105,31 +105,45 @@ func (a *Agent) runLoop(
 
 	for {
 		turnStart := time.Now()
-		activeAgent.emitEvent(ctx, ObserverEvent{
-			Type:      EventTurnStarted,
-			TurnIndex: turns,
+
+		taskID, agentName, lineage := activeAgent.hookContext(ctx)
+		mcResult, err := runPreModelCall(ctx, activeAgent.hooks, ModelCallContext{
+			Messages:  messages,
+			Tools:     allTools,
+			AgentName: agentName,
+			TaskID:    taskID,
+			Lineage:   lineage,
 		})
+		if err != nil {
+			return nil, fmt.Errorf("pre-model-call hook: %w", err)
+		}
+		if mcResult.Action == HookModify {
+			messages = mcResult.Messages
+			allTools = mcResult.Tools
+		}
 
 		resp, err := activeAgent.llm.SendMessages(ctx, messages, allTools)
+
+		mrResult, hookErr := runPostModelCall(ctx, activeAgent.hooks, ModelResponseContext{
+			Response:  resp,
+			Duration:  time.Since(turnStart),
+			AgentName: agentName,
+			TaskID:    taskID,
+			Lineage:   lineage,
+			Error:     err,
+		})
 		if err != nil {
-			activeAgent.emitEvent(ctx, ObserverEvent{
-				Type:      EventTurnErrored,
-				TurnIndex: turns,
-				Duration:  time.Since(turnStart),
-				Error:     err.Error(),
-			})
 			return nil, err
 		}
+		if hookErr != nil {
+			return nil, fmt.Errorf("post-model-call hook: %w", hookErr)
+		}
+		if mrResult.Action == HookModify && mrResult.Response != nil {
+			resp = mrResult.Response
+		}
+
 		turns++
 		totalUsage.Add(resp.Usage)
-
-		activeAgent.emitEvent(ctx, ObserverEvent{
-			Type:      EventTurnCompleted,
-			TurnIndex: turns - 1,
-			Duration:  time.Since(turnStart),
-			Usage:     resp.Usage,
-			ToolCount: len(resp.ToolCalls),
-		})
 
 		if len(resp.ToolCalls) == 0 || !activeAgent.autoExecute ||
 			(maxIter > 0 && iteration >= maxIter) {

@@ -16,13 +16,9 @@ import (
 type TaskStatus string
 
 const (
-	// TaskRunning indicates the task is currently executing.
-	TaskRunning TaskStatus = "running"
-	// TaskCompleted indicates the task finished successfully.
+	TaskRunning   TaskStatus = "running"
 	TaskCompleted TaskStatus = "completed"
-	// TaskFailed indicates the task encountered an error.
-	TaskFailed TaskStatus = "failed"
-	// TaskCancelled indicates the task was explicitly cancelled.
+	TaskFailed    TaskStatus = "failed"
 	TaskCancelled TaskStatus = "cancelled"
 )
 
@@ -42,25 +38,17 @@ type backgroundTask struct {
 // supports blocking and non-blocking result retrieval with optional timeouts,
 // and provides bulk cancellation for cleanup when the parent agent finishes.
 type TaskManager struct {
-	mu       sync.RWMutex
-	tasks    map[string]*backgroundTask
-	wg       sync.WaitGroup
-	idGen    atomic.Int64
-	observer Observer
+	mu    sync.RWMutex
+	tasks map[string]*backgroundTask
+	wg    sync.WaitGroup
+	idGen atomic.Int64
+	hooks []Hooks
 }
 
 func newTaskManager() *TaskManager {
 	return &TaskManager{
 		tasks: make(map[string]*backgroundTask),
 	}
-}
-
-func (tm *TaskManager) emitEvent(evt ObserverEvent) {
-	if tm.observer == nil {
-		return
-	}
-	evt.Timestamp = time.Now()
-	tm.observer.OnEvent(evt)
 }
 
 // Launch starts a background task that runs the given agent with the provided task message.
@@ -89,10 +77,12 @@ func (tm *TaskManager) Launch(
 	tm.tasks[id] = bt
 	tm.mu.Unlock()
 
-	tm.emitEvent(ObserverEvent{
-		Type:      EventTaskLaunched,
+	_, _, lineage := taskScopeFromContext(ctx)
+	runSubagentStart(ctx, tm.hooks, SubagentEventContext{
 		TaskID:    id,
 		AgentName: agentName,
+		Task:      task,
+		Lineage:   lineage,
 	})
 
 	tm.wg.Add(1)
@@ -103,7 +93,7 @@ func (tm *TaskManager) Launch(
 			if r := recover(); r != nil {
 				endedAt := time.Now()
 				panicMsg := fmt.Sprintf("panic: %v", r)
-				stack := string(debug.Stack())
+				_ = debug.Stack()
 
 				tm.mu.Lock()
 				bt.Status = TaskFailed
@@ -111,13 +101,13 @@ func (tm *TaskManager) Launch(
 				bt.EndedAt = endedAt
 				tm.mu.Unlock()
 
-				tm.emitEvent(ObserverEvent{
-					Type:       EventTaskPanicked,
-					TaskID:     id,
-					AgentName:  agentName,
-					Duration:   endedAt.Sub(startedAt),
-					Error:      panicMsg,
-					PanicStack: stack,
+				runSubagentStop(ctx, tm.hooks, SubagentEventContext{
+					TaskID:    id,
+					AgentName: agentName,
+					Task:      task,
+					Lineage:   lineage,
+					Error:     fmt.Errorf("%s", panicMsg),
+					Duration:  endedAt.Sub(startedAt),
 				})
 			}
 		}()
@@ -135,10 +125,12 @@ func (tm *TaskManager) Launch(
 			bt.Error = "task was cancelled"
 			tm.mu.Unlock()
 
-			tm.emitEvent(ObserverEvent{
-				Type:      EventTaskCancelled,
+			runSubagentStop(ctx, tm.hooks, SubagentEventContext{
 				TaskID:    id,
 				AgentName: agentName,
+				Task:      task,
+				Lineage:   lineage,
+				Error:     fmt.Errorf("task was cancelled"),
 				Duration:  duration,
 			})
 			return
@@ -148,12 +140,13 @@ func (tm *TaskManager) Launch(
 			bt.Error = err.Error()
 			tm.mu.Unlock()
 
-			tm.emitEvent(ObserverEvent{
-				Type:      EventTaskFailed,
+			runSubagentStop(ctx, tm.hooks, SubagentEventContext{
 				TaskID:    id,
 				AgentName: agentName,
+				Task:      task,
+				Lineage:   lineage,
+				Error:     err,
 				Duration:  duration,
-				Error:     err.Error(),
 			})
 			return
 		}
@@ -161,10 +154,12 @@ func (tm *TaskManager) Launch(
 		bt.Result = resp.Content
 		tm.mu.Unlock()
 
-		tm.emitEvent(ObserverEvent{
-			Type:      EventTaskCompleted,
+		runSubagentStop(ctx, tm.hooks, SubagentEventContext{
 			TaskID:    id,
 			AgentName: agentName,
+			Task:      task,
+			Lineage:   lineage,
+			Result:    resp.Content,
 			Duration:  duration,
 		})
 	}()
@@ -229,7 +224,6 @@ func (tm *TaskManager) GetResult(
 			select {
 			case <-bt.done:
 			case <-time.After(timeout):
-				// Timeout expired — return current snapshot (likely still "running")
 			case <-ctx.Done():
 				return nil, ctx.Err()
 			}

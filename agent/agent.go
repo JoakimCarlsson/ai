@@ -3,7 +3,6 @@ package agent
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/joakimcarlsson/ai/agent/memory"
 	"github.com/joakimcarlsson/ai/agent/session"
@@ -33,9 +32,9 @@ type Agent struct {
 	maxParallelTools    int
 	state               map[string]any
 	instructionProvider func(ctx context.Context, state map[string]any) (string, error)
-	handoffs            []HandoffConfig
-	taskManager         *TaskManager
-	observer            Observer
+	handoffs    []HandoffConfig
+	taskManager *TaskManager
+	hooks       []Hooks
 }
 
 func (a *Agent) getMemoryLLM() llm.LLM {
@@ -96,14 +95,6 @@ func ParseToolInput[T any](input string) (T, error) {
 	return result, err
 }
 
-func (a *Agent) emitEvent(ctx context.Context, evt ObserverEvent) {
-	if a.observer == nil {
-		return
-	}
-	evt.Timestamp = time.Now()
-	if taskID, agentName := taskScopeFromContext(ctx); taskID != "" {
-		evt.TaskID = taskID
-		evt.AgentName = agentName
-	}
-	a.observer.OnEvent(evt)
+func (a *Agent) hookContext(ctx context.Context) (taskID, agentName string, lineage []string) {
+	return taskScopeFromContext(ctx)
 }
