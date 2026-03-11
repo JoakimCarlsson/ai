@@ -77,12 +77,12 @@ func (tm *TaskManager) Launch(
 	tm.tasks[id] = bt
 	tm.mu.Unlock()
 
-	_, _, lineage := taskScopeFromContext(ctx)
+	_, _, branch := taskScopeFromContext(ctx)
 	runSubagentStart(ctx, tm.hooks, SubagentEventContext{
 		TaskID:    id,
 		AgentName: agentName,
 		Task:      task,
-		Lineage:   lineage,
+		Branch:    branch,
 	})
 
 	tm.wg.Add(1)
@@ -105,7 +105,7 @@ func (tm *TaskManager) Launch(
 					TaskID:    id,
 					AgentName: agentName,
 					Task:      task,
-					Lineage:   lineage,
+					Branch:    branch,
 					Error:     fmt.Errorf("%s", panicMsg),
 					Duration:  endedAt.Sub(startedAt),
 				})
@@ -129,7 +129,7 @@ func (tm *TaskManager) Launch(
 				TaskID:    id,
 				AgentName: agentName,
 				Task:      task,
-				Lineage:   lineage,
+				Branch:    branch,
 				Error:     fmt.Errorf("task was cancelled"),
 				Duration:  duration,
 			})
@@ -144,7 +144,7 @@ func (tm *TaskManager) Launch(
 				TaskID:    id,
 				AgentName: agentName,
 				Task:      task,
-				Lineage:   lineage,
+				Branch:    branch,
 				Error:     err,
 				Duration:  duration,
 			})
@@ -158,7 +158,7 @@ func (tm *TaskManager) Launch(
 			TaskID:    id,
 			AgentName: agentName,
 			Task:      task,
-			Lineage:   lineage,
+			Branch:    branch,
 			Result:    resp.Content,
 			Duration:  duration,
 		})

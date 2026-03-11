@@ -14,14 +14,14 @@ func (a *Agent) executeSingleTool(
 	registry *tool.Registry,
 	tc message.ToolCall,
 ) ToolExecutionResult {
-	taskID, agentName, lineage := a.hookContext(ctx)
+	taskID, agentName, branch := a.hookContext(ctx)
 	hookTC := ToolUseContext{
 		ToolCallID: tc.ID,
 		ToolName:   tc.Name,
 		Input:      tc.Input,
 		AgentName:  agentName,
 		TaskID:     taskID,
-		Lineage:    lineage,
+		Branch:     branch,
 	}
 
 	preResult, err := runPreToolUse(ctx, a.hooks, hookTC)

@@ -764,7 +764,7 @@ func TestHooksWithParallelTools(t *testing.T) {
 	}
 }
 
-func TestLineage_OnObserverEvents(t *testing.T) {
+func TestBranch_OnObserverEvents(t *testing.T) {
 	collector := &hookEventCollector{}
 
 	childLLM := newMockLLM(mockResponse{Content: "child done"})
@@ -873,4 +873,3 @@ func (t *simpleTool) Info() tool.ToolInfo {
 func (t *simpleTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
 	return t.run(ctx, params)
 }
-

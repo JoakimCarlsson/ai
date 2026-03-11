@@ -12,7 +12,7 @@ import (
 type HookAction int
 
 const (
-	HookAllow  HookAction = iota
+	HookAllow HookAction = iota
 	HookDeny
 	HookModify
 )
@@ -23,7 +23,7 @@ type ToolUseContext struct {
 	Input      string
 	AgentName  string
 	TaskID     string
-	Lineage    []string
+	Branch     string
 }
 
 type PreToolUseResult struct {
@@ -49,7 +49,7 @@ type ModelCallContext struct {
 	Tools     []tool.BaseTool
 	AgentName string
 	TaskID    string
-	Lineage   []string
+	Branch    string
 }
 
 type ModelCallResult struct {
@@ -63,7 +63,7 @@ type ModelResponseContext struct {
 	Duration  time.Duration
 	AgentName string
 	TaskID    string
-	Lineage   []string
+	Branch    string
 	Error     error
 }
 
@@ -76,7 +76,7 @@ type SubagentEventContext struct {
 	TaskID    string
 	AgentName string
 	Task      string
-	Lineage   []string
+	Branch    string
 	Result    string
 	Error     error
 	Duration  time.Duration
@@ -107,7 +107,7 @@ type HookEvent struct {
 	Timestamp  time.Time
 	AgentName  string
 	TaskID     string
-	Lineage    []string
+	Branch     string
 	ToolCallID string
 	ToolName   string
 	Input      string
@@ -126,7 +126,7 @@ func NewObservingHooks(fn func(HookEvent)) Hooks {
 				Timestamp:  time.Now(),
 				AgentName:  tc.AgentName,
 				TaskID:     tc.TaskID,
-				Lineage:    tc.Lineage,
+				Branch:     tc.Branch,
 				ToolCallID: tc.ToolCallID,
 				ToolName:   tc.ToolName,
 				Input:      tc.Input,
@@ -139,7 +139,7 @@ func NewObservingHooks(fn func(HookEvent)) Hooks {
 				Timestamp:  time.Now(),
 				AgentName:  tc.AgentName,
 				TaskID:     tc.TaskID,
-				Lineage:    tc.Lineage,
+				Branch:     tc.Branch,
 				ToolCallID: tc.ToolCallID,
 				ToolName:   tc.ToolName,
 				Input:      tc.Input,
@@ -155,7 +155,7 @@ func NewObservingHooks(fn func(HookEvent)) Hooks {
 				Timestamp: time.Now(),
 				AgentName: mc.AgentName,
 				TaskID:    mc.TaskID,
-				Lineage:   mc.Lineage,
+				Branch:    mc.Branch,
 			})
 			return ModelCallResult{Action: HookAllow}, nil
 		},
@@ -165,7 +165,7 @@ func NewObservingHooks(fn func(HookEvent)) Hooks {
 				Timestamp: time.Now(),
 				AgentName: mc.AgentName,
 				TaskID:    mc.TaskID,
-				Lineage:   mc.Lineage,
+				Branch:    mc.Branch,
 				Duration:  mc.Duration,
 			}
 			if mc.Error != nil {
@@ -183,7 +183,7 @@ func NewObservingHooks(fn func(HookEvent)) Hooks {
 				Timestamp: time.Now(),
 				AgentName: sc.AgentName,
 				TaskID:    sc.TaskID,
-				Lineage:   sc.Lineage,
+				Branch:    sc.Branch,
 				Input:     sc.Task,
 			})
 		},
@@ -193,7 +193,7 @@ func NewObservingHooks(fn func(HookEvent)) Hooks {
 				Timestamp: time.Now(),
 				AgentName: sc.AgentName,
 				TaskID:    sc.TaskID,
-				Lineage:   sc.Lineage,
+				Branch:    sc.Branch,
 				Output:    sc.Result,
 				Duration:  sc.Duration,
 			}
@@ -213,28 +213,28 @@ type taskScopeKey struct{}
 type taskScope struct {
 	TaskID    string
 	AgentName string
-	Lineage   []string
+	Branch    string
 }
 
 func withTaskScope(ctx context.Context, taskID, agentName string) context.Context {
-	var lineage []string
+	var branch string
 	if existing, ok := ctx.Value(taskScopeKey{}).(taskScope); ok {
-		lineage = make([]string, len(existing.Lineage)+1)
-		copy(lineage, existing.Lineage)
-		lineage[len(existing.Lineage)] = existing.TaskID
+		branch = existing.Branch + "/" + agentName
+	} else {
+		branch = agentName
 	}
 	return context.WithValue(ctx, taskScopeKey{}, taskScope{
 		TaskID:    taskID,
 		AgentName: agentName,
-		Lineage:   lineage,
+		Branch:    branch,
 	})
 }
 
-func taskScopeFromContext(ctx context.Context) (taskID, agentName string, lineage []string) {
+func taskScopeFromContext(ctx context.Context) (taskID, agentName, branch string) {
 	if s, ok := ctx.Value(taskScopeKey{}).(taskScope); ok {
-		return s.TaskID, s.AgentName, s.Lineage
+		return s.TaskID, s.AgentName, s.Branch
 	}
-	return "", "", nil
+	return "", "", ""
 }
 
 // Chain runners for composing multiple hooks.

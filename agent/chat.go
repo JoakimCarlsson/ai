@@ -106,13 +106,13 @@ func (a *Agent) runLoop(
 	for {
 		turnStart := time.Now()
 
-		taskID, agentName, lineage := activeAgent.hookContext(ctx)
+		taskID, agentName, branch := activeAgent.hookContext(ctx)
 		mcResult, err := runPreModelCall(ctx, activeAgent.hooks, ModelCallContext{
 			Messages:  messages,
 			Tools:     allTools,
 			AgentName: agentName,
 			TaskID:    taskID,
-			Lineage:   lineage,
+			Branch:    branch,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("pre-model-call hook: %w", err)
@@ -129,7 +129,7 @@ func (a *Agent) runLoop(
 			Duration:  time.Since(turnStart),
 			AgentName: agentName,
 			TaskID:    taskID,
-			Lineage:   lineage,
+			Branch:    branch,
 			Error:     err,
 		})
 		if err != nil {
