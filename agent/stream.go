@@ -131,6 +131,7 @@ func (a *Agent) runLoopStream(
 		var fullContent string
 		var toolCalls []message.ToolCall
 		var finalResponse *llm.LLMResponse
+		seenToolStarts := make(map[string]bool)
 
 		turnStart := time.Now()
 
@@ -162,6 +163,9 @@ func (a *Agent) runLoopStream(
 				types.EventToolUseDelta,
 				types.EventToolUseStop:
 				if event.ToolCall != nil {
+					if event.Type == types.EventToolUseStart {
+						seenToolStarts[event.ToolCall.ID] = true
+					}
 					eventChan <- ChatEvent{Type: event.Type, ToolCall: event.ToolCall}
 				}
 			case types.EventComplete:
@@ -259,6 +263,15 @@ func (a *Agent) runLoopStream(
 		}
 		assistantMsg.AppendToolCalls(toolCalls)
 		messages = append(messages, assistantMsg)
+
+		for i := range toolCalls {
+			if !seenToolStarts[toolCalls[i].ID] {
+				eventChan <- ChatEvent{
+					Type:     types.EventToolUseStart,
+					ToolCall: &toolCalls[i],
+				}
+			}
+		}
 
 		toolResults := activeAgent.executeTools(ctx, toolCalls)
 
