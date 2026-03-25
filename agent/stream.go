@@ -136,13 +136,17 @@ func (a *Agent) runLoopStream(
 		turnStart := time.Now()
 
 		taskID, agentName, branch := activeAgent.hookContext(ctx)
-		mcResult, hookErr := runPreModelCall(ctx, activeAgent.hooks, ModelCallContext{
-			Messages:  messages,
-			Tools:     allTools,
-			AgentName: agentName,
-			TaskID:    taskID,
-			Branch:    branch,
-		})
+		mcResult, hookErr := runPreModelCall(
+			ctx,
+			activeAgent.hooks,
+			ModelCallContext{
+				Messages:  messages,
+				Tools:     allTools,
+				AgentName: agentName,
+				TaskID:    taskID,
+				Branch:    branch,
+			},
+		)
 		if hookErr != nil {
 			eventChan <- ChatEvent{Type: types.EventError, Error: fmt.Errorf("pre-model-call hook: %w", hookErr)}
 			return
@@ -189,13 +193,17 @@ func (a *Agent) runLoopStream(
 		turns++
 		if finalResponse != nil {
 			totalUsage.Add(finalResponse.Usage)
-			mrResult, hookErr := runPostModelCall(ctx, activeAgent.hooks, ModelResponseContext{
-				Response:  finalResponse,
-				Duration:  time.Since(turnStart),
-				AgentName: agentName,
-				TaskID:    taskID,
-				Branch:    branch,
-			})
+			mrResult, hookErr := runPostModelCall(
+				ctx,
+				activeAgent.hooks,
+				ModelResponseContext{
+					Response:  finalResponse,
+					Duration:  time.Since(turnStart),
+					AgentName: agentName,
+					TaskID:    taskID,
+					Branch:    branch,
+				},
+			)
 			if hookErr != nil {
 				eventChan <- ChatEvent{Type: types.EventError, Error: fmt.Errorf("post-model-call hook: %w", hookErr)}
 				return

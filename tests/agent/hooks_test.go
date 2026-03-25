@@ -69,7 +69,12 @@ func TestPreToolUse_Deny(t *testing.T) {
 	mock := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "forbidden", Input: `{"text":"hi"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "forbidden",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "ok denied"},
@@ -114,7 +119,12 @@ func TestPreToolUse_Modify(t *testing.T) {
 	mock := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"original"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"original"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "done"},
@@ -189,7 +199,12 @@ func TestPostToolUse_Modify(t *testing.T) {
 	parentBase := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"hello"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hello"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "final"},
@@ -250,7 +265,10 @@ func TestPreModelCall_Modify(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if capturedMsgCount < 2 {
-		t.Fatalf("expected at least 2 messages (original + injected), got %d", capturedMsgCount)
+		t.Fatalf(
+			"expected at least 2 messages (original + injected), got %d",
+			capturedMsgCount,
+		)
 	}
 }
 
@@ -321,7 +339,10 @@ func TestHookChaining_DenyWins(t *testing.T) {
 	}
 	hook2 := agent.Hooks{
 		PreToolUse: func(_ context.Context, _ agent.ToolUseContext) (agent.PreToolUseResult, error) {
-			return agent.PreToolUseResult{Action: agent.HookDeny, DenyReason: "blocked"}, nil
+			return agent.PreToolUseResult{
+				Action:     agent.HookDeny,
+				DenyReason: "blocked",
+			}, nil
 		},
 	}
 
@@ -360,19 +381,30 @@ func TestHookChaining_LastModifyWins(t *testing.T) {
 
 	hook1 := agent.Hooks{
 		PreToolUse: func(_ context.Context, _ agent.ToolUseContext) (agent.PreToolUseResult, error) {
-			return agent.PreToolUseResult{Action: agent.HookModify, Input: `{"v":"first"}`}, nil
+			return agent.PreToolUseResult{
+				Action: agent.HookModify,
+				Input:  `{"v":"first"}`,
+			}, nil
 		},
 	}
 	hook2 := agent.Hooks{
 		PreToolUse: func(_ context.Context, _ agent.ToolUseContext) (agent.PreToolUseResult, error) {
-			return agent.PreToolUseResult{Action: agent.HookModify, Input: `{"v":"second"}`}, nil
+			return agent.PreToolUseResult{
+				Action: agent.HookModify,
+				Input:  `{"v":"second"}`,
+			}, nil
 		},
 	}
 
 	mock := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "target", Input: `{"v":"original"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "target",
+					Input: `{"v":"original"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "done"},
@@ -401,12 +433,22 @@ func TestOnSubagentStart_OnSubagentStop(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"do it","background":true}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"do it","background":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "get_task_result", Input: `{"task_id":"task-1","wait":true}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "get_task_result",
+					Input: `{"task_id":"task-1","wait":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "all done"},
@@ -458,12 +500,22 @@ func TestOnSubagentStop_WithError(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"fail","background":true}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"fail","background":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "get_task_result", Input: `{"task_id":"task-1","wait":true}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "get_task_result",
+					Input: `{"task_id":"task-1","wait":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "handled"},
@@ -496,7 +548,12 @@ func TestNilHooks_NoPanic(t *testing.T) {
 	mock := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"hi"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "done"},
@@ -527,7 +584,12 @@ func TestHooksPropagateToSubAgents(t *testing.T) {
 	childLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-child", Name: "echo", Input: `{"text":"from child"}`, Type: "function"},
+				{
+					ID:    "tc-child",
+					Name:  "echo",
+					Input: `{"text":"from child"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "child done"},
@@ -537,7 +599,12 @@ func TestHooksPropagateToSubAgents(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"run echo"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"run echo"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "parent done"},
@@ -557,7 +624,9 @@ func TestHooksPropagateToSubAgents(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if !toolHookFired {
-		t.Fatal("parent hook should have propagated to sub-agent and fired for echo tool")
+		t.Fatal(
+			"parent hook should have propagated to sub-agent and fired for echo tool",
+		)
 	}
 }
 
@@ -567,7 +636,12 @@ func TestNewObservingHooks(t *testing.T) {
 	mock := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"hi"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "done"},
@@ -661,7 +735,12 @@ func TestHooksWithStreaming(t *testing.T) {
 	mock := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"stream"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"stream"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "streamed"},
@@ -773,12 +852,22 @@ func TestBranch_OnObserverEvents(t *testing.T) {
 	parentLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "worker", Input: `{"task":"do it","background":true}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "worker",
+					Input: `{"task":"do it","background":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "get_task_result", Input: `{"task_id":"task-1","wait":true}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "get_task_result",
+					Input: `{"task_id":"task-1","wait":true}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "all done"},
@@ -807,7 +896,9 @@ func TestBranch_OnObserverEvents(t *testing.T) {
 		}
 	}
 	if len(childModelCalls) == 0 {
-		t.Fatal("expected child model call events to have TaskID for correlation")
+		t.Fatal(
+			"expected child model call events to have TaskID for correlation",
+		)
 	}
 }
 
@@ -835,7 +926,12 @@ func TestMultipleHookChains(t *testing.T) {
 	mock := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"hi"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "done"},
@@ -870,6 +966,9 @@ func (t *simpleTool) Info() tool.ToolInfo {
 	}{})
 }
 
-func (t *simpleTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+func (t *simpleTool) Run(
+	ctx context.Context,
+	params tool.ToolCall,
+) (tool.ToolResponse, error) {
 	return t.run(ctx, params)
 }

@@ -17,7 +17,12 @@ func TestContinue_Basic(t *testing.T) {
 		// First Chat() call: LLM requests a tool call
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "search", Input: `{"q":"weather"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "search",
+					Input: `{"q":"weather"}`,
+					Type:  "function",
+				},
 			},
 		},
 		// Second call (via Continue): LLM produces final answer
@@ -89,8 +94,18 @@ func TestContinue_MultipleResults(t *testing.T) {
 		// First Chat(): LLM requests two tool calls
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "search", Input: `{"q":"a"}`, Type: "function"},
-				{ID: "tc-2", Name: "search", Input: `{"q":"b"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "search",
+					Input: `{"q":"a"}`,
+					Type:  "function",
+				},
+				{
+					ID:    "tc-2",
+					Name:  "search",
+					Input: `{"q":"b"}`,
+					Type:  "function",
+				},
 			},
 		},
 		// Continue: LLM produces final answer
@@ -129,7 +144,12 @@ func TestContinue_Stream(t *testing.T) {
 	mockLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "search", Input: `{"q":"test"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "search",
+					Input: `{"q":"test"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "streamed result"},
@@ -152,7 +172,10 @@ func TestContinue_Stream(t *testing.T) {
 		t.Fatal("expected response from first ChatStream")
 	}
 	if len(firstResp.ToolCalls) != 1 {
-		t.Fatalf("expected 1 pending tool call, got %d", len(firstResp.ToolCalls))
+		t.Fatalf(
+			"expected 1 pending tool call, got %d",
+			len(firstResp.ToolCalls),
+		)
 	}
 
 	// Continue via stream
@@ -178,7 +201,12 @@ func TestContinue_PendingToolCallsPersisted(t *testing.T) {
 	mockLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "search", Input: `{"q":"test"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "search",
+					Input: `{"q":"test"}`,
+					Type:  "function",
+				},
 			},
 		},
 	)
@@ -221,6 +249,8 @@ func TestContinue_PendingToolCallsPersisted(t *testing.T) {
 	}
 
 	if !foundAssistantWithToolCalls {
-		t.Error("expected session to contain assistant message with tool calls, but none found")
+		t.Error(
+			"expected session to contain assistant message with tool calls, but none found",
+		)
 	}
 }

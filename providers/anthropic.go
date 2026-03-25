@@ -506,7 +506,9 @@ func (a *anthropicClient) supportsStructuredOutput() bool {
 	return a.llmOptions.model.SupportsStructuredOut
 }
 
-func (a *anthropicClient) buildOutputConfig(outputSchema *schema.StructuredOutputInfo) anthropic.OutputConfigParam {
+func (a *anthropicClient) buildOutputConfig(
+	outputSchema *schema.StructuredOutputInfo,
+) anthropic.OutputConfigParam {
 	schemaMap := map[string]any{
 		"type":                 "object",
 		"properties":           outputSchema.Parameters,
@@ -559,10 +561,12 @@ func (a *anthropicClient) sendWithStructuredOutput(
 			}
 
 			return &LLMResponse{
-				Content:                    content,
-				ToolCalls:                  a.toolCalls(*anthropicResponse),
-				Usage:                      a.usage(*anthropicResponse),
-				FinishReason:               a.finishReason(string(anthropicResponse.StopReason)),
+				Content:   content,
+				ToolCalls: a.toolCalls(*anthropicResponse),
+				Usage:     a.usage(*anthropicResponse),
+				FinishReason: a.finishReason(
+					string(anthropicResponse.StopReason),
+				),
 				StructuredOutput:           &content,
 				UsedNativeStructuredOutput: true,
 			}, nil

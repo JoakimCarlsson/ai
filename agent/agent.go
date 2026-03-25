@@ -95,6 +95,8 @@ func ParseToolInput[T any](input string) (T, error) {
 	return result, err
 }
 
-func (a *Agent) hookContext(ctx context.Context) (taskID, agentName, branch string) {
+func (a *Agent) hookContext(
+	ctx context.Context,
+) (taskID, agentName, branch string) {
 	return taskScopeFromContext(ctx)
 }
