@@ -22,8 +22,8 @@ type flightSearchParams struct {
 
 type flightSearchTool struct{}
 
-func (f *flightSearchTool) Info() tool.ToolInfo {
-	return tool.NewToolInfo(
+func (f *flightSearchTool) Info() tool.Info {
+	return tool.NewInfo(
 		"flight_search",
 		"Search for available flights between two airports",
 		flightSearchParams{},
@@ -32,8 +32,8 @@ func (f *flightSearchTool) Info() tool.ToolInfo {
 
 func (f *flightSearchTool) Run(
 	_ context.Context,
-	_ tool.ToolCall,
-) (tool.ToolResponse, error) {
+	_ tool.Call,
+) (tool.Response, error) {
 	panic("should never be called — autoExecute is disabled")
 }
 

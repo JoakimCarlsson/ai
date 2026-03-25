@@ -47,7 +47,7 @@ func newMistralClient(opts fimClientOptions) *mistralClient {
 	}
 }
 
-type mistralFIMRequest struct {
+type mistralRequest struct {
 	Model       string   `json:"model"`
 	Prompt      string   `json:"prompt"`
 	Suffix      string   `json:"suffix,omitempty"`
@@ -69,19 +69,19 @@ type mistralFIMChoice struct {
 	FinishReason string `json:"finish_reason"`
 }
 
-type mistralFIMUsage struct {
+type mistralUsage struct {
 	PromptTokens     int64 `json:"prompt_tokens"`
 	CompletionTokens int64 `json:"completion_tokens"`
 	TotalTokens      int64 `json:"total_tokens"`
 }
 
-type mistralFIMResponse struct {
+type mistralResponse struct {
 	ID      string             `json:"id"`
 	Object  string             `json:"object"`
 	Created int64              `json:"created"`
 	Model   string             `json:"model"`
 	Choices []mistralFIMChoice `json:"choices"`
-	Usage   mistralFIMUsage    `json:"usage"`
+	Usage   mistralUsage       `json:"usage"`
 }
 
 type mistralFIMStreamDelta struct {
@@ -101,14 +101,14 @@ type mistralFIMStreamResponse struct {
 	Created int64                    `json:"created"`
 	Model   string                   `json:"model"`
 	Choices []mistralFIMStreamChoice `json:"choices"`
-	Usage   *mistralFIMUsage         `json:"usage,omitempty"`
+	Usage   *mistralUsage            `json:"usage,omitempty"`
 }
 
 func (m *mistralClient) buildRequest(
-	req FIMRequest,
+	req Request,
 	stream bool,
-) mistralFIMRequest {
-	fimReq := mistralFIMRequest{
+) mistralRequest {
+	fimReq := mistralRequest{
 		Model:  m.providerOptions.model.APIModel,
 		Prompt: req.Prompt,
 		Suffix: req.Suffix,
@@ -161,8 +161,8 @@ func (m *mistralClient) finishReason(reason string) FinishReason {
 
 func (m *mistralClient) complete(
 	ctx context.Context,
-	req FIMRequest,
-) (*FIMResponse, error) {
+	req Request,
+) (*Response, error) {
 	fimReq := m.buildRequest(req, false)
 
 	body, err := json.Marshal(fimReq)
@@ -198,7 +198,7 @@ func (m *mistralClient) complete(
 		)
 	}
 
-	var fimResp mistralFIMResponse
+	var fimResp mistralResponse
 	if err := json.NewDecoder(resp.Body).Decode(&fimResp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
@@ -207,9 +207,9 @@ func (m *mistralClient) complete(
 		return nil, fmt.Errorf("no choices returned from mistral fim")
 	}
 
-	return &FIMResponse{
+	return &Response{
 		Content: fimResp.Choices[0].Message.Content,
-		Usage: FIMUsage{
+		Usage: Usage{
 			InputTokens:  fimResp.Usage.PromptTokens,
 			OutputTokens: fimResp.Usage.CompletionTokens,
 		},
@@ -219,17 +219,17 @@ func (m *mistralClient) complete(
 
 func (m *mistralClient) stream(
 	ctx context.Context,
-	req FIMRequest,
-) <-chan FIMEvent {
+	req Request,
+) <-chan Event {
 	fimReq := m.buildRequest(req, true)
-	eventChan := make(chan FIMEvent)
+	eventChan := make(chan Event)
 
 	go func() {
 		defer close(eventChan)
 
 		body, err := json.Marshal(fimReq)
 		if err != nil {
-			eventChan <- FIMEvent{Type: EventError, Error: fmt.Errorf("failed to marshal request: %w", err)}
+			eventChan <- Event{Type: EventError, Error: fmt.Errorf("failed to marshal request: %w", err)}
 			return
 		}
 
@@ -240,7 +240,7 @@ func (m *mistralClient) stream(
 			bytes.NewReader(body),
 		)
 		if err != nil {
-			eventChan <- FIMEvent{Type: EventError, Error: fmt.Errorf("failed to create request: %w", err)}
+			eventChan <- Event{Type: EventError, Error: fmt.Errorf("failed to create request: %w", err)}
 			return
 		}
 
@@ -250,29 +250,29 @@ func (m *mistralClient) stream(
 
 		resp, err := m.httpClient.Do(httpReq)
 		if err != nil {
-			eventChan <- FIMEvent{Type: EventError, Error: fmt.Errorf("failed to send request: %w", err)}
+			eventChan <- Event{Type: EventError, Error: fmt.Errorf("failed to send request: %w", err)}
 			return
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
 			bodyBytes, _ := io.ReadAll(resp.Body)
-			eventChan <- FIMEvent{Type: EventError, Error: fmt.Errorf("mistral fim api error (status %d): %s", resp.StatusCode, string(bodyBytes))}
+			eventChan <- Event{Type: EventError, Error: fmt.Errorf("mistral fim api error (status %d): %s", resp.StatusCode, string(bodyBytes))}
 			return
 		}
 
 		reader := bufio.NewReader(resp.Body)
 		var currentContent strings.Builder
-		var finalUsage FIMUsage
+		var finalUsage Usage
 		var finalFinishReason FinishReason
 
 		for {
 			line, err := reader.ReadBytes('\n')
 			if err != nil {
 				if err == io.EOF {
-					eventChan <- FIMEvent{
+					eventChan <- Event{
 						Type: EventComplete,
-						Response: &FIMResponse{
+						Response: &Response{
 							Content:      currentContent.String(),
 							Usage:        finalUsage,
 							FinishReason: finalFinishReason,
@@ -280,7 +280,7 @@ func (m *mistralClient) stream(
 					}
 					return
 				}
-				eventChan <- FIMEvent{Type: EventError, Error: fmt.Errorf("error reading stream: %w", err)}
+				eventChan <- Event{Type: EventError, Error: fmt.Errorf("error reading stream: %w", err)}
 				return
 			}
 
@@ -292,9 +292,9 @@ func (m *mistralClient) stream(
 			if bytes.HasPrefix(line, []byte("data: ")) {
 				data := bytes.TrimPrefix(line, []byte("data: "))
 				if bytes.Equal(data, []byte("[DONE]")) {
-					eventChan <- FIMEvent{
+					eventChan <- Event{
 						Type: EventComplete,
-						Response: &FIMResponse{
+						Response: &Response{
 							Content:      currentContent.String(),
 							Usage:        finalUsage,
 							FinishReason: finalFinishReason,
@@ -311,7 +311,7 @@ func (m *mistralClient) stream(
 				for _, choice := range streamResp.Choices {
 					if choice.Delta.Content != "" {
 						currentContent.WriteString(choice.Delta.Content)
-						eventChan <- FIMEvent{
+						eventChan <- Event{
 							Type:    EventContentDelta,
 							Content: choice.Delta.Content,
 						}
@@ -322,7 +322,7 @@ func (m *mistralClient) stream(
 				}
 
 				if streamResp.Usage != nil {
-					finalUsage = FIMUsage{
+					finalUsage = Usage{
 						InputTokens:  streamResp.Usage.PromptTokens,
 						OutputTokens: streamResp.Usage.CompletionTokens,
 					}

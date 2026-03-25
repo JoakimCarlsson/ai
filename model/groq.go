@@ -2,22 +2,22 @@ package model
 
 // Groq provider identifier and hosted model IDs for this registry.
 const (
-	ProviderGROQ ModelProvider = "groq"
+	ProviderGROQ Provider = "groq"
 
-	QWENQwq ModelID = "qwen-qwq"
+	QWENQwq ID = "qwen-qwq"
 
-	Llama4Scout               ModelID = "meta-llama/llama-4-scout-17b-16e-instruct"
-	Llama4Maverick            ModelID = "meta-llama/llama-4-maverick-17b-128e-instruct"
-	Llama3_3_70BVersatile     ModelID = "llama-3.3-70b-versatile"
-	DeepseekR1DistillLlama70b ModelID = "deepseek-r1-distill-llama-70b"
-	GPTOss120B                ModelID = "openai/gpt-oss-120b"
-	GPTOss20B                 ModelID = "openai/gpt-oss-20b"
-	Qwen3_32BGroq             ModelID = "qwen/qwen3-32b"
-	KimiK2                    ModelID = "moonshotai/kimi-k2-instruct-0905"
+	Llama4Scout               ID = "meta-llama/llama-4-scout-17b-16e-instruct"
+	Llama4Maverick            ID = "meta-llama/llama-4-maverick-17b-128e-instruct"
+	Llama3_3_70BVersatile     ID = "llama-3.3-70b-versatile"
+	DeepseekR1DistillLlama70b ID = "deepseek-r1-distill-llama-70b"
+	GPTOss120B                ID = "openai/gpt-oss-120b"
+	GPTOss20B                 ID = "openai/gpt-oss-20b"
+	Qwen3_32BGroq             ID = "qwen/qwen3-32b"
+	KimiK2                    ID = "moonshotai/kimi-k2-instruct-0905"
 )
 
 // GroqModels maps Groq model IDs to their configurations.
-var GroqModels = map[ModelID]Model{
+var GroqModels = map[ID]Model{
 	QWENQwq: {
 		ID:                    QWENQwq,
 		Name:                  "Qwen Qwq",

@@ -1,3 +1,4 @@
+// Example transcription demonstrates speech-to-text with the transcription API.
 package main
 
 import (

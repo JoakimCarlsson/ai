@@ -35,6 +35,7 @@ type openaiClient struct {
 	client          openai.Client
 }
 
+// OpenAIClient implements speech-to-text using the OpenAI API.
 type OpenAIClient SpeechToTextClient
 
 func newOpenAIClient(opts transcriptionClientOptions) OpenAIClient {
@@ -69,9 +70,9 @@ func newOpenAIClient(opts transcriptionClientOptions) OpenAIClient {
 func (o *openaiClient) transcribe(
 	ctx context.Context,
 	audioFile []byte,
-	options ...TranscriptionOption,
-) (*TranscriptionResponse, error) {
-	opts := TranscriptionOptions{
+	options ...Option,
+) (*Response, error) {
+	opts := Options{
 		Filename: "audio.mp3",
 	}
 	for _, opt := range options {
@@ -113,15 +114,15 @@ func (o *openaiClient) transcribe(
 		return nil, fmt.Errorf("failed to transcribe audio: %w", err)
 	}
 
-	return o.convertTranscriptionResponse(response), nil
+	return o.convertResponse(response), nil
 }
 
 func (o *openaiClient) translate(
 	ctx context.Context,
 	audioFile []byte,
-	options ...TranscriptionOption,
-) (*TranscriptionResponse, error) {
-	opts := TranscriptionOptions{
+	options ...Option,
+) (*Response, error) {
+	opts := Options{
 		Filename: "audio.mp3",
 	}
 	for _, opt := range options {
@@ -173,8 +174,8 @@ func (o *openaiClient) translate(
 
 func (o *openaiClient) convertTranslationResponse(
 	response *openai.Translation,
-) *TranscriptionResponse {
-	return &TranscriptionResponse{
+) *Response {
+	return &Response{
 		Text:  response.Text,
 		Model: o.providerOptions.model.APIModel,
 	}
@@ -202,10 +203,10 @@ type verboseTranscription struct {
 	} `json:"words"`
 }
 
-func (o *openaiClient) convertTranscriptionResponse(
+func (o *openaiClient) convertResponse(
 	response *openai.Transcription,
-) *TranscriptionResponse {
-	result := &TranscriptionResponse{
+) *Response {
+	result := &Response{
 		Text:  response.Text,
 		Model: o.providerOptions.model.APIModel,
 	}
@@ -228,7 +229,7 @@ func (o *openaiClient) convertTranscriptionResponse(
 			result.Language = verbose.Language
 			result.Duration = verbose.Duration
 			for _, s := range verbose.Segments {
-				result.Segments = append(result.Segments, TranscriptionSegment{
+				result.Segments = append(result.Segments, Segment{
 					ID:               s.ID,
 					Start:            s.Start,
 					End:              s.End,
@@ -241,7 +242,7 @@ func (o *openaiClient) convertTranscriptionResponse(
 				})
 			}
 			for _, w := range verbose.Words {
-				result.Words = append(result.Words, TranscriptionWord{
+				result.Words = append(result.Words, Word{
 					Word:  w.Word,
 					Start: w.Start,
 					End:   w.End,

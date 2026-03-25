@@ -2,17 +2,17 @@ package model
 
 // Meta provider identifier and Llama model IDs for this registry.
 const (
-	ProviderMeta ModelProvider = "meta"
+	ProviderMeta Provider = "meta"
 
-	MetaLlama4Maverick ModelID = "llama-4-maverick"
-	MetaLlama4Scout    ModelID = "llama-4-scout"
-	MetaLlama31405B    ModelID = "llama-3.1-405b"
-	MetaLlama3170B     ModelID = "llama-3.1-70b"
-	MetaLlama318B      ModelID = "llama-3.1-8b"
+	MetaLlama4Maverick ID = "llama-4-maverick"
+	MetaLlama4Scout    ID = "llama-4-scout"
+	MetaLlama31405B    ID = "llama-3.1-405b"
+	MetaLlama3170B     ID = "llama-3.1-70b"
+	MetaLlama318B      ID = "llama-3.1-8b"
 )
 
 // MetaModels maps Meta Llama model IDs to their configurations.
-var MetaModels = map[ModelID]Model{
+var MetaModels = map[ID]Model{
 	MetaLlama4Maverick: {
 		ID:                    MetaLlama4Maverick,
 		Name:                  "Llama 4 Maverick",

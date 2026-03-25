@@ -42,14 +42,14 @@ func newFanOutTool(config FanOutConfig) *fanOutTool {
 	return &fanOutTool{config: config}
 }
 
-func (t *fanOutTool) Info() tool.ToolInfo {
-	return tool.NewToolInfo(t.config.Name, t.config.Description, fanOutInput{})
+func (t *fanOutTool) Info() tool.Info {
+	return tool.NewInfo(t.config.Name, t.config.Description, fanOutInput{})
 }
 
 func (t *fanOutTool) Run(
 	ctx context.Context,
-	params tool.ToolCall,
-) (tool.ToolResponse, error) {
+	params tool.Call,
+) (tool.Response, error) {
 	var input fanOutInput
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
 		return tool.NewTextErrorResponse(

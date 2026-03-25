@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// GenerateSchema builds JSON Schema-style properties and required field names from a struct value or type.
 func GenerateSchema(v any) (map[string]any, []string) {
 	t := reflect.TypeOf(v)
 	if t.Kind() == reflect.Ptr {

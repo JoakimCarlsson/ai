@@ -21,8 +21,8 @@ type weatherParams struct {
 
 type weatherTool struct{}
 
-func (w *weatherTool) Info() tool.ToolInfo {
-	return tool.NewToolInfo(
+func (w *weatherTool) Info() tool.Info {
+	return tool.NewInfo(
 		"get_weather",
 		"Get the current weather for a location",
 		weatherParams{},
@@ -31,8 +31,8 @@ func (w *weatherTool) Info() tool.ToolInfo {
 
 func (w *weatherTool) Run(
 	ctx context.Context,
-	params tool.ToolCall,
-) (tool.ToolResponse, error) {
+	params tool.Call,
+) (tool.Response, error) {
 	var input weatherParams
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
 		return tool.NewTextErrorResponse(err.Error()), nil

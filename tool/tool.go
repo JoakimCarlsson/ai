@@ -10,8 +10,8 @@
 //
 // Key components include:
 //   - BaseTool interface for implementing custom tools
-//   - ToolInfo for describing tool capabilities and parameters
-//   - ToolResponse for structured tool execution results
+//   - Info for describing tool capabilities and parameters
+//   - Response for structured tool execution results
 //   - Registry for managing collections of tools
 //   - MCP integration for external tool providers
 //
@@ -19,8 +19,8 @@
 //
 //	type WeatherTool struct{}
 //
-//	func (w *WeatherTool) Info() tool.ToolInfo {
-//		return tool.ToolInfo{
+//	func (w *WeatherTool) Info() tool.Info {
+//		return tool.Info{
 //			Name:        "get_weather",
 //			Description: "Get current weather for a location",
 //			Parameters: map[string]any{
@@ -33,7 +33,7 @@
 //		}
 //	}
 //
-//	func (w *WeatherTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+//	func (w *WeatherTool) Run(ctx context.Context, params tool.Call) (tool.Response, error) {
 //		return tool.NewTextResponse("Sunny, 22°C"), nil
 //	}
 package tool
@@ -47,13 +47,13 @@ import (
 // Tools provide functionality that AI models can invoke during conversations.
 type BaseTool interface {
 	// Info returns metadata about the tool including its name, description, and parameters.
-	Info() ToolInfo
+	Info() Info
 	// Run executes the tool with the provided parameters and returns a response.
-	Run(ctx context.Context, params ToolCall) (ToolResponse, error)
+	Run(ctx context.Context, params Call) (Response, error)
 }
 
-// ToolInfo describes a tool's capabilities and parameters using JSON Schema format.
-type ToolInfo struct {
+// Info holds a tool's name, description, and JSON Schema parameter definitions for model registration.
+type Info struct {
 	// Name is the unique identifier for the tool.
 	Name string `json:"name"`
 	// Description explains what the tool does and when to use it.
@@ -64,9 +64,10 @@ type ToolInfo struct {
 	Required []string `json:"required"`
 }
 
-func NewToolInfo(name, description string, paramsStruct any) ToolInfo {
+// NewInfo builds registration metadata from a name, description, and a struct type used for schema generation.
+func NewInfo(name, description string, paramsStruct any) Info {
 	params, required := GenerateSchema(paramsStruct)
-	return ToolInfo{
+	return Info{
 		Name:        name,
 		Description: description,
 		Parameters:  params,
@@ -74,8 +75,8 @@ func NewToolInfo(name, description string, paramsStruct any) ToolInfo {
 	}
 }
 
-// ToolCall represents a request to execute a specific tool with parameters.
-type ToolCall struct {
+// Call represents a request to run a named tool with JSON-encoded arguments from the model.
+type Call struct {
 	// ID is a unique identifier for this tool call instance.
 	ID string `json:"id"`
 	// Name is the name of the tool to execute.
@@ -84,69 +85,72 @@ type ToolCall struct {
 	Input string `json:"input"`
 }
 
-// ToolResponseType indicates the format of a tool's response content.
-type ToolResponseType string
+// ResponseType discriminates how tool output is encoded (text, image, file, or JSON).
+type ResponseType string
 
+// Standard values for Response.Type when returning results to the model.
 const (
-	ToolResponseTypeText  ToolResponseType = "text"
-	ToolResponseTypeImage ToolResponseType = "image"
-	ToolResponseTypeFile  ToolResponseType = "file"
-	ToolResponseTypeJSON  ToolResponseType = "json"
+	ResponseTypeText  ResponseType = "text"
+	ResponseTypeImage ResponseType = "image"
+	ResponseTypeFile  ResponseType = "file"
+	ResponseTypeJSON  ResponseType = "json"
 )
 
-// ToolResponse represents the result of a tool execution.
-type ToolResponse struct {
-	Type     ToolResponseType `json:"type"`
-	Content  string           `json:"content"`
-	Data     []byte           `json:"data,omitempty"`
-	MimeType string           `json:"mime_type,omitempty"`
-	Metadata string           `json:"metadata,omitempty"`
-	IsError  bool             `json:"is_error"`
+// Response holds the result of executing a tool: payload type, content or raw data, and optional error flag.
+type Response struct {
+	Type     ResponseType `json:"type"`
+	Content  string       `json:"content"`
+	Data     []byte       `json:"data,omitempty"`
+	MimeType string       `json:"mime_type,omitempty"`
+	Metadata string       `json:"metadata,omitempty"`
+	IsError  bool         `json:"is_error"`
 }
 
 // NewTextResponse creates a successful text response.
-func NewTextResponse(content string) ToolResponse {
-	return ToolResponse{
-		Type:    ToolResponseTypeText,
+func NewTextResponse(content string) Response {
+	return Response{
+		Type:    ResponseTypeText,
 		Content: content,
 		IsError: false,
 	}
 }
 
 // NewTextErrorResponse creates an error text response.
-func NewTextErrorResponse(content string) ToolResponse {
-	return ToolResponse{
-		Type:    ToolResponseTypeText,
+func NewTextErrorResponse(content string) Response {
+	return Response{
+		Type:    ResponseTypeText,
 		Content: content,
 		IsError: true,
 	}
 }
 
 // NewImageResponse creates a successful image response.
-func NewImageResponse(content string) ToolResponse {
-	return ToolResponse{
-		Type:    ToolResponseTypeImage,
+func NewImageResponse(content string) Response {
+	return Response{
+		Type:    ResponseTypeImage,
 		Content: content,
 		IsError: false,
 	}
 }
 
-func NewFileResponse(data []byte, mimeType string) ToolResponse {
-	return ToolResponse{
-		Type:     ToolResponseTypeFile,
+// NewFileResponse returns a non-error response carrying raw bytes and a MIME type for file-style tool output.
+func NewFileResponse(data []byte, mimeType string) Response {
+	return Response{
+		Type:     ResponseTypeFile,
 		Data:     data,
 		MimeType: mimeType,
 		IsError:  false,
 	}
 }
 
-func NewJSONResponse(v any) ToolResponse {
+// NewJSONResponse returns a successful response with v marshaled as application/json content.
+func NewJSONResponse(v any) Response {
 	data, err := json.Marshal(v)
 	if err != nil {
 		return NewTextErrorResponse("failed to marshal JSON: " + err.Error())
 	}
-	return ToolResponse{
-		Type:     ToolResponseTypeJSON,
+	return Response{
+		Type:     ResponseTypeJSON,
 		Content:  string(data),
 		MimeType: "application/json",
 		IsError:  false,
@@ -154,7 +158,7 @@ func NewJSONResponse(v any) ToolResponse {
 }
 
 // WithResponseMetadata adds JSON metadata to a tool response.
-func WithResponseMetadata(response ToolResponse, metadata any) ToolResponse {
+func WithResponseMetadata(response Response, metadata any) Response {
 	if metadata != nil {
 		metadataBytes, err := json.Marshal(metadata)
 		if err != nil {
@@ -209,8 +213,8 @@ func (r *Registry) Names() []string {
 // Execute runs a tool by name with the provided parameters.
 func (r *Registry) Execute(
 	ctx context.Context,
-	call ToolCall,
-) (ToolResponse, error) {
+	call Call,
+) (Response, error) {
 	tool, exists := r.tools[call.Name]
 	if !exists {
 		return NewTextErrorResponse("tool not found: " + call.Name), nil

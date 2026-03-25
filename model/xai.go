@@ -2,24 +2,24 @@ package model
 
 // xAI provider identifier and Grok model IDs for this registry.
 const (
-	ProviderXAI ModelProvider = "xai"
+	ProviderXAI Provider = "xai"
 
-	XAIGrok4                  ModelID = "grok-4-0709"
-	XAIGrok4FastReasoning     ModelID = "grok-4-fast-reasoning"
-	XAIGrok4FastNonReasoning  ModelID = "grok-4-fast-non-reasoning"
-	XAIGrok41FastReasoning    ModelID = "grok-4-1-fast-reasoning"
-	XAIGrok41FastNonReasoning ModelID = "grok-4-1-fast-non-reasoning"
-	XAIGrok3                  ModelID = "grok-3"
-	XAIGrok3Mini              ModelID = "grok-3-mini"
-	XAIGrok3Fast              ModelID = "grok-3-fast"
-	XAIGrok3MiniFast          ModelID = "grok-3-mini-fast"
-	XAIGrok2Vision            ModelID = "grok-2-vision-1212"
-	XAIGrokCodeFast1          ModelID = "grok-code-fast-1"
-	XAIGrok2Image             ModelID = "grok-2-image-1212"
+	XAIGrok4                  ID = "grok-4-0709"
+	XAIGrok4FastReasoning     ID = "grok-4-fast-reasoning"
+	XAIGrok4FastNonReasoning  ID = "grok-4-fast-non-reasoning"
+	XAIGrok41FastReasoning    ID = "grok-4-1-fast-reasoning"
+	XAIGrok41FastNonReasoning ID = "grok-4-1-fast-non-reasoning"
+	XAIGrok3                  ID = "grok-3"
+	XAIGrok3Mini              ID = "grok-3-mini"
+	XAIGrok3Fast              ID = "grok-3-fast"
+	XAIGrok3MiniFast          ID = "grok-3-mini-fast"
+	XAIGrok2Vision            ID = "grok-2-vision-1212"
+	XAIGrokCodeFast1          ID = "grok-code-fast-1"
+	XAIGrok2Image             ID = "grok-2-image-1212"
 )
 
 // XAIModels maps xAI chat model IDs to their configurations.
-var XAIModels = map[ModelID]Model{
+var XAIModels = map[ID]Model{
 	XAIGrok4: {
 		ID:                    XAIGrok4,
 		Name:                  "Grok4",
@@ -166,7 +166,7 @@ var XAIModels = map[ModelID]Model{
 }
 
 // XAIImageGenerationModels maps xAI image generation model IDs to their configurations.
-var XAIImageGenerationModels = map[ModelID]ImageGenerationModel{
+var XAIImageGenerationModels = map[ID]ImageGenerationModel{
 	XAIGrok2Image: {
 		ID:       XAIGrok2Image,
 		Name:     "Grok 2 Image",

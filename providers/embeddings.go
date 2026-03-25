@@ -82,7 +82,7 @@ type baseEmbedding[C EmbeddingClient] struct {
 }
 
 func NewEmbedding(
-	provider model.ModelProvider,
+	provider model.Provider,
 	opts ...EmbeddingClientOption,
 ) (Embedding, error) {
 	clientOptions := embeddingClientOptions{
@@ -92,8 +92,7 @@ func NewEmbedding(
 		o(&clientOptions)
 	}
 
-	switch provider {
-	case model.ProviderVoyage:
+	if provider == model.ProviderVoyage {
 		return &baseEmbedding[VoyageClient]{
 			options: clientOptions,
 			client:  newVoyageClient(clientOptions),

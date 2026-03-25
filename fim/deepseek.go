@@ -49,7 +49,7 @@ func newDeepSeekClient(opts fimClientOptions) *deepseekClient {
 	}
 }
 
-type deepseekFIMRequest struct {
+type deepseekRequest struct {
 	Model            string   `json:"model"`
 	Prompt           string   `json:"prompt"`
 	Suffix           string   `json:"suffix,omitempty"`
@@ -69,7 +69,7 @@ type deepseekFIMChoice struct {
 	FinishReason string `json:"finish_reason"`
 }
 
-type deepseekFIMUsage struct {
+type deepseekUsage struct {
 	PromptTokens          int64 `json:"prompt_tokens"`
 	CompletionTokens      int64 `json:"completion_tokens"`
 	TotalTokens           int64 `json:"total_tokens"`
@@ -77,13 +77,13 @@ type deepseekFIMUsage struct {
 	PromptCacheMissTokens int64 `json:"prompt_cache_miss_tokens"`
 }
 
-type deepseekFIMResponse struct {
+type deepseekResponse struct {
 	ID      string              `json:"id"`
 	Object  string              `json:"object"`
 	Created int64               `json:"created"`
 	Model   string              `json:"model"`
 	Choices []deepseekFIMChoice `json:"choices"`
-	Usage   deepseekFIMUsage    `json:"usage"`
+	Usage   deepseekUsage       `json:"usage"`
 }
 
 type deepseekFIMStreamChoice struct {
@@ -98,14 +98,14 @@ type deepseekFIMStreamResponse struct {
 	Created int64                     `json:"created"`
 	Model   string                    `json:"model"`
 	Choices []deepseekFIMStreamChoice `json:"choices"`
-	Usage   *deepseekFIMUsage         `json:"usage,omitempty"`
+	Usage   *deepseekUsage            `json:"usage,omitempty"`
 }
 
 func (d *deepseekClient) buildRequest(
-	req FIMRequest,
+	req Request,
 	stream bool,
-) deepseekFIMRequest {
-	fimReq := deepseekFIMRequest{
+) deepseekRequest {
+	fimReq := deepseekRequest{
 		Model:  d.providerOptions.model.APIModel,
 		Prompt: req.Prompt,
 		Suffix: req.Suffix,
@@ -162,8 +162,8 @@ func (d *deepseekClient) finishReason(reason string) FinishReason {
 
 func (d *deepseekClient) complete(
 	ctx context.Context,
-	req FIMRequest,
-) (*FIMResponse, error) {
+	req Request,
+) (*Response, error) {
 	fimReq := d.buildRequest(req, false)
 
 	body, err := json.Marshal(fimReq)
@@ -199,7 +199,7 @@ func (d *deepseekClient) complete(
 		)
 	}
 
-	var fimResp deepseekFIMResponse
+	var fimResp deepseekResponse
 	if err := json.NewDecoder(resp.Body).Decode(&fimResp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
@@ -208,9 +208,9 @@ func (d *deepseekClient) complete(
 		return nil, fmt.Errorf("no choices returned from deepseek fim")
 	}
 
-	return &FIMResponse{
+	return &Response{
 		Content: fimResp.Choices[0].Text,
-		Usage: FIMUsage{
+		Usage: Usage{
 			InputTokens:  fimResp.Usage.PromptTokens,
 			OutputTokens: fimResp.Usage.CompletionTokens,
 		},
@@ -220,17 +220,17 @@ func (d *deepseekClient) complete(
 
 func (d *deepseekClient) stream(
 	ctx context.Context,
-	req FIMRequest,
-) <-chan FIMEvent {
+	req Request,
+) <-chan Event {
 	fimReq := d.buildRequest(req, true)
-	eventChan := make(chan FIMEvent)
+	eventChan := make(chan Event)
 
 	go func() {
 		defer close(eventChan)
 
 		body, err := json.Marshal(fimReq)
 		if err != nil {
-			eventChan <- FIMEvent{Type: EventError, Error: fmt.Errorf("failed to marshal request: %w", err)}
+			eventChan <- Event{Type: EventError, Error: fmt.Errorf("failed to marshal request: %w", err)}
 			return
 		}
 
@@ -241,7 +241,7 @@ func (d *deepseekClient) stream(
 			bytes.NewReader(body),
 		)
 		if err != nil {
-			eventChan <- FIMEvent{Type: EventError, Error: fmt.Errorf("failed to create request: %w", err)}
+			eventChan <- Event{Type: EventError, Error: fmt.Errorf("failed to create request: %w", err)}
 			return
 		}
 
@@ -251,29 +251,29 @@ func (d *deepseekClient) stream(
 
 		resp, err := d.httpClient.Do(httpReq)
 		if err != nil {
-			eventChan <- FIMEvent{Type: EventError, Error: fmt.Errorf("failed to send request: %w", err)}
+			eventChan <- Event{Type: EventError, Error: fmt.Errorf("failed to send request: %w", err)}
 			return
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
 			bodyBytes, _ := io.ReadAll(resp.Body)
-			eventChan <- FIMEvent{Type: EventError, Error: fmt.Errorf("deepseek fim api error (status %d): %s", resp.StatusCode, string(bodyBytes))}
+			eventChan <- Event{Type: EventError, Error: fmt.Errorf("deepseek fim api error (status %d): %s", resp.StatusCode, string(bodyBytes))}
 			return
 		}
 
 		reader := bufio.NewReader(resp.Body)
 		var currentContent strings.Builder
-		var finalUsage FIMUsage
+		var finalUsage Usage
 		var finalFinishReason FinishReason
 
 		for {
 			line, err := reader.ReadBytes('\n')
 			if err != nil {
 				if err == io.EOF {
-					eventChan <- FIMEvent{
+					eventChan <- Event{
 						Type: EventComplete,
-						Response: &FIMResponse{
+						Response: &Response{
 							Content:      currentContent.String(),
 							Usage:        finalUsage,
 							FinishReason: finalFinishReason,
@@ -281,7 +281,7 @@ func (d *deepseekClient) stream(
 					}
 					return
 				}
-				eventChan <- FIMEvent{Type: EventError, Error: fmt.Errorf("error reading stream: %w", err)}
+				eventChan <- Event{Type: EventError, Error: fmt.Errorf("error reading stream: %w", err)}
 				return
 			}
 
@@ -293,9 +293,9 @@ func (d *deepseekClient) stream(
 			if bytes.HasPrefix(line, []byte("data: ")) {
 				data := bytes.TrimPrefix(line, []byte("data: "))
 				if bytes.Equal(data, []byte("[DONE]")) {
-					eventChan <- FIMEvent{
+					eventChan <- Event{
 						Type: EventComplete,
-						Response: &FIMResponse{
+						Response: &Response{
 							Content:      currentContent.String(),
 							Usage:        finalUsage,
 							FinishReason: finalFinishReason,
@@ -312,7 +312,7 @@ func (d *deepseekClient) stream(
 				for _, choice := range streamResp.Choices {
 					if choice.Text != "" {
 						currentContent.WriteString(choice.Text)
-						eventChan <- FIMEvent{
+						eventChan <- Event{
 							Type:    EventContentDelta,
 							Content: choice.Text,
 						}
@@ -323,7 +323,7 @@ func (d *deepseekClient) stream(
 				}
 
 				if streamResp.Usage != nil {
-					finalUsage = FIMUsage{
+					finalUsage = Usage{
 						InputTokens:  streamResp.Usage.PromptTokens,
 						OutputTokens: streamResp.Usage.CompletionTokens,
 					}

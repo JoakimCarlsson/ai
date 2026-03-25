@@ -2,27 +2,27 @@ package model
 
 // Gemini provider plus Gemini and Imagen model IDs for this registry.
 const (
-	ProviderGemini ModelProvider = "gemini"
+	ProviderGemini Provider = "gemini"
 
-	Gemini3Pro        ModelID = "gemini-3-pro"
-	Gemini3Flash      ModelID = "gemini-3-flash"
-	Gemini31Pro       ModelID = "gemini-3.1-pro"
-	Gemini25Flash     ModelID = "gemini-2.5-flash"
-	Gemini25FlashLite ModelID = "gemini-2.5-flash-lite"
-	Gemini25          ModelID = "gemini-2.5"
-	Gemini20Flash     ModelID = "gemini-2.0-flash"
-	Gemini20FlashLite ModelID = "gemini-2.0-flash-lite"
+	Gemini3Pro        ID = "gemini-3-pro"
+	Gemini3Flash      ID = "gemini-3-flash"
+	Gemini31Pro       ID = "gemini-3.1-pro"
+	Gemini25Flash     ID = "gemini-2.5-flash"
+	Gemini25FlashLite ID = "gemini-2.5-flash-lite"
+	Gemini25          ID = "gemini-2.5"
+	Gemini20Flash     ID = "gemini-2.0-flash"
+	Gemini20FlashLite ID = "gemini-2.0-flash-lite"
 
-	Gemini25FlashImage ModelID = "gemini-2.5-flash-image"
-	Gemini3ProImage    ModelID = "gemini-3-pro-image"
-	Imagen3            ModelID = "imagen-3.0"
-	Imagen4            ModelID = "imagen-4.0"
-	Imagen4Ultra       ModelID = "imagen-4.0-ultra"
-	Imagen4Fast        ModelID = "imagen-4.0-fast"
+	Gemini25FlashImage ID = "gemini-2.5-flash-image"
+	Gemini3ProImage    ID = "gemini-3-pro-image"
+	Imagen3            ID = "imagen-3.0"
+	Imagen4            ID = "imagen-4.0"
+	Imagen4Ultra       ID = "imagen-4.0-ultra"
+	Imagen4Fast        ID = "imagen-4.0-fast"
 )
 
 // GeminiModels maps Gemini chat model IDs to their configurations.
-var GeminiModels = map[ModelID]Model{
+var GeminiModels = map[ID]Model{
 	Gemini3Pro: {
 		ID:                    Gemini3Pro,
 		Name:                  "Gemini 3 Pro",
@@ -141,7 +141,7 @@ var GeminiModels = map[ModelID]Model{
 }
 
 // GeminiImageGenerationModels maps Gemini and Imagen image-generation model IDs to their configurations.
-var GeminiImageGenerationModels = map[ModelID]ImageGenerationModel{
+var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 	Gemini25FlashImage: {
 		ID:       Gemini25FlashImage,
 		Name:     "Gemini 2.5 Flash Image",

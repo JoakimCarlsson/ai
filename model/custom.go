@@ -22,7 +22,7 @@ package model
 //	    model.WithCostPer1MIn(1.50),
 //	    model.WithCostPer1MOut(5.00),
 //	)
-func NewCustomModel(opts ...ModelOption) Model {
+func NewCustomModel(opts ...Option) Model {
 	m := Model{
 		Provider:                "custom",
 		SupportsStructuredOut:   false,
@@ -36,103 +36,102 @@ func NewCustomModel(opts ...ModelOption) Model {
 	return m
 }
 
-// ModelOption configures a custom Model when passed to NewCustomModel.
-//revive:disable-next-line:exported
-type ModelOption func(*Model)
+// Option configures a custom Model when passed to NewCustomModel.
+type Option func(*Model)
 
 // WithModelID sets the unique identifier for the model.
-func WithModelID(id ModelID) ModelOption {
+func WithModelID(id ID) Option {
 	return func(m *Model) {
 		m.ID = id
 	}
 }
 
 // WithName sets the human-readable name of the model.
-func WithName(name string) ModelOption {
+func WithName(name string) Option {
 	return func(m *Model) {
 		m.Name = name
 	}
 }
 
 // WithProvider sets the provider identifier for the model.
-func WithProvider(provider ModelProvider) ModelOption {
+func WithProvider(provider Provider) Option {
 	return func(m *Model) {
 		m.Provider = provider
 	}
 }
 
 // WithAPIModel sets the model identifier used in API requests.
-func WithAPIModel(apiModel string) ModelOption {
+func WithAPIModel(apiModel string) Option {
 	return func(m *Model) {
 		m.APIModel = apiModel
 	}
 }
 
 // WithCostPer1MIn sets the cost per 1 million input tokens in USD.
-func WithCostPer1MIn(cost float64) ModelOption {
+func WithCostPer1MIn(cost float64) Option {
 	return func(m *Model) {
 		m.CostPer1MIn = cost
 	}
 }
 
 // WithCostPer1MOut sets the cost per 1 million output tokens in USD.
-func WithCostPer1MOut(cost float64) ModelOption {
+func WithCostPer1MOut(cost float64) Option {
 	return func(m *Model) {
 		m.CostPer1MOut = cost
 	}
 }
 
 // WithCostPer1MInCached sets the cost per 1 million cached input tokens in USD.
-func WithCostPer1MInCached(cost float64) ModelOption {
+func WithCostPer1MInCached(cost float64) Option {
 	return func(m *Model) {
 		m.CostPer1MInCached = cost
 	}
 }
 
 // WithCostPer1MOutCached sets the cost per 1 million cached output tokens in USD.
-func WithCostPer1MOutCached(cost float64) ModelOption {
+func WithCostPer1MOutCached(cost float64) Option {
 	return func(m *Model) {
 		m.CostPer1MOutCached = cost
 	}
 }
 
 // WithContextWindow sets the maximum number of tokens the model can process.
-func WithContextWindow(window int64) ModelOption {
+func WithContextWindow(window int64) Option {
 	return func(m *Model) {
 		m.ContextWindow = window
 	}
 }
 
 // WithDefaultMaxTokens sets the recommended maximum tokens for responses.
-func WithDefaultMaxTokens(maxTokens int64) ModelOption {
+func WithDefaultMaxTokens(maxTokens int64) Option {
 	return func(m *Model) {
 		m.DefaultMaxTokens = maxTokens
 	}
 }
 
 // WithReasoning sets whether the model supports chain-of-thought reasoning.
-func WithReasoning(canReason bool) ModelOption {
+func WithReasoning(canReason bool) Option {
 	return func(m *Model) {
 		m.CanReason = canReason
 	}
 }
 
 // WithAttachments sets whether the model can process images and files.
-func WithAttachments(supportsAttachments bool) ModelOption {
+func WithAttachments(supportsAttachments bool) Option {
 	return func(m *Model) {
 		m.SupportsAttachments = supportsAttachments
 	}
 }
 
 // WithStructuredOutput sets whether the model supports structured JSON output.
-func WithStructuredOutput(supportsStructuredOutput bool) ModelOption {
+func WithStructuredOutput(supportsStructuredOutput bool) Option {
 	return func(m *Model) {
 		m.SupportsStructuredOut = supportsStructuredOutput
 	}
 }
 
 // WithImageGeneration sets whether the model can generate images.
-func WithImageGeneration(supportsImageGeneration bool) ModelOption {
+func WithImageGeneration(supportsImageGeneration bool) Option {
 	return func(m *Model) {
 		m.SupportsImageGeneration = supportsImageGeneration
 	}

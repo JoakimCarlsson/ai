@@ -62,7 +62,7 @@ import (
 const maxRetries = 8
 
 // customProviders stores registered custom provider configurations.
-var customProviders = make(map[model.ModelProvider]CustomProviderConfig)
+var customProviders = make(map[model.Provider]CustomProviderConfig)
 var customProvidersMu sync.RWMutex
 
 // CustomProviderConfig defines configuration for OpenAI-compatible custom providers.
@@ -94,7 +94,7 @@ type CustomProviderConfig struct {
 }
 
 // RegisterCustomProvider registers an OpenAI-compatible custom provider for use with NewLLM.
-// Returns a ModelProvider constant that can be passed to NewLLM() to create clients.
+// Returns a Provider constant that can be passed to NewLLM() to create clients.
 //
 // Custom providers must implement OpenAI-compatible APIs for message formatting and streaming.
 // This works well with Ollama, LocalAI, and other OpenAI-compatible local inference servers.
@@ -132,18 +132,18 @@ type CustomProviderConfig struct {
 func RegisterCustomProvider(
 	name string,
 	config CustomProviderConfig,
-) model.ModelProvider {
+) model.Provider {
 	customProvidersMu.Lock()
 	defer customProvidersMu.Unlock()
 
-	providerID := model.ModelProvider("custom:" + name)
+	providerID := model.Provider("custom:" + name)
 	customProviders[providerID] = config
 	return providerID
 }
 
 // getCustomProvider safely retrieves a custom provider configuration.
 func getCustomProvider(
-	provider model.ModelProvider,
+	provider model.Provider,
 ) (CustomProviderConfig, bool) {
 	customProvidersMu.RLock()
 	defer customProvidersMu.RUnlock()
@@ -303,7 +303,7 @@ type baseLLM[C LLMClient] struct {
 
 // NewLLM creates a new LLM client instance for the specified provider with configuration options
 func NewLLM(
-	llmProvider model.ModelProvider,
+	llmProvider model.Provider,
 	opts ...LLMClientOption,
 ) (LLM, error) {
 	clientOptions := llmClientOptions{}

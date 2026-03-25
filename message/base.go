@@ -19,21 +19,21 @@ import (
 	"github.com/joakimcarlsson/ai/model"
 )
 
-// MessageRole represents the role of a message in a conversation.
-type MessageRole string
+// Role describes who produced a message in a conversation (user, assistant, system, tool, or summary).
+type Role string
 
 const (
 	// Assistant represents messages from the AI assistant.
-	Assistant MessageRole = "assistant"
+	Assistant Role = "assistant"
 	// User represents messages from the human user.
-	User MessageRole = "user"
+	User Role = "user"
 	// System represents system-level instructions or context.
-	System MessageRole = "system"
+	System Role = "system"
 	// Tool represents responses from tool executions.
-	Tool MessageRole = "tool"
+	Tool Role = "tool"
 	// Summary represents a summarized conversation history.
 	// Stored in session, converted to User when sending to LLM.
-	Summary MessageRole = "summary"
+	Summary Role = "summary"
 )
 
 // Attachment represents a file attachment with its MIME type and binary data.
@@ -140,7 +140,7 @@ type BinaryContent struct {
 
 // String returns the binary content as a base64-encoded string,
 // formatted according to the specified provider's requirements.
-func (bc BinaryContent) String(provider model.ModelProvider) string {
+func (bc BinaryContent) String(provider model.Provider) string {
 	base64Encoded := base64.StdEncoding.EncodeToString(bc.Data)
 	if provider == model.ProviderOpenAI {
 		return "data:" + bc.MIMEType + ";base64," + base64Encoded
@@ -154,17 +154,17 @@ func (BinaryContent) isPart() {}
 // It can contain multiple content parts including text, images, tool calls, and tool results.
 type Message struct {
 	// Role indicates who sent the message (user, assistant, system, or tool).
-	Role MessageRole
+	Role Role
 	// Parts contains the various content components of the message.
 	Parts []ContentPart
 	// Model identifies which AI model this message is associated with.
-	Model model.ModelID
+	Model model.ID
 	// CreatedAt is a Unix timestamp (nanoseconds) indicating when the message was created.
 	CreatedAt int64
 }
 
 // NewMessage creates a new message with the specified role and content parts.
-func NewMessage(role MessageRole, parts []ContentPart) Message {
+func NewMessage(role Role, parts []ContentPart) Message {
 	return Message{
 		Role:      role,
 		Parts:     parts,
@@ -263,7 +263,7 @@ func (m *Message) AppendContent(delta string) {
 
 // AppendReasoningContent adds reasoning text content to the message.
 // This is currently a placeholder for future reasoning content support.
-func (m *Message) AppendReasoningContent(delta string) {
+func (m *Message) AppendReasoningContent(_ string) {
 }
 
 // SetToolCalls replaces all message parts with the provided tool calls.
@@ -296,7 +296,7 @@ func (m *Message) SetToolResults(tr []ToolResult) {
 
 // AddFinish adds a finish reason to the message.
 // This is currently a placeholder for future finish reason support.
-func (m *Message) AddFinish(reason FinishReason) {
+func (m *Message) AddFinish(_ FinishReason) {
 }
 
 // AddImageURL adds an image URL content part to the message.
@@ -315,12 +315,13 @@ type contentPartWrapper struct {
 }
 
 type messageJSON struct {
-	Role      MessageRole          `json:"role"`
+	Role      Role                 `json:"role"`
 	Parts     []contentPartWrapper `json:"parts"`
-	Model     model.ModelID        `json:"model,omitempty"`
+	Model     model.ID             `json:"model,omitempty"`
 	CreatedAt int64                `json:"created_at"`
 }
 
+// MarshalJSON encodes the message and its typed content parts for JSON storage.
 func (m Message) MarshalJSON() ([]byte, error) {
 	parts := make([]contentPartWrapper, 0, len(m.Parts))
 	for _, part := range m.Parts {
@@ -355,6 +356,7 @@ func (m Message) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// UnmarshalJSON decodes JSON into a message, dispatching on each wrapped part's type tag.
 func (m *Message) UnmarshalJSON(data []byte) error {
 	var mj messageJSON
 	if err := json.Unmarshal(data, &mj); err != nil {
@@ -422,15 +424,15 @@ type BaseMessage interface {
 	// SetMetadata sets a metadata key-value pair for this message.
 	SetMetadata(key string, value interface{})
 	// GetRole returns the role of the message sender.
-	GetRole() MessageRole
+	GetRole() Role
 	// GetModel returns the model ID associated with this message.
-	GetModel() model.ModelID
+	GetModel() model.ID
 	// SetModel sets the model ID for this message.
-	SetModel(modelID model.ModelID)
+	SetModel(modelID model.ID)
 }
 
-// MessageSource identifies the origin of a message with type and ID.
-type MessageSource struct {
+// Source identifies where a message came from using a category string and optional instance ID.
+type Source struct {
 	// Type indicates the category or provider of the message source.
 	Type string `json:"type"`
 	// ID is a unique identifier within the source type.
@@ -438,7 +440,7 @@ type MessageSource struct {
 }
 
 // String returns a string representation of the message source.
-func (ms MessageSource) String() string {
+func (ms Source) String() string {
 	if ms.ID != "" {
 		return ms.Type + ":" + ms.ID
 	}
@@ -450,27 +452,27 @@ func generateMessageID() string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
 }
 
-// NewMessageSource creates a message source with type and ID, generating ID if empty.
-func NewMessageSource(sourceType, id string) MessageSource {
+// NewSource creates a message source with type and ID, generating ID if empty.
+func NewSource(sourceType, id string) Source {
 	if id == "" {
 		id = generateMessageID()
 	}
-	return MessageSource{Type: sourceType, ID: id}
+	return Source{Type: sourceType, ID: id}
 }
 
 // baseMessage provides a concrete implementation of the BaseMessage interface
 // with source tracking, metadata, and timestamps.
 type baseMessage struct {
 	// Source identifies where this message originated.
-	Source MessageSource `json:"source"`
+	Source Source `json:"source"`
 	// CreatedAt is the timestamp when this message was created.
 	CreatedAt time.Time `json:"created_at"`
 	// Metadata contains additional key-value data associated with the message.
 	Metadata map[string]interface{} `json:"metadata"`
 	// Role indicates the sender's role in the conversation.
-	Role MessageRole `json:"role"`
+	Role Role `json:"role"`
 	// Model specifies which AI model is associated with this message.
-	Model model.ModelID `json:"model"`
+	Model model.ID `json:"model"`
 }
 
 // GetSource returns the string representation of the message source.
@@ -500,22 +502,22 @@ func (bm *baseMessage) SetMetadata(key string, value interface{}) {
 }
 
 // GetRole returns the role of the message sender.
-func (bm *baseMessage) GetRole() MessageRole {
+func (bm *baseMessage) GetRole() Role {
 	return bm.Role
 }
 
 // GetModel returns the model ID associated with this message.
-func (bm *baseMessage) GetModel() model.ModelID {
+func (bm *baseMessage) GetModel() model.ID {
 	return bm.Model
 }
 
 // SetModel sets the model ID for this message.
-func (bm *baseMessage) SetModel(modelID model.ModelID) {
+func (bm *baseMessage) SetModel(modelID model.ID) {
 	bm.Model = modelID
 }
 
 // newBaseMessage creates a new base message with the specified source and role.
-func newBaseMessage(source MessageSource, role MessageRole) baseMessage {
+func newBaseMessage(source Source, role Role) baseMessage {
 	return baseMessage{
 		Source:    source,
 		CreatedAt: time.Now(),

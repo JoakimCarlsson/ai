@@ -253,15 +253,15 @@ func (m *toolResultCapturingLLM) SupportsStructuredOutput() bool {
 
 type echoTool struct{}
 
-func (t *echoTool) Info() tool.ToolInfo {
-	return tool.NewToolInfo("echo", "Echoes the input back", struct {
+func (t *echoTool) Info() tool.Info {
+	return tool.NewInfo("echo", "Echoes the input back", struct {
 		Text string `json:"text" desc:"Text to echo"`
 	}{})
 }
 
 func (t *echoTool) Run(
 	_ context.Context,
-	params tool.ToolCall,
-) (tool.ToolResponse, error) {
+	params tool.Call,
+) (tool.Response, error) {
 	return tool.NewTextResponse("echo: " + params.Input), nil
 }

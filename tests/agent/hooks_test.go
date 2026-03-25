@@ -49,7 +49,7 @@ func TestPreToolUse_Deny(t *testing.T) {
 	toolExecuted := false
 	deniedTool := &simpleTool{
 		name: "forbidden",
-		run: func(_ context.Context, _ tool.ToolCall) (tool.ToolResponse, error) {
+		run: func(_ context.Context, _ tool.Call) (tool.Response, error) {
 			toolExecuted = true
 			return tool.NewTextResponse("should not happen"), nil
 		},
@@ -102,7 +102,7 @@ func TestPreToolUse_Modify(t *testing.T) {
 	var capturedInput string
 	modTool := &simpleTool{
 		name: "echo",
-		run: func(_ context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+		run: func(_ context.Context, params tool.Call) (tool.Response, error) {
 			capturedInput = params.Input
 			return tool.NewTextResponse("echoed"), nil
 		},
@@ -149,7 +149,7 @@ func TestPreToolUse_Allow(t *testing.T) {
 	toolExecuted := false
 	simpleTl := &simpleTool{
 		name: "ping",
-		run: func(_ context.Context, _ tool.ToolCall) (tool.ToolResponse, error) {
+		run: func(_ context.Context, _ tool.Call) (tool.Response, error) {
 			toolExecuted = true
 			return tool.NewTextResponse("pong"), nil
 		},
@@ -327,7 +327,7 @@ func TestHookChaining_DenyWins(t *testing.T) {
 	toolExecuted := false
 	simpleTl := &simpleTool{
 		name: "target",
-		run: func(_ context.Context, _ tool.ToolCall) (tool.ToolResponse, error) {
+		run: func(_ context.Context, _ tool.Call) (tool.Response, error) {
 			toolExecuted = true
 			return tool.NewTextResponse("ran"), nil
 		},
@@ -374,7 +374,7 @@ func TestHookChaining_LastModifyWins(t *testing.T) {
 	var capturedInput string
 	simpleTl := &simpleTool{
 		name: "target",
-		run: func(_ context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+		run: func(_ context.Context, params tool.Call) (tool.Response, error) {
 			capturedInput = params.Input
 			return tool.NewTextResponse("ok"), nil
 		},
@@ -695,7 +695,7 @@ func TestPreToolUse_ErrorTreatedAsDeny(t *testing.T) {
 	toolExecuted := false
 	simpleTl := &simpleTool{
 		name: "target",
-		run: func(_ context.Context, _ tool.ToolCall) (tool.ToolResponse, error) {
+		run: func(_ context.Context, _ tool.Call) (tool.Response, error) {
 			toolExecuted = true
 			return tool.NewTextResponse("ran"), nil
 		},
@@ -796,14 +796,14 @@ func TestHooksWithParallelTools(t *testing.T) {
 
 	tool1 := &simpleTool{
 		name: "tool_a",
-		run: func(_ context.Context, _ tool.ToolCall) (tool.ToolResponse, error) {
+		run: func(_ context.Context, _ tool.Call) (tool.Response, error) {
 			time.Sleep(10 * time.Millisecond)
 			return tool.NewTextResponse("a"), nil
 		},
 	}
 	tool2 := &simpleTool{
 		name: "tool_b",
-		run: func(_ context.Context, _ tool.ToolCall) (tool.ToolResponse, error) {
+		run: func(_ context.Context, _ tool.Call) (tool.Response, error) {
 			time.Sleep(10 * time.Millisecond)
 			return tool.NewTextResponse("b"), nil
 		},
@@ -958,18 +958,18 @@ func TestMultipleHookChains(t *testing.T) {
 // simpleTool is a test helper for creating tools with custom behavior.
 type simpleTool struct {
 	name string
-	run  func(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error)
+	run  func(ctx context.Context, params tool.Call) (tool.Response, error)
 }
 
-func (t *simpleTool) Info() tool.ToolInfo {
-	return tool.NewToolInfo(t.name, "A test tool", struct {
+func (t *simpleTool) Info() tool.Info {
+	return tool.NewInfo(t.name, "A test tool", struct {
 		Text string `json:"text" desc:"Input text" required:"false"`
 	}{})
 }
 
 func (t *simpleTool) Run(
 	ctx context.Context,
-	params tool.ToolCall,
-) (tool.ToolResponse, error) {
+	params tool.Call,
+) (tool.Response, error) {
 	return t.run(ctx, params)
 }

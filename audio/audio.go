@@ -193,7 +193,7 @@ type baseAudioGeneration[C AudioGenerationClient] struct {
 // Supported providers include ElevenLabs. Use WithModel() to specify the audio generation model
 // and WithAPIKey() for authentication.
 func NewAudioGeneration(
-	provider model.ModelProvider,
+	provider model.Provider,
 	opts ...AudioGenerationClientOption,
 ) (AudioGeneration, error) {
 	clientOptions := audioGenerationClientOptions{}

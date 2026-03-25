@@ -17,8 +17,8 @@ type getTaskResultInput struct {
 
 type getTaskResultTool struct{}
 
-func (t *getTaskResultTool) Info() tool.ToolInfo {
-	return tool.NewToolInfo(
+func (t *getTaskResultTool) Info() tool.Info {
+	return tool.NewInfo(
 		"get_task_result",
 		"Check the status or wait for the result of a background sub-agent task. Use the task_id returned when you launched the task with background: true.",
 		getTaskResultInput{},
@@ -27,8 +27,8 @@ func (t *getTaskResultTool) Info() tool.ToolInfo {
 
 func (t *getTaskResultTool) Run(
 	ctx context.Context,
-	params tool.ToolCall,
-) (tool.ToolResponse, error) {
+	params tool.Call,
+) (tool.Response, error) {
 	var input getTaskResultInput
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
 		return tool.NewTextErrorResponse(
@@ -79,8 +79,8 @@ type stopTaskInput struct {
 
 type stopTaskTool struct{}
 
-func (t *stopTaskTool) Info() tool.ToolInfo {
-	return tool.NewToolInfo(
+func (t *stopTaskTool) Info() tool.Info {
+	return tool.NewInfo(
 		"stop_task",
 		"Cancel a running background sub-agent task.",
 		stopTaskInput{},
@@ -89,8 +89,8 @@ func (t *stopTaskTool) Info() tool.ToolInfo {
 
 func (t *stopTaskTool) Run(
 	ctx context.Context,
-	params tool.ToolCall,
-) (tool.ToolResponse, error) {
+	params tool.Call,
+) (tool.Response, error) {
 	var input stopTaskInput
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
 		return tool.NewTextErrorResponse(
@@ -129,8 +129,8 @@ type listTasksInput struct{}
 
 type listTasksTool struct{}
 
-func (t *listTasksTool) Info() tool.ToolInfo {
-	return tool.NewToolInfo(
+func (t *listTasksTool) Info() tool.Info {
+	return tool.NewInfo(
 		"list_tasks",
 		"List all background sub-agent tasks and their current status.",
 		listTasksInput{},
@@ -139,8 +139,8 @@ func (t *listTasksTool) Info() tool.ToolInfo {
 
 func (t *listTasksTool) Run(
 	ctx context.Context,
-	params tool.ToolCall,
-) (tool.ToolResponse, error) {
+	params tool.Call,
+) (tool.Response, error) {
 	tm := taskManagerFromContext(ctx)
 	if tm == nil {
 		return tool.NewTextErrorResponse("no task manager available"), nil

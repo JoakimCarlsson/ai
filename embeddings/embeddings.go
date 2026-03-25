@@ -162,7 +162,7 @@ type baseEmbedding[C EmbeddingClient] struct {
 // Supported providers include Voyage AI and OpenAI.
 // Use WithModel() to specify the embedding model and WithAPIKey() for authentication.
 func NewEmbedding(
-	provider model.ModelProvider,
+	provider model.Provider,
 	opts ...EmbeddingClientOption,
 ) (Embedding, error) {
 	clientOptions := embeddingClientOptions{

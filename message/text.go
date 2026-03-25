@@ -17,8 +17,8 @@ type TextMessage struct {
 
 // NewTextMessage creates a text message with source, role and content.
 func NewTextMessage(
-	source MessageSource,
-	role MessageRole,
+	source Source,
+	role Role,
 	content string,
 ) *TextMessage {
 	return &TextMessage{
@@ -29,19 +29,19 @@ func NewTextMessage(
 
 // NewUserTextMessage creates a user text message with the given content.
 func NewUserTextMessage(content string) *TextMessage {
-	source := NewMessageSource("user", "")
+	source := NewSource("user", "")
 	return NewTextMessage(source, User, content)
 }
 
 // NewSystemTextMessage creates a system text message with the given content.
 func NewSystemTextMessage(content string) *TextMessage {
-	source := NewMessageSource("system", "")
+	source := NewSource("system", "")
 	return NewTextMessage(source, System, content)
 }
 
 // NewAssistantTextMessage creates an assistant text message with the given content.
 func NewAssistantTextMessage(content string) *TextMessage {
-	source := NewMessageSource("assistant", "")
+	source := NewSource("assistant", "")
 	return NewTextMessage(source, Assistant, content)
 }
 
@@ -62,11 +62,11 @@ func (tm *TextMessage) AppendText(delta string) {
 
 // textMessageJSON is used for JSON serialization of TextMessage.
 type textMessageJSON struct {
-	Source    MessageSource          `json:"source"`
+	Source    Source                 `json:"source"`
 	CreatedAt int64                  `json:"created_at"`
 	Metadata  map[string]interface{} `json:"metadata"`
-	Role      MessageRole            `json:"role"`
-	Model     model.ModelID          `json:"model"`
+	Role      Role                   `json:"role"`
+	Model     model.ID               `json:"model"`
 	Content   string                 `json:"content"`
 	Type      string                 `json:"type"`
 }

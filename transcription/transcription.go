@@ -41,8 +41,8 @@ import (
 	"github.com/joakimcarlsson/ai/model"
 )
 
-// TranscriptionUsage tracks resource consumption for transcription operations.
-type TranscriptionUsage struct {
+// Usage tracks resource consumption for transcription operations.
+type Usage struct {
 	InputTokens  int64
 	OutputTokens int64
 	TotalTokens  int64
@@ -51,8 +51,8 @@ type TranscriptionUsage struct {
 	DurationSec  float64
 }
 
-// TranscriptionSegment represents a segment of transcribed audio with timing and metadata.
-type TranscriptionSegment struct {
+// Segment represents a segment of transcribed audio with timing and metadata.
+type Segment struct {
 	ID               int
 	Start            float64
 	End              float64
@@ -65,21 +65,21 @@ type TranscriptionSegment struct {
 	Speaker          string
 }
 
-// TranscriptionWord represents a single word with its timing information.
-type TranscriptionWord struct {
+// Word represents a single word with its timing information.
+type Word struct {
 	Word  string
 	Start float64
 	End   float64
 }
 
-// TranscriptionResponse contains the transcription result with optional segments, words, and usage data.
-type TranscriptionResponse struct {
+// Response contains the transcription result with optional segments, words, and usage data.
+type Response struct {
 	Text     string
 	Language string
 	Duration float64
-	Segments []TranscriptionSegment
-	Words    []TranscriptionWord
-	Usage    TranscriptionUsage
+	Segments []Segment
+	Words    []Word
+	Usage    Usage
 	Model    string
 }
 
@@ -90,15 +90,15 @@ type SpeechToText interface {
 	Transcribe(
 		ctx context.Context,
 		audioFile []byte,
-		options ...TranscriptionOption,
-	) (*TranscriptionResponse, error)
+		options ...Option,
+	) (*Response, error)
 
 	// Translate converts audio to English text regardless of the source language.
 	Translate(
 		ctx context.Context,
 		audioFile []byte,
-		options ...TranscriptionOption,
-	) (*TranscriptionResponse, error)
+		options ...Option,
+	) (*Response, error)
 
 	// Model returns the transcription model configuration being used.
 	Model() model.TranscriptionModel
@@ -112,19 +112,21 @@ type transcriptionClientOptions struct {
 	openaiOptions []OpenAIOption
 }
 
-type TranscriptionClientOption func(*transcriptionClientOptions)
+// ClientOption configures a speech-to-text client.
+type ClientOption func(*transcriptionClientOptions)
 
+// SpeechToTextClient is the internal interface implemented by provider-specific transcription clients.
 type SpeechToTextClient interface {
 	transcribe(
 		ctx context.Context,
 		audioFile []byte,
-		options ...TranscriptionOption,
-	) (*TranscriptionResponse, error)
+		options ...Option,
+	) (*Response, error)
 	translate(
 		ctx context.Context,
 		audioFile []byte,
-		options ...TranscriptionOption,
-	) (*TranscriptionResponse, error)
+		options ...Option,
+	) (*Response, error)
 }
 
 type baseSpeechToText[C SpeechToTextClient] struct {
@@ -134,8 +136,8 @@ type baseSpeechToText[C SpeechToTextClient] struct {
 
 // NewSpeechToText creates a new speech-to-text client for the specified provider.
 func NewSpeechToText(
-	provider model.ModelProvider,
-	opts ...TranscriptionClientOption,
+	provider model.Provider,
+	opts ...ClientOption,
 ) (SpeechToText, error) {
 	clientOptions := transcriptionClientOptions{}
 	for _, o := range opts {
@@ -158,16 +160,16 @@ func NewSpeechToText(
 func (s *baseSpeechToText[C]) Transcribe(
 	ctx context.Context,
 	audioFile []byte,
-	options ...TranscriptionOption,
-) (*TranscriptionResponse, error) {
+	options ...Option,
+) (*Response, error) {
 	return s.client.transcribe(ctx, audioFile, options...)
 }
 
 func (s *baseSpeechToText[C]) Translate(
 	ctx context.Context,
 	audioFile []byte,
-	options ...TranscriptionOption,
-) (*TranscriptionResponse, error) {
+	options ...Option,
+) (*Response, error) {
 	return s.client.translate(ctx, audioFile, options...)
 }
 
@@ -176,21 +178,21 @@ func (s *baseSpeechToText[C]) Model() model.TranscriptionModel {
 }
 
 // WithAPIKey sets the API key for authentication with the speech-to-text provider.
-func WithAPIKey(apiKey string) TranscriptionClientOption {
+func WithAPIKey(apiKey string) ClientOption {
 	return func(options *transcriptionClientOptions) {
 		options.apiKey = apiKey
 	}
 }
 
 // WithModel specifies which transcription model to use.
-func WithModel(model model.TranscriptionModel) TranscriptionClientOption {
+func WithModel(model model.TranscriptionModel) ClientOption {
 	return func(options *transcriptionClientOptions) {
 		options.model = model
 	}
 }
 
 // WithTimeout sets the maximum duration to wait for transcription requests to complete.
-func WithTimeout(timeout time.Duration) TranscriptionClientOption {
+func WithTimeout(timeout time.Duration) ClientOption {
 	return func(options *transcriptionClientOptions) {
 		options.timeout = &timeout
 	}
@@ -199,14 +201,14 @@ func WithTimeout(timeout time.Duration) TranscriptionClientOption {
 // WithOpenAIOptions applies OpenAI-specific configuration options.
 func WithOpenAIOptions(
 	openaiOptions ...OpenAIOption,
-) TranscriptionClientOption {
+) ClientOption {
 	return func(options *transcriptionClientOptions) {
 		options.openaiOptions = openaiOptions
 	}
 }
 
-// TranscriptionOptions contains parameters for customizing transcription requests.
-type TranscriptionOptions struct {
+// Options contains parameters for customizing transcription requests.
+type Options struct {
 	Language               string
 	Prompt                 string
 	ResponseFormat         string
@@ -217,38 +219,40 @@ type TranscriptionOptions struct {
 	Filename               string
 }
 
-type TranscriptionOption func(*TranscriptionOptions)
+// Option customizes a single Transcribe or Translate call.
+type Option func(*Options)
 
-func WithLanguage(language string) TranscriptionOption {
-	return func(options *TranscriptionOptions) {
+// WithLanguage sets the expected language of the audio (ISO-639-1).
+func WithLanguage(language string) Option {
+	return func(options *Options) {
 		options.Language = language
 	}
 }
 
 // WithPrompt provides optional text to guide the model's style or continue a previous audio segment.
-func WithPrompt(prompt string) TranscriptionOption {
-	return func(options *TranscriptionOptions) {
+func WithPrompt(prompt string) Option {
+	return func(options *Options) {
 		options.Prompt = prompt
 	}
 }
 
 // WithResponseFormat sets the output format (json, text, srt, verbose_json, vtt, or diarized_json).
-func WithResponseFormat(format string) TranscriptionOption {
-	return func(options *TranscriptionOptions) {
+func WithResponseFormat(format string) Option {
+	return func(options *Options) {
 		options.ResponseFormat = format
 	}
 }
 
 // WithTemperature sets the sampling temperature between 0 and 1 for output randomness.
-func WithTemperature(temperature float64) TranscriptionOption {
-	return func(options *TranscriptionOptions) {
+func WithTemperature(temperature float64) Option {
+	return func(options *Options) {
 		options.Temperature = &temperature
 	}
 }
 
 // WithTimestampGranularities specifies timestamp levels to include (word, segment).
-func WithTimestampGranularities(granularities ...string) TranscriptionOption {
-	return func(options *TranscriptionOptions) {
+func WithTimestampGranularities(granularities ...string) Option {
+	return func(options *Options) {
 		options.TimestampGranularities = granularities
 	}
 }
@@ -257,26 +261,28 @@ func WithTimestampGranularities(granularities ...string) TranscriptionOption {
 func WithKnownSpeakers(
 	names []string,
 	references []string,
-) TranscriptionOption {
-	return func(options *TranscriptionOptions) {
+) Option {
+	return func(options *Options) {
 		options.KnownSpeakerNames = names
 		options.KnownSpeakerReferences = references
 	}
 }
 
 // WithFilename specifies the audio filename for format detection (e.g., "audio.mp3").
-func WithFilename(filename string) TranscriptionOption {
-	return func(options *TranscriptionOptions) {
+func WithFilename(filename string) Option {
+	return func(options *Options) {
 		options.Filename = filename
 	}
 }
 
+// OpenAIOption configures OpenAI-specific transcription client settings.
 type OpenAIOption func(*openaiOptions)
 
 type openaiOptions struct {
 	baseURL string
 }
 
+// WithOpenAIBaseURL sets a custom base URL for the OpenAI API.
 func WithOpenAIBaseURL(baseURL string) OpenAIOption {
 	return func(o *openaiOptions) {
 		o.baseURL = baseURL

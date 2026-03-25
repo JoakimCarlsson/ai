@@ -72,7 +72,7 @@ func (mmc MultiModalContent) String() string {
 }
 
 // GetDataURL returns a data URL or base64 payload suitable for the given provider.
-func (mmc MultiModalContent) GetDataURL(provider model.ModelProvider) string {
+func (mmc MultiModalContent) GetDataURL(provider model.Provider) string {
 	if mmc.Type == ContentTypeBinary && len(mmc.Data) > 0 {
 		base64Encoded := base64.StdEncoding.EncodeToString(mmc.Data)
 		if provider == model.ProviderOpenAI {
@@ -91,8 +91,8 @@ type MultiModalMessage struct {
 
 // NewMultiModalMessage creates a multimodal message with source, role and contents
 func NewMultiModalMessage(
-	source MessageSource,
-	role MessageRole,
+	source Source,
+	role Role,
 	contents []MultiModalContent,
 ) *MultiModalMessage {
 	return &MultiModalMessage{
@@ -103,7 +103,7 @@ func NewMultiModalMessage(
 
 // NewUserMultiModalMessage creates a user multimodal message with the given contents
 func NewUserMultiModalMessage(contents []MultiModalContent) *MultiModalMessage {
-	source := NewMessageSource("user", "")
+	source := NewSource("user", "")
 	return NewMultiModalMessage(source, User, contents)
 }
 
@@ -202,11 +202,11 @@ func (mmm *MultiModalMessage) AppendTextContent(delta string) {
 }
 
 type multiModalMessageJSON struct {
-	Source    MessageSource          `json:"source"`
+	Source    Source                 `json:"source"`
 	CreatedAt int64                  `json:"created_at"`
 	Metadata  map[string]interface{} `json:"metadata"`
-	Role      MessageRole            `json:"role"`
-	Model     model.ModelID          `json:"model"`
+	Role      Role                   `json:"role"`
+	Model     model.ID               `json:"model"`
 	Contents  []MultiModalContent    `json:"contents"`
 	Type      string                 `json:"type"`
 }

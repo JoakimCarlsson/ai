@@ -456,8 +456,7 @@ func (a *anthropicClient) toolCalls(msg anthropic.Message) []message.ToolCall {
 	var toolCalls []message.ToolCall
 
 	for _, block := range msg.Content {
-		switch variant := block.AsAny().(type) {
-		case anthropic.ToolUseBlock:
+		if variant, ok := block.AsAny().(anthropic.ToolUseBlock); ok {
 			toolCall := message.ToolCall{
 				ID:       variant.ID,
 				Name:     variant.Name,

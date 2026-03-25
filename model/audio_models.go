@@ -2,30 +2,30 @@ package model
 
 // ElevenLabs provider plus speech and transcription model IDs for this registry.
 const (
-	ProviderElevenLabs ModelProvider = "elevenlabs"
+	ProviderElevenLabs Provider = "elevenlabs"
 
-	ElevenV3             ModelID = "eleven_v3"
-	ElevenMultilingualV2 ModelID = "eleven_multilingual_v2"
-	ElevenFlashV2_5      ModelID = "eleven_flash_v2_5"
-	ElevenFlashV2        ModelID = "eleven_flash_v2"
-	ElevenTurboV2_5      ModelID = "eleven_turbo_v2_5"
-	ElevenTurboV2        ModelID = "eleven_turbo_v2"
+	ElevenV3             ID = "eleven_v3"
+	ElevenMultilingualV2 ID = "eleven_multilingual_v2"
+	ElevenFlashV2_5      ID = "eleven_flash_v2_5"
+	ElevenFlashV2        ID = "eleven_flash_v2"
+	ElevenTurboV2_5      ID = "eleven_turbo_v2_5"
+	ElevenTurboV2        ID = "eleven_turbo_v2"
 
-	Whisper1                ModelID = "whisper-1"
-	GPT4oTranscribe         ModelID = "gpt-4o-transcribe"
-	GPT4oMiniTranscribe     ModelID = "gpt-4o-mini-transcribe"
-	GPT4oMiniTranscribe2025 ModelID = "gpt-4o-mini-transcribe-2025-12-15"
-	GPT4oTranscribeDiarize  ModelID = "gpt-4o-transcribe-diarize"
+	Whisper1                ID = "whisper-1"
+	GPT4oTranscribe         ID = "gpt-4o-transcribe"
+	GPT4oMiniTranscribe     ID = "gpt-4o-mini-transcribe"
+	GPT4oMiniTranscribe2025 ID = "gpt-4o-mini-transcribe-2025-12-15"
+	GPT4oTranscribeDiarize  ID = "gpt-4o-transcribe-diarize"
 )
 
 // AudioModel represents an audio generation model with its configuration and capabilities.
 type AudioModel struct {
 	// ID is the unique identifier for this audio model.
-	ID ModelID `json:"id"`
+	ID ID `json:"id"`
 	// Name is the human-readable name of the audio model.
 	Name string `json:"name"`
 	// Provider identifies which AI service provides this model.
-	Provider ModelProvider `json:"provider"`
+	Provider Provider `json:"provider"`
 	// APIModel is the model identifier used in API requests.
 	APIModel string `json:"api_model"`
 	// CostPer1MChars is the cost per 1 million characters in USD.
@@ -43,7 +43,7 @@ type AudioModel struct {
 }
 
 // ElevenLabsAudioModels maps ElevenLabs and OpenAI speech model IDs to audio configurations.
-var ElevenLabsAudioModels = map[ModelID]AudioModel{
+var ElevenLabsAudioModels = map[ID]AudioModel{
 	ElevenV3: {
 		ID:            ElevenV3,
 		Name:          "Eleven v3",
@@ -150,24 +150,24 @@ var ElevenLabsAudioModels = map[ModelID]AudioModel{
 
 // TranscriptionModel represents a speech-to-text transcription model with its configuration and capabilities.
 type TranscriptionModel struct {
-	ID                       ModelID       `json:"id"`
-	Name                     string        `json:"name"`
-	Provider                 ModelProvider `json:"provider"`
-	APIModel                 string        `json:"api_model"`
-	CostPer1MIn              float64       `json:"cost_per_1m_in"`
-	CostPer1MOut             float64       `json:"cost_per_1m_out"`
-	MaxFileSizeMB            int64         `json:"max_file_size_mb"`
-	SupportedFormats         []string      `json:"supported_formats,omitempty"`
-	SupportsTimestamps       bool          `json:"supports_timestamps"`
-	SupportsWordTimestamps   bool          `json:"supports_word_timestamps"`
-	SupportsDiarization      bool          `json:"supports_diarization"`
-	SupportsTranslation      bool          `json:"supports_translation"`
-	SupportsStreaming        bool          `json:"supports_streaming"`
-	SupportedResponseFormats []string      `json:"supported_response_formats,omitempty"`
+	ID                       ID       `json:"id"`
+	Name                     string   `json:"name"`
+	Provider                 Provider `json:"provider"`
+	APIModel                 string   `json:"api_model"`
+	CostPer1MIn              float64  `json:"cost_per_1m_in"`
+	CostPer1MOut             float64  `json:"cost_per_1m_out"`
+	MaxFileSizeMB            int64    `json:"max_file_size_mb"`
+	SupportedFormats         []string `json:"supported_formats,omitempty"`
+	SupportsTimestamps       bool     `json:"supports_timestamps"`
+	SupportsWordTimestamps   bool     `json:"supports_word_timestamps"`
+	SupportsDiarization      bool     `json:"supports_diarization"`
+	SupportsTranslation      bool     `json:"supports_translation"`
+	SupportsStreaming        bool     `json:"supports_streaming"`
+	SupportedResponseFormats []string `json:"supported_response_formats,omitempty"`
 }
 
 // OpenAITranscriptionModels contains configuration for OpenAI speech-to-text models.
-var OpenAITranscriptionModels = map[ModelID]TranscriptionModel{
+var OpenAITranscriptionModels = map[ID]TranscriptionModel{
 	Whisper1: {
 		ID:            Whisper1,
 		Name:          "Whisper v2",

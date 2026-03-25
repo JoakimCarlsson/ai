@@ -132,8 +132,10 @@ type imageGenerationClientOptions struct {
 	geminiOptions []GeminiOption
 }
 
+// ImageGenerationClientOption configures an image generation client.
 type ImageGenerationClientOption func(*imageGenerationClientOptions)
 
+// ImageGenerationClient is the internal interface implemented by provider-specific clients.
 type ImageGenerationClient interface {
 	generate(
 		ctx context.Context,
@@ -161,7 +163,7 @@ type baseImageGeneration[C ImageGenerationClient] struct {
 // Supported providers include OpenAI, xAI, and Gemini. Use WithModel() to specify the image generation model
 // and WithAPIKey() for authentication.
 func NewImageGeneration(
-	provider model.ModelProvider,
+	provider model.Provider,
 	opts ...ImageGenerationClientOption,
 ) (ImageGeneration, error) {
 	clientOptions := imageGenerationClientOptions{}

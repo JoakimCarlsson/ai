@@ -2,16 +2,16 @@ package model
 
 // DeepSeek provider identifier and model IDs for this registry.
 const (
-	ProviderDeepSeek ModelProvider = "deepseek"
+	ProviderDeepSeek Provider = "deepseek"
 
-	DeepSeekV32         ModelID = "deepseek-v3.2"
-	DeepSeekV32Thinking ModelID = "deepseek-v3.2-thinking"
-	DeepSeekR1          ModelID = "deepseek-r1"
-	DeepSeekR1Distill   ModelID = "deepseek-r1-distill-llama-70b"
+	DeepSeekV32         ID = "deepseek-v3.2"
+	DeepSeekV32Thinking ID = "deepseek-v3.2-thinking"
+	DeepSeekR1          ID = "deepseek-r1"
+	DeepSeekR1Distill   ID = "deepseek-r1-distill-llama-70b"
 )
 
 // DeepSeekModels maps DeepSeek model IDs to their configurations.
-var DeepSeekModels = map[ModelID]Model{
+var DeepSeekModels = map[ID]Model{
 	DeepSeekV32: {
 		ID:                    DeepSeekV32,
 		Name:                  "DeepSeek V3.2",

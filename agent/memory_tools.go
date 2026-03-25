@@ -19,8 +19,8 @@ func newStoreMemoryTool(store memory.Store, memoryID string) *storeMemoryTool {
 	return &storeMemoryTool{store: store, memoryID: memoryID}
 }
 
-func (t *storeMemoryTool) Info() tool.ToolInfo {
-	return tool.ToolInfo{
+func (t *storeMemoryTool) Info() tool.Info {
+	return tool.Info{
 		Name:        "store_memory",
 		Description: "Store an important fact about the user for future conversations. Use when user shares preferences, personal details, health info, or anything worth remembering long-term.",
 		Parameters: map[string]any{
@@ -46,8 +46,8 @@ func (t *storeMemoryTool) Info() tool.ToolInfo {
 
 func (t *storeMemoryTool) Run(
 	ctx context.Context,
-	params tool.ToolCall,
-) (tool.ToolResponse, error) {
+	params tool.Call,
+) (tool.Response, error) {
 	var input struct {
 		Fact     string `json:"fact"`
 		Category string `json:"category"`
@@ -84,8 +84,8 @@ func newRecallMemoriesTool(
 	return &recallMemoriesTool{store: store, memoryID: memoryID}
 }
 
-func (t *recallMemoriesTool) Info() tool.ToolInfo {
-	return tool.ToolInfo{
+func (t *recallMemoriesTool) Info() tool.Info {
+	return tool.Info{
 		Name:        "recall_memories",
 		Description: "Search for relevant memories about the user. Use before answering questions that might benefit from knowing user preferences or history.",
 		Parameters: map[string]any{
@@ -100,8 +100,8 @@ func (t *recallMemoriesTool) Info() tool.ToolInfo {
 
 func (t *recallMemoriesTool) Run(
 	ctx context.Context,
-	params tool.ToolCall,
-) (tool.ToolResponse, error) {
+	params tool.Call,
+) (tool.Response, error) {
 	var input struct {
 		Query string `json:"query"`
 	}
@@ -142,8 +142,8 @@ func newDeleteMemoryTool(
 	return &deleteMemoryTool{store: store, memoryID: memoryID}
 }
 
-func (t *deleteMemoryTool) Info() tool.ToolInfo {
-	return tool.ToolInfo{
+func (t *deleteMemoryTool) Info() tool.Info {
+	return tool.Info{
 		Name:        "delete_memory",
 		Description: "Delete a stored memory. Use when the user explicitly asks to forget something, or when information is no longer accurate/relevant.",
 		Parameters: map[string]any{
@@ -162,8 +162,8 @@ func (t *deleteMemoryTool) Info() tool.ToolInfo {
 
 func (t *deleteMemoryTool) Run(
 	ctx context.Context,
-	params tool.ToolCall,
-) (tool.ToolResponse, error) {
+	params tool.Call,
+) (tool.Response, error) {
 	var input struct {
 		MemoryID string `json:"memory_id"`
 		Reason   string `json:"reason"`
@@ -195,8 +195,8 @@ func newReplaceMemoryTool(
 	return &replaceMemoryTool{store: store, memoryID: memoryID}
 }
 
-func (t *replaceMemoryTool) Info() tool.ToolInfo {
-	return tool.ToolInfo{
+func (t *replaceMemoryTool) Info() tool.Info {
+	return tool.Info{
 		Name:        "replace_memory",
 		Description: "Replace an existing memory with updated information. Use when a fact has changed or needs correction. First use recall_memories to find the memory_id.",
 		Parameters: map[string]any{
@@ -226,8 +226,8 @@ func (t *replaceMemoryTool) Info() tool.ToolInfo {
 
 func (t *replaceMemoryTool) Run(
 	ctx context.Context,
-	params tool.ToolCall,
-) (tool.ToolResponse, error) {
+	params tool.Call,
+) (tool.Response, error) {
 	var input struct {
 		MemoryID string `json:"memory_id"`
 		Fact     string `json:"fact"`

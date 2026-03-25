@@ -34,20 +34,20 @@ func newHandoffTool(config HandoffConfig) *handoffTool {
 	return &handoffTool{config: config}
 }
 
-func (t *handoffTool) Info() tool.ToolInfo {
+func (t *handoffTool) Info() tool.Info {
 	toolName := "transfer_to_" + t.config.Name
 	description := fmt.Sprintf(
 		"Transfer control to %s. %s",
 		t.config.Name,
 		t.config.Description,
 	)
-	return tool.NewToolInfo(toolName, description, handoffInput{})
+	return tool.NewInfo(toolName, description, handoffInput{})
 }
 
 func (t *handoffTool) Run(
 	ctx context.Context,
-	params tool.ToolCall,
-) (tool.ToolResponse, error) {
+	params tool.Call,
+) (tool.Response, error) {
 	var input handoffInput
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
 		input.Reason = ""

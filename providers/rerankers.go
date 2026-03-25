@@ -60,7 +60,7 @@ type baseReranker[C RerankerClient] struct {
 }
 
 func NewReranker(
-	provider model.ModelProvider,
+	provider model.Provider,
 	opts ...RerankerClientOption,
 ) (Reranker, error) {
 	clientOptions := rerankerClientOptions{
@@ -70,8 +70,7 @@ func NewReranker(
 		o(&clientOptions)
 	}
 
-	switch provider {
-	case model.ProviderVoyage:
+	if provider == model.ProviderVoyage {
 		return &baseReranker[VoyageRerankerClient]{
 			options: clientOptions,
 			client:  newVoyageRerankerClient(clientOptions),

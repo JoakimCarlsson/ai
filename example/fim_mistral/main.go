@@ -80,7 +80,7 @@ func getUsers() []User {
 }`
 
 	maxTokens := int64(100)
-	resp, err := client.Complete(context.Background(), fim.FIMRequest{
+	resp, err := client.Complete(context.Background(), fim.Request{
 		Prompt:    prompt,
 		Suffix:    suffix,
 		MaxTokens: &maxTokens,
@@ -132,7 +132,7 @@ func Min(numbers []int) int {
 }`
 
 	maxTokens := int64(80)
-	eventChan := client.CompleteStream(context.Background(), fim.FIMRequest{
+	eventChan := client.CompleteStream(context.Background(), fim.Request{
 		Prompt:    prompt,
 		Suffix:    suffix,
 		MaxTokens: &maxTokens,

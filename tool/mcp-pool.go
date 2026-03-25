@@ -141,6 +141,7 @@ func (p *mcpClientPool) closeAll() {
 	p.configs = make(map[string]MCPServer)
 }
 
+// CloseMCPPool closes all pooled MCP clients and clears cached connections and configs.
 func CloseMCPPool() {
 	pool.closeAll()
 }

@@ -2,31 +2,31 @@ package model
 
 // Mistral provider identifier and model IDs for this registry.
 const (
-	ProviderMistral ModelProvider = "mistral"
+	ProviderMistral Provider = "mistral"
 
-	MistralLarge3     ModelID = "mistral-large-3"
-	MistralMedium31   ModelID = "mistral-medium-3.1"
-	MistralSmall32    ModelID = "mistral-small-3.2"
-	Ministral3_14B    ModelID = "ministral-3-14b"
-	Ministral3_8B     ModelID = "ministral-3-8b"
-	Ministral3_3B     ModelID = "ministral-3-3b"
-	MistralNemo       ModelID = "mistral-nemo"
-	Codestral         ModelID = "codestral"
-	Devstral2         ModelID = "devstral-2"
-	PixtralLarge      ModelID = "pixtral-large"
-	DevstralSmall     ModelID = "devstral-small"
-	MistralSmall31    ModelID = "mistral-small-3.1"
-	MistralMedium3    ModelID = "mistral-medium-3"
-	DevstralMedium    ModelID = "devstral-medium"
-	MistralLarge2411  ModelID = "mistral-large-2411"
-	Mixtral8x7B       ModelID = "mixtral-8x7b"
-	Mistral7B         ModelID = "mistral-7b"
-	MagistralMedium12 ModelID = "magistral-medium-1.2"
-	MagistralSmall12  ModelID = "magistral-small-1.2"
+	MistralLarge3     ID = "mistral-large-3"
+	MistralMedium31   ID = "mistral-medium-3.1"
+	MistralSmall32    ID = "mistral-small-3.2"
+	Ministral3_14B    ID = "ministral-3-14b"
+	Ministral3_8B     ID = "ministral-3-8b"
+	Ministral3_3B     ID = "ministral-3-3b"
+	MistralNemo       ID = "mistral-nemo"
+	Codestral         ID = "codestral"
+	Devstral2         ID = "devstral-2"
+	PixtralLarge      ID = "pixtral-large"
+	DevstralSmall     ID = "devstral-small"
+	MistralSmall31    ID = "mistral-small-3.1"
+	MistralMedium3    ID = "mistral-medium-3"
+	DevstralMedium    ID = "devstral-medium"
+	MistralLarge2411  ID = "mistral-large-2411"
+	Mixtral8x7B       ID = "mixtral-8x7b"
+	Mistral7B         ID = "mistral-7b"
+	MagistralMedium12 ID = "magistral-medium-1.2"
+	MagistralSmall12  ID = "magistral-small-1.2"
 )
 
 // MistralModels maps Mistral model IDs to their configurations.
-var MistralModels = map[ModelID]Model{
+var MistralModels = map[ID]Model{
 	MistralLarge3: {
 		ID:                    MistralLarge3,
 		Name:                  "Mistral Large 3",
