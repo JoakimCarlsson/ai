@@ -1,0 +1,20 @@
+version: "2"
+
+linters:
+  disable:
+    - errcheck
+  enable:
+    - govet
+    - staticcheck
+    - ineffassign
+    - unused
+    - misspell
+    - bodyclose
+    - revive
+    - gocritic
+    - copyloopvar
+    - intrange
+
+formatters:
+  enable:
+    - goimports

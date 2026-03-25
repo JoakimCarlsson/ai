@@ -2,6 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/joakimcarlsson/ai.svg)](https://pkg.go.dev/github.com/joakimcarlsson/ai)
 [![Go Report Card](https://goreportcard.com/badge/github.com/joakimcarlsson/ai)](https://goreportcard.com/report/github.com/joakimcarlsson/ai)
+[![codecov](https://codecov.io/gh/joakimcarlsson/ai/branch/main/graph/badge.svg)](https://codecov.io/gh/joakimcarlsson/ai)
 
 A comprehensive, multi-provider Go library for interacting with various AI models through unified interfaces. Supports LLMs, embeddings, image generation, audio generation, speech-to-text, and rerankers from 10+ providers with streaming, tool calling, structured output, and MCP integration.
 
