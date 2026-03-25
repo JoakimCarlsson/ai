@@ -151,7 +151,7 @@ func (s *fileStore) Search(
 	}
 
 	results := make([]Entry, limit)
-	for i := 0; i < limit; i++ {
+	for i := range limit {
 		results[i] = scoredEntries[i].entry.Entry
 		results[i].Score = scoredEntries[i].score
 	}
@@ -176,7 +176,7 @@ func (s *fileStore) GetAll(
 	}
 
 	results := make([]Entry, limit)
-	for i := 0; i < limit; i++ {
+	for i := range limit {
 		results[i] = entries[i].Entry
 	}
 

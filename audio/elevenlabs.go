@@ -482,27 +482,22 @@ func (c ElevenLabsClient) streamStandard(
 	req.Header.Set("xi-api-key", c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		ch := make(chan AudioChunk, 1)
-		ch <- AudioChunk{Error: fmt.Errorf("request failed: %w", err)}
-		close(ch)
-		return ch, nil
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		defer resp.Body.Close()
-		ch := make(chan AudioChunk, 1)
-		ch <- AudioChunk{Error: c.parseError(resp)}
-		close(ch)
-		return ch, nil
-	}
-
 	chunkChan := make(chan AudioChunk, 10)
 
 	go func() {
 		defer close(chunkChan)
+
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			chunkChan <- AudioChunk{Error: fmt.Errorf("request failed: %w", err)}
+			return
+		}
 		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			chunkChan <- AudioChunk{Error: c.parseError(resp)}
+			return
+		}
 
 		buffer := make([]byte, 4096)
 		for {
@@ -618,27 +613,22 @@ func (c ElevenLabsClient) streamWithTimestamps(
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		ch := make(chan AudioChunk, 1)
-		ch <- AudioChunk{Error: fmt.Errorf("request failed: %w", err)}
-		close(ch)
-		return ch, nil
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		defer resp.Body.Close()
-		ch := make(chan AudioChunk, 1)
-		ch <- AudioChunk{Error: c.parseError(resp)}
-		close(ch)
-		return ch, nil
-	}
-
 	chunkChan := make(chan AudioChunk, 10)
 
 	go func() {
 		defer close(chunkChan)
+
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			chunkChan <- AudioChunk{Error: fmt.Errorf("request failed: %w", err)}
+			return
+		}
 		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			chunkChan <- AudioChunk{Error: c.parseError(resp)}
+			return
+		}
 
 		decoder := json.NewDecoder(resp.Body)
 		for {
@@ -794,21 +784,12 @@ func (c ElevenLabsClient) GenerateForcedAlignment(
 
 	characters := make([]CharAlignment, len(alignmentResp.Characters))
 	for i, char := range alignmentResp.Characters {
-		characters[i] = CharAlignment{
-			Text:  char.Text,
-			Start: char.Start,
-			End:   char.End,
-		}
+		characters[i] = CharAlignment(char)
 	}
 
 	words := make([]WordAlignment, len(alignmentResp.Words))
 	for i, word := range alignmentResp.Words {
-		words[i] = WordAlignment{
-			Text:  word.Text,
-			Start: word.Start,
-			End:   word.End,
-			Loss:  word.Loss,
-		}
+		words[i] = WordAlignment(word)
 	}
 
 	return &ForcedAlignmentData{

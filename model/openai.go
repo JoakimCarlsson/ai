@@ -1,5 +1,6 @@
 package model
 
+// OpenAI provider plus chat, embedding, and image model IDs for this registry.
 const (
 	ProviderOpenAI ModelProvider = "openai"
 
@@ -45,6 +46,7 @@ const (
 	GPTImage1Mini ModelID = "gpt-image-1-mini"
 )
 
+// OpenAIModels maps OpenAI chat model IDs to their configurations.
 var OpenAIModels = map[ModelID]Model{
 	GPT41: {
 		ID:                    GPT41,
@@ -492,6 +494,7 @@ var OpenAIModels = map[ModelID]Model{
 	},
 }
 
+// OpenAIEmbeddingModels maps OpenAI embedding model IDs to their configurations.
 var OpenAIEmbeddingModels = map[ModelID]EmbeddingModel{
 	TextEmbedding3Large: {
 		ID:                  TextEmbedding3Large,
@@ -531,6 +534,7 @@ var OpenAIEmbeddingModels = map[ModelID]EmbeddingModel{
 	},
 }
 
+// OpenAIImageGenerationModels maps OpenAI image generation model IDs to their configurations.
 var OpenAIImageGenerationModels = map[ModelID]ImageGenerationModel{
 	DALLE2: {
 		ID:       DALLE2,

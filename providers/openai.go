@@ -374,14 +374,14 @@ func (o *openaiClient) stream(
 
 			err := openaiStream.Err()
 			if err == nil || errors.Is(err, io.EOF) {
-				if len(acc.ChatCompletion.Choices) == 0 {
+				if len(acc.Choices) == 0 {
 					eventChan <- LLMEvent{Type: types.EventError, Error: errors.New("no response choices in stream")}
 					return errors.New("no response choices in stream")
 				}
 				finishReason := o.finishReason(
-					string(acc.ChatCompletion.Choices[0].FinishReason),
+					string(acc.Choices[0].FinishReason),
 				)
-				if len(acc.ChatCompletion.Choices[0].Message.ToolCalls) > 0 {
+				if len(acc.Choices[0].Message.ToolCalls) > 0 {
 					toolCalls = append(
 						toolCalls,
 						o.toolCalls(acc.ChatCompletion)...)
@@ -649,14 +649,14 @@ func (o *openaiClient) streamWithStructuredOutput(
 
 			err := openaiStream.Err()
 			if err == nil || errors.Is(err, io.EOF) {
-				if len(acc.ChatCompletion.Choices) == 0 {
+				if len(acc.Choices) == 0 {
 					eventChan <- LLMEvent{Type: types.EventError, Error: errors.New("no response choices in stream")}
 					return errors.New("no response choices in stream")
 				}
 				finishReason := o.finishReason(
-					string(acc.ChatCompletion.Choices[0].FinishReason),
+					string(acc.Choices[0].FinishReason),
 				)
-				if len(acc.ChatCompletion.Choices[0].Message.ToolCalls) > 0 {
+				if len(acc.Choices[0].Message.ToolCalls) > 0 {
 					toolCalls = append(
 						toolCalls,
 						o.toolCalls(acc.ChatCompletion)...)

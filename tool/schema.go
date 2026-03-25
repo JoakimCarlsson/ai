@@ -17,7 +17,7 @@ func GenerateSchema(v any) (map[string]any, []string) {
 	properties := make(map[string]any)
 	var required []string
 
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		field := t.Field(i)
 		if !field.IsExported() {
 			continue

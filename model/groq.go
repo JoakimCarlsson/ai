@@ -1,5 +1,6 @@
 package model
 
+// Groq provider identifier and hosted model IDs for this registry.
 const (
 	ProviderGROQ ModelProvider = "groq"
 
@@ -15,6 +16,7 @@ const (
 	KimiK2                    ModelID = "moonshotai/kimi-k2-instruct-0905"
 )
 
+// GroqModels maps Groq model IDs to their configurations.
 var GroqModels = map[ModelID]Model{
 	QWENQwq: {
 		ID:                    QWENQwq,

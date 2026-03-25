@@ -127,8 +127,7 @@ func NewReranker(
 		o(&clientOptions)
 	}
 
-	switch provider {
-	case model.ProviderVoyage:
+	if provider == model.ProviderVoyage {
 		return &baseReranker[VoyageClient]{
 			options: clientOptions,
 			client:  newVoyageClient(clientOptions),

@@ -1,5 +1,6 @@
 package model
 
+// Meta provider identifier and Llama model IDs for this registry.
 const (
 	ProviderMeta ModelProvider = "meta"
 
@@ -10,6 +11,7 @@ const (
 	MetaLlama318B      ModelID = "llama-3.1-8b"
 )
 
+// MetaModels maps Meta Llama model IDs to their configurations.
 var MetaModels = map[ModelID]Model{
 	MetaLlama4Maverick: {
 		ID:                    MetaLlama4Maverick,

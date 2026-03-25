@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -247,7 +248,7 @@ func TestPreModelCall_Modify(t *testing.T) {
 				CreatedAt: time.Now().UnixNano(),
 			}
 			extra.AppendContent("injected by hook")
-			msgs := append(mc.Messages, extra)
+			msgs := slices.Concat(mc.Messages, []message.Message{extra})
 			capturedMsgCount = len(msgs)
 			return agent.ModelCallResult{
 				Action:   agent.HookModify,

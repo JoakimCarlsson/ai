@@ -1,5 +1,6 @@
 package model
 
+// Anthropic provider identifier and Claude model IDs for this registry.
 const (
 	ProviderAnthropic ModelProvider = "anthropic"
 
@@ -17,6 +18,7 @@ const (
 	Claude46Sonnet ModelID = "claude-4.6-sonnet"
 )
 
+// AnthropicModels maps Anthropic model IDs to their configurations.
 var AnthropicModels = map[ModelID]Model{
 	Claude35Sonnet: {
 		ID:                    Claude35Sonnet,

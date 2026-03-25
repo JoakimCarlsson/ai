@@ -1,7 +1,9 @@
 package model
 
+// ProviderAzure is the Azure OpenAI provider identifier.
 const ProviderAzure ModelProvider = "azure"
 
+// Azure OpenAI chat model IDs for this registry.
 const (
 	AzureGPT41     ModelID = "azure.gpt-4.1"
 	AzureGPT41Mini ModelID = "azure.gpt-4.1-mini"
@@ -15,6 +17,7 @@ const (
 	AzureO4Mini    ModelID = "azure.o4-mini"
 )
 
+// AzureModels maps Azure OpenAI model IDs to their configurations.
 var AzureModels = map[ModelID]Model{
 	AzureGPT41: {
 		ID:                    AzureGPT41,

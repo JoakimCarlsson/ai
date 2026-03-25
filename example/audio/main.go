@@ -134,10 +134,10 @@ func saveStreamingAudio(chunkChan <-chan audio.AudioChunk) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer file.Close()
 
 	for chunk := range chunkChan {
 		if chunk.Error != nil {
+			_ = file.Close()
 			log.Fatal(chunk.Error)
 		}
 
@@ -147,9 +147,14 @@ func saveStreamingAudio(chunkChan <-chan audio.AudioChunk) {
 
 		if len(chunk.Data) > 0 {
 			if _, err := file.Write(chunk.Data); err != nil {
+				_ = file.Close()
 				log.Fatal(err)
 			}
 		}
+	}
+
+	if err := file.Close(); err != nil {
+		log.Fatal(err)
 	}
 }
 

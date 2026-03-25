@@ -14,10 +14,6 @@ import (
 	"github.com/joakimcarlsson/ai/types"
 )
 
-func makeCall(name, input string) tool.ToolCall {
-	return tool.ToolCall{ID: "test-1", Name: name, Input: input}
-}
-
 type mockResponse struct {
 	Content      string
 	ToolCalls    []message.ToolCall

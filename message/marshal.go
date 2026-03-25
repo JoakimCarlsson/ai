@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// MessageEnvelope wraps a typed JSON payload for serialization and routing.
 type MessageEnvelope struct {
 	Type string          `json:"type"`
 	Data json.RawMessage `json:"data"`

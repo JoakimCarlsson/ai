@@ -1,5 +1,6 @@
 package model
 
+// xAI provider identifier and Grok model IDs for this registry.
 const (
 	ProviderXAI ModelProvider = "xai"
 
@@ -17,6 +18,7 @@ const (
 	XAIGrok2Image             ModelID = "grok-2-image-1212"
 )
 
+// XAIModels maps xAI chat model IDs to their configurations.
 var XAIModels = map[ModelID]Model{
 	XAIGrok4: {
 		ID:                    XAIGrok4,
@@ -163,6 +165,7 @@ var XAIModels = map[ModelID]Model{
 	},
 }
 
+// XAIImageGenerationModels maps xAI image generation model IDs to their configurations.
 var XAIImageGenerationModels = map[ModelID]ImageGenerationModel{
 	XAIGrok2Image: {
 		ID:       XAIGrok2Image,

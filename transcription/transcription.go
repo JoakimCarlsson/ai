@@ -142,8 +142,7 @@ func NewSpeechToText(
 		o(&clientOptions)
 	}
 
-	switch provider {
-	case model.ProviderOpenAI:
+	if provider == model.ProviderOpenAI {
 		return &baseSpeechToText[OpenAIClient]{
 			options: clientOptions,
 			client:  newOpenAIClient(clientOptions),

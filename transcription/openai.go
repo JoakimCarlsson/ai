@@ -210,13 +210,14 @@ func (o *openaiClient) convertTranscriptionResponse(
 		Model: o.providerOptions.model.APIModel,
 	}
 
-	if response.Usage.Type == "tokens" {
+	switch response.Usage.Type {
+	case "tokens":
 		result.Usage.TotalTokens = response.Usage.TotalTokens
 		result.Usage.InputTokens = response.Usage.InputTokens
 		result.Usage.OutputTokens = response.Usage.OutputTokens
 		result.Usage.AudioTokens = response.Usage.InputTokenDetails.AudioTokens
 		result.Usage.TextTokens = response.Usage.InputTokenDetails.TextTokens
-	} else if response.Usage.Type == "duration" {
+	case "duration":
 		result.Usage.DurationSec = response.Usage.Seconds
 	}
 

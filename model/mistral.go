@@ -1,5 +1,6 @@
 package model
 
+// Mistral provider identifier and model IDs for this registry.
 const (
 	ProviderMistral ModelProvider = "mistral"
 
@@ -24,6 +25,7 @@ const (
 	MagistralSmall12  ModelID = "magistral-small-1.2"
 )
 
+// MistralModels maps Mistral model IDs to their configurations.
 var MistralModels = map[ModelID]Model{
 	MistralLarge3: {
 		ID:                    MistralLarge3,

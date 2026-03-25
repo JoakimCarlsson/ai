@@ -1,5 +1,6 @@
 package model
 
+// Cohere provider identifier and Command model IDs for this registry.
 const (
 	ProviderCohere ModelProvider = "cohere"
 
@@ -7,6 +8,7 @@ const (
 	CommandR     ModelID = "command-r"
 )
 
+// CohereModels maps Cohere model IDs to their configurations.
 var CohereModels = map[ModelID]Model{
 	CommandRPlus: {
 		ID:                    CommandRPlus,

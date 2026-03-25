@@ -103,7 +103,7 @@ func (s *memoryStore) Search(
 	}
 
 	results := make([]Entry, limit)
-	for i := 0; i < limit; i++ {
+	for i := range limit {
 		results[i] = scoredEntries[i].entry.Entry
 		results[i].Score = scoredEntries[i].score
 	}
@@ -125,7 +125,7 @@ func (s *memoryStore) GetAll(
 	}
 
 	results := make([]Entry, limit)
-	for i := 0; i < limit; i++ {
+	for i := range limit {
 		results[i] = userEntries[i].Entry
 	}
 

@@ -36,7 +36,8 @@ func NewCustomModel(opts ...ModelOption) Model {
 	return m
 }
 
-// ModelOption is a functional option for configuring custom models.
+// ModelOption configures a custom Model when passed to NewCustomModel.
+//revive:disable-next-line:exported
 type ModelOption func(*Model)
 
 // WithModelID sets the unique identifier for the model.

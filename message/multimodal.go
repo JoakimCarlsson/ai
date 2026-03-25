@@ -8,8 +8,10 @@ import (
 	"github.com/joakimcarlsson/ai/model"
 )
 
+// ContentType identifies the kind of a multimodal content part.
 type ContentType string
 
+// Multimodal content type constants used in API payloads.
 const (
 	ContentTypeText     ContentType = "text"
 	ContentTypeImage    ContentType = "image"
@@ -17,6 +19,7 @@ const (
 	ContentTypeImageURL ContentType = "image_url"
 )
 
+// MultiModalContent is one segment of a multimodal message (text, image URL, or binary).
 type MultiModalContent struct {
 	Type     ContentType `json:"type"`
 	Text     string      `json:"text,omitempty"`
@@ -68,6 +71,7 @@ func (mmc MultiModalContent) String() string {
 	}
 }
 
+// GetDataURL returns a data URL or base64 payload suitable for the given provider.
 func (mmc MultiModalContent) GetDataURL(provider model.ModelProvider) string {
 	if mmc.Type == ContentTypeBinary && len(mmc.Data) > 0 {
 		base64Encoded := base64.StdEncoding.EncodeToString(mmc.Data)
@@ -79,6 +83,7 @@ func (mmc MultiModalContent) GetDataURL(provider model.ModelProvider) string {
 	return ""
 }
 
+// MultiModalMessage carries multiple content parts in a single user or assistant turn.
 type MultiModalMessage struct {
 	baseMessage
 	Contents []MultiModalContent `json:"contents"`
@@ -206,6 +211,7 @@ type multiModalMessageJSON struct {
 	Type      string                 `json:"type"`
 }
 
+// MarshalJSON encodes the message including base fields and multimodal payload.
 func (mmm *MultiModalMessage) MarshalJSON() ([]byte, error) {
 	return json.Marshal(multiModalMessageJSON{
 		Source:    mmm.Source,
@@ -218,6 +224,7 @@ func (mmm *MultiModalMessage) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// UnmarshalJSON decodes JSON into a MultiModalMessage, including timestamps and metadata.
 func (mmm *MultiModalMessage) UnmarshalJSON(data []byte) error {
 	var mmmJSON multiModalMessageJSON
 	if err := json.Unmarshal(data, &mmmJSON); err != nil {

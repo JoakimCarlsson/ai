@@ -1,5 +1,6 @@
 package model
 
+// Voyage provider identifier plus embedding and reranker model IDs for this registry.
 const (
 	ProviderVoyage ModelProvider = "voyage"
 
@@ -41,6 +42,7 @@ const (
 	VoyageMulti35 ModelID = "voyage-multimodal-3.5"
 )
 
+// VoyageEmbeddingModels maps Voyage embedding model IDs to their configurations.
 var VoyageEmbeddingModels = map[ModelID]EmbeddingModel{
 	Voyage3Large: {
 		ID:                  Voyage3Large,
@@ -354,6 +356,7 @@ var VoyageEmbeddingModels = map[ModelID]EmbeddingModel{
 	},
 }
 
+// VoyageRerankerModels maps Voyage reranker model IDs to their configurations.
 var VoyageRerankerModels = map[ModelID]RerankerModel{
 	Rerank25: {
 		ID:              Rerank25,

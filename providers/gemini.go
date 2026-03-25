@@ -160,10 +160,10 @@ func (g *geminiClient) convertTools(tools []tool.BaseTool) []*genai.Tool {
 func (g *geminiClient) finishReason(
 	reason genai.FinishReason,
 ) message.FinishReason {
-	switch {
-	case reason == genai.FinishReasonStop:
+	switch reason {
+	case genai.FinishReasonStop:
 		return message.FinishReasonEndTurn
-	case reason == genai.FinishReasonMaxTokens:
+	case genai.FinishReasonMaxTokens:
 		return message.FinishReasonMaxTokens
 	default:
 		return message.FinishReasonUnknown

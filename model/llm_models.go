@@ -26,12 +26,13 @@
 //	}
 package model
 
-type (
-	// ModelID is a unique identifier for a specific AI model.
-	ModelID string
-	// ModelProvider identifies the AI service provider (OpenAI, Anthropic, etc.).
-	ModelProvider string
-)
+// ModelID uniquely identifies an LLM or API model in this package.
+//revive:disable-next-line:exported
+type ModelID string
+
+// ModelProvider names the vendor or routing backend for a model.
+//revive:disable-next-line:exported
+type ModelProvider string
 
 // Model represents a Large Language Model with its configuration and capabilities.
 type Model struct {

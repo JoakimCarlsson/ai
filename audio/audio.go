@@ -201,8 +201,7 @@ func NewAudioGeneration(
 		o(&clientOptions)
 	}
 
-	switch provider {
-	case model.ProviderElevenLabs:
+	if provider == model.ProviderElevenLabs {
 		return &baseAudioGeneration[ElevenLabsClient]{
 			options: clientOptions,
 			client:  newElevenLabsClient(clientOptions),

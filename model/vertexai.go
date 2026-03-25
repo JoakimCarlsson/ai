@@ -1,5 +1,6 @@
 package model
 
+// Vertex AI provider identifier and Gemini model IDs for this registry.
 const (
 	ProviderVertexAI ModelProvider = "vertexai"
 
@@ -7,6 +8,7 @@ const (
 	VertexAIGemini25      ModelID = "vertexai.gemini-2.5"
 )
 
+// VertexAIGeminiModels maps Vertex AI Gemini model IDs to their configurations.
 var VertexAIGeminiModels = map[ModelID]Model{
 	VertexAIGemini25Flash: {
 		ID:                    VertexAIGemini25Flash,

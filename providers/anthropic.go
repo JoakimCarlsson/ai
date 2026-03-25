@@ -382,17 +382,22 @@ func (a *anthropicClient) stream(
 					}
 
 				case anthropic.ContentBlockDeltaEvent:
-					if event.Delta.Type == "thinking_delta" && event.Delta.Thinking != "" {
-						eventChan <- LLMEvent{
-							Type:     types.EventThinkingDelta,
-							Thinking: event.Delta.Thinking,
+					switch event.Delta.Type {
+					case "thinking_delta":
+						if event.Delta.Thinking != "" {
+							eventChan <- LLMEvent{
+								Type:     types.EventThinkingDelta,
+								Thinking: event.Delta.Thinking,
+							}
 						}
-					} else if event.Delta.Type == "text_delta" && event.Delta.Text != "" {
-						eventChan <- LLMEvent{
-							Type:    types.EventContentDelta,
-							Content: event.Delta.Text,
+					case "text_delta":
+						if event.Delta.Text != "" {
+							eventChan <- LLMEvent{
+								Type:    types.EventContentDelta,
+								Content: event.Delta.Text,
+							}
 						}
-					} else if event.Delta.Type == "input_json_delta" {
+					case "input_json_delta":
 						if currentToolCallID != "" {
 							eventChan <- LLMEvent{
 								Type: types.EventToolUseDelta,
@@ -630,17 +635,22 @@ func (a *anthropicClient) streamWithStructuredOutput(
 					}
 
 				case anthropic.ContentBlockDeltaEvent:
-					if event.Delta.Type == "thinking_delta" && event.Delta.Thinking != "" {
-						eventChan <- LLMEvent{
-							Type:     types.EventThinkingDelta,
-							Thinking: event.Delta.Thinking,
+					switch event.Delta.Type {
+					case "thinking_delta":
+						if event.Delta.Thinking != "" {
+							eventChan <- LLMEvent{
+								Type:     types.EventThinkingDelta,
+								Thinking: event.Delta.Thinking,
+							}
 						}
-					} else if event.Delta.Type == "text_delta" && event.Delta.Text != "" {
-						eventChan <- LLMEvent{
-							Type:    types.EventContentDelta,
-							Content: event.Delta.Text,
+					case "text_delta":
+						if event.Delta.Text != "" {
+							eventChan <- LLMEvent{
+								Type:    types.EventContentDelta,
+								Content: event.Delta.Text,
+							}
 						}
-					} else if event.Delta.Type == "input_json_delta" {
+					case "input_json_delta":
 						if currentToolCallID != "" {
 							eventChan <- LLMEvent{
 								Type: types.EventToolUseDelta,

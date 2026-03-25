@@ -1,5 +1,6 @@
 package model
 
+// OpenRouter provider identifier and routed model IDs for this registry.
 const (
 	ProviderOpenRouter ModelProvider = "openrouter"
 
@@ -58,6 +59,7 @@ const (
 	OpenRouterSonarDeepResearch ModelID = "openrouter.sonar-deep-research"
 )
 
+// OpenRouterModels maps OpenRouter model IDs to their configurations.
 var OpenRouterModels = map[ModelID]Model{
 	OpenRouterGPT41: {
 		ID:                    OpenRouterGPT41,

@@ -100,9 +100,9 @@ func (t *fanOutTool) Run(
 
 	var sb strings.Builder
 	for i, r := range results {
-		sb.WriteString(fmt.Sprintf("## Task %d: %s\n", i+1, r.Task))
+		fmt.Fprintf(&sb, "## Task %d: %s\n", i+1, r.Task)
 		if r.IsError {
-			sb.WriteString(fmt.Sprintf("**Error:** %s\n\n", r.Result))
+			fmt.Fprintf(&sb, "**Error:** %s\n\n", r.Result)
 		} else {
 			sb.WriteString(r.Result)
 			sb.WriteString("\n\n")

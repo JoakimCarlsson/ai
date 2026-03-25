@@ -57,32 +57,33 @@ func (ev *EmbeddingVector) UnmarshalJSON(data []byte) error {
 			}
 			ev.DataType = "float32"
 		default:
-			if intVal, ok := first.(float64); ok && intVal == float64(int(intVal)) {
-				if intVal >= -128 && intVal <= 127 {
-					ev.Int8 = make([]int8, len(v))
-					for i, val := range v {
-						if f, ok := val.(float64); ok && f == float64(int(f)) {
-							ev.Int8[i] = int8(f)
-						} else {
-							return fmt.Errorf("invalid int8 value at index %d", i)
-						}
-					}
-					ev.DataType = "int8"
-				} else if intVal >= 0 && intVal <= 255 {
-					ev.Uint8 = make([]uint8, len(v))
-					for i, val := range v {
-						if f, ok := val.(float64); ok && f == float64(int(f)) {
-							ev.Uint8[i] = uint8(f)
-						} else {
-							return fmt.Errorf("invalid uint8 value at index %d", i)
-						}
-					}
-					ev.DataType = "uint8"
-				} else {
-					return fmt.Errorf("integer value out of range: %v", intVal)
-				}
-			} else {
+			intVal, ok := first.(float64)
+			if !ok || intVal != float64(int(intVal)) {
 				return fmt.Errorf("unsupported embedding value type: %T", first)
+			}
+			switch {
+			case intVal >= -128 && intVal <= 127:
+				ev.Int8 = make([]int8, len(v))
+				for i, val := range v {
+					if f, ok := val.(float64); ok && f == float64(int(f)) {
+						ev.Int8[i] = int8(f)
+					} else {
+						return fmt.Errorf("invalid int8 value at index %d", i)
+					}
+				}
+				ev.DataType = "int8"
+			case intVal >= 0 && intVal <= 255:
+				ev.Uint8 = make([]uint8, len(v))
+				for i, val := range v {
+					if f, ok := val.(float64); ok && f == float64(int(f)) {
+						ev.Uint8[i] = uint8(f)
+					} else {
+						return fmt.Errorf("invalid uint8 value at index %d", i)
+					}
+				}
+				ev.DataType = "uint8"
+			default:
+				return fmt.Errorf("integer value out of range: %v", intVal)
 			}
 		}
 	default:

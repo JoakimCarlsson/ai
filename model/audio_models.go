@@ -1,5 +1,6 @@
 package model
 
+// ElevenLabs provider plus speech and transcription model IDs for this registry.
 const (
 	ProviderElevenLabs ModelProvider = "elevenlabs"
 
@@ -41,6 +42,7 @@ type AudioModel struct {
 	LatencyMs int64 `json:"latency_ms,omitempty"`
 }
 
+// ElevenLabsAudioModels maps ElevenLabs and OpenAI speech model IDs to audio configurations.
 var ElevenLabsAudioModels = map[ModelID]AudioModel{
 	ElevenV3: {
 		ID:            ElevenV3,

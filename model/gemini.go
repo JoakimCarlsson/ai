@@ -1,5 +1,6 @@
 package model
 
+// Gemini provider plus Gemini and Imagen model IDs for this registry.
 const (
 	ProviderGemini ModelProvider = "gemini"
 
@@ -20,6 +21,7 @@ const (
 	Imagen4Fast        ModelID = "imagen-4.0-fast"
 )
 
+// GeminiModels maps Gemini chat model IDs to their configurations.
 var GeminiModels = map[ModelID]Model{
 	Gemini3Pro: {
 		ID:                    Gemini3Pro,
@@ -138,6 +140,7 @@ var GeminiModels = map[ModelID]Model{
 	},
 }
 
+// GeminiImageGenerationModels maps Gemini and Imagen image-generation model IDs to their configurations.
 var GeminiImageGenerationModels = map[ModelID]ImageGenerationModel{
 	Gemini25FlashImage: {
 		ID:       Gemini25FlashImage,
