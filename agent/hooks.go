@@ -9,14 +9,17 @@ import (
 	"github.com/joakimcarlsson/ai/tool"
 )
 
+// HookAction represents the action a hook wants to take on an intercepted event.
 type HookAction int
 
+// HookAction values control whether an event is allowed, denied, or modified.
 const (
 	HookAllow HookAction = iota
 	HookDeny
 	HookModify
 )
 
+// ToolUseContext provides context about a tool invocation to pre-tool-use hooks.
 type ToolUseContext struct {
 	ToolCallID string
 	ToolName   string
@@ -26,12 +29,14 @@ type ToolUseContext struct {
 	Branch     string
 }
 
+// PreToolUseResult is the decision returned by a pre-tool-use hook.
 type PreToolUseResult struct {
 	Action     HookAction
 	DenyReason string
 	Input      string
 }
 
+// PostToolUseContext provides context about a completed tool invocation to post-tool-use hooks.
 type PostToolUseContext struct {
 	ToolUseContext
 	Output   string
@@ -39,11 +44,13 @@ type PostToolUseContext struct {
 	Duration time.Duration
 }
 
+// PostToolUseResult is the decision returned by a post-tool-use hook.
 type PostToolUseResult struct {
 	Action HookAction
 	Output string
 }
 
+// ModelCallContext provides context about an upcoming LLM call to pre-model-call hooks.
 type ModelCallContext struct {
 	Messages  []message.Message
 	Tools     []tool.BaseTool
@@ -52,14 +59,16 @@ type ModelCallContext struct {
 	Branch    string
 }
 
+// ModelCallResult is the decision returned by a pre-model-call hook.
 type ModelCallResult struct {
 	Action   HookAction
 	Messages []message.Message
 	Tools    []tool.BaseTool
 }
 
+// ModelResponseContext provides context about a completed LLM response to post-model-call hooks.
 type ModelResponseContext struct {
-	Response  *llm.LLMResponse
+	Response  *llm.Response
 	Duration  time.Duration
 	AgentName string
 	TaskID    string
@@ -67,11 +76,13 @@ type ModelResponseContext struct {
 	Error     error
 }
 
+// ModelResponseResult is the decision returned by a post-model-call hook.
 type ModelResponseResult struct {
 	Action   HookAction
-	Response *llm.LLMResponse
+	Response *llm.Response
 }
 
+// SubagentEventContext provides context about a sub-agent lifecycle event.
 type SubagentEventContext struct {
 	TaskID    string
 	AgentName string
@@ -82,6 +93,7 @@ type SubagentEventContext struct {
 	Duration  time.Duration
 }
 
+// Hooks defines callback functions that intercept and optionally modify agent execution events.
 type Hooks struct {
 	PreToolUse      func(ctx context.Context, tc ToolUseContext) (PreToolUseResult, error)
 	PostToolUse     func(ctx context.Context, tc PostToolUseContext) (PostToolUseResult, error)
@@ -91,8 +103,10 @@ type Hooks struct {
 	OnSubagentStop  func(ctx context.Context, sc SubagentEventContext)
 }
 
+// HookEventType identifies the kind of hook event being emitted.
 type HookEventType string
 
+// HookEventType values for each stage of the agent execution pipeline.
 const (
 	HookEventPreToolUse    HookEventType = "pre_tool_use"
 	HookEventPostToolUse   HookEventType = "post_tool_use"
@@ -102,6 +116,7 @@ const (
 	HookEventSubagentStop  HookEventType = "subagent_stop"
 )
 
+// HookEvent is a structured record of an agent execution event emitted by observing hooks.
 type HookEvent struct {
 	Type       HookEventType
 	Timestamp  time.Time
@@ -118,6 +133,7 @@ type HookEvent struct {
 	Error      string
 }
 
+// NewObservingHooks creates a Hooks instance that emits read-only HookEvent records to fn.
 func NewObservingHooks(fn func(HookEvent)) Hooks {
 	return Hooks{
 		PreToolUse: func(_ context.Context, tc ToolUseContext) (PreToolUseResult, error) {

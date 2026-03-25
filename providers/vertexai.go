@@ -14,7 +14,8 @@ type vertexAIClient struct {
 	*geminiClient
 }
 
-type VertexAIClient LLMClient
+// VertexAIClient is the Google Vertex AI Client implementation type.
+type VertexAIClient Client
 
 func newVertexAIClient(opts llmClientOptions) VertexAIClient {
 	geminiOpts := geminiOptions{}
@@ -49,7 +50,7 @@ func (v *vertexAIClient) sendWithStructuredOutput(
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
-) (*LLMResponse, error) {
+) (*Response, error) {
 	return v.geminiClient.sendWithStructuredOutput(
 		ctx,
 		messages,
@@ -63,7 +64,7 @@ func (v *vertexAIClient) streamWithStructuredOutput(
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
-) <-chan LLMEvent {
+) <-chan Event {
 	return v.geminiClient.streamWithStructuredOutput(
 		ctx,
 		messages,

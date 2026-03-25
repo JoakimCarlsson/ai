@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// EmbeddingVector holds a Voyage API embedding in one of several numeric or base64 encodings.
 type EmbeddingVector struct {
 	Float32  []float32 `json:"-"`
 	Int8     []int8    `json:"-"`
@@ -20,6 +21,7 @@ type EmbeddingVector struct {
 	DataType string    `json:"-"`
 }
 
+// UnmarshalJSON decodes a Voyage embedding from JSON (array of numbers, string base64, etc.).
 func (ev *EmbeddingVector) UnmarshalJSON(data []byte) error {
 	var raw interface{}
 	if err := json.Unmarshal(data, &raw); err != nil {
@@ -93,6 +95,7 @@ func (ev *EmbeddingVector) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// ToFloat32 returns the embedding as float32 values when the stored type is convertible.
 func (ev *EmbeddingVector) ToFloat32() []float32 {
 	switch ev.DataType {
 	case "float32":
@@ -128,6 +131,7 @@ func (ev *EmbeddingVector) ToFloat32() []float32 {
 	}
 }
 
+// Len returns the logical length of the embedding for the active data type.
 func (ev *EmbeddingVector) Len() int {
 	switch ev.DataType {
 	case "float32":
@@ -143,10 +147,12 @@ func (ev *EmbeddingVector) Len() int {
 	}
 }
 
+// GetDataType returns the detected embedding encoding label (e.g. "float32", "base64").
 func (ev *EmbeddingVector) GetDataType() string {
 	return ev.DataType
 }
 
+// IsBase64 reports whether the embedding was parsed as a base64 string payload.
 func (ev *EmbeddingVector) IsBase64() bool {
 	return ev.DataType == "base64"
 }
@@ -159,6 +165,7 @@ type voyageOptions struct {
 	encodingFormat  string
 }
 
+// VoyageOption configures Voyage AI-specific embedding client options.
 type VoyageOption func(*voyageOptions)
 
 type voyageClient struct {
@@ -168,6 +175,7 @@ type voyageClient struct {
 	baseURL         string
 }
 
+// VoyageClient is the Voyage AI implementation of EmbeddingClient.
 type VoyageClient EmbeddingClient
 
 type voyageEmbeddingRequest struct {

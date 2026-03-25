@@ -1,3 +1,4 @@
+// Example vision demonstrates sending image URL and base64 inputs to a vision-capable LLM.
 package main
 
 import (

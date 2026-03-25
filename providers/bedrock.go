@@ -16,15 +16,17 @@ import (
 type bedrockOptions struct {
 }
 
+// BedrockOption configures optional settings for Bedrock clients.
 type BedrockOption func(*bedrockOptions)
 
 type bedrockClient struct {
 	providerOptions llmClientOptions
 	options         bedrockOptions
-	childProvider   LLMClient
+	childProvider   Client
 }
 
-type BedrockClient LLMClient
+// BedrockClient is the AWS Bedrock Client implementation type.
+type BedrockClient Client
 
 func newBedrockClient(opts llmClientOptions) BedrockClient {
 	bedrockOpts := bedrockOptions{}
@@ -72,7 +74,7 @@ func (b *bedrockClient) send(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
-) (*LLMResponse, error) {
+) (*Response, error) {
 	if b.childProvider == nil {
 		return nil, errors.New("unsupported model for bedrock provider")
 	}
@@ -83,12 +85,12 @@ func (b *bedrockClient) stream(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
-) <-chan LLMEvent {
-	eventChan := make(chan LLMEvent)
+) <-chan Event {
+	eventChan := make(chan Event)
 
 	if b.childProvider == nil {
 		go func() {
-			eventChan <- LLMEvent{
+			eventChan <- Event{
 				Type:  types.EventError,
 				Error: errors.New("unsupported model for bedrock provider"),
 			}
@@ -114,7 +116,7 @@ func (b *bedrockClient) sendWithStructuredOutput(
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
-) (*LLMResponse, error) {
+) (*Response, error) {
 	if b.childProvider != nil {
 		return b.childProvider.sendWithStructuredOutput(
 			ctx,
@@ -134,7 +136,7 @@ func (b *bedrockClient) streamWithStructuredOutput(
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
-) <-chan LLMEvent {
+) <-chan Event {
 	if b.childProvider != nil {
 		return b.childProvider.streamWithStructuredOutput(
 			ctx,
@@ -144,8 +146,8 @@ func (b *bedrockClient) streamWithStructuredOutput(
 		)
 	}
 
-	errChan := make(chan LLMEvent, 1)
-	errChan <- LLMEvent{
+	errChan := make(chan Event, 1)
+	errChan <- Event{
 		Type:  types.EventError,
 		Error: errors.New("structured output not supported by this Bedrock model"),
 	}

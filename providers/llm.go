@@ -173,8 +173,8 @@ func (u *TokenUsage) Add(other TokenUsage) {
 	u.CacheReadTokens += other.CacheReadTokens
 }
 
-// LLMResponse represents the complete response from an LLM provider.
-type LLMResponse struct {
+// Response represents the complete response from an LLM provider.
+type Response struct {
 	// Content is the generated text response from the model.
 	Content string
 	// ToolCalls contains any tool calls requested by the model.
@@ -189,8 +189,8 @@ type LLMResponse struct {
 	UsedNativeStructuredOutput bool
 }
 
-// LLMEvent represents a single event in a streaming LLM response.
-type LLMEvent struct {
+// Event represents a single event in a streaming LLM response.
+type Event struct {
 	// Type indicates the kind of event (content delta, tool call, completion, error, etc.).
 	Type types.EventType
 
@@ -199,7 +199,7 @@ type LLMEvent struct {
 	// Thinking contains reasoning content for models that support chain-of-thought.
 	Thinking string
 	// Response contains the final response for completion events.
-	Response *LLMResponse
+	Response *Response
 	// ToolCall contains tool call information for tool use events.
 	ToolCall *message.ToolCall
 	// Error contains error information for error events.
@@ -216,7 +216,7 @@ type LLM interface {
 		ctx context.Context,
 		messages []message.Message,
 		tools []tool.BaseTool,
-	) (*LLMResponse, error)
+	) (*Response, error)
 
 	// SendMessagesWithStructuredOutput sends a conversation and requests structured JSON output
 	// conforming to the provided schema. Not all providers support this feature.
@@ -225,7 +225,7 @@ type LLM interface {
 		messages []message.Message,
 		tools []tool.BaseTool,
 		outputSchema *schema.StructuredOutputInfo,
-	) (*LLMResponse, error)
+	) (*Response, error)
 
 	// StreamResponse sends a conversation and returns a channel of streaming events.
 	// Events include content deltas, tool calls, and completion notifications.
@@ -233,7 +233,7 @@ type LLM interface {
 		ctx context.Context,
 		messages []message.Message,
 		tools []tool.BaseTool,
-	) <-chan LLMEvent
+	) <-chan Event
 
 	// StreamResponseWithStructuredOutput streams a response with structured output constraints.
 	// The final response will include structured JSON conforming to the provided schema.
@@ -242,7 +242,7 @@ type LLM interface {
 		messages []message.Message,
 		tools []tool.BaseTool,
 		outputSchema *schema.StructuredOutputInfo,
-	) <-chan LLMEvent
+	) <-chan Event
 
 	// Model returns the model configuration being used by this LLM instance.
 	Model() model.Model
@@ -268,35 +268,37 @@ type llmClientOptions struct {
 	azureOptions     []AzureOption
 }
 
-type LLMClientOption func(*llmClientOptions)
+// ClientOption configures an LLM client when passed to NewLLM.
+type ClientOption func(*llmClientOptions)
 
-type LLMClient interface {
+// Client is the provider-specific implementation used by baseLLM.
+type Client interface {
 	send(
 		ctx context.Context,
 		messages []message.Message,
 		tools []tool.BaseTool,
-	) (*LLMResponse, error)
+	) (*Response, error)
 	sendWithStructuredOutput(
 		ctx context.Context,
 		messages []message.Message,
 		tools []tool.BaseTool,
 		outputSchema *schema.StructuredOutputInfo,
-	) (*LLMResponse, error)
+	) (*Response, error)
 	stream(
 		ctx context.Context,
 		messages []message.Message,
 		tools []tool.BaseTool,
-	) <-chan LLMEvent
+	) <-chan Event
 	streamWithStructuredOutput(
 		ctx context.Context,
 		messages []message.Message,
 		tools []tool.BaseTool,
 		outputSchema *schema.StructuredOutputInfo,
-	) <-chan LLMEvent
+	) <-chan Event
 	supportsStructuredOutput() bool
 }
 
-type baseLLM[C LLMClient] struct {
+type baseLLM[C Client] struct {
 	options llmClientOptions
 	client  C
 }
@@ -304,7 +306,7 @@ type baseLLM[C LLMClient] struct {
 // NewLLM creates a new LLM client instance for the specified provider with configuration options
 func NewLLM(
 	llmProvider model.Provider,
-	opts ...LLMClientOption,
+	opts ...ClientOption,
 ) (LLM, error) {
 	clientOptions := llmClientOptions{}
 	for _, o := range opts {
@@ -416,7 +418,7 @@ func (p *baseLLM[C]) SendMessages(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
-) (*LLMResponse, error) {
+) (*Response, error) {
 	messages = p.cleanMessages(messages)
 	response, err := p.client.send(ctx, messages, tools)
 
@@ -432,7 +434,7 @@ func (p *baseLLM[C]) SendMessagesWithStructuredOutput(
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
-) (*LLMResponse, error) {
+) (*Response, error) {
 	if !p.client.supportsStructuredOutput() {
 		return nil, fmt.Errorf(
 			"structured output not supported by provider: %s",
@@ -467,7 +469,7 @@ func (p *baseLLM[C]) StreamResponse(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
-) <-chan LLMEvent {
+) <-chan Event {
 	messages = p.cleanMessages(messages)
 	return p.client.stream(ctx, messages, tools)
 }
@@ -477,10 +479,10 @@ func (p *baseLLM[C]) StreamResponseWithStructuredOutput(
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
-) <-chan LLMEvent {
+) <-chan Event {
 	if !p.client.supportsStructuredOutput() {
-		errChan := make(chan LLMEvent, 1)
-		errChan <- LLMEvent{
+		errChan := make(chan Event, 1)
+		errChan <- Event{
 			Type:  types.EventError,
 			Error: fmt.Errorf("structured output not supported by provider: %s", p.options.model.Provider),
 		}
@@ -498,91 +500,91 @@ func (p *baseLLM[C]) StreamResponseWithStructuredOutput(
 }
 
 // WithAPIKey sets the API key for authenticating with the LLM provider
-func WithAPIKey(apiKey string) LLMClientOption {
+func WithAPIKey(apiKey string) ClientOption {
 	return func(options *llmClientOptions) {
 		options.apiKey = apiKey
 	}
 }
 
 // WithModel specifies which model to use for generating responses
-func WithModel(model model.Model) LLMClientOption {
+func WithModel(model model.Model) ClientOption {
 	return func(options *llmClientOptions) {
 		options.model = model
 	}
 }
 
 // WithMaxTokens sets the maximum number of tokens to generate in responses
-func WithMaxTokens(maxTokens int64) LLMClientOption {
+func WithMaxTokens(maxTokens int64) ClientOption {
 	return func(options *llmClientOptions) {
 		options.maxTokens = maxTokens
 	}
 }
 
 // WithAnthropicOptions applies provider-specific configuration for Anthropic models
-func WithAnthropicOptions(anthropicOptions ...AnthropicOption) LLMClientOption {
+func WithAnthropicOptions(anthropicOptions ...AnthropicOption) ClientOption {
 	return func(options *llmClientOptions) {
 		options.anthropicOptions = anthropicOptions
 	}
 }
 
 // WithOpenAIOptions applies provider-specific configuration for OpenAI models
-func WithOpenAIOptions(openaiOptions ...OpenAIOption) LLMClientOption {
+func WithOpenAIOptions(openaiOptions ...OpenAIOption) ClientOption {
 	return func(options *llmClientOptions) {
 		options.openaiOptions = openaiOptions
 	}
 }
 
 // WithGeminiOptions applies provider-specific configuration for Gemini models
-func WithGeminiOptions(geminiOptions ...GeminiOption) LLMClientOption {
+func WithGeminiOptions(geminiOptions ...GeminiOption) ClientOption {
 	return func(options *llmClientOptions) {
 		options.geminiOptions = geminiOptions
 	}
 }
 
 // WithBedrockOptions applies provider-specific configuration for AWS Bedrock models
-func WithBedrockOptions(bedrockOptions ...BedrockOption) LLMClientOption {
+func WithBedrockOptions(bedrockOptions ...BedrockOption) ClientOption {
 	return func(options *llmClientOptions) {
 		options.bedrockOptions = bedrockOptions
 	}
 }
 
 // WithAzureOptions applies provider-specific configuration for Azure OpenAI models
-func WithAzureOptions(azureOptions ...AzureOption) LLMClientOption {
+func WithAzureOptions(azureOptions ...AzureOption) ClientOption {
 	return func(options *llmClientOptions) {
 		options.azureOptions = azureOptions
 	}
 }
 
 // WithTemperature controls the randomness of responses, from 0 (deterministic) to 1 (creative)
-func WithTemperature(temperature float64) LLMClientOption {
+func WithTemperature(temperature float64) ClientOption {
 	return func(options *llmClientOptions) {
 		options.temperature = &temperature
 	}
 }
 
 // WithTopP sets nucleus sampling to control response diversity by probability mass
-func WithTopP(topP float64) LLMClientOption {
+func WithTopP(topP float64) ClientOption {
 	return func(options *llmClientOptions) {
 		options.topP = &topP
 	}
 }
 
 // WithTopK limits token selection to the top K most likely candidates
-func WithTopK(topK int64) LLMClientOption {
+func WithTopK(topK int64) ClientOption {
 	return func(options *llmClientOptions) {
 		options.topK = &topK
 	}
 }
 
 // WithStopSequences defines text sequences that will halt response generation
-func WithStopSequences(stopSequences ...string) LLMClientOption {
+func WithStopSequences(stopSequences ...string) ClientOption {
 	return func(options *llmClientOptions) {
 		options.stopSequences = stopSequences
 	}
 }
 
 // WithTimeout sets the maximum duration to wait for API responses
-func WithTimeout(timeout time.Duration) LLMClientOption {
+func WithTimeout(timeout time.Duration) ClientOption {
 	return func(options *llmClientOptions) {
 		options.timeout = &timeout
 	}

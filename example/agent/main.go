@@ -1,3 +1,4 @@
+// Example agent demonstrates a chat agent with custom tools and a file-backed session.
 package main
 
 import (

@@ -18,12 +18,12 @@ func MemoryStore() Store {
 	return &memoryStore{}
 }
 
-func (s *memoryStore) Exists(ctx context.Context, id string) (bool, error) {
+func (s *memoryStore) Exists(_ context.Context, id string) (bool, error) {
 	_, ok := s.sessions.Load(id)
 	return ok, nil
 }
 
-func (s *memoryStore) Create(ctx context.Context, id string) (Session, error) {
+func (s *memoryStore) Create(_ context.Context, id string) (Session, error) {
 	session := &memorySession{
 		id:       id,
 		messages: make([]message.Message, 0),
@@ -32,7 +32,7 @@ func (s *memoryStore) Create(ctx context.Context, id string) (Session, error) {
 	return session, nil
 }
 
-func (s *memoryStore) Load(ctx context.Context, id string) (Session, error) {
+func (s *memoryStore) Load(_ context.Context, id string) (Session, error) {
 	val, ok := s.sessions.Load(id)
 	if !ok {
 		return nil, nil

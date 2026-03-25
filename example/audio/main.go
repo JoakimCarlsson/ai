@@ -1,3 +1,4 @@
+// Example audio demonstrates ElevenLabs text-to-speech generation, streaming, and voice listing.
 package main
 
 import (
@@ -34,7 +35,7 @@ func main() {
 	listVoicesExample(client)
 }
 
-func basicExample(client audio.AudioGeneration) {
+func basicExample(client audio.Generation) {
 	text := "Hello! This is a demonstration of the ElevenLabs text-to-speech API integration."
 
 	response, err := client.GenerateAudio(
@@ -52,7 +53,7 @@ func basicExample(client audio.AudioGeneration) {
 	}
 }
 
-func customVoiceExample(client audio.AudioGeneration) {
+func customVoiceExample(client audio.Generation) {
 	text := "This audio uses custom voice settings for enhanced expressiveness and stability."
 
 	response, err := client.GenerateAudio(
@@ -74,7 +75,7 @@ func customVoiceExample(client audio.AudioGeneration) {
 	}
 }
 
-func streamingExample(client audio.AudioGeneration) {
+func streamingExample(client audio.Generation) {
 	text := "This is a streaming audio example. The audio is generated and sent in chunks for real-time playback."
 
 	chunkChan, err := client.StreamAudio(
@@ -94,7 +95,7 @@ func streamingExample(client audio.AudioGeneration) {
 	}
 }
 
-func playStreamingAudio(chunkChan <-chan audio.AudioChunk) {
+func playStreamingAudio(chunkChan <-chan audio.Chunk) {
 	cmd := exec.Command("ffplay", "-nodisp", "-autoexit", "-")
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -129,7 +130,7 @@ func playStreamingAudio(chunkChan <-chan audio.AudioChunk) {
 	cmd.Wait()
 }
 
-func saveStreamingAudio(chunkChan <-chan audio.AudioChunk) {
+func saveStreamingAudio(chunkChan <-chan audio.Chunk) {
 	file, err := os.Create("output_stream.mp3")
 	if err != nil {
 		log.Fatal(err)
@@ -158,7 +159,7 @@ func saveStreamingAudio(chunkChan <-chan audio.AudioChunk) {
 	}
 }
 
-func listVoicesExample(client audio.AudioGeneration) {
+func listVoicesExample(client audio.Generation) {
 	voices, err := client.ListVoices(context.Background())
 	if err != nil {
 		log.Fatal(err)

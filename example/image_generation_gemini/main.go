@@ -1,3 +1,4 @@
+// Example image_generation_gemini demonstrates generating images with Gemini Imagen.
 package main
 
 import (

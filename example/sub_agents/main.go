@@ -1,3 +1,4 @@
+// Example sub_agents demonstrates multi-agent orchestration with sub-agents.
 package main
 
 import (

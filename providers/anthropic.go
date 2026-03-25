@@ -24,6 +24,7 @@ type anthropicOptions struct {
 	shouldThink  func(userMessage string) bool
 }
 
+// AnthropicOption configures optional settings for Anthropic clients.
 type AnthropicOption func(*anthropicOptions)
 
 type anthropicClient struct {
@@ -32,7 +33,8 @@ type anthropicClient struct {
 	client     anthropic.Client
 }
 
-type AnthropicClient LLMClient
+// AnthropicClient is the Anthropic Client implementation type.
+type AnthropicClient Client
 
 func newAnthropicClient(opts llmClientOptions) AnthropicClient {
 	anthropicOpts := anthropicOptions{}
@@ -287,7 +289,7 @@ func (a *anthropicClient) send(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
-) (resposne *LLMResponse, err error) {
+) (resposne *Response, err error) {
 	anthropicMessages, systemMessages := a.convertMessages(messages)
 	preparedMessages := a.preparedMessages(
 		anthropicMessages,
@@ -301,7 +303,7 @@ func (a *anthropicClient) send(
 	return ExecuteWithRetry(
 		ctx,
 		AnthropicRetryConfig(),
-		func() (*LLMResponse, error) {
+		func() (*Response, error) {
 			anthropicResponse, err := a.client.Messages.New(
 				ctx,
 				preparedMessages,
@@ -317,7 +319,7 @@ func (a *anthropicClient) send(
 				}
 			}
 
-			return &LLMResponse{
+			return &Response{
 				Content:   content,
 				ToolCalls: a.toolCalls(*anthropicResponse),
 				Usage:     a.usage(*anthropicResponse),
@@ -333,14 +335,14 @@ func (a *anthropicClient) stream(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
-) <-chan LLMEvent {
+) <-chan Event {
 	anthropicMessages, systemMessages := a.convertMessages(messages)
 	preparedMessages := a.preparedMessages(
 		anthropicMessages,
 		a.convertTools(tools),
 		systemMessages,
 	)
-	eventChan := make(chan LLMEvent)
+	eventChan := make(chan Event)
 
 	ctx, cancel := withTimeout(ctx, a.llmOptions.timeout)
 	defer cancel()
@@ -368,10 +370,10 @@ func (a *anthropicClient) stream(
 				case anthropic.ContentBlockStartEvent:
 					switch event.ContentBlock.Type {
 					case "text":
-						eventChan <- LLMEvent{Type: types.EventContentStart}
+						eventChan <- Event{Type: types.EventContentStart}
 					case "tool_use":
 						currentToolCallID = event.ContentBlock.ID
-						eventChan <- LLMEvent{
+						eventChan <- Event{
 							Type: types.EventToolUseStart,
 							ToolCall: &message.ToolCall{
 								ID:       event.ContentBlock.ID,
@@ -385,21 +387,21 @@ func (a *anthropicClient) stream(
 					switch event.Delta.Type {
 					case "thinking_delta":
 						if event.Delta.Thinking != "" {
-							eventChan <- LLMEvent{
+							eventChan <- Event{
 								Type:     types.EventThinkingDelta,
 								Thinking: event.Delta.Thinking,
 							}
 						}
 					case "text_delta":
 						if event.Delta.Text != "" {
-							eventChan <- LLMEvent{
+							eventChan <- Event{
 								Type:    types.EventContentDelta,
 								Content: event.Delta.Text,
 							}
 						}
 					case "input_json_delta":
 						if currentToolCallID != "" {
-							eventChan <- LLMEvent{
+							eventChan <- Event{
 								Type: types.EventToolUseDelta,
 								ToolCall: &message.ToolCall{
 									ID:       currentToolCallID,
@@ -411,7 +413,7 @@ func (a *anthropicClient) stream(
 					}
 				case anthropic.ContentBlockStopEvent:
 					if currentToolCallID != "" {
-						eventChan <- LLMEvent{
+						eventChan <- Event{
 							Type: types.EventToolUseStop,
 							ToolCall: &message.ToolCall{
 								ID: currentToolCallID,
@@ -419,7 +421,7 @@ func (a *anthropicClient) stream(
 						}
 						currentToolCallID = ""
 					} else {
-						eventChan <- LLMEvent{Type: types.EventContentStop}
+						eventChan <- Event{Type: types.EventContentStop}
 					}
 
 				case anthropic.MessageStopEvent:
@@ -430,9 +432,9 @@ func (a *anthropicClient) stream(
 						}
 					}
 
-					eventChan <- LLMEvent{
+					eventChan <- Event{
 						Type: types.EventComplete,
-						Response: &LLMResponse{
+						Response: &Response{
 							Content:      content,
 							ToolCalls:    a.toolCalls(accumulatedMessage),
 							Usage:        a.usage(accumulatedMessage),
@@ -533,7 +535,7 @@ func (a *anthropicClient) sendWithStructuredOutput(
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
-) (*LLMResponse, error) {
+) (*Response, error) {
 	anthropicMessages, systemMessages := a.convertMessages(messages)
 	preparedMessages := a.preparedMessages(
 		anthropicMessages,
@@ -548,7 +550,7 @@ func (a *anthropicClient) sendWithStructuredOutput(
 	return ExecuteWithRetry(
 		ctx,
 		AnthropicRetryConfig(),
-		func() (*LLMResponse, error) {
+		func() (*Response, error) {
 			anthropicResponse, err := a.client.Messages.New(
 				ctx,
 				preparedMessages,
@@ -564,7 +566,7 @@ func (a *anthropicClient) sendWithStructuredOutput(
 				}
 			}
 
-			return &LLMResponse{
+			return &Response{
 				Content:   content,
 				ToolCalls: a.toolCalls(*anthropicResponse),
 				Usage:     a.usage(*anthropicResponse),
@@ -583,7 +585,7 @@ func (a *anthropicClient) streamWithStructuredOutput(
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
-) <-chan LLMEvent {
+) <-chan Event {
 	anthropicMessages, systemMessages := a.convertMessages(messages)
 	preparedMessages := a.preparedMessages(
 		anthropicMessages,
@@ -592,7 +594,7 @@ func (a *anthropicClient) streamWithStructuredOutput(
 	)
 	preparedMessages.OutputConfig = a.buildOutputConfig(outputSchema)
 
-	eventChan := make(chan LLMEvent)
+	eventChan := make(chan Event)
 
 	ctx, cancel := withTimeout(ctx, a.llmOptions.timeout)
 	defer cancel()
@@ -620,10 +622,10 @@ func (a *anthropicClient) streamWithStructuredOutput(
 				case anthropic.ContentBlockStartEvent:
 					switch event.ContentBlock.Type {
 					case "text":
-						eventChan <- LLMEvent{Type: types.EventContentStart}
+						eventChan <- Event{Type: types.EventContentStart}
 					case "tool_use":
 						currentToolCallID = event.ContentBlock.ID
-						eventChan <- LLMEvent{
+						eventChan <- Event{
 							Type: types.EventToolUseStart,
 							ToolCall: &message.ToolCall{
 								ID:       event.ContentBlock.ID,
@@ -637,21 +639,21 @@ func (a *anthropicClient) streamWithStructuredOutput(
 					switch event.Delta.Type {
 					case "thinking_delta":
 						if event.Delta.Thinking != "" {
-							eventChan <- LLMEvent{
+							eventChan <- Event{
 								Type:     types.EventThinkingDelta,
 								Thinking: event.Delta.Thinking,
 							}
 						}
 					case "text_delta":
 						if event.Delta.Text != "" {
-							eventChan <- LLMEvent{
+							eventChan <- Event{
 								Type:    types.EventContentDelta,
 								Content: event.Delta.Text,
 							}
 						}
 					case "input_json_delta":
 						if currentToolCallID != "" {
-							eventChan <- LLMEvent{
+							eventChan <- Event{
 								Type: types.EventToolUseDelta,
 								ToolCall: &message.ToolCall{
 									ID:       currentToolCallID,
@@ -663,7 +665,7 @@ func (a *anthropicClient) streamWithStructuredOutput(
 					}
 				case anthropic.ContentBlockStopEvent:
 					if currentToolCallID != "" {
-						eventChan <- LLMEvent{
+						eventChan <- Event{
 							Type: types.EventToolUseStop,
 							ToolCall: &message.ToolCall{
 								ID: currentToolCallID,
@@ -671,7 +673,7 @@ func (a *anthropicClient) streamWithStructuredOutput(
 						}
 						currentToolCallID = ""
 					} else {
-						eventChan <- LLMEvent{Type: types.EventContentStop}
+						eventChan <- Event{Type: types.EventContentStop}
 					}
 
 				case anthropic.MessageStopEvent:
@@ -682,9 +684,9 @@ func (a *anthropicClient) streamWithStructuredOutput(
 						}
 					}
 
-					eventChan <- LLMEvent{
+					eventChan <- Event{
 						Type: types.EventComplete,
-						Response: &LLMResponse{
+						Response: &Response{
 							Content:                    content,
 							ToolCalls:                  a.toolCalls(accumulatedMessage),
 							Usage:                      a.usage(accumulatedMessage),

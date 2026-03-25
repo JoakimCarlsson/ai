@@ -130,7 +130,7 @@ func (a *Agent) runLoopStream(
 	for {
 		var fullContent string
 		var toolCalls []message.ToolCall
-		var finalResponse *llm.LLMResponse
+		var finalResponse *llm.Response
 		seenToolStarts := make(map[string]bool)
 
 		turnStart := time.Now()

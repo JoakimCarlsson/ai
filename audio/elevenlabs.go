@@ -18,7 +18,7 @@ const (
 	defaultVoiceID           = "EXAVITQu4vr4xnSDxMaL" // Rachel voice
 )
 
-// ElevenLabsClient implements the AudioGenerationClient interface for ElevenLabs API.
+// ElevenLabsClient implements the GenerationClient interface for ElevenLabs API.
 type ElevenLabsClient struct {
 	apiKey     string
 	baseURL    string
@@ -128,7 +128,7 @@ func (c ElevenLabsClient) generate(
 	ctx context.Context,
 	text string,
 	options ...GenerationOption,
-) (*AudioResponse, error) {
+) (*Response, error) {
 	opts := &GenerationOptions{}
 	for _, opt := range options {
 		opt(opts)
@@ -147,7 +147,7 @@ func (c ElevenLabsClient) generateStandard(
 	ctx context.Context,
 	text string,
 	opts *GenerationOptions,
-) (*AudioResponse, error) {
+) (*Response, error) {
 	voiceID := defaultVoiceID
 	if opts.VoiceID != "" {
 		voiceID = opts.VoiceID
@@ -240,10 +240,10 @@ func (c ElevenLabsClient) generateStandard(
 		contentType = "audio/mpeg"
 	}
 
-	return &AudioResponse{
+	return &Response{
 		AudioData:   audioData,
 		ContentType: contentType,
-		Usage: AudioUsage{
+		Usage: Usage{
 			Characters: charCount,
 		},
 		Model: c.model,
@@ -254,7 +254,7 @@ func (c ElevenLabsClient) generateWithTimestamps(
 	ctx context.Context,
 	text string,
 	opts *GenerationOptions,
-) (*AudioResponse, error) {
+) (*Response, error) {
 	voiceID := defaultVoiceID
 	if opts.VoiceID != "" {
 		voiceID = opts.VoiceID
@@ -379,10 +379,10 @@ func (c ElevenLabsClient) generateWithTimestamps(
 		}
 	}
 
-	return &AudioResponse{
+	return &Response{
 		AudioData:           audioData,
 		ContentType:         contentType,
-		Usage:               AudioUsage{Characters: charCount},
+		Usage:               Usage{Characters: charCount},
 		Model:               c.model,
 		Alignment:           alignment,
 		NormalizedAlignment: normalizedAlignment,
@@ -393,7 +393,7 @@ func (c ElevenLabsClient) stream(
 	ctx context.Context,
 	text string,
 	options ...GenerationOption,
-) (<-chan AudioChunk, error) {
+) (<-chan Chunk, error) {
 	opts := &GenerationOptions{}
 	for _, opt := range options {
 		opt(opts)
@@ -410,7 +410,7 @@ func (c ElevenLabsClient) streamStandard(
 	ctx context.Context,
 	text string,
 	opts *GenerationOptions,
-) (<-chan AudioChunk, error) {
+) (<-chan Chunk, error) {
 	voiceID := defaultVoiceID
 	if opts.VoiceID != "" {
 		voiceID = opts.VoiceID
@@ -446,8 +446,8 @@ func (c ElevenLabsClient) streamStandard(
 
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
-		ch := make(chan AudioChunk, 1)
-		ch <- AudioChunk{Error: fmt.Errorf("failed to marshal request: %w", err)}
+		ch := make(chan Chunk, 1)
+		ch <- Chunk{Error: fmt.Errorf("failed to marshal request: %w", err)}
 		close(ch)
 		return ch, nil
 	}
@@ -473,8 +473,8 @@ func (c ElevenLabsClient) streamStandard(
 		bytes.NewBuffer(jsonData),
 	)
 	if err != nil {
-		ch := make(chan AudioChunk, 1)
-		ch <- AudioChunk{Error: fmt.Errorf("failed to create request: %w", err)}
+		ch := make(chan Chunk, 1)
+		ch <- Chunk{Error: fmt.Errorf("failed to create request: %w", err)}
 		close(ch)
 		return ch, nil
 	}
@@ -482,20 +482,20 @@ func (c ElevenLabsClient) streamStandard(
 	req.Header.Set("xi-api-key", c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	chunkChan := make(chan AudioChunk, 10)
+	chunkChan := make(chan Chunk, 10)
 
 	go func() {
 		defer close(chunkChan)
 
 		resp, err := c.httpClient.Do(req)
 		if err != nil {
-			chunkChan <- AudioChunk{Error: fmt.Errorf("request failed: %w", err)}
+			chunkChan <- Chunk{Error: fmt.Errorf("request failed: %w", err)}
 			return
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			chunkChan <- AudioChunk{Error: c.parseError(resp)}
+			chunkChan <- Chunk{Error: c.parseError(resp)}
 			return
 		}
 
@@ -505,22 +505,22 @@ func (c ElevenLabsClient) streamStandard(
 			if n > 0 {
 				data := make([]byte, n)
 				copy(data, buffer[:n])
-				chunkChan <- AudioChunk{Data: data, Done: false}
+				chunkChan <- Chunk{Data: data, Done: false}
 			}
 
 			if err == io.EOF {
-				chunkChan <- AudioChunk{Done: true}
+				chunkChan <- Chunk{Done: true}
 				break
 			}
 
 			if err != nil {
-				chunkChan <- AudioChunk{Error: fmt.Errorf("stream read error: %w", err)}
+				chunkChan <- Chunk{Error: fmt.Errorf("stream read error: %w", err)}
 				break
 			}
 
 			select {
 			case <-ctx.Done():
-				chunkChan <- AudioChunk{Error: ctx.Err()}
+				chunkChan <- Chunk{Error: ctx.Err()}
 				return
 			default:
 			}
@@ -540,7 +540,7 @@ func (c ElevenLabsClient) streamWithTimestamps(
 	ctx context.Context,
 	text string,
 	opts *GenerationOptions,
-) (<-chan AudioChunk, error) {
+) (<-chan Chunk, error) {
 	voiceID := defaultVoiceID
 	if opts.VoiceID != "" {
 		voiceID = opts.VoiceID
@@ -576,8 +576,8 @@ func (c ElevenLabsClient) streamWithTimestamps(
 
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
-		ch := make(chan AudioChunk, 1)
-		ch <- AudioChunk{Error: fmt.Errorf("failed to marshal request: %w", err)}
+		ch := make(chan Chunk, 1)
+		ch <- Chunk{Error: fmt.Errorf("failed to marshal request: %w", err)}
 		close(ch)
 		return ch, nil
 	}
@@ -603,8 +603,8 @@ func (c ElevenLabsClient) streamWithTimestamps(
 		bytes.NewBuffer(jsonData),
 	)
 	if err != nil {
-		ch := make(chan AudioChunk, 1)
-		ch <- AudioChunk{Error: fmt.Errorf("failed to create request: %w", err)}
+		ch := make(chan Chunk, 1)
+		ch <- Chunk{Error: fmt.Errorf("failed to create request: %w", err)}
 		close(ch)
 		return ch, nil
 	}
@@ -613,20 +613,20 @@ func (c ElevenLabsClient) streamWithTimestamps(
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 
-	chunkChan := make(chan AudioChunk, 10)
+	chunkChan := make(chan Chunk, 10)
 
 	go func() {
 		defer close(chunkChan)
 
 		resp, err := c.httpClient.Do(req)
 		if err != nil {
-			chunkChan <- AudioChunk{Error: fmt.Errorf("request failed: %w", err)}
+			chunkChan <- Chunk{Error: fmt.Errorf("request failed: %w", err)}
 			return
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			chunkChan <- AudioChunk{Error: c.parseError(resp)}
+			chunkChan <- Chunk{Error: c.parseError(resp)}
 			return
 		}
 
@@ -636,18 +636,18 @@ func (c ElevenLabsClient) streamWithTimestamps(
 			err := decoder.Decode(&chunk)
 
 			if err == io.EOF {
-				chunkChan <- AudioChunk{Done: true}
+				chunkChan <- Chunk{Done: true}
 				break
 			}
 
 			if err != nil {
-				chunkChan <- AudioChunk{Error: fmt.Errorf("stream decode error: %w", err)}
+				chunkChan <- Chunk{Error: fmt.Errorf("stream decode error: %w", err)}
 				break
 			}
 
 			audioData, err := base64.StdEncoding.DecodeString(chunk.AudioBase64)
 			if err != nil {
-				chunkChan <- AudioChunk{Error: fmt.Errorf("failed to decode base64 audio: %w", err)}
+				chunkChan <- Chunk{Error: fmt.Errorf("failed to decode base64 audio: %w", err)}
 				break
 			}
 
@@ -669,7 +669,7 @@ func (c ElevenLabsClient) streamWithTimestamps(
 				}
 			}
 
-			chunkChan <- AudioChunk{
+			chunkChan <- Chunk{
 				Data:                audioData,
 				Done:                false,
 				Alignment:           alignment,
@@ -678,7 +678,7 @@ func (c ElevenLabsClient) streamWithTimestamps(
 
 			select {
 			case <-ctx.Done():
-				chunkChan <- AudioChunk{Error: ctx.Err()}
+				chunkChan <- Chunk{Error: ctx.Err()}
 				return
 			default:
 			}

@@ -1,3 +1,4 @@
+// Example image_generation demonstrates generating images with the image generation API.
 package main
 
 import (

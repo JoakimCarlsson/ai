@@ -1,3 +1,4 @@
+// Example audio_alignment demonstrates ElevenLabs speech synthesis with character-level alignment data.
 package main
 
 import (

@@ -1,3 +1,4 @@
+// Example handoffs demonstrates routing user messages between specialist agents via handoff tools.
 package main
 
 import (

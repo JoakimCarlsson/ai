@@ -225,7 +225,7 @@ Passed to `PostModelCall`:
 
 ```go
 type ModelResponseContext struct {
-    Response  *llm.LLMResponse
+    Response  *llm.Response
     Duration  time.Duration
     AgentName string
     TaskID    string

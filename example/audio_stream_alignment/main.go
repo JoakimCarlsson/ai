@@ -1,3 +1,4 @@
+// Example audio_stream_alignment demonstrates streaming audio with alignment data.
 package main
 
 import (

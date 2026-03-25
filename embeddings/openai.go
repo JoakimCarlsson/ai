@@ -13,6 +13,7 @@ type openaiOptions struct {
 	user       string
 }
 
+// OpenAIOption configures OpenAI-specific embedding client options.
 type OpenAIOption func(*openaiOptions)
 
 type openaiClient struct {
@@ -21,6 +22,7 @@ type openaiClient struct {
 	client          openai.Client
 }
 
+// OpenAIClient is the OpenAI implementation of EmbeddingClient.
 type OpenAIClient EmbeddingClient
 
 func newOpenAIClient(opts embeddingClientOptions) OpenAIClient {
@@ -48,7 +50,7 @@ func newOpenAIClient(opts embeddingClientOptions) OpenAIClient {
 func (o *openaiClient) embed(
 	ctx context.Context,
 	texts []string,
-	inputType ...string,
+	_ ...string,
 ) (*EmbeddingResponse, error) {
 	if len(texts) == 0 {
 		return &EmbeddingResponse{
@@ -133,17 +135,17 @@ func (o *openaiClient) embedBatch(
 }
 
 func (o *openaiClient) embedMultimodal(
-	ctx context.Context,
-	inputs []MultimodalInput,
-	inputType ...string,
+	_ context.Context,
+	_ []MultimodalInput,
+	_ ...string,
 ) (*EmbeddingResponse, error) {
 	return nil, fmt.Errorf("OpenAI does not support multimodal embeddings")
 }
 
 func (o *openaiClient) embedContextualized(
-	ctx context.Context,
-	documentChunks [][]string,
-	inputType ...string,
+	_ context.Context,
+	_ [][]string,
+	_ ...string,
 ) (*ContextualizedEmbeddingResponse, error) {
 	return nil, fmt.Errorf("OpenAI does not support contextualized embeddings")
 }

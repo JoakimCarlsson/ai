@@ -8,6 +8,7 @@ import (
 	"github.com/joakimcarlsson/ai/tool"
 )
 
+// Token counting constants.
 const (
 	SystemMessageOverhead  int64 = 15
 	MessageOverhead        int64 = 10

@@ -133,8 +133,10 @@ type embeddingClientOptions struct {
 	openaiOptions []OpenAIOption
 }
 
+// EmbeddingClientOption configures embedding client construction when passed to NewEmbedding.
 type EmbeddingClientOption func(*embeddingClientOptions)
 
+// EmbeddingClient is the internal interface implemented by provider-specific embedding backends.
 type EmbeddingClient interface {
 	embed(
 		ctx context.Context,

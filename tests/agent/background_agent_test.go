@@ -1379,7 +1379,7 @@ func (m *blockingMockLLM) SendMessages(
 	ctx context.Context,
 	msgs []message.Message,
 	tools []tool.BaseTool,
-) (*llm.LLMResponse, error) {
+) (*llm.Response, error) {
 	select {
 	case <-time.After(m.delay):
 		return m.fallback.SendMessages(ctx, msgs, tools)
@@ -1396,7 +1396,7 @@ func (m *blockingMockLLM) SendMessagesWithStructuredOutput(
 	msgs []message.Message,
 	tools []tool.BaseTool,
 	info *schema.StructuredOutputInfo,
-) (*llm.LLMResponse, error) {
+) (*llm.Response, error) {
 	return m.fallback.SendMessagesWithStructuredOutput(ctx, msgs, tools, info)
 }
 
@@ -1404,8 +1404,8 @@ func (m *blockingMockLLM) StreamResponse(
 	ctx context.Context,
 	msgs []message.Message,
 	tools []tool.BaseTool,
-) <-chan llm.LLMEvent {
-	ch := make(chan llm.LLMEvent)
+) <-chan llm.Event {
+	ch := make(chan llm.Event)
 	go func() {
 		defer close(ch)
 		select {
@@ -1417,7 +1417,7 @@ func (m *blockingMockLLM) StreamResponse(
 			if m.onCancel != nil {
 				m.onCancel()
 			}
-			ch <- llm.LLMEvent{Type: types.EventError, Error: ctx.Err()}
+			ch <- llm.Event{Type: types.EventError, Error: ctx.Err()}
 		}
 	}()
 	return ch
@@ -1428,7 +1428,7 @@ func (m *blockingMockLLM) StreamResponseWithStructuredOutput(
 	msgs []message.Message,
 	tools []tool.BaseTool,
 	info *schema.StructuredOutputInfo,
-) <-chan llm.LLMEvent {
+) <-chan llm.Event {
 	return m.fallback.StreamResponseWithStructuredOutput(ctx, msgs, tools, info)
 }
 
@@ -1451,7 +1451,7 @@ func (m *toolCapturingLLM) SendMessages(
 	ctx context.Context,
 	msgs []message.Message,
 	tools []tool.BaseTool,
-) (*llm.LLMResponse, error) {
+) (*llm.Response, error) {
 	if m.onTools != nil {
 		var names []string
 		for _, t := range tools {
@@ -1467,7 +1467,7 @@ func (m *toolCapturingLLM) SendMessagesWithStructuredOutput(
 	msgs []message.Message,
 	tools []tool.BaseTool,
 	info *schema.StructuredOutputInfo,
-) (*llm.LLMResponse, error) {
+) (*llm.Response, error) {
 	return m.base.SendMessagesWithStructuredOutput(ctx, msgs, tools, info)
 }
 
@@ -1475,7 +1475,7 @@ func (m *toolCapturingLLM) StreamResponse(
 	ctx context.Context,
 	msgs []message.Message,
 	tools []tool.BaseTool,
-) <-chan llm.LLMEvent {
+) <-chan llm.Event {
 	return m.base.StreamResponse(ctx, msgs, tools)
 }
 
@@ -1484,7 +1484,7 @@ func (m *toolCapturingLLM) StreamResponseWithStructuredOutput(
 	msgs []message.Message,
 	tools []tool.BaseTool,
 	info *schema.StructuredOutputInfo,
-) <-chan llm.LLMEvent {
+) <-chan llm.Event {
 	return m.base.StreamResponseWithStructuredOutput(ctx, msgs, tools, info)
 }
 

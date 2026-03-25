@@ -14,6 +14,7 @@ import (
 	"github.com/openai/openai-go"
 )
 
+// RetryConfig holds parameters for LLM request retry behavior.
 type RetryConfig struct {
 	MaxRetries       int
 	BaseBackoffMs    int
@@ -22,12 +23,14 @@ type RetryConfig struct {
 	CheckRetryAfter  bool
 }
 
+// RetryableError is an error with HTTP status and optional Retry-After for retries.
 type RetryableError interface {
 	error
 	GetStatusCode() int
 	GetRetryAfter() string
 }
 
+// OpenAIRetryableError wraps an OpenAI API error for retry decisions.
 type OpenAIRetryableError struct {
 	err *openai.Error
 }
@@ -36,10 +39,12 @@ func (e OpenAIRetryableError) Error() string {
 	return e.err.Error()
 }
 
+// GetStatusCode returns the HTTP status code from the OpenAI error.
 func (e OpenAIRetryableError) GetStatusCode() int {
 	return e.err.StatusCode
 }
 
+// GetRetryAfter returns the Retry-After header value if the response had one.
 func (e OpenAIRetryableError) GetRetryAfter() string {
 	if e.err.Response != nil {
 		retryAfterValues := e.err.Response.Header.Values("Retry-After")
@@ -50,6 +55,7 @@ func (e OpenAIRetryableError) GetRetryAfter() string {
 	return ""
 }
 
+// AnthropicRetryableError wraps an Anthropic API error for retry decisions.
 type AnthropicRetryableError struct {
 	err *anthropic.Error
 }
@@ -58,10 +64,12 @@ func (e AnthropicRetryableError) Error() string {
 	return e.err.Error()
 }
 
+// GetStatusCode returns the HTTP status code from the Anthropic error.
 func (e AnthropicRetryableError) GetStatusCode() int {
 	return e.err.StatusCode
 }
 
+// GetRetryAfter returns the Retry-After header value if the response had one.
 func (e AnthropicRetryableError) GetRetryAfter() string {
 	if e.err.Response != nil {
 		retryAfterValues := e.err.Response.Header.Values("Retry-After")
@@ -72,6 +80,7 @@ func (e AnthropicRetryableError) GetRetryAfter() string {
 	return ""
 }
 
+// GenericRetryableError marks an error retryable with a fixed HTTP status code.
 type GenericRetryableError struct {
 	err        error
 	statusCode int
@@ -81,10 +90,12 @@ func (e GenericRetryableError) Error() string {
 	return e.err.Error()
 }
 
+// GetStatusCode returns the status code associated with this retryable error.
 func (e GenericRetryableError) GetStatusCode() int {
 	return e.statusCode
 }
 
+// GetRetryAfter returns empty; generic errors do not carry Retry-After.
 func (e GenericRetryableError) GetRetryAfter() string {
 	return ""
 }
@@ -280,7 +291,7 @@ func ExecuteStreamWithRetry(
 	ctx context.Context,
 	config RetryConfig,
 	operation func() error,
-	eventChan chan<- LLMEvent,
+	eventChan chan<- Event,
 ) {
 	attempts := 0
 
@@ -297,12 +308,12 @@ func ExecuteStreamWithRetry(
 			config,
 		)
 		if retryErr != nil {
-			eventChan <- LLMEvent{Type: types.EventError, Error: retryErr}
+			eventChan <- Event{Type: types.EventError, Error: retryErr}
 			return
 		}
 
 		if !shouldRetry {
-			eventChan <- LLMEvent{Type: types.EventError, Error: err}
+			eventChan <- Event{Type: types.EventError, Error: err}
 			return
 		}
 
@@ -315,7 +326,7 @@ func ExecuteStreamWithRetry(
 		select {
 		case <-ctx.Done():
 			if ctx.Err() != nil {
-				eventChan <- LLMEvent{Type: types.EventError, Error: ctx.Err()}
+				eventChan <- Event{Type: types.EventError, Error: ctx.Err()}
 			}
 			return
 		case <-time.After(time.Duration(retryAfterMs) * time.Millisecond):

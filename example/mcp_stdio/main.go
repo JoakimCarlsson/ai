@@ -1,3 +1,4 @@
+// Example mcp_stdio demonstrates MCP tool discovery over stdio and HTTP transports.
 package main
 
 import (

@@ -1,3 +1,4 @@
+// Example fim_mistral demonstrates fill-in-the-middle code completion with Mistral Codestral.
 package main
 
 import (

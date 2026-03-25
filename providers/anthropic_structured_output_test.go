@@ -149,7 +149,7 @@ func TestSendWithStructuredOutput(t *testing.T) {
 
 func TestStreamWithStructuredOutput(t *testing.T) {
 	server := httptest.NewServer(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "text/event-stream")
 			w.Header().Set("Cache-Control", "no-cache")
 			flusher := w.(http.Flusher)
@@ -200,7 +200,7 @@ func TestStreamWithStructuredOutput(t *testing.T) {
 	)
 
 	var gotContentDelta bool
-	var finalResponse *LLMResponse
+	var finalResponse *Response
 
 	for event := range eventChan {
 		switch event.Type {

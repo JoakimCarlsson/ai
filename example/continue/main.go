@@ -1,3 +1,4 @@
+// Example continue demonstrates resuming an agent turn after manually executing pending tool calls.
 package main
 
 import (

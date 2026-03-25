@@ -1,3 +1,4 @@
+// Example instruction_templates demonstrates system prompts with Go-template substitution and dynamic state.
 package main
 
 import (

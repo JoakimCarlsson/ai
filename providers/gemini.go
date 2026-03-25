@@ -20,6 +20,7 @@ type geminiOptions struct {
 	seed             *int64
 }
 
+// GeminiOption configures optional settings for Gemini clients.
 type GeminiOption func(*geminiOptions)
 
 type geminiClient struct {
@@ -28,7 +29,8 @@ type geminiClient struct {
 	client          *genai.Client
 }
 
-type GeminiClient LLMClient
+// GeminiClient is the Google Gemini Client implementation type.
+type GeminiClient Client
 
 func newGeminiClient(opts llmClientOptions) GeminiClient {
 	geminiOpts := geminiOptions{}
@@ -174,7 +176,7 @@ func (g *geminiClient) send(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
-) (*LLMResponse, error) {
+) (*Response, error) {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
 	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
@@ -223,7 +225,7 @@ func (g *geminiClient) send(
 	return ExecuteWithRetry(
 		ctx,
 		GeminiRetryConfig(),
-		func() (*LLMResponse, error) {
+		func() (*Response, error) {
 			var toolCalls []message.ToolCall
 
 			var lastMsgParts []genai.Part
@@ -263,7 +265,7 @@ func (g *geminiClient) send(
 				finishReason = message.FinishReasonToolUse
 			}
 
-			return &LLMResponse{
+			return &Response{
 				Content:      content,
 				ToolCalls:    toolCalls,
 				Usage:        g.usage(resp),
@@ -277,7 +279,7 @@ func (g *geminiClient) stream(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
-) <-chan LLMEvent {
+) <-chan Event {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
 	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
@@ -323,7 +325,7 @@ func (g *geminiClient) stream(
 		history,
 	)
 
-	eventChan := make(chan LLMEvent)
+	eventChan := make(chan Event)
 
 	go func() {
 		defer close(eventChan)
@@ -333,7 +335,7 @@ func (g *geminiClient) stream(
 			toolCalls := []message.ToolCall{}
 			var finalResp *genai.GenerateContentResponse
 
-			eventChan <- LLMEvent{Type: types.EventContentStart}
+			eventChan <- Event{Type: types.EventContentStart}
 
 			var lastMsgParts []genai.Part
 
@@ -354,7 +356,7 @@ func (g *geminiClient) stream(
 						case part.Text != "":
 							delta := string(part.Text)
 							currentContent += delta
-							eventChan <- LLMEvent{
+							eventChan <- Event{
 								Type:    types.EventContentDelta,
 								Content: delta,
 							}
@@ -386,7 +388,7 @@ func (g *geminiClient) stream(
 				}
 			}
 
-			eventChan <- LLMEvent{Type: types.EventContentStop}
+			eventChan <- Event{Type: types.EventContentStop}
 
 			if finalResp != nil {
 
@@ -399,9 +401,9 @@ func (g *geminiClient) stream(
 				if len(toolCalls) > 0 {
 					finishReason = message.FinishReasonToolUse
 				}
-				eventChan <- LLMEvent{
+				eventChan <- Event{
 					Type: types.EventComplete,
-					Response: &LLMResponse{
+					Response: &Response{
 						Content:      currentContent,
 						ToolCalls:    toolCalls,
 						Usage:        g.usage(finalResp),
@@ -543,7 +545,7 @@ func (g *geminiClient) sendWithStructuredOutput(
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
-) (*LLMResponse, error) {
+) (*Response, error) {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
 	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
@@ -596,7 +598,7 @@ func (g *geminiClient) sendWithStructuredOutput(
 	return ExecuteWithRetry(
 		ctx,
 		GeminiRetryConfig(),
-		func() (*LLMResponse, error) {
+		func() (*Response, error) {
 			response, err := chat.Send(ctx, lastMsg.Parts[0])
 			if err != nil {
 				return nil, err
@@ -637,7 +639,7 @@ func (g *geminiClient) sendWithStructuredOutput(
 				finishReason = message.FinishReasonToolUse
 			}
 
-			return &LLMResponse{
+			return &Response{
 				Content:                    content,
 				ToolCalls:                  toolCalls,
 				Usage:                      g.usage(response),
@@ -654,7 +656,7 @@ func (g *geminiClient) streamWithStructuredOutput(
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
-) <-chan LLMEvent {
+) <-chan Event {
 	geminiMessages, systemMessages := g.convertMessages(messages)
 
 	ctx, cancel := withTimeout(ctx, g.providerOptions.timeout)
@@ -706,7 +708,7 @@ func (g *geminiClient) streamWithStructuredOutput(
 		history,
 	)
 
-	eventChan := make(chan LLMEvent)
+	eventChan := make(chan Event)
 
 	go func() {
 		defer close(eventChan)
@@ -716,7 +718,7 @@ func (g *geminiClient) streamWithStructuredOutput(
 			toolCalls := []message.ToolCall{}
 			var finalResp *genai.GenerateContentResponse
 
-			eventChan <- LLMEvent{Type: types.EventContentStart}
+			eventChan <- Event{Type: types.EventContentStart}
 
 			var lastMsgParts []genai.Part
 			for _, part := range lastMsg.Parts {
@@ -737,7 +739,7 @@ func (g *geminiClient) streamWithStructuredOutput(
 						case part.Text != "":
 							delta := string(part.Text)
 							currentContent += delta
-							eventChan <- LLMEvent{
+							eventChan <- Event{
 								Type:    types.EventContentDelta,
 								Content: delta,
 							}
@@ -769,7 +771,7 @@ func (g *geminiClient) streamWithStructuredOutput(
 				}
 			}
 
-			eventChan <- LLMEvent{Type: types.EventContentStop}
+			eventChan <- Event{Type: types.EventContentStop}
 
 			if finalResp != nil {
 				finishReason := message.FinishReasonEndTurn
@@ -781,9 +783,9 @@ func (g *geminiClient) streamWithStructuredOutput(
 				if len(toolCalls) > 0 {
 					finishReason = message.FinishReasonToolUse
 				}
-				eventChan <- LLMEvent{
+				eventChan <- Event{
 					Type: types.EventComplete,
-					Response: &LLMResponse{
+					Response: &Response{
 						Content:                    currentContent,
 						ToolCalls:                  toolCalls,
 						Usage:                      g.usage(finalResp),

@@ -1,3 +1,4 @@
+// Example embeddings demonstrates generating text embeddings with the embeddings API.
 package main
 
 import (
