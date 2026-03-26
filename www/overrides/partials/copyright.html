@@ -1,0 +1,13 @@
+<div class="md-copyright" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+  <div>
+    {% if not config.extra.generator == false %}
+      Made with
+      <a href="https://zensical.org/" target="_blank" rel="noopener">Zensical</a>
+    {% endif %}
+  </div>
+  <div>
+    <a href="{{ config.site_url }}/llms.txt" title="LLM-optimized documentation overview">llms.txt</a>
+    <span style="margin: 0 0.3rem; opacity: 0.5;">&middot;</span>
+    <a href="{{ config.site_url }}/llms-full.txt" title="Complete documentation for LLMs">llms-full.txt</a>
+  </div>
+</div>
