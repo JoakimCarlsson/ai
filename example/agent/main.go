@@ -13,6 +13,7 @@ import (
 	"github.com/joakimcarlsson/ai/model"
 	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/tool"
+	"github.com/joakimcarlsson/ai/tool/functiontool"
 )
 
 type weatherParams struct {
@@ -56,12 +57,25 @@ func main() {
 		log.Fatal(err)
 	}
 
+	timeTool := functiontool.New(
+		"get_time",
+		"Get the current time in a city",
+		func(_ context.Context, p struct {
+			City string `json:"city" desc:"The city name"`
+		}) (string, error) {
+			return fmt.Sprintf(
+				"The current time in %s is 14:30 UTC",
+				p.City,
+			), nil
+		},
+	)
+
 	myAgent := agent.New(
 		llmClient,
 		agent.WithSystemPrompt(
-			"You are a helpful assistant with access to weather tools.",
+			"You are a helpful assistant with access to weather and time tools.",
 		),
-		agent.WithTools(&weatherTool{}),
+		agent.WithTools(&weatherTool{}, timeTool),
 		agent.WithSession("conv-1", session.FileStore("./sessions")),
 	)
 
