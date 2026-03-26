@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/joakimcarlsson/ai v0.14.0
+	github.com/joakimcarlsson/ai v0.15.0
 	github.com/lib/pq v1.11.2
 )
 
