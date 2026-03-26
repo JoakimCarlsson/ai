@@ -99,7 +99,6 @@ func (a *Agent) runLoop(
 	var turns int
 
 	activeAgent := a
-	allTools := activeAgent.getToolsWithContext(ctx)
 	iteration := 0
 
 	maxIter := activeAgent.maxIterations
@@ -109,6 +108,7 @@ func (a *Agent) runLoop(
 
 	for {
 		turnStart := time.Now()
+		allTools := activeAgent.getToolsWithContext(ctx)
 
 		taskID, agentName, branch := activeAgent.hookContext(ctx)
 		mcResult, err := runPreModelCall(
@@ -241,7 +241,6 @@ func (a *Agent) runLoop(
 					err,
 				)
 			}
-			allTools = activeAgent.getToolsWithContext(ctx)
 			iteration = 0
 			continue
 		}
