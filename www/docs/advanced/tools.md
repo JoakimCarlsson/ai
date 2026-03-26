@@ -81,3 +81,7 @@ The agent package provides a generic helper:
 ```go
 input, err := agent.ParseToolInput[WeatherParams](params.Input)
 ```
+
+## Toolsets
+
+For grouping, filtering, and dynamically controlling which tools are available at runtime, see [Toolsets](../agent/toolsets.md).

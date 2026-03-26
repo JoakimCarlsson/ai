@@ -65,6 +65,7 @@ nav:
     - Fan-Out: agent/fan-out.md
     - Continue/Resume: agent/continue.md
     - Context Strategies: agent/context-strategies.md
+    - Toolsets: agent/toolsets.md
     - Instruction Templates: agent/instruction-templates.md
   - Integrations:
     - PostgreSQL: integrations/postgres.md

@@ -82,7 +82,7 @@ func (a *Agent) executeTools(
 	toolCalls []message.ToolCall,
 ) []ToolExecutionResult {
 	registry := tool.NewRegistry()
-	for _, t := range a.getTools() {
+	for _, t := range a.getToolsWithContext(ctx) {
 		registry.Register(t)
 	}
 

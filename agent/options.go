@@ -27,6 +27,15 @@ func WithTools(tools ...tool.BaseTool) Option {
 	}
 }
 
+// WithToolsets adds toolsets to the agent. Toolsets group tools under a name and support
+// dynamic filtering — tools are resolved per-call via Toolset.Tools(ctx), not at creation time.
+// Toolsets compose: a toolset can contain individual tools and other toolsets.
+func WithToolsets(toolsets ...tool.Toolset) Option {
+	return func(a *Agent) {
+		a.toolsets = append(a.toolsets, toolsets...)
+	}
+}
+
 // WithMaxIterations sets the maximum number of tool execution iterations per chat.
 // Default is 10. Prevents infinite loops when tools keep triggering more tool calls.
 func WithMaxIterations(maxIter int) Option {

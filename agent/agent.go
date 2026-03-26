@@ -17,6 +17,7 @@ type Agent struct {
 	llm                 llm.LLM
 	memoryLLM           llm.LLM
 	tools               []tool.BaseTool
+	toolsets            []tool.Toolset
 	systemPrompt        string
 	maxIterations       int
 	autoExecute         bool
@@ -71,9 +72,13 @@ func New(llmClient llm.LLM, opts ...Option) *Agent {
 	return a
 }
 
-func (a *Agent) getTools() []tool.BaseTool {
+func (a *Agent) getToolsWithContext(ctx context.Context) []tool.BaseTool {
 	allTools := make([]tool.BaseTool, len(a.tools))
 	copy(allTools, a.tools)
+
+	for _, ts := range a.toolsets {
+		allTools = append(allTools, ts.Tools(ctx)...)
+	}
 
 	if a.memory != nil && !a.autoExtract && a.memoryID != "" {
 		memoryTools := createMemoryTools(a.memory, a.memoryID)

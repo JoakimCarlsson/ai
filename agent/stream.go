@@ -119,7 +119,6 @@ func (a *Agent) runLoopStream(
 	var turns int
 
 	activeAgent := a
-	allTools := activeAgent.getTools()
 	iteration := 0
 
 	maxIter := activeAgent.maxIterations
@@ -134,6 +133,7 @@ func (a *Agent) runLoopStream(
 		seenToolStarts := make(map[string]bool)
 
 		turnStart := time.Now()
+		allTools := activeAgent.getToolsWithContext(ctx)
 
 		taskID, agentName, branch := activeAgent.hookContext(ctx)
 		mcResult, hookErr := runPreModelCall(
@@ -329,7 +329,6 @@ func (a *Agent) runLoopStream(
 				eventChan <- ChatEvent{Type: types.EventError, Error: err}
 				return
 			}
-			allTools = activeAgent.getTools()
 			iteration = 0
 			continue
 		}
