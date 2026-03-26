@@ -23,16 +23,26 @@ type scanParams struct {
 type scanTool struct{}
 
 func (s *scanTool) Info() tool.Info {
-	return tool.NewInfo("scan_ports", "Scan open ports on a target", scanParams{})
+	return tool.NewInfo(
+		"scan_ports",
+		"Scan open ports on a target",
+		scanParams{},
+	)
 }
 
-func (s *scanTool) Run(_ context.Context, params tool.Call) (tool.Response, error) {
+func (s *scanTool) Run(
+	_ context.Context,
+	params tool.Call,
+) (tool.Response, error) {
 	var input scanParams
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
 		return tool.NewTextErrorResponse(err.Error()), nil
 	}
 	return tool.NewTextResponse(
-		fmt.Sprintf("Scan results for %s: ports 22, 80, 443 open", input.Target),
+		fmt.Sprintf(
+			"Scan results for %s: ports 22, 80, 443 open",
+			input.Target,
+		),
 	), nil
 }
 
@@ -44,16 +54,27 @@ type exploitParams struct {
 type exploitTool struct{}
 
 func (e *exploitTool) Info() tool.Info {
-	return tool.NewInfo("run_exploit", "Attempt exploitation on target port", exploitParams{})
+	return tool.NewInfo(
+		"run_exploit",
+		"Attempt exploitation on target port",
+		exploitParams{},
+	)
 }
 
-func (e *exploitTool) Run(_ context.Context, params tool.Call) (tool.Response, error) {
+func (e *exploitTool) Run(
+	_ context.Context,
+	params tool.Call,
+) (tool.Response, error) {
 	var input exploitParams
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
 		return tool.NewTextErrorResponse(err.Error()), nil
 	}
 	return tool.NewTextResponse(
-		fmt.Sprintf("Exploit succeeded on %s:%d — shell obtained", input.Target, input.Port),
+		fmt.Sprintf(
+			"Exploit succeeded on %s:%d — shell obtained",
+			input.Target,
+			input.Port,
+		),
 	), nil
 }
 
@@ -87,7 +108,9 @@ func main() {
 
 	myAgent := agent.New(
 		llmClient,
-		agent.WithSystemPrompt("You are a penetration testing assistant. Use available tools to help with the engagement."),
+		agent.WithSystemPrompt(
+			"You are a penetration testing assistant. Use available tools to help with the engagement.",
+		),
 		agent.WithToolsets(filtered),
 		agent.WithMaxIterations(1),
 	)

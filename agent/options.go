@@ -221,6 +221,26 @@ func WithHandoffs(configs ...HandoffConfig) Option {
 	}
 }
 
+// WithConfirmationProvider sets a callback that decides whether sensitive tool calls
+// should proceed. When set, tools with RequireConfirmation=true on their Info will
+// invoke this callback before execution. Tools can also call tool.RequestConfirmation()
+// from within Run() to trigger dynamic confirmation.
+//
+// The provider blocks until a decision is made. For streaming, a confirmation event
+// is emitted before the provider is called, allowing the consumer to present UI
+// and then unblock the provider.
+//
+// Example auto-approve:
+//
+//	agent.WithConfirmationProvider(func(ctx context.Context, req tool.ConfirmationRequest) (bool, error) {
+//	    return true, nil
+//	})
+func WithConfirmationProvider(provider ConfirmationProvider) Option {
+	return func(a *Agent) {
+		a.confirmationProvider = provider
+	}
+}
+
 // WithFanOut registers a fan-out tool that spawns multiple sub-agents in parallel.
 // The LLM calls this tool with a list of tasks, and each task is dispatched to a
 // separate execution of the template agent. Results are aggregated into a single response.

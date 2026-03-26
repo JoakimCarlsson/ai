@@ -54,6 +54,7 @@ for event := range myAgent.ContinueStream(ctx, toolResults) {
 | `EventToolUseStop` | `ToolResult` | Tool execution completed with result |
 | `EventThinkingDelta` | `Thinking` | Chain-of-thought reasoning (if model supports it) |
 | `EventHandoff` | `AgentName` | Control transferred to another agent |
+| `EventConfirmationRequired` | `ConfirmationRequest` | Tool awaiting human approval ([details](confirmation.md)) |
 | `EventComplete` | `Response` | Streaming finished — contains the full `ChatResponse` |
 | `EventError` | `Error` | An error occurred during streaming |
 | `EventWarning` | `Error` | A non-fatal warning |
@@ -68,7 +69,8 @@ type ChatEvent struct {
     ToolCall   *message.ToolCall   // EventToolUseStart/Delta
     ToolResult *ToolExecutionResult // EventToolUseStop
     Response   *ChatResponse       // EventComplete
-    Error      error               // EventError, EventWarning
-    AgentName  string              // EventHandoff
+    Error               error                    // EventError, EventWarning
+    AgentName           string                   // EventHandoff
+    ConfirmationRequest *tool.ConfirmationRequest // EventConfirmationRequired
 }
 ```

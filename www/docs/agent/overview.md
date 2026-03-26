@@ -46,6 +46,7 @@ When you call `Chat()`, the agent:
 | `WithState(map)` | Template variables for system prompt | none |
 | `WithInstructionProvider(fn)` | Dynamic system prompt generation | none |
 | `WithHooks(hooks...)` | Add hook interceptors for observation/interception | none |
+| `WithConfirmationProvider(fn)` | Require human approval for sensitive tools | none |
 | `WithSubAgents(configs...)` | Register child agents | none |
 | `WithHandoffs(configs...)` | Register peer agents for transfer | none |
 | `WithFanOut(configs...)` | Register parallel task distribution | none |

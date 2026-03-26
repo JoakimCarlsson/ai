@@ -134,7 +134,11 @@ func TestToolset_FilterByContext(t *testing.T) {
 
 		a := agent.New(llmClient, agent.WithToolsets(filtered))
 
-		ctx := context.WithValue(context.Background(), phaseKey{}, "exploitation")
+		ctx := context.WithValue(
+			context.Background(),
+			phaseKey{},
+			"exploitation",
+		)
 		_, err := a.Chat(ctx, "exploit target")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -146,7 +150,10 @@ func TestToolset_FilterByContext(t *testing.T) {
 			nameSet[n] = true
 		}
 		if !nameSet["scan"] || !nameSet["exploit"] {
-			t.Fatalf("exploitation phase: expected scan and exploit, got %v", names)
+			t.Fatalf(
+				"exploitation phase: expected scan and exploit, got %v",
+				names,
+			)
 		}
 	})
 }
@@ -264,7 +271,11 @@ func TestToolset_FilterChangesBetweenCalls(t *testing.T) {
 		t.Fatalf("call 1: expected [scan], got %v", call1Names)
 	}
 
-	exploitCtx := context.WithValue(context.Background(), phaseKey{}, "exploitation")
+	exploitCtx := context.WithValue(
+		context.Background(),
+		phaseKey{},
+		"exploitation",
+	)
 	_, err = a.Chat(exploitCtx, "exploit")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -401,7 +412,12 @@ func TestToolset_StreamingWithToolset(t *testing.T) {
 	mock := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"stream"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"stream"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "streamed"},

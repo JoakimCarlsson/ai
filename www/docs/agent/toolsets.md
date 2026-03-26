@@ -132,9 +132,27 @@ a := agent.New(llmClient,
 )
 ```
 
+## Confirmation Wrapper
+
+`tool.WithConfirmation` wraps a toolset so every tool in it requires human approval before execution. Pair it with `WithConfirmationProvider` on the agent:
+
+```go
+dangerous := tool.NewToolset("exploits",
+    &SqlInjectionTool{},
+    &BruteForcePasswordTool{},
+)
+
+a := agent.New(llmClient,
+    agent.WithToolsets(tool.WithConfirmation(dangerous)),
+    agent.WithConfirmationProvider(myApprovalHandler),
+)
+```
+
+The original toolset is not modified. See [Tool Confirmation](confirmation.md) for the full protocol.
+
 ## Toolsets and Hooks
 
-Tool confirmation works at the toolset level through the existing [hook system](hooks.md). Since toolsets resolve to `[]tool.BaseTool`, hooks apply to individual tools regardless of how they were grouped:
+Since toolsets resolve to `[]tool.BaseTool`, [hooks](hooks.md) apply to individual tools regardless of how they were grouped:
 
 ```go
 a := agent.New(llmClient,
@@ -142,10 +160,9 @@ a := agent.New(llmClient,
     agent.WithHooks(agent.Hooks{
         PreToolUse: func(ctx context.Context, tc agent.ToolUseContext) (agent.PreToolUseResult, error) {
             if tc.ToolName == "sql_injection" {
-                // Require confirmation for dangerous tools
                 return agent.PreToolUseResult{
                     Action:     agent.HookDeny,
-                    DenyReason: "SQL injection requires manual approval",
+                    DenyReason: "SQL injection blocked by policy",
                 }, nil
             }
             return agent.PreToolUseResult{Action: agent.HookAllow}, nil

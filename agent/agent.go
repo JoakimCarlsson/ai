@@ -14,28 +14,29 @@ import (
 // Agent is an AI assistant that can chat with users, use tools, and maintain memory.
 // Create one using New() with functional options.
 type Agent struct {
-	llm                 llm.LLM
-	memoryLLM           llm.LLM
-	tools               []tool.BaseTool
-	toolsets            []tool.Toolset
-	systemPrompt        string
-	maxIterations       int
-	autoExecute         bool
-	memory              memory.Store
-	memoryID            string
-	autoExtract         bool
-	autoDedup           bool
-	session             session.Session
-	contextStrategy     tokens.Strategy
-	reserveTokens       int64
-	maxContextTokens    int64
-	parallelTools       bool
-	maxParallelTools    int
-	state               map[string]any
-	instructionProvider func(ctx context.Context, state map[string]any) (string, error)
-	handoffs            []HandoffConfig
-	taskManager         *TaskManager
-	hooks               []Hooks
+	llm                  llm.LLM
+	memoryLLM            llm.LLM
+	tools                []tool.BaseTool
+	toolsets             []tool.Toolset
+	systemPrompt         string
+	maxIterations        int
+	autoExecute          bool
+	memory               memory.Store
+	memoryID             string
+	autoExtract          bool
+	autoDedup            bool
+	session              session.Session
+	contextStrategy      tokens.Strategy
+	reserveTokens        int64
+	maxContextTokens     int64
+	parallelTools        bool
+	maxParallelTools     int
+	state                map[string]any
+	instructionProvider  func(ctx context.Context, state map[string]any) (string, error)
+	handoffs             []HandoffConfig
+	taskManager          *TaskManager
+	hooks                []Hooks
+	confirmationProvider ConfirmationProvider
 }
 
 func (a *Agent) getMemoryLLM() llm.LLM {

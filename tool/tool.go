@@ -62,6 +62,10 @@ type Info struct {
 	Parameters map[string]any `json:"parameters"`
 	// Required lists the parameter names that must be provided.
 	Required []string `json:"required"`
+	// RequireConfirmation indicates the tool needs human approval before execution.
+	// When set and a ConfirmationProvider is configured on the agent, the provider
+	// is consulted before Run() is called.
+	RequireConfirmation bool `json:"-"`
 }
 
 // NewInfo builds registration metadata from a name, description, and a struct type used for schema generation.

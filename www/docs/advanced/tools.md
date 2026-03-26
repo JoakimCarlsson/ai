@@ -82,6 +82,33 @@ The agent package provides a generic helper:
 input, err := agent.ParseToolInput[WeatherParams](params.Input)
 ```
 
+## Requiring Confirmation
+
+Set `RequireConfirmation` on a tool's `Info` to require human approval before execution:
+
+```go
+func (t *DeleteTool) Info() tool.Info {
+    info := tool.NewInfo("delete_records", "Delete database records", DeleteParams{})
+    info.RequireConfirmation = true
+    return info
+}
+```
+
+Tools can also request confirmation dynamically from within `Run()`:
+
+```go
+func (t *TransferTool) Run(ctx context.Context, params tool.Call) (tool.Response, error) {
+    if amount > 10000 {
+        if err := tool.RequestConfirmation(ctx, "Large transfer", params); err != nil {
+            return tool.Response{}, err
+        }
+    }
+    // ...
+}
+```
+
+Both require a `ConfirmationProvider` on the agent. See [Tool Confirmation](../agent/confirmation.md) for the full protocol.
+
 ## Toolsets
 
 For grouping, filtering, and dynamically controlling which tools are available at runtime, see [Toolsets](../agent/toolsets.md).
