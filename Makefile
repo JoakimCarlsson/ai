@@ -1,4 +1,4 @@
-.PHONY: install fmt lint test release-tag release-publish
+.PHONY: install fmt lint test release-tag release-publish llms
 
 install:
 	go install github.com/air-verse/air@latest
@@ -22,3 +22,6 @@ release-tag:
 
 release-publish:
 	@scripts/release.sh release --publish
+
+llms:
+	cd cmd/llmstxt && go run . -config ../../www/mkdocs.yml -docs ../../www/docs -out ../../www/docs

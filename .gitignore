@@ -28,3 +28,7 @@ go.work.sum
 
 # MkDocs
 www/site/
+
+# Generated llms.txt files
+www/docs/llms.txt
+www/docs/llms-full.txt
