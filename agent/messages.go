@@ -67,7 +67,7 @@ func (a *Agent) PeekContextMessages(
 		result, err := a.contextStrategy.Fit(ctx, tokens.StrategyInput{
 			Messages:     messages,
 			SystemPrompt: systemPrompt,
-			Tools:        a.getTools(),
+			Tools:        a.getToolsWithContext(ctx),
 			Counter:      counter,
 			MaxTokens:    maxTokens,
 		})
@@ -166,7 +166,7 @@ func (a *Agent) buildMessages(
 		result, err := a.contextStrategy.Fit(ctx, tokens.StrategyInput{
 			Messages:     messages,
 			SystemPrompt: systemPrompt,
-			Tools:        a.getTools(),
+			Tools:        a.getToolsWithContext(ctx),
 			Counter:      counter,
 			MaxTokens:    maxTokens,
 		})
@@ -231,7 +231,7 @@ func (a *Agent) buildContinueMessages(
 		result, err := a.contextStrategy.Fit(ctx, tokens.StrategyInput{
 			Messages:     messages,
 			SystemPrompt: systemPrompt,
-			Tools:        a.getTools(),
+			Tools:        a.getToolsWithContext(ctx),
 			Counter:      counter,
 			MaxTokens:    maxTokens,
 		})

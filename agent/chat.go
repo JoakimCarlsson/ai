@@ -99,7 +99,7 @@ func (a *Agent) runLoop(
 	var turns int
 
 	activeAgent := a
-	allTools := activeAgent.getTools()
+	allTools := activeAgent.getToolsWithContext(ctx)
 	iteration := 0
 
 	maxIter := activeAgent.maxIterations
@@ -241,7 +241,7 @@ func (a *Agent) runLoop(
 					err,
 				)
 			}
-			allTools = activeAgent.getTools()
+			allTools = activeAgent.getToolsWithContext(ctx)
 			iteration = 0
 			continue
 		}
