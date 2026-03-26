@@ -1,4 +1,4 @@
-.PHONY: install fmt lint test
+.PHONY: install fmt lint test release-tag release-publish
 
 install:
 	go install github.com/air-verse/air@latest
@@ -16,3 +16,9 @@ lint:
 
 test:
 	go test -short ./...
+
+release-tag:
+	@scripts/release.sh tag -m $(MODULE) -v $(VERSION) --push
+
+release-publish:
+	@scripts/release.sh release --publish
