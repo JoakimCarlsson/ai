@@ -1,3 +1,4 @@
+// Example prompt demonstrates template processing.
 package main
 
 import (

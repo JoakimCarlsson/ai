@@ -99,7 +99,7 @@ func (t *BPETokenizer) bpeEncode(text string) []int {
 		minRank := -1
 		minIdx := -1
 
-		for i := 0; i < len(pieces)-1; i++ {
+		for i := range len(pieces) - 1 {
 			pair := string(pieces[i]) + string(pieces[i+1])
 			if rank, ok := t.encoder[pair]; ok {
 				if minRank == -1 || rank < minRank {

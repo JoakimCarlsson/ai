@@ -1,16 +1,18 @@
 package model
 
+// Perplexity provider identifier and Sonar model IDs for this registry.
 const (
-	ProviderPerplexity ModelProvider = "perplexity"
+	ProviderPerplexity Provider = "perplexity"
 
-	Sonar             ModelID = "sonar"
-	SonarPro          ModelID = "sonar-pro"
-	SonarReasoning    ModelID = "sonar-reasoning"
-	SonarReasoningPro ModelID = "sonar-reasoning-pro"
-	SonarDeepResearch ModelID = "sonar-deep-research"
+	Sonar             ID = "sonar"
+	SonarPro          ID = "sonar-pro"
+	SonarReasoning    ID = "sonar-reasoning"
+	SonarReasoningPro ID = "sonar-reasoning-pro"
+	SonarDeepResearch ID = "sonar-deep-research"
 )
 
-var PerplexityModels = map[ModelID]Model{
+// PerplexityModels maps Perplexity model IDs to their configurations.
+var PerplexityModels = map[ID]Model{
 	Sonar: {
 		ID:                    Sonar,
 		Name:                  "Sonar",

@@ -1,23 +1,25 @@
 package model
 
+// Anthropic provider identifier and Claude model IDs for this registry.
 const (
-	ProviderAnthropic ModelProvider = "anthropic"
+	ProviderAnthropic Provider = "anthropic"
 
-	Claude35Sonnet ModelID = "claude-3.5-sonnet"
-	Claude3Haiku   ModelID = "claude-3-haiku"
-	Claude35Haiku  ModelID = "claude-3.5-haiku"
-	Claude3Opus    ModelID = "claude-3-opus"
-	Claude4Opus    ModelID = "claude-4-opus"
-	Claude41Opus   ModelID = "claude-4.1-opus"
-	Claude4Sonnet  ModelID = "claude-4-sonnet"
-	Claude45Sonnet ModelID = "claude-4.5-sonnet"
-	Claude45Opus   ModelID = "claude-4.5-opus"
-	Claude45Haiku  ModelID = "claude-4.5-haiku"
-	Claude46Opus   ModelID = "claude-4.6-opus"
-	Claude46Sonnet ModelID = "claude-4.6-sonnet"
+	Claude35Sonnet ID = "claude-3.5-sonnet"
+	Claude3Haiku   ID = "claude-3-haiku"
+	Claude35Haiku  ID = "claude-3.5-haiku"
+	Claude3Opus    ID = "claude-3-opus"
+	Claude4Opus    ID = "claude-4-opus"
+	Claude41Opus   ID = "claude-4.1-opus"
+	Claude4Sonnet  ID = "claude-4-sonnet"
+	Claude45Sonnet ID = "claude-4.5-sonnet"
+	Claude45Opus   ID = "claude-4.5-opus"
+	Claude45Haiku  ID = "claude-4.5-haiku"
+	Claude46Opus   ID = "claude-4.6-opus"
+	Claude46Sonnet ID = "claude-4.6-sonnet"
 )
 
-var AnthropicModels = map[ModelID]Model{
+// AnthropicModels maps Anthropic model IDs to their configurations.
+var AnthropicModels = map[ID]Model{
 	Claude35Sonnet: {
 		ID:                    Claude35Sonnet,
 		Name:                  "Claude 3.5 Sonnet",

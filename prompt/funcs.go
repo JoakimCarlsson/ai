@@ -82,8 +82,8 @@ func toFloat(v any) float64 {
 	}
 }
 
-func replace(old, new, s string) string {
-	return strings.ReplaceAll(s, old, new)
+func replace(old, replacement, s string) string {
+	return strings.ReplaceAll(s, old, replacement)
 }
 
 func join(sep string, v any) string {

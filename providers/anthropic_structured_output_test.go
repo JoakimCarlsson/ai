@@ -79,30 +79,32 @@ func TestBuildOutputConfigNoRequired(t *testing.T) {
 func TestSendWithStructuredOutput(t *testing.T) {
 	jsonResponse := `{"name":"Alice","age":30}`
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var body map[string]any
-		json.NewDecoder(r.Body).Decode(&body)
+	server := httptest.NewServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
 
-		if _, ok := body["output_config"]; !ok {
-			t.Error("expected output_config in request body")
-		}
+			if _, ok := body["output_config"]; !ok {
+				t.Error("expected output_config in request body")
+			}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
-			"id":    "msg_test",
-			"type":  "message",
-			"role":  "assistant",
-			"model": "claude-sonnet-4-5-20250929",
-			"content": []map[string]any{
-				{"type": "text", "text": jsonResponse},
-			},
-			"stop_reason": "end_turn",
-			"usage": map[string]any{
-				"input_tokens":  10,
-				"output_tokens": 20,
-			},
-		})
-	}))
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]any{
+				"id":    "msg_test",
+				"type":  "message",
+				"role":  "assistant",
+				"model": "claude-sonnet-4-5-20250929",
+				"content": []map[string]any{
+					{"type": "text", "text": jsonResponse},
+				},
+				"stop_reason": "end_turn",
+				"usage": map[string]any{
+					"input_tokens":  10,
+					"output_tokens": 20,
+				},
+			})
+		}),
+	)
 	defer server.Close()
 
 	client := &anthropicClient{
@@ -146,26 +148,28 @@ func TestSendWithStructuredOutput(t *testing.T) {
 }
 
 func TestStreamWithStructuredOutput(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/event-stream")
-		w.Header().Set("Cache-Control", "no-cache")
-		flusher := w.(http.Flusher)
+	server := httptest.NewServer(
+		http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "text/event-stream")
+			w.Header().Set("Cache-Control", "no-cache")
+			flusher := w.(http.Flusher)
 
-		events := []string{
-			`event: message_start` + "\n" + `data: {"type":"message_start","message":{"id":"msg_test","type":"message","role":"assistant","model":"claude-sonnet-4-5-20250929","content":[],"stop_reason":null,"usage":{"input_tokens":10,"output_tokens":0}}}`,
-			`event: content_block_start` + "\n" + `data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}`,
-			`event: content_block_delta` + "\n" + `data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"{\"name\":"}}`,
-			`event: content_block_delta` + "\n" + `data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\"Alice\",\"age\":30}"}}`,
-			`event: content_block_stop` + "\n" + `data: {"type":"content_block_stop","index":0}`,
-			`event: message_delta` + "\n" + `data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":15}}`,
-			`event: message_stop` + "\n" + `data: {"type":"message_stop"}`,
-		}
+			events := []string{
+				`event: message_start` + "\n" + `data: {"type":"message_start","message":{"id":"msg_test","type":"message","role":"assistant","model":"claude-sonnet-4-5-20250929","content":[],"stop_reason":null,"usage":{"input_tokens":10,"output_tokens":0}}}`,
+				`event: content_block_start` + "\n" + `data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}`,
+				`event: content_block_delta` + "\n" + `data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"{\"name\":"}}`,
+				`event: content_block_delta` + "\n" + `data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\"Alice\",\"age\":30}"}}`,
+				`event: content_block_stop` + "\n" + `data: {"type":"content_block_stop","index":0}`,
+				`event: message_delta` + "\n" + `data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":15}}`,
+				`event: message_stop` + "\n" + `data: {"type":"message_stop"}`,
+			}
 
-		for _, event := range events {
-			fmt.Fprintf(w, "%s\n\n", event)
-			flusher.Flush()
-		}
-	}))
+			for _, event := range events {
+				fmt.Fprintf(w, "%s\n\n", event)
+				flusher.Flush()
+			}
+		}),
+	)
 	defer server.Close()
 
 	client := &anthropicClient{
@@ -196,7 +200,7 @@ func TestStreamWithStructuredOutput(t *testing.T) {
 	)
 
 	var gotContentDelta bool
-	var finalResponse *LLMResponse
+	var finalResponse *Response
 
 	for event := range eventChan {
 		switch event.Type {
@@ -224,6 +228,10 @@ func TestStreamWithStructuredOutput(t *testing.T) {
 
 	expected := `{"name":"Alice","age":30}`
 	if *finalResponse.StructuredOutput != expected {
-		t.Errorf("expected structured output %q, got %q", expected, *finalResponse.StructuredOutput)
+		t.Errorf(
+			"expected structured output %q, got %q",
+			expected,
+			*finalResponse.StructuredOutput,
+		)
 	}
 }

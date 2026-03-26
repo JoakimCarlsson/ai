@@ -1,0 +1,48 @@
+name: release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+
+      - name: Integration tests
+        run: go test ./tests/integration/ -v -timeout 120s
+
+  goproxy:
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
+      - name: Warm Go module proxy
+        run: GOPROXY=proxy.golang.org go list -m github.com/joakimcarlsson/ai@${{ github.event.release.tag_name }}

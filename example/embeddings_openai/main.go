@@ -1,3 +1,4 @@
+// Example embeddings_openai demonstrates OpenAI text embeddings with custom output dimensions.
 package main
 
 import (

@@ -42,14 +42,14 @@ func newFanOutTool(config FanOutConfig) *fanOutTool {
 	return &fanOutTool{config: config}
 }
 
-func (t *fanOutTool) Info() tool.ToolInfo {
-	return tool.NewToolInfo(t.config.Name, t.config.Description, fanOutInput{})
+func (t *fanOutTool) Info() tool.Info {
+	return tool.NewInfo(t.config.Name, t.config.Description, fanOutInput{})
 }
 
 func (t *fanOutTool) Run(
 	ctx context.Context,
-	params tool.ToolCall,
-) (tool.ToolResponse, error) {
+	params tool.Call,
+) (tool.Response, error) {
 	var input fanOutInput
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
 		return tool.NewTextErrorResponse(
@@ -100,9 +100,9 @@ func (t *fanOutTool) Run(
 
 	var sb strings.Builder
 	for i, r := range results {
-		sb.WriteString(fmt.Sprintf("## Task %d: %s\n", i+1, r.Task))
+		fmt.Fprintf(&sb, "## Task %d: %s\n", i+1, r.Task)
 		if r.IsError {
-			sb.WriteString(fmt.Sprintf("**Error:** %s\n\n", r.Result))
+			fmt.Fprintf(&sb, "**Error:** %s\n\n", r.Result)
 		} else {
 			sb.WriteString(r.Result)
 			sb.WriteString("\n\n")

@@ -1,14 +1,16 @@
 package model
 
+// Qwen provider identifier and model IDs for this registry.
 const (
-	ProviderQwen ModelProvider = "qwen"
+	ProviderQwen Provider = "qwen"
 
-	Qwen3Max       ModelID = "qwen-3-max"
-	Qwen3Coder480B ModelID = "qwen-3-coder-480b"
-	Qwen3CoderPlus ModelID = "qwen-3-coder-plus"
+	Qwen3Max       ID = "qwen-3-max"
+	Qwen3Coder480B ID = "qwen-3-coder-480b"
+	Qwen3CoderPlus ID = "qwen-3-coder-plus"
 )
 
-var QwenModels = map[ModelID]Model{
+// QwenModels maps Qwen model IDs to their configurations.
+var QwenModels = map[ID]Model{
 	Qwen3Max: {
 		ID:                    Qwen3Max,
 		Name:                  "Qwen 3 Max",

@@ -28,7 +28,7 @@ func (s *fileStore) filePath(id string) string {
 	return filepath.Join(s.dir, id+".json")
 }
 
-func (s *fileStore) Exists(ctx context.Context, id string) (bool, error) {
+func (s *fileStore) Exists(_ context.Context, id string) (bool, error) {
 	_, err := os.Stat(s.filePath(id))
 	if err == nil {
 		return true, nil
@@ -39,7 +39,7 @@ func (s *fileStore) Exists(ctx context.Context, id string) (bool, error) {
 	return false, err
 }
 
-func (s *fileStore) Create(ctx context.Context, id string) (Session, error) {
+func (s *fileStore) Create(_ context.Context, id string) (Session, error) {
 	filePath := s.filePath(id)
 	if err := os.WriteFile(filePath, []byte("[]"), 0644); err != nil {
 		return nil, err
@@ -47,11 +47,11 @@ func (s *fileStore) Create(ctx context.Context, id string) (Session, error) {
 	return &fileSession{id: id, filePath: filePath}, nil
 }
 
-func (s *fileStore) Load(ctx context.Context, id string) (Session, error) {
+func (s *fileStore) Load(_ context.Context, id string) (Session, error) {
 	return &fileSession{id: id, filePath: s.filePath(id)}, nil
 }
 
-func (s *fileStore) Delete(ctx context.Context, id string) error {
+func (s *fileStore) Delete(_ context.Context, id string) error {
 	return os.Remove(s.filePath(id))
 }
 
@@ -66,7 +66,7 @@ func (s *fileSession) ID() string {
 }
 
 func (s *fileSession) GetMessages(
-	ctx context.Context,
+	_ context.Context,
 	limit *int,
 ) ([]message.Message, error) {
 	s.mu.RLock()
@@ -89,7 +89,7 @@ func (s *fileSession) GetMessages(
 }
 
 func (s *fileSession) AddMessages(
-	ctx context.Context,
+	_ context.Context,
 	msgs []message.Message,
 ) error {
 	s.mu.Lock()
@@ -105,7 +105,7 @@ func (s *fileSession) AddMessages(
 }
 
 func (s *fileSession) SetMessages(
-	ctx context.Context,
+	_ context.Context,
 	msgs []message.Message,
 ) error {
 	s.mu.Lock()
@@ -115,7 +115,7 @@ func (s *fileSession) SetMessages(
 }
 
 func (s *fileSession) PopMessage(
-	ctx context.Context,
+	context.Context,
 ) (*message.Message, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -139,7 +139,7 @@ func (s *fileSession) PopMessage(
 	return &msg, nil
 }
 
-func (s *fileSession) Clear(ctx context.Context) error {
+func (s *fileSession) Clear(context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

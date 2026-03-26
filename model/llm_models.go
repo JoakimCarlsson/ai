@@ -26,21 +26,20 @@
 //	}
 package model
 
-type (
-	// ModelID is a unique identifier for a specific AI model.
-	ModelID string
-	// ModelProvider identifies the AI service provider (OpenAI, Anthropic, etc.).
-	ModelProvider string
-)
+// ID uniquely identifies an LLM or API model in this package.
+type ID string
+
+// Provider names the vendor or routing backend for a model.
+type Provider string
 
 // Model represents a Large Language Model with its configuration and capabilities.
 type Model struct {
 	// ID is the unique identifier for this model within the library.
-	ID ModelID `json:"id"`
+	ID ID `json:"id"`
 	// Name is the human-readable name of the model.
 	Name string `json:"name"`
 	// Provider identifies which AI service provides this model.
-	Provider ModelProvider `json:"provider"`
+	Provider Provider `json:"provider"`
 	// APIModel is the model identifier used in API requests.
 	APIModel string `json:"api_model"`
 	// CostPer1MIn is the cost per 1 million input tokens in USD.

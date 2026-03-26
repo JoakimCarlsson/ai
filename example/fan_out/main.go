@@ -1,3 +1,4 @@
+// Example fan_out demonstrates parallel sub-agent research via agent fan-out tooling.
 package main
 
 import (

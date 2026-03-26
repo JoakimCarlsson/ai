@@ -46,10 +46,14 @@ func (a *Agent) Continue(
 	opts ...ChatOption,
 ) (*ChatResponse, error) {
 	if a.session == nil {
-		return nil, fmt.Errorf("agent: Continue requires a session to restore conversation state")
+		return nil, fmt.Errorf(
+			"agent: Continue requires a session to restore conversation state",
+		)
 	}
 	if len(toolResults) == 0 {
-		return nil, fmt.Errorf("agent: Continue requires at least one tool result")
+		return nil, fmt.Errorf(
+			"agent: Continue requires at least one tool result",
+		)
 	}
 
 	cfg := applyChatOptions(opts)
@@ -107,13 +111,17 @@ func (a *Agent) runLoop(
 		turnStart := time.Now()
 
 		taskID, agentName, branch := activeAgent.hookContext(ctx)
-		mcResult, err := runPreModelCall(ctx, activeAgent.hooks, ModelCallContext{
-			Messages:  messages,
-			Tools:     allTools,
-			AgentName: agentName,
-			TaskID:    taskID,
-			Branch:    branch,
-		})
+		mcResult, err := runPreModelCall(
+			ctx,
+			activeAgent.hooks,
+			ModelCallContext{
+				Messages:  messages,
+				Tools:     allTools,
+				AgentName: agentName,
+				TaskID:    taskID,
+				Branch:    branch,
+			},
+		)
 		if err != nil {
 			return nil, fmt.Errorf("pre-model-call hook: %w", err)
 		}
@@ -124,14 +132,18 @@ func (a *Agent) runLoop(
 
 		resp, err := activeAgent.llm.SendMessages(ctx, messages, allTools)
 
-		mrResult, hookErr := runPostModelCall(ctx, activeAgent.hooks, ModelResponseContext{
-			Response:  resp,
-			Duration:  time.Since(turnStart),
-			AgentName: agentName,
-			TaskID:    taskID,
-			Branch:    branch,
-			Error:     err,
-		})
+		mrResult, hookErr := runPostModelCall(
+			ctx,
+			activeAgent.hooks,
+			ModelResponseContext{
+				Response:  resp,
+				Duration:  time.Since(turnStart),
+				AgentName: agentName,
+				TaskID:    taskID,
+				Branch:    branch,
+				Error:     err,
+			},
+		)
 		if err != nil {
 			return nil, err
 		}

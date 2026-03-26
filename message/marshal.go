@@ -5,7 +5,8 @@ import (
 	"fmt"
 )
 
-type MessageEnvelope struct {
+// Envelope wraps a typed JSON payload for serialization and routing.
+type Envelope struct {
 	Type string          `json:"type"`
 	Data json.RawMessage `json:"data"`
 }
@@ -31,7 +32,7 @@ func MarshalMessage(msg BaseMessage) ([]byte, error) {
 		return nil, fmt.Errorf("failed to marshal message: %w", err)
 	}
 
-	envelope := MessageEnvelope{
+	envelope := Envelope{
 		Type: msgType,
 		Data: data,
 	}
@@ -41,7 +42,7 @@ func MarshalMessage(msg BaseMessage) ([]byte, error) {
 
 // UnmarshalMessage converts JSON bytes back to a BaseMessage instance
 func UnmarshalMessage(data []byte) (BaseMessage, error) {
-	var envelope MessageEnvelope
+	var envelope Envelope
 	if err := json.Unmarshal(data, &envelope); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal message envelope: %w", err)
 	}
@@ -69,7 +70,7 @@ func UnmarshalMessage(data []byte) (BaseMessage, error) {
 
 // MarshalMessages converts a slice of BaseMessage to JSON bytes
 func MarshalMessages(messages []BaseMessage) ([]byte, error) {
-	envelopes := make([]MessageEnvelope, len(messages))
+	envelopes := make([]Envelope, len(messages))
 
 	for i, msg := range messages {
 		var msgType string
@@ -95,7 +96,7 @@ func MarshalMessages(messages []BaseMessage) ([]byte, error) {
 			)
 		}
 
-		envelopes[i] = MessageEnvelope{
+		envelopes[i] = Envelope{
 			Type: msgType,
 			Data: data,
 		}
@@ -106,7 +107,7 @@ func MarshalMessages(messages []BaseMessage) ([]byte, error) {
 
 // UnmarshalMessages converts JSON bytes back to a slice of BaseMessage
 func UnmarshalMessages(data []byte) ([]BaseMessage, error) {
-	var envelopes []MessageEnvelope
+	var envelopes []Envelope
 	if err := json.Unmarshal(data, &envelopes); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal message envelopes: %w", err)
 	}

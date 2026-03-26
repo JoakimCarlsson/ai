@@ -8,8 +8,10 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+// MCPType describes the transport and connection style for an MCP server (stdio, SSE, or streamable HTTP).
 type MCPType string
 
+// Built-in MCP transport identifiers used in MCPServer configuration.
 const (
 	MCPStdio          MCPType = "stdio"
 	MCPSse            MCPType = "sse"
@@ -22,6 +24,7 @@ type mcpTool struct {
 	mcpConfig MCPServer
 }
 
+// MCPClient is the subset of MCP session operations needed to list and invoke tools.
 type MCPClient interface {
 	ListTools(
 		ctx context.Context,
@@ -34,6 +37,7 @@ type MCPClient interface {
 	Close() error
 }
 
+// MCPServer describes how to launch or connect to a single MCP server instance.
 type MCPServer struct {
 	Command string            `json:"command"`
 	Env     []string          `json:"env"`
@@ -43,7 +47,7 @@ type MCPServer struct {
 	Headers map[string]string `json:"headers"`
 }
 
-func (b *mcpTool) Info() ToolInfo {
+func (b *mcpTool) Info() Info {
 	params := make(map[string]any)
 	required := []string{}
 
@@ -62,7 +66,7 @@ func (b *mcpTool) Info() ToolInfo {
 		}
 	}
 
-	return ToolInfo{
+	return Info{
 		Name:        fmt.Sprintf("%s_%s", b.mcpName, b.tool.Name),
 		Description: b.tool.Description,
 		Parameters:  params,
@@ -75,7 +79,7 @@ func runTool(
 	c MCPClient,
 	toolName string,
 	input string,
-) (ToolResponse, error) {
+) (Response, error) {
 	var args map[string]any
 	if err := json.Unmarshal([]byte(input), &args); err != nil {
 		return NewTextErrorResponse(
@@ -107,8 +111,8 @@ func runTool(
 
 func (b *mcpTool) Run(
 	ctx context.Context,
-	params ToolCall,
-) (ToolResponse, error) {
+	params Call,
+) (Response, error) {
 	c, err := pool.getClient(ctx, b.mcpName, b.mcpConfig)
 	if err != nil {
 		return NewTextErrorResponse(err.Error()), nil

@@ -8,6 +8,7 @@ import (
 	"google.golang.org/genai"
 )
 
+// GeminiClient implements image generation using the Google Gemini API.
 type GeminiClient struct {
 	client  *genai.Client
 	options imageGenerationClientOptions

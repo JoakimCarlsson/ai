@@ -9,11 +9,11 @@ import (
 	"github.com/joakimcarlsson/ai/tool"
 )
 
-// AgentOption is a functional option for configuring an Agent.
-type AgentOption func(*Agent)
+// Option is a functional option for configuring an Agent.
+type Option func(*Agent)
 
 // WithSystemPrompt sets the system prompt that defines the agent's behavior and personality.
-func WithSystemPrompt(prompt string) AgentOption {
+func WithSystemPrompt(prompt string) Option {
 	return func(a *Agent) {
 		a.systemPrompt = prompt
 	}
@@ -21,7 +21,7 @@ func WithSystemPrompt(prompt string) AgentOption {
 
 // WithTools adds tools that the agent can use during conversations.
 // Tools are executed automatically when the LLM requests them (unless WithAutoExecute is false).
-func WithTools(tools ...tool.BaseTool) AgentOption {
+func WithTools(tools ...tool.BaseTool) Option {
 	return func(a *Agent) {
 		a.tools = append(a.tools, tools...)
 	}
@@ -29,15 +29,15 @@ func WithTools(tools ...tool.BaseTool) AgentOption {
 
 // WithMaxIterations sets the maximum number of tool execution iterations per chat.
 // Default is 10. Prevents infinite loops when tools keep triggering more tool calls.
-func WithMaxIterations(max int) AgentOption {
+func WithMaxIterations(maxIter int) Option {
 	return func(a *Agent) {
-		a.maxIterations = max
+		a.maxIterations = maxIter
 	}
 }
 
 // WithAutoExecute controls whether tools are automatically executed when requested by the LLM.
 // Default is true. Set to false for manual tool execution control.
-func WithAutoExecute(auto bool) AgentOption {
+func WithAutoExecute(auto bool) Option {
 	return func(a *Agent) {
 		a.autoExecute = auto
 	}
@@ -53,7 +53,7 @@ func WithMemory(
 	id string,
 	store memory.Store,
 	opts ...memory.Option,
-) AgentOption {
+) Option {
 	return func(a *Agent) {
 		a.memoryID = id
 		a.memory = store
@@ -69,7 +69,7 @@ func WithMemory(
 // WithSession configures the agent with a session for conversation persistence.
 // The session is automatically loaded if it exists, or created if it doesn't.
 // If not called, the agent operates in stateless mode (no conversation history).
-func WithSession(id string, store session.Store) AgentOption {
+func WithSession(id string, store session.Store) Option {
 	return func(a *Agent) {
 		if store == nil {
 			return
@@ -107,7 +107,7 @@ func WithSession(id string, store session.Store) AgentOption {
 func WithContextStrategy(
 	strategy tokens.Strategy,
 	maxContextTokens int64,
-) AgentOption {
+) Option {
 	return func(a *Agent) {
 		a.contextStrategy = strategy
 		a.maxContextTokens = maxContextTokens
@@ -118,7 +118,7 @@ func WithContextStrategy(
 // By default, tools are executed in parallel for better performance.
 // Use this option when tools have dependencies on each other or when
 // you need deterministic execution order.
-func WithSequentialToolExecution() AgentOption {
+func WithSequentialToolExecution() Option {
 	return func(a *Agent) {
 		a.parallelTools = false
 	}
@@ -127,10 +127,10 @@ func WithSequentialToolExecution() AgentOption {
 // WithMaxParallelTools sets the maximum number of tools that can execute concurrently.
 // Default is 0 (unlimited). Set to a positive number to limit concurrency.
 // This is useful when tools consume significant resources (e.g., API rate limits).
-func WithMaxParallelTools(max int) AgentOption {
+func WithMaxParallelTools(maxTools int) Option {
 	return func(a *Agent) {
-		if max > 0 {
-			a.maxParallelTools = max
+		if maxTools > 0 {
+			a.maxParallelTools = maxTools
 		}
 	}
 }
@@ -138,7 +138,7 @@ func WithMaxParallelTools(max int) AgentOption {
 // WithState sets the state map for template variable substitution in the system prompt.
 // Use Go text/template syntax like {{.name}} in the system prompt, and they will be
 // replaced with values from this state map. Supports conditionals, loops, and complex data.
-func WithState(state map[string]any) AgentOption {
+func WithState(state map[string]any) Option {
 	return func(a *Agent) {
 		a.state = state
 	}
@@ -150,7 +150,7 @@ type InstructionProvider func(ctx context.Context, state map[string]any) (string
 // WithInstructionProvider sets a dynamic instruction provider that generates the system
 // prompt at runtime. When set, this takes precedence over the static system prompt.
 // The provider receives the current context and state map.
-func WithInstructionProvider(provider InstructionProvider) AgentOption {
+func WithInstructionProvider(provider InstructionProvider) Option {
 	return func(a *Agent) {
 		a.instructionProvider = provider
 	}
@@ -169,7 +169,7 @@ func WithInstructionProvider(provider InstructionProvider) AgentOption {
 //
 // If the parent has hooks set, they are automatically propagated to sub-agents
 // that do not already have their own hooks.
-func WithSubAgents(configs ...SubAgentConfig) AgentOption {
+func WithSubAgents(configs ...SubAgentConfig) Option {
 	return func(a *Agent) {
 		for _, cfg := range configs {
 			if len(a.hooks) > 0 && len(cfg.Agent.hooks) == 0 {
@@ -189,7 +189,7 @@ func WithSubAgents(configs ...SubAgentConfig) AgentOption {
 // WithHooks adds hook interceptors to the agent's execution pipeline.
 // Hooks can observe, modify, or block tool calls and model interactions.
 // Multiple calls append to the chain. Hooks run in registration order.
-func WithHooks(hooks ...Hooks) AgentOption {
+func WithHooks(hooks ...Hooks) Option {
 	return func(a *Agent) {
 		a.hooks = append(a.hooks, hooks...)
 		if a.taskManager != nil {
@@ -203,7 +203,7 @@ func WithHooks(hooks ...Hooks) AgentOption {
 // The new agent inherits the full message history but uses its own system prompt and tools.
 //
 // Handoff agents can themselves have handoffs, enabling chains like A -> B -> C.
-func WithHandoffs(configs ...HandoffConfig) AgentOption {
+func WithHandoffs(configs ...HandoffConfig) Option {
 	return func(a *Agent) {
 		a.handoffs = append(a.handoffs, configs...)
 		for _, cfg := range configs {
@@ -217,7 +217,7 @@ func WithHandoffs(configs ...HandoffConfig) AgentOption {
 // separate execution of the template agent. Results are aggregated into a single response.
 //
 // Note: The template agent should not use sessions, as concurrent Chat() calls would race.
-func WithFanOut(configs ...FanOutConfig) AgentOption {
+func WithFanOut(configs ...FanOutConfig) Option {
 	return func(a *Agent) {
 		for _, cfg := range configs {
 			a.tools = append(a.tools, newFanOutTool(cfg))

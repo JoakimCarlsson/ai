@@ -1,3 +1,4 @@
+// Example context_truncate demonstrates truncating conversation history to stay within token limits.
 package main
 
 import (

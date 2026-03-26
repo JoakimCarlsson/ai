@@ -11,6 +11,7 @@ import (
 	"github.com/openai/openai-go/option"
 )
 
+// OpenAIClient implements image generation using the OpenAI API.
 type OpenAIClient struct {
 	client     openai.Client
 	options    imageGenerationClientOptions

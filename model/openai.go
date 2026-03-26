@@ -1,51 +1,53 @@
 package model
 
+// OpenAI provider plus chat, embedding, and image model IDs for this registry.
 const (
-	ProviderOpenAI ModelProvider = "openai"
+	ProviderOpenAI Provider = "openai"
 
-	GPT41              ModelID = "gpt-4.1"
-	GPT41Mini          ModelID = "gpt-4.1-mini"
-	GPT41Nano          ModelID = "gpt-4.1-nano"
-	GPT4o              ModelID = "gpt-4o"
-	GPT4oMini          ModelID = "gpt-4o-mini"
-	O1                 ModelID = "o1"
-	O1Pro              ModelID = "o1-pro"
-	O1Mini             ModelID = "o1-mini"
-	O3                 ModelID = "o3"
-	O3Pro              ModelID = "o3-pro"
-	O3Mini             ModelID = "o3-mini"
-	O4Mini             ModelID = "o4-mini"
-	GPT5               ModelID = "gpt-5"
-	GPT5Mini           ModelID = "gpt-5-mini"
-	GPT5Nano           ModelID = "gpt-5-nano"
-	GPT51              ModelID = "gpt-5.1"
-	GPT51ChatLatest    ModelID = "gpt-5.1-chat-latest"
-	GPT5ChatLatest     ModelID = "gpt-5-chat-latest"
-	GPT51Codex         ModelID = "gpt-5.1-codex"
-	GPT5Codex          ModelID = "gpt-5-codex"
-	GPT51CodexMini     ModelID = "gpt-5.1-codex-mini"
-	GPT5Pro            ModelID = "gpt-5-pro"
-	GPT52              ModelID = "gpt-5.2"
-	GPT52Pro           ModelID = "gpt-5.2-pro"
-	GPT52Instant       ModelID = "gpt-5.2-chat-latest"
-	GPT52Codex         ModelID = "gpt-5.2-codex"
-	GPT53Codex         ModelID = "gpt-5.3-codex"
-	GPT51CodexMax      ModelID = "gpt-5.1-codex-max"
-	O3DeepResearch     ModelID = "o3-deep-research"
-	O4MiniDeepResearch ModelID = "o4-mini-deep-research"
+	GPT41              ID = "gpt-4.1"
+	GPT41Mini          ID = "gpt-4.1-mini"
+	GPT41Nano          ID = "gpt-4.1-nano"
+	GPT4o              ID = "gpt-4o"
+	GPT4oMini          ID = "gpt-4o-mini"
+	O1                 ID = "o1"
+	O1Pro              ID = "o1-pro"
+	O1Mini             ID = "o1-mini"
+	O3                 ID = "o3"
+	O3Pro              ID = "o3-pro"
+	O3Mini             ID = "o3-mini"
+	O4Mini             ID = "o4-mini"
+	GPT5               ID = "gpt-5"
+	GPT5Mini           ID = "gpt-5-mini"
+	GPT5Nano           ID = "gpt-5-nano"
+	GPT51              ID = "gpt-5.1"
+	GPT51ChatLatest    ID = "gpt-5.1-chat-latest"
+	GPT5ChatLatest     ID = "gpt-5-chat-latest"
+	GPT51Codex         ID = "gpt-5.1-codex"
+	GPT5Codex          ID = "gpt-5-codex"
+	GPT51CodexMini     ID = "gpt-5.1-codex-mini"
+	GPT5Pro            ID = "gpt-5-pro"
+	GPT52              ID = "gpt-5.2"
+	GPT52Pro           ID = "gpt-5.2-pro"
+	GPT52Instant       ID = "gpt-5.2-chat-latest"
+	GPT52Codex         ID = "gpt-5.2-codex"
+	GPT53Codex         ID = "gpt-5.3-codex"
+	GPT51CodexMax      ID = "gpt-5.1-codex-max"
+	O3DeepResearch     ID = "o3-deep-research"
+	O4MiniDeepResearch ID = "o4-mini-deep-research"
 
-	TextEmbedding3Large ModelID = "text-embedding-3-large"
-	TextEmbedding3Small ModelID = "text-embedding-3-small"
-	AdaEmbedding002     ModelID = "text-embedding-ada-002"
+	TextEmbedding3Large ID = "text-embedding-3-large"
+	TextEmbedding3Small ID = "text-embedding-3-small"
+	AdaEmbedding002     ID = "text-embedding-ada-002"
 
-	DALLE2        ModelID = "dall-e-2"
-	DALLE3        ModelID = "dall-e-3"
-	GPTImage1     ModelID = "gpt-image-1"
-	GPTImage15    ModelID = "gpt-image-1.5"
-	GPTImage1Mini ModelID = "gpt-image-1-mini"
+	DALLE2        ID = "dall-e-2"
+	DALLE3        ID = "dall-e-3"
+	GPTImage1     ID = "gpt-image-1"
+	GPTImage15    ID = "gpt-image-1.5"
+	GPTImage1Mini ID = "gpt-image-1-mini"
 )
 
-var OpenAIModels = map[ModelID]Model{
+// OpenAIModels maps OpenAI chat model IDs to their configurations.
+var OpenAIModels = map[ID]Model{
 	GPT41: {
 		ID:                    GPT41,
 		Name:                  "GPT 4.1",
@@ -492,7 +494,8 @@ var OpenAIModels = map[ModelID]Model{
 	},
 }
 
-var OpenAIEmbeddingModels = map[ModelID]EmbeddingModel{
+// OpenAIEmbeddingModels maps OpenAI embedding model IDs to their configurations.
+var OpenAIEmbeddingModels = map[ID]EmbeddingModel{
 	TextEmbedding3Large: {
 		ID:                  TextEmbedding3Large,
 		Name:                "Text Embedding 3 Large",
@@ -531,7 +534,8 @@ var OpenAIEmbeddingModels = map[ModelID]EmbeddingModel{
 	},
 }
 
-var OpenAIImageGenerationModels = map[ModelID]ImageGenerationModel{
+// OpenAIImageGenerationModels maps OpenAI image generation model IDs to their configurations.
+var OpenAIImageGenerationModels = map[ID]ImageGenerationModel{
 	DALLE2: {
 		ID:       DALLE2,
 		Name:     "DALL-E 2",

@@ -27,6 +27,7 @@ type openaiOptions struct {
 	parallelToolCalls *bool
 }
 
+// OpenAIOption configures optional settings for OpenAI clients.
 type OpenAIOption func(*openaiOptions)
 
 type openaiClient struct {
@@ -35,7 +36,8 @@ type openaiClient struct {
 	client          openai.Client
 }
 
-type OpenAIClient LLMClient
+// OpenAIClient is the OpenAI Client implementation type.
+type OpenAIClient Client
 
 func newOpenAIClient(opts llmClientOptions) OpenAIClient {
 	openaiOpts := openaiOptions{
@@ -281,7 +283,7 @@ func (o *openaiClient) send(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
-) (response *LLMResponse, err error) {
+) (response *Response, err error) {
 	params := o.preparedParams(
 		o.convertMessages(messages),
 		o.convertTools(tools),
@@ -293,7 +295,7 @@ func (o *openaiClient) send(
 	return ExecuteWithRetry(
 		ctx,
 		OpenAIRetryConfig(),
-		func() (*LLMResponse, error) {
+		func() (*Response, error) {
 			openaiResponse, err := o.client.Chat.Completions.New(ctx, params)
 			if err != nil {
 				return nil, err
@@ -319,7 +321,7 @@ func (o *openaiClient) send(
 				finishReason = message.FinishReasonToolUse
 			}
 
-			return &LLMResponse{
+			return &Response{
 				Content:      content,
 				ToolCalls:    toolCalls,
 				Usage:        o.usage(*openaiResponse),
@@ -333,7 +335,7 @@ func (o *openaiClient) stream(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
-) <-chan LLMEvent {
+) <-chan Event {
 	params := o.preparedParams(
 		o.convertMessages(messages),
 		o.convertTools(tools),
@@ -345,7 +347,7 @@ func (o *openaiClient) stream(
 	ctx, cancel := withTimeout(ctx, o.providerOptions.timeout)
 	defer cancel()
 
-	eventChan := make(chan LLMEvent)
+	eventChan := make(chan Event)
 
 	go func() {
 		defer close(eventChan)
@@ -363,7 +365,7 @@ func (o *openaiClient) stream(
 
 				for _, choice := range chunk.Choices {
 					if choice.Delta.Content != "" {
-						eventChan <- LLMEvent{
+						eventChan <- Event{
 							Type:    types.EventContentDelta,
 							Content: choice.Delta.Content,
 						}
@@ -374,14 +376,14 @@ func (o *openaiClient) stream(
 
 			err := openaiStream.Err()
 			if err == nil || errors.Is(err, io.EOF) {
-				if len(acc.ChatCompletion.Choices) == 0 {
-					eventChan <- LLMEvent{Type: types.EventError, Error: errors.New("no response choices in stream")}
+				if len(acc.Choices) == 0 {
+					eventChan <- Event{Type: types.EventError, Error: errors.New("no response choices in stream")}
 					return errors.New("no response choices in stream")
 				}
 				finishReason := o.finishReason(
-					string(acc.ChatCompletion.Choices[0].FinishReason),
+					string(acc.Choices[0].FinishReason),
 				)
-				if len(acc.ChatCompletion.Choices[0].Message.ToolCalls) > 0 {
+				if len(acc.Choices[0].Message.ToolCalls) > 0 {
 					toolCalls = append(
 						toolCalls,
 						o.toolCalls(acc.ChatCompletion)...)
@@ -390,9 +392,9 @@ func (o *openaiClient) stream(
 					finishReason = message.FinishReasonToolUse
 				}
 
-				eventChan <- LLMEvent{
+				eventChan <- Event{
 					Type: types.EventComplete,
-					Response: &LLMResponse{
+					Response: &Response{
 						Content:      currentContent,
 						ToolCalls:    toolCalls,
 						Usage:        o.usage(acc.ChatCompletion),
@@ -514,7 +516,7 @@ func (o *openaiClient) sendWithStructuredOutput(
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
-) (response *LLMResponse, err error) {
+) (response *Response, err error) {
 	params := o.preparedParams(
 		o.convertMessages(messages),
 		o.convertTools(tools),
@@ -545,7 +547,7 @@ func (o *openaiClient) sendWithStructuredOutput(
 	return ExecuteWithRetry(
 		ctx,
 		OpenAIRetryConfig(),
-		func() (*LLMResponse, error) {
+		func() (*Response, error) {
 			openaiResponse, err := o.client.Chat.Completions.New(ctx, params)
 			if err != nil {
 				return nil, err
@@ -571,7 +573,7 @@ func (o *openaiClient) sendWithStructuredOutput(
 				finishReason = message.FinishReasonToolUse
 			}
 
-			return &LLMResponse{
+			return &Response{
 				Content:                    content,
 				ToolCalls:                  toolCalls,
 				Usage:                      o.usage(*openaiResponse),
@@ -588,7 +590,7 @@ func (o *openaiClient) streamWithStructuredOutput(
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
-) <-chan LLMEvent {
+) <-chan Event {
 	params := o.preparedParams(
 		o.convertMessages(messages),
 		o.convertTools(tools),
@@ -620,7 +622,7 @@ func (o *openaiClient) streamWithStructuredOutput(
 	ctx, cancel := withTimeout(ctx, o.providerOptions.timeout)
 	defer cancel()
 
-	eventChan := make(chan LLMEvent)
+	eventChan := make(chan Event)
 
 	go func() {
 		defer close(eventChan)
@@ -638,7 +640,7 @@ func (o *openaiClient) streamWithStructuredOutput(
 
 				for _, choice := range chunk.Choices {
 					if choice.Delta.Content != "" {
-						eventChan <- LLMEvent{
+						eventChan <- Event{
 							Type:    types.EventContentDelta,
 							Content: choice.Delta.Content,
 						}
@@ -649,14 +651,14 @@ func (o *openaiClient) streamWithStructuredOutput(
 
 			err := openaiStream.Err()
 			if err == nil || errors.Is(err, io.EOF) {
-				if len(acc.ChatCompletion.Choices) == 0 {
-					eventChan <- LLMEvent{Type: types.EventError, Error: errors.New("no response choices in stream")}
+				if len(acc.Choices) == 0 {
+					eventChan <- Event{Type: types.EventError, Error: errors.New("no response choices in stream")}
 					return errors.New("no response choices in stream")
 				}
 				finishReason := o.finishReason(
-					string(acc.ChatCompletion.Choices[0].FinishReason),
+					string(acc.Choices[0].FinishReason),
 				)
-				if len(acc.ChatCompletion.Choices[0].Message.ToolCalls) > 0 {
+				if len(acc.Choices[0].Message.ToolCalls) > 0 {
 					toolCalls = append(
 						toolCalls,
 						o.toolCalls(acc.ChatCompletion)...)
@@ -665,9 +667,9 @@ func (o *openaiClient) streamWithStructuredOutput(
 					finishReason = message.FinishReasonToolUse
 				}
 
-				eventChan <- LLMEvent{
+				eventChan <- Event{
 					Type: types.EventComplete,
-					Response: &LLMResponse{
+					Response: &Response{
 						Content:                    currentContent,
 						ToolCalls:                  toolCalls,
 						Usage:                      o.usage(acc.ChatCompletion),

@@ -1,3 +1,4 @@
+// Example background_agents demonstrates orchestrating sub-agents that run research tasks in the background.
 package main
 
 import (
@@ -69,9 +70,9 @@ func main() {
 	fmt.Println()
 }
 
-func truncate(s string, max int) string {
-	if len(s) <= max {
+func truncate(s string, maxLen int) string {
+	if len(s) <= maxLen {
 		return s
 	}
-	return s[:max] + "..."
+	return s[:maxLen] + "..."
 }

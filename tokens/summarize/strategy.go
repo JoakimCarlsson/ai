@@ -109,15 +109,15 @@ func (s *summarizeStrategy) generateSummary(
 ) (string, error) {
 	var sb strings.Builder
 	for _, msg := range msgs {
-		sb.WriteString(fmt.Sprintf("[%s]: ", msg.Role))
+		fmt.Fprintf(&sb, "[%s]: ", msg.Role)
 		for _, part := range msg.Parts {
 			switch p := part.(type) {
 			case message.TextContent:
 				sb.WriteString(p.Text)
 			case message.ToolCall:
-				sb.WriteString(fmt.Sprintf("[Tool call: %s]", p.Name))
+				fmt.Fprintf(&sb, "[Tool call: %s]", p.Name)
 			case message.ToolResult:
-				sb.WriteString(fmt.Sprintf("[Tool result: %s]", p.Name))
+				fmt.Fprintf(&sb, "[Tool result: %s]", p.Name)
 			}
 		}
 		sb.WriteString("\n\n")

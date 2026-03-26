@@ -1,3 +1,4 @@
+// Example image_generation_openai demonstrates generating images with OpenAI DALL·E.
 package main
 
 import (

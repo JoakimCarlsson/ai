@@ -1,3 +1,4 @@
+// Example multimodal_embeddings demonstrates generating embeddings from combined text and image inputs.
 package main
 
 import (

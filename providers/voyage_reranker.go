@@ -16,6 +16,7 @@ type voyageRerankerOptions struct {
 	truncation *bool
 }
 
+// VoyageRerankerOption configures optional settings for Voyage reranker clients.
 type VoyageRerankerOption func(*voyageRerankerOptions)
 
 type voyageRerankerClient struct {
@@ -25,6 +26,7 @@ type voyageRerankerClient struct {
 	baseURL         string
 }
 
+// VoyageRerankerClient is the Voyage AI RerankerClient implementation type.
 type VoyageRerankerClient RerankerClient
 
 type voyageRerankerRequest struct {
@@ -154,18 +156,21 @@ func (v *voyageRerankerClient) rerank(
 	}, nil
 }
 
+// WithVoyageTopK limits the number of top results returned by the Voyage reranker.
 func WithVoyageTopK(topK int) VoyageRerankerOption {
 	return func(options *voyageRerankerOptions) {
 		options.topK = &topK
 	}
 }
 
+// WithVoyageReturnDocuments controls whether documents are included in reranker results.
 func WithVoyageReturnDocuments(returnDocs bool) VoyageRerankerOption {
 	return func(options *voyageRerankerOptions) {
 		options.returnDocs = returnDocs
 	}
 }
 
+// WithVoyageRerankerTruncation enables or disables input truncation for the Voyage reranker.
 func WithVoyageRerankerTruncation(truncation bool) VoyageRerankerOption {
 	return func(options *voyageRerankerOptions) {
 		options.truncation = &truncation

@@ -1,3 +1,4 @@
+// Example embeddings_advanced demonstrates Voyage embedding options such as dimensions, input type, and output dtype.
 package main
 
 import (

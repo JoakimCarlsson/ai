@@ -98,8 +98,10 @@ type rerankerClientOptions struct {
 	voyageOptions []VoyageOption
 }
 
+// RerankerClientOption configures a reranker client.
 type RerankerClientOption func(*rerankerClientOptions)
 
+// RerankerClient is the internal interface implemented by provider-specific reranker clients.
 type RerankerClient interface {
 	rerank(
 		ctx context.Context,
@@ -117,7 +119,7 @@ type baseReranker[C RerankerClient] struct {
 // Currently only Voyage AI is supported as a reranker provider.
 // Use WithModel() to specify the reranker model and WithAPIKey() for authentication.
 func NewReranker(
-	provider model.ModelProvider,
+	provider model.Provider,
 	opts ...RerankerClientOption,
 ) (Reranker, error) {
 	clientOptions := rerankerClientOptions{
@@ -127,8 +129,7 @@ func NewReranker(
 		o(&clientOptions)
 	}
 
-	switch provider {
-	case model.ProviderVoyage:
+	if provider == model.ProviderVoyage {
 		return &baseReranker[VoyageClient]{
 			options: clientOptions,
 			client:  newVoyageClient(clientOptions),

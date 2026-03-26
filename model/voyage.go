@@ -1,47 +1,49 @@
 package model
 
+// Voyage provider identifier plus embedding and reranker model IDs for this registry.
 const (
-	ProviderVoyage ModelProvider = "voyage"
+	ProviderVoyage Provider = "voyage"
 
-	Voyage35       ModelID = "voyage-3.5"
-	Voyage35Lite   ModelID = "voyage-3.5-lite"
-	Voyage3Large   ModelID = "voyage-3-large"
-	VoyageCode3    ModelID = "voyage-code-3"
-	VoyageContext3 ModelID = "voyage-context-3"
+	Voyage35       ID = "voyage-3.5"
+	Voyage35Lite   ID = "voyage-3.5-lite"
+	Voyage3Large   ID = "voyage-3-large"
+	VoyageCode3    ID = "voyage-code-3"
+	VoyageContext3 ID = "voyage-context-3"
 
-	Rerank25     ModelID = "rerank-2.5"
-	Rerank25Lite ModelID = "rerank-2.5-lite"
-	Rerank2      ModelID = "rerank-2"
-	Rerank2Lite  ModelID = "rerank-2-lite"
-	Rerank1      ModelID = "rerank-1"
-	RerankLite1  ModelID = "rerank-lite-1"
+	Rerank25     ID = "rerank-2.5"
+	Rerank25Lite ID = "rerank-2.5-lite"
+	Rerank2      ID = "rerank-2"
+	Rerank2Lite  ID = "rerank-2-lite"
+	Rerank1      ID = "rerank-1"
+	RerankLite1  ID = "rerank-lite-1"
 
-	VoyageFinance2 ModelID = "voyage-finance-2"
-	VoyageLaw2     ModelID = "voyage-law-2"
-	VoyageCode2    ModelID = "voyage-code-2"
+	VoyageFinance2 ID = "voyage-finance-2"
+	VoyageLaw2     ID = "voyage-law-2"
+	VoyageCode2    ID = "voyage-code-2"
 
-	Voyage3              ModelID = "voyage-3"
-	Voyage3Lite          ModelID = "voyage-3-lite"
-	VoyageMultilingual2  ModelID = "voyage-multilingual-2"
-	VoyageLarge2Instruct ModelID = "voyage-large-2-instruct"
-	VoyageLarge2         ModelID = "voyage-large-2"
-	Voyage2              ModelID = "voyage-2"
-	VoyageMulti3         ModelID = "voyage-multimodal-3"
+	Voyage3              ID = "voyage-3"
+	Voyage3Lite          ID = "voyage-3-lite"
+	VoyageMultilingual2  ID = "voyage-multilingual-2"
+	VoyageLarge2Instruct ID = "voyage-large-2-instruct"
+	VoyageLarge2         ID = "voyage-large-2"
+	Voyage2              ID = "voyage-2"
+	VoyageMulti3         ID = "voyage-multimodal-3"
 
-	VoyageLite02Instruct ModelID = "voyage-lite-02-instruct"
-	Voyage02             ModelID = "voyage-02"
-	Voyage01             ModelID = "voyage-01"
-	VoyageLite01         ModelID = "voyage-lite-01"
-	VoyageLite01Instruct ModelID = "voyage-lite-01-instruct"
+	VoyageLite02Instruct ID = "voyage-lite-02-instruct"
+	Voyage02             ID = "voyage-02"
+	Voyage01             ID = "voyage-01"
+	VoyageLite01         ID = "voyage-lite-01"
+	VoyageLite01Instruct ID = "voyage-lite-01-instruct"
 
-	Voyage4Large  ModelID = "voyage-4-large"
-	Voyage4       ModelID = "voyage-4"
-	Voyage4Lite   ModelID = "voyage-4-lite"
-	Voyage4Nano   ModelID = "voyage-4-nano"
-	VoyageMulti35 ModelID = "voyage-multimodal-3.5"
+	Voyage4Large  ID = "voyage-4-large"
+	Voyage4       ID = "voyage-4"
+	Voyage4Lite   ID = "voyage-4-lite"
+	Voyage4Nano   ID = "voyage-4-nano"
+	VoyageMulti35 ID = "voyage-multimodal-3.5"
 )
 
-var VoyageEmbeddingModels = map[ModelID]EmbeddingModel{
+// VoyageEmbeddingModels maps Voyage embedding model IDs to their configurations.
+var VoyageEmbeddingModels = map[ID]EmbeddingModel{
 	Voyage3Large: {
 		ID:                  Voyage3Large,
 		Name:                "Voyage 3 Large",
@@ -354,7 +356,8 @@ var VoyageEmbeddingModels = map[ModelID]EmbeddingModel{
 	},
 }
 
-var VoyageRerankerModels = map[ModelID]RerankerModel{
+// VoyageRerankerModels maps Voyage reranker model IDs to their configurations.
+var VoyageRerankerModels = map[ID]RerankerModel{
 	Rerank25: {
 		ID:              Rerank25,
 		Name:            "Rerank 2.5",

@@ -3,11 +3,11 @@ package model
 // EmbeddingModel represents an embedding model with its configuration and capabilities.
 type EmbeddingModel struct {
 	// ID is the unique identifier for this embedding model.
-	ID ModelID `json:"id"`
+	ID ID `json:"id"`
 	// Name is the human-readable name of the embedding model.
 	Name string `json:"name"`
 	// Provider identifies which AI service provides this model.
-	Provider ModelProvider `json:"provider"`
+	Provider Provider `json:"provider"`
 	// APIModel is the model identifier used in API requests.
 	APIModel string `json:"api_model"`
 	// CostPer1MTokens is the cost per 1 million tokens in USD.
@@ -29,11 +29,11 @@ type EmbeddingModel struct {
 // RerankerModel represents a document reranking model with its configuration and capabilities.
 type RerankerModel struct {
 	// ID is the unique identifier for this reranker model.
-	ID ModelID `json:"id"`
+	ID ID `json:"id"`
 	// Name is the human-readable name of the reranker model.
 	Name string `json:"name"`
 	// Provider identifies which AI service provides this model.
-	Provider ModelProvider `json:"provider"`
+	Provider Provider `json:"provider"`
 	// APIModel is the model identifier used in API requests.
 	APIModel string `json:"api_model"`
 	// CostPer1MTokens is the cost per 1 million tokens in USD.

@@ -151,7 +151,7 @@ func (s *fileStore) Search(
 	}
 
 	results := make([]Entry, limit)
-	for i := 0; i < limit; i++ {
+	for i := range limit {
 		results[i] = scoredEntries[i].entry.Entry
 		results[i].Score = scoredEntries[i].score
 	}
@@ -160,7 +160,7 @@ func (s *fileStore) Search(
 }
 
 func (s *fileStore) GetAll(
-	ctx context.Context,
+	_ context.Context,
 	id string,
 	limit int,
 ) ([]Entry, error) {
@@ -176,14 +176,14 @@ func (s *fileStore) GetAll(
 	}
 
 	results := make([]Entry, limit)
-	for i := 0; i < limit; i++ {
+	for i := range limit {
 		results[i] = entries[i].Entry
 	}
 
 	return results, nil
 }
 
-func (s *fileStore) Delete(ctx context.Context, memoryID string) error {
+func (s *fileStore) Delete(_ context.Context, memoryID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

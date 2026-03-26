@@ -1,3 +1,4 @@
+// Example contextualized_embeddings demonstrates document-aware contextualized chunk embeddings.
 package main
 
 import (

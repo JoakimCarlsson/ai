@@ -16,6 +16,7 @@ func KeepRecent(n int) Option {
 	}
 }
 
+// Apply creates a Config from the given options.
 func Apply(opts ...Option) *Config {
 	cfg := &Config{
 		KeepRecent: 5,

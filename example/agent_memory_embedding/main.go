@@ -1,3 +1,4 @@
+// Example agent_memory_embedding demonstrates agent semantic memory backed by embeddings and file storage.
 package main
 
 import (

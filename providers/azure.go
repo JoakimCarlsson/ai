@@ -12,6 +12,7 @@ import (
 	"github.com/openai/openai-go/option"
 )
 
+// AzureOption configures optional settings for Azure OpenAI clients.
 type AzureOption func(*azureOptions)
 
 type azureOptions struct {
@@ -23,7 +24,8 @@ type azureClient struct {
 	*openaiClient
 }
 
-type AzureClient LLMClient
+// AzureClient is the Azure OpenAI Client implementation type.
+type AzureClient Client
 
 func newAzureClient(opts llmClientOptions) AzureClient {
 	azureOpts := &azureOptions{}
@@ -78,7 +80,7 @@ func (a *azureClient) sendWithStructuredOutput(
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
-) (*LLMResponse, error) {
+) (*Response, error) {
 	return a.openaiClient.sendWithStructuredOutput(
 		ctx,
 		messages,
@@ -93,7 +95,7 @@ func (a *azureClient) streamWithStructuredOutput(
 	messages []message.Message,
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
-) <-chan LLMEvent {
+) <-chan Event {
 	return a.openaiClient.streamWithStructuredOutput(
 		ctx,
 		messages,

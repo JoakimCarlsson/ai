@@ -12,11 +12,11 @@ type WeatherParams struct {
 
 type WeatherTool struct{}
 
-func (w *WeatherTool) Info() tool.ToolInfo {
-    return tool.NewToolInfo("get_weather", "Get current weather for a location", WeatherParams{})
+func (w *WeatherTool) Info() tool.Info {
+    return tool.NewInfo("get_weather", "Get current weather for a location", WeatherParams{})
 }
 
-func (w *WeatherTool) Run(ctx context.Context, params tool.ToolCall) (tool.ToolResponse, error) {
+func (w *WeatherTool) Run(ctx context.Context, params tool.Call) (tool.Response, error) {
     var input WeatherParams
     json.Unmarshal([]byte(params.Input), &input)
     return tool.NewTextResponse("Sunny, 22°C"), nil
@@ -43,7 +43,7 @@ type SearchParams struct {
     Filters []string `json:"filters" desc:"Filter tags" required:"false"`
 }
 
-info := tool.NewToolInfo("search", "Search documents", SearchParams{})
+info := tool.NewInfo("search", "Search documents", SearchParams{})
 ```
 
 Supported tags:

@@ -31,7 +31,7 @@ if err != nil {
 ```go
 maxTokens := int64(100)
 
-resp, err := client.Complete(ctx, fim.FIMRequest{
+resp, err := client.Complete(ctx, fim.Request{
     Prompt:    "func Add(a, b int) int {\n    ",
     Suffix:    "\n}",
     MaxTokens: &maxTokens,
@@ -47,7 +47,7 @@ fmt.Println(resp.Content)
 ## Streaming
 
 ```go
-events := client.CompleteStream(ctx, fim.FIMRequest{
+events := client.CompleteStream(ctx, fim.Request{
     Prompt:    "func Max(numbers []int) int {\n    ",
     Suffix:    "\n}",
     MaxTokens: &maxTokens,
@@ -68,7 +68,7 @@ for event := range events {
 }
 ```
 
-## FIMRequest
+## Request
 
 | Field | Type | Description |
 |-------|------|-------------|

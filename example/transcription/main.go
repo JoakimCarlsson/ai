@@ -1,3 +1,4 @@
+// Example transcription demonstrates speech-to-text with the transcription API.
 package main
 
 import (
@@ -36,9 +37,11 @@ func main() {
 		fmt.Printf("Error downloading audio: %v\n", err)
 		os.Exit(1)
 	}
-	defer resp.Body.Close()
 
 	audioData, err := io.ReadAll(resp.Body)
+	if closeErr := resp.Body.Close(); closeErr != nil && err == nil {
+		err = closeErr
+	}
 	if err != nil {
 		fmt.Printf("Error reading audio: %v\n", err)
 		os.Exit(1)

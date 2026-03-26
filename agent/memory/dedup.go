@@ -12,6 +12,7 @@ import (
 // DedupEvent represents the type of deduplication action to take.
 type DedupEvent string
 
+// Dedup event types.
 const (
 	DedupEventAdd    DedupEvent = "ADD"
 	DedupEventUpdate DedupEvent = "UPDATE"

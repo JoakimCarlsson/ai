@@ -15,6 +15,7 @@ import (
 // TaskStatus represents the lifecycle state of a background task.
 type TaskStatus string
 
+// Task status values.
 const (
 	TaskRunning   TaskStatus = "running"
 	TaskCompleted TaskStatus = "completed"
@@ -22,7 +23,8 @@ const (
 	TaskCancelled TaskStatus = "cancelled"
 )
 
-type backgroundTask struct {
+// BackgroundTask holds the state and result of an asynchronous sub-agent execution.
+type BackgroundTask struct {
 	ID        string
 	AgentName string
 	Status    TaskStatus
@@ -39,7 +41,7 @@ type backgroundTask struct {
 // and provides bulk cancellation for cleanup when the parent agent finishes.
 type TaskManager struct {
 	mu    sync.RWMutex
-	tasks map[string]*backgroundTask
+	tasks map[string]*BackgroundTask
 	wg    sync.WaitGroup
 	idGen atomic.Int64
 	hooks []Hooks
@@ -47,7 +49,7 @@ type TaskManager struct {
 
 func newTaskManager() *TaskManager {
 	return &TaskManager{
-		tasks: make(map[string]*backgroundTask),
+		tasks: make(map[string]*BackgroundTask),
 	}
 }
 
@@ -64,7 +66,7 @@ func (tm *TaskManager) Launch(
 	startedAt := time.Now()
 
 	taskCtx, cancel := context.WithCancel(ctx)
-	bt := &backgroundTask{
+	bt := &BackgroundTask{
 		ID:        id,
 		AgentName: agentName,
 		Status:    TaskRunning,
@@ -210,7 +212,7 @@ func (tm *TaskManager) GetResult(
 	taskID string,
 	wait bool,
 	timeout time.Duration,
-) (*backgroundTask, error) {
+) (*BackgroundTask, error) {
 	tm.mu.RLock()
 	bt, ok := tm.tasks[taskID]
 	tm.mu.RUnlock()
@@ -257,11 +259,11 @@ func (tm *TaskManager) Stop(taskID string) error {
 }
 
 // ListAll returns a snapshot of all tracked background tasks regardless of status.
-func (tm *TaskManager) ListAll() []*backgroundTask {
+func (tm *TaskManager) ListAll() []*BackgroundTask {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
 
-	result := make([]*backgroundTask, 0, len(tm.tasks))
+	result := make([]*BackgroundTask, 0, len(tm.tasks))
 	for _, bt := range tm.tasks {
 		snapshot := *bt
 		result = append(result, &snapshot)

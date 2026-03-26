@@ -1,3 +1,4 @@
+// Example strucured_output demonstrates LLM responses constrained to a JSON schema via structured output.
 package main
 
 import (

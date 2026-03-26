@@ -43,14 +43,29 @@ func TestMetrics_MultiTurn(t *testing.T) {
 	mockLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"a"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"a"}`,
+					Type:  "function",
+				},
 			},
 			Usage: llm.TokenUsage{InputTokens: 100, OutputTokens: 20},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "echo", Input: `{"text":"b"}`, Type: "function"},
-				{ID: "tc-3", Name: "echo", Input: `{"text":"c"}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "echo",
+					Input: `{"text":"b"}`,
+					Type:  "function",
+				},
+				{
+					ID:    "tc-3",
+					Name:  "echo",
+					Input: `{"text":"c"}`,
+					Type:  "function",
+				},
 			},
 			Usage: llm.TokenUsage{InputTokens: 200, OutputTokens: 30},
 		},
@@ -74,10 +89,16 @@ func TestMetrics_MultiTurn(t *testing.T) {
 		t.Errorf("expected TotalToolCalls=3 (1+2), got %d", resp.TotalToolCalls)
 	}
 	if resp.Usage.InputTokens != 600 {
-		t.Errorf("expected aggregated InputTokens=600, got %d", resp.Usage.InputTokens)
+		t.Errorf(
+			"expected aggregated InputTokens=600, got %d",
+			resp.Usage.InputTokens,
+		)
 	}
 	if resp.Usage.OutputTokens != 90 {
-		t.Errorf("expected aggregated OutputTokens=90, got %d", resp.Usage.OutputTokens)
+		t.Errorf(
+			"expected aggregated OutputTokens=90, got %d",
+			resp.Usage.OutputTokens,
+		)
 	}
 }
 
@@ -99,13 +120,26 @@ func TestMetrics_Stream(t *testing.T) {
 	mockLLM := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"a"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"a"}`,
+					Type:  "function",
+				},
 			},
-			Usage: llm.TokenUsage{InputTokens: 50, OutputTokens: 10, CacheReadTokens: 5},
+			Usage: llm.TokenUsage{
+				InputTokens:     50,
+				OutputTokens:    10,
+				CacheReadTokens: 5,
+			},
 		},
 		mockResponse{
 			Content: "stream done",
-			Usage:   llm.TokenUsage{InputTokens: 80, OutputTokens: 15, CacheReadTokens: 3},
+			Usage: llm.TokenUsage{
+				InputTokens:     80,
+				OutputTokens:    15,
+				CacheReadTokens: 3,
+			},
 		},
 	)
 
@@ -128,13 +162,22 @@ func TestMetrics_Stream(t *testing.T) {
 		t.Errorf("expected TotalToolCalls=1, got %d", resp.TotalToolCalls)
 	}
 	if resp.Usage.InputTokens != 130 {
-		t.Errorf("expected aggregated InputTokens=130, got %d", resp.Usage.InputTokens)
+		t.Errorf(
+			"expected aggregated InputTokens=130, got %d",
+			resp.Usage.InputTokens,
+		)
 	}
 	if resp.Usage.OutputTokens != 25 {
-		t.Errorf("expected aggregated OutputTokens=25, got %d", resp.Usage.OutputTokens)
+		t.Errorf(
+			"expected aggregated OutputTokens=25, got %d",
+			resp.Usage.OutputTokens,
+		)
 	}
 	if resp.Usage.CacheReadTokens != 8 {
-		t.Errorf("expected aggregated CacheReadTokens=8, got %d", resp.Usage.CacheReadTokens)
+		t.Errorf(
+			"expected aggregated CacheReadTokens=8, got %d",
+			resp.Usage.CacheReadTokens,
+		)
 	}
 	if resp.TotalDuration <= 0 {
 		t.Error("expected TotalDuration > 0")

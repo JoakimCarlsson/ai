@@ -17,7 +17,7 @@ func Strategy(opts ...Option) tokens.Strategy {
 }
 
 func (s *slidingStrategy) Fit(
-	ctx context.Context,
+	_ context.Context,
 	input tokens.StrategyInput,
 ) (*tokens.StrategyResult, error) {
 	var systemMsgs, convMsgs []message.Message

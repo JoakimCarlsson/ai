@@ -18,6 +18,7 @@ type voyageOptions struct {
 	encodingFormat  string
 }
 
+// VoyageOption configures optional settings for Voyage embedding clients.
 type VoyageOption func(*voyageOptions)
 
 type voyageClient struct {
@@ -27,6 +28,7 @@ type voyageClient struct {
 	baseURL         string
 }
 
+// VoyageClient is the Voyage AI EmbeddingClient implementation type.
 type VoyageClient EmbeddingClient
 
 type voyageEmbeddingRequest struct {
@@ -400,30 +402,35 @@ func (v *voyageClient) embedContextualized(
 	}, nil
 }
 
+// WithVoyageInputType sets the input type for Voyage embeddings (e.g. "document", "query").
 func WithVoyageInputType(inputType string) VoyageOption {
 	return func(options *voyageOptions) {
 		options.inputType = inputType
 	}
 }
 
+// WithVoyageTruncation enables or disables input truncation for Voyage embeddings.
 func WithVoyageTruncation(truncation bool) VoyageOption {
 	return func(options *voyageOptions) {
 		options.truncation = &truncation
 	}
 }
 
+// WithVoyageEncodingFormat sets the output encoding format for Voyage embeddings.
 func WithVoyageEncodingFormat(format string) VoyageOption {
 	return func(options *voyageOptions) {
 		options.encodingFormat = format
 	}
 }
 
+// WithVoyageOutputDimension sets the desired output vector dimensionality.
 func WithVoyageOutputDimension(dimension int) VoyageOption {
 	return func(options *voyageOptions) {
 		options.outputDimension = &dimension
 	}
 }
 
+// WithVoyageOutputDtype sets the output data type for Voyage embeddings (e.g. "float", "int8").
 func WithVoyageOutputDtype(dtype string) VoyageOption {
 	return func(options *voyageOptions) {
 		options.outputDtype = dtype

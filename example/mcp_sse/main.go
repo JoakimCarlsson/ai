@@ -1,3 +1,4 @@
+// Example mcp_sse demonstrates using MCP tools with SSE/HTTP and stdio transports.
 package main
 
 import (

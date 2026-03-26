@@ -1,3 +1,4 @@
+// Example reranker demonstrates document reranking.
 package main
 
 import (

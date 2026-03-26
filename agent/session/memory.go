@@ -18,12 +18,12 @@ func MemoryStore() Store {
 	return &memoryStore{}
 }
 
-func (s *memoryStore) Exists(ctx context.Context, id string) (bool, error) {
+func (s *memoryStore) Exists(_ context.Context, id string) (bool, error) {
 	_, ok := s.sessions.Load(id)
 	return ok, nil
 }
 
-func (s *memoryStore) Create(ctx context.Context, id string) (Session, error) {
+func (s *memoryStore) Create(_ context.Context, id string) (Session, error) {
 	session := &memorySession{
 		id:       id,
 		messages: make([]message.Message, 0),
@@ -32,7 +32,7 @@ func (s *memoryStore) Create(ctx context.Context, id string) (Session, error) {
 	return session, nil
 }
 
-func (s *memoryStore) Load(ctx context.Context, id string) (Session, error) {
+func (s *memoryStore) Load(_ context.Context, id string) (Session, error) {
 	val, ok := s.sessions.Load(id)
 	if !ok {
 		return nil, nil
@@ -40,7 +40,7 @@ func (s *memoryStore) Load(ctx context.Context, id string) (Session, error) {
 	return val.(*memorySession), nil
 }
 
-func (s *memoryStore) Delete(ctx context.Context, id string) error {
+func (s *memoryStore) Delete(_ context.Context, id string) error {
 	s.sessions.Delete(id)
 	return nil
 }
@@ -56,7 +56,7 @@ func (s *memorySession) ID() string {
 }
 
 func (s *memorySession) GetMessages(
-	ctx context.Context,
+	_ context.Context,
 	limit *int,
 ) ([]message.Message, error) {
 	s.mu.RLock()
@@ -78,7 +78,7 @@ func (s *memorySession) GetMessages(
 }
 
 func (s *memorySession) AddMessages(
-	ctx context.Context,
+	_ context.Context,
 	msgs []message.Message,
 ) error {
 	s.mu.Lock()
@@ -89,7 +89,7 @@ func (s *memorySession) AddMessages(
 }
 
 func (s *memorySession) SetMessages(
-	ctx context.Context,
+	_ context.Context,
 	msgs []message.Message,
 ) error {
 	s.mu.Lock()
@@ -101,7 +101,7 @@ func (s *memorySession) SetMessages(
 }
 
 func (s *memorySession) PopMessage(
-	ctx context.Context,
+	context.Context,
 ) (*message.Message, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -115,7 +115,7 @@ func (s *memorySession) PopMessage(
 	return &msg, nil
 }
 
-func (s *memorySession) Clear(ctx context.Context) error {
+func (s *memorySession) Clear(context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

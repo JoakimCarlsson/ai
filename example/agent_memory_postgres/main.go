@@ -1,3 +1,4 @@
+// Example agent_memory_postgres demonstrates semantic agent memory stored in PostgreSQL with pgvector.
 package main
 
 import (

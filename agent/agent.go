@@ -55,7 +55,7 @@ func (a *Agent) getMemoryLLM() llm.LLM {
 //	    agent.WithSession("conv-1", session.FileStore("./sessions")),
 //	    agent.WithMemory("user-123", myMemoryStore, memory.AutoExtract()),
 //	)
-func New(llmClient llm.LLM, opts ...AgentOption) *Agent {
+func New(llmClient llm.LLM, opts ...Option) *Agent {
 	a := &Agent{
 		llm:           llmClient,
 		tools:         make([]tool.BaseTool, 0),
@@ -95,6 +95,8 @@ func ParseToolInput[T any](input string) (T, error) {
 	return result, err
 }
 
-func (a *Agent) hookContext(ctx context.Context) (taskID, agentName, branch string) {
+func (a *Agent) hookContext(
+	ctx context.Context,
+) (taskID, agentName, branch string) {
 	return taskScopeFromContext(ctx)
 }

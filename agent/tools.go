@@ -43,7 +43,7 @@ func (a *Agent) executeSingleTool(
 	}
 
 	start := time.Now()
-	resp, execErr := registry.Execute(ctx, tool.ToolCall{
+	resp, execErr := registry.Execute(ctx, tool.Call{
 		ID:    tc.ID,
 		Name:  tc.Name,
 		Input: tc.Input,

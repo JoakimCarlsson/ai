@@ -1,3 +1,4 @@
+// Example continue demonstrates resuming an agent turn after manually executing pending tool calls.
 package main
 
 import (
@@ -17,20 +18,23 @@ import (
 
 type flightSearchParams struct {
 	Origin      string `json:"origin"      desc:"Departure airport code (e.g. SFO)"`
-	Destination string `json:"destination"  desc:"Arrival airport code (e.g. NRT)"`
+	Destination string `json:"destination" desc:"Arrival airport code (e.g. NRT)"`
 }
 
 type flightSearchTool struct{}
 
-func (f *flightSearchTool) Info() tool.ToolInfo {
-	return tool.NewToolInfo(
+func (f *flightSearchTool) Info() tool.Info {
+	return tool.NewInfo(
 		"flight_search",
 		"Search for available flights between two airports",
 		flightSearchParams{},
 	)
 }
 
-func (f *flightSearchTool) Run(_ context.Context, _ tool.ToolCall) (tool.ToolResponse, error) {
+func (f *flightSearchTool) Run(
+	_ context.Context,
+	_ tool.Call,
+) (tool.Response, error) {
 	panic("should never be called — autoExecute is disabled")
 }
 
@@ -39,7 +43,8 @@ func executeFlightSearch(input string) string {
 	_ = json.Unmarshal([]byte(input), &params)
 	return fmt.Sprintf(
 		"Found 3 flights from %s to %s: [UA837 $820 dep 10:30] [JL1 $1150 dep 17:45] [NH7 $980 dep 11:00]",
-		params.Origin, params.Destination,
+		params.Origin,
+		params.Destination,
 	)
 }
 
@@ -56,8 +61,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	a := agent.New(llmClient,
-		agent.WithSystemPrompt("You are a travel assistant. Use flight_search to find flights, then recommend the best option."),
+	a := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You are a travel assistant. Use flight_search to find flights, then recommend the best option.",
+		),
 		agent.WithTools(&flightSearchTool{}),
 		agent.WithAutoExecute(false),
 		agent.WithSession("travel-1", session.MemoryStore()),

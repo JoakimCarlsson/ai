@@ -8,6 +8,7 @@ import (
 	"github.com/joakimcarlsson/ai/tool"
 )
 
+// Token counting constants.
 const (
 	SystemMessageOverhead  int64 = 15
 	MessageOverhead        int64 = 10
@@ -56,7 +57,7 @@ func NewCounter() (*Counter, error) {
 
 // CountTokens counts tokens for messages, system prompt, and tools.
 func (c *Counter) CountTokens(
-	ctx context.Context,
+	_ context.Context,
 	opts CountOptions,
 ) (*TokenCount, error) {
 	var result TokenCount

@@ -1,3 +1,4 @@
+// Example custom_id_generator demonstrates custom ID generators for Postgres session and memory stores.
 package main
 
 import (

@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// EmbeddingVector holds a Voyage API embedding in one of several numeric or base64 encodings.
 type EmbeddingVector struct {
 	Float32  []float32 `json:"-"`
 	Int8     []int8    `json:"-"`
@@ -20,6 +21,7 @@ type EmbeddingVector struct {
 	DataType string    `json:"-"`
 }
 
+// UnmarshalJSON decodes a Voyage embedding from JSON (array of numbers, string base64, etc.).
 func (ev *EmbeddingVector) UnmarshalJSON(data []byte) error {
 	var raw interface{}
 	if err := json.Unmarshal(data, &raw); err != nil {
@@ -57,32 +59,33 @@ func (ev *EmbeddingVector) UnmarshalJSON(data []byte) error {
 			}
 			ev.DataType = "float32"
 		default:
-			if intVal, ok := first.(float64); ok && intVal == float64(int(intVal)) {
-				if intVal >= -128 && intVal <= 127 {
-					ev.Int8 = make([]int8, len(v))
-					for i, val := range v {
-						if f, ok := val.(float64); ok && f == float64(int(f)) {
-							ev.Int8[i] = int8(f)
-						} else {
-							return fmt.Errorf("invalid int8 value at index %d", i)
-						}
-					}
-					ev.DataType = "int8"
-				} else if intVal >= 0 && intVal <= 255 {
-					ev.Uint8 = make([]uint8, len(v))
-					for i, val := range v {
-						if f, ok := val.(float64); ok && f == float64(int(f)) {
-							ev.Uint8[i] = uint8(f)
-						} else {
-							return fmt.Errorf("invalid uint8 value at index %d", i)
-						}
-					}
-					ev.DataType = "uint8"
-				} else {
-					return fmt.Errorf("integer value out of range: %v", intVal)
-				}
-			} else {
+			intVal, ok := first.(float64)
+			if !ok || intVal != float64(int(intVal)) {
 				return fmt.Errorf("unsupported embedding value type: %T", first)
+			}
+			switch {
+			case intVal >= -128 && intVal <= 127:
+				ev.Int8 = make([]int8, len(v))
+				for i, val := range v {
+					if f, ok := val.(float64); ok && f == float64(int(f)) {
+						ev.Int8[i] = int8(f)
+					} else {
+						return fmt.Errorf("invalid int8 value at index %d", i)
+					}
+				}
+				ev.DataType = "int8"
+			case intVal >= 0 && intVal <= 255:
+				ev.Uint8 = make([]uint8, len(v))
+				for i, val := range v {
+					if f, ok := val.(float64); ok && f == float64(int(f)) {
+						ev.Uint8[i] = uint8(f)
+					} else {
+						return fmt.Errorf("invalid uint8 value at index %d", i)
+					}
+				}
+				ev.DataType = "uint8"
+			default:
+				return fmt.Errorf("integer value out of range: %v", intVal)
 			}
 		}
 	default:
@@ -92,6 +95,7 @@ func (ev *EmbeddingVector) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// ToFloat32 returns the embedding as float32 values when the stored type is convertible.
 func (ev *EmbeddingVector) ToFloat32() []float32 {
 	switch ev.DataType {
 	case "float32":
@@ -127,6 +131,7 @@ func (ev *EmbeddingVector) ToFloat32() []float32 {
 	}
 }
 
+// Len returns the logical length of the embedding for the active data type.
 func (ev *EmbeddingVector) Len() int {
 	switch ev.DataType {
 	case "float32":
@@ -142,10 +147,12 @@ func (ev *EmbeddingVector) Len() int {
 	}
 }
 
+// GetDataType returns the detected embedding encoding label (e.g. "float32", "base64").
 func (ev *EmbeddingVector) GetDataType() string {
 	return ev.DataType
 }
 
+// IsBase64 reports whether the embedding was parsed as a base64 string payload.
 func (ev *EmbeddingVector) IsBase64() bool {
 	return ev.DataType == "base64"
 }
@@ -158,6 +165,7 @@ type voyageOptions struct {
 	encodingFormat  string
 }
 
+// VoyageOption configures Voyage AI-specific embedding client options.
 type VoyageOption func(*voyageOptions)
 
 type voyageClient struct {
@@ -167,6 +175,7 @@ type voyageClient struct {
 	baseURL         string
 }
 
+// VoyageClient is the Voyage AI implementation of EmbeddingClient.
 type VoyageClient EmbeddingClient
 
 type voyageEmbeddingRequest struct {

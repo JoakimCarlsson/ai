@@ -1,3 +1,4 @@
+// Example context_summarize demonstrates summarizing older turns to fit context limits in long chats.
 package main
 
 import (

@@ -41,8 +41,8 @@ import (
 	"github.com/joakimcarlsson/ai/model"
 )
 
-// AudioUsage tracks the resource consumption for audio generation operations.
-type AudioUsage struct {
+// Usage tracks the resource consumption for audio generation operations.
+type Usage struct {
 	// Characters is the number of characters processed.
 	Characters int64
 }
@@ -76,14 +76,14 @@ type ForcedAlignmentData struct {
 	Loss       float64
 }
 
-// AudioResponse contains the generated audio and metadata from an audio generation request.
-type AudioResponse struct {
+// Response contains the generated audio and metadata from an audio generation request.
+type Response struct {
 	// AudioData contains the audio file data as bytes.
 	AudioData []byte
 	// ContentType specifies the MIME type of the audio data (e.g., "audio/mpeg", "audio/pcm").
 	ContentType string
 	// Usage tracks resource consumption for this request.
-	Usage AudioUsage
+	Usage Usage
 	// Model identifies which audio generation model was used.
 	Model string
 	// Alignment contains character-level timing information aligned to the original input text.
@@ -92,8 +92,8 @@ type AudioResponse struct {
 	NormalizedAlignment *AlignmentData
 }
 
-// AudioChunk represents a piece of streaming audio data.
-type AudioChunk struct {
+// Chunk represents a piece of streaming audio data.
+type Chunk struct {
 	// Data contains the audio chunk bytes.
 	Data []byte
 	// Error contains any error that occurred during streaming.
@@ -122,16 +122,16 @@ type Voice struct {
 	Labels map[string]string
 }
 
-// AudioGeneration defines the interface for generating audio from text using TTS providers.
+// Generation defines the interface for generating audio from text using TTS providers.
 // It provides methods for synchronous audio generation, streaming, and voice management.
-type AudioGeneration interface {
+type Generation interface {
 	// GenerateAudio creates audio from text and returns the complete audio data.
 	// The optional GenerationOption parameters can customize the generation (voice, format, settings, etc.).
 	GenerateAudio(
 		ctx context.Context,
 		text string,
 		options ...GenerationOption,
-	) (*AudioResponse, error)
+	) (*Response, error)
 
 	// StreamAudio creates audio from text and returns a channel of audio chunks for streaming playback.
 	// This is useful for real-time audio playback with lower latency.
@@ -139,7 +139,7 @@ type AudioGeneration interface {
 		ctx context.Context,
 		text string,
 		options ...GenerationOption,
-	) (<-chan AudioChunk, error)
+	) (<-chan Chunk, error)
 
 	// ListVoices retrieves the list of available voices from the provider.
 	ListVoices(ctx context.Context) ([]Voice, error)
@@ -168,23 +168,25 @@ type audioGenerationClientOptions struct {
 	elevenLabsOptions []ElevenLabsOption
 }
 
-type AudioGenerationClientOption func(*audioGenerationClientOptions)
+// GenerationClientOption configures an audio generation client when passed to NewAudioGeneration.
+type GenerationClientOption func(*audioGenerationClientOptions)
 
-type AudioGenerationClient interface {
+// GenerationClient defines the provider-specific implementation for audio generation.
+type GenerationClient interface {
 	generate(
 		ctx context.Context,
 		text string,
 		options ...GenerationOption,
-	) (*AudioResponse, error)
+	) (*Response, error)
 	stream(
 		ctx context.Context,
 		text string,
 		options ...GenerationOption,
-	) (<-chan AudioChunk, error)
+	) (<-chan Chunk, error)
 	listVoices(ctx context.Context) ([]Voice, error)
 }
 
-type baseAudioGeneration[C AudioGenerationClient] struct {
+type baseAudioGeneration[C GenerationClient] struct {
 	options audioGenerationClientOptions
 	client  C
 }
@@ -193,16 +195,15 @@ type baseAudioGeneration[C AudioGenerationClient] struct {
 // Supported providers include ElevenLabs. Use WithModel() to specify the audio generation model
 // and WithAPIKey() for authentication.
 func NewAudioGeneration(
-	provider model.ModelProvider,
-	opts ...AudioGenerationClientOption,
-) (AudioGeneration, error) {
+	provider model.Provider,
+	opts ...GenerationClientOption,
+) (Generation, error) {
 	clientOptions := audioGenerationClientOptions{}
 	for _, o := range opts {
 		o(&clientOptions)
 	}
 
-	switch provider {
-	case model.ProviderElevenLabs:
+	if provider == model.ProviderElevenLabs {
 		return &baseAudioGeneration[ElevenLabsClient]{
 			options: clientOptions,
 			client:  newElevenLabsClient(clientOptions),
@@ -219,7 +220,7 @@ func (a *baseAudioGeneration[C]) GenerateAudio(
 	ctx context.Context,
 	text string,
 	options ...GenerationOption,
-) (*AudioResponse, error) {
+) (*Response, error) {
 	return a.client.generate(ctx, text, options...)
 }
 
@@ -227,7 +228,7 @@ func (a *baseAudioGeneration[C]) StreamAudio(
 	ctx context.Context,
 	text string,
 	options ...GenerationOption,
-) (<-chan AudioChunk, error) {
+) (<-chan Chunk, error) {
 	return a.client.stream(ctx, text, options...)
 }
 
@@ -242,21 +243,21 @@ func (a *baseAudioGeneration[C]) Model() model.AudioModel {
 }
 
 // WithAPIKey sets the API key for authentication with the audio generation provider.
-func WithAPIKey(apiKey string) AudioGenerationClientOption {
+func WithAPIKey(apiKey string) GenerationClientOption {
 	return func(options *audioGenerationClientOptions) {
 		options.apiKey = apiKey
 	}
 }
 
 // WithModel specifies which audio generation model to use for creating audio.
-func WithModel(model model.AudioModel) AudioGenerationClientOption {
+func WithModel(model model.AudioModel) GenerationClientOption {
 	return func(options *audioGenerationClientOptions) {
 		options.model = model
 	}
 }
 
 // WithTimeout sets the maximum duration to wait for audio generation requests to complete.
-func WithTimeout(timeout time.Duration) AudioGenerationClientOption {
+func WithTimeout(timeout time.Duration) GenerationClientOption {
 	return func(options *audioGenerationClientOptions) {
 		options.timeout = &timeout
 	}
@@ -265,7 +266,7 @@ func WithTimeout(timeout time.Duration) AudioGenerationClientOption {
 // WithElevenLabsOptions applies ElevenLabs-specific configuration options.
 func WithElevenLabsOptions(
 	elevenLabsOptions ...ElevenLabsOption,
-) AudioGenerationClientOption {
+) GenerationClientOption {
 	return func(options *audioGenerationClientOptions) {
 		options.elevenLabsOptions = elevenLabsOptions
 	}
@@ -350,7 +351,7 @@ func WithOptimizeStreamingLatency(level int) GenerationOption {
 
 // WithAlignmentEnabled enables or disables character-level timing data in the response.
 // When enabled, the audio generation will use the /with-timestamps endpoint and populate
-// the Alignment and NormalizedAlignment fields in the AudioResponse.
+// the Alignment and NormalizedAlignment fields in the Response.
 // This is useful for subtitles, word highlighting, lip sync, and other timing-dependent features.
 func WithAlignmentEnabled(enabled bool) GenerationOption {
 	return func(options *GenerationOptions) {

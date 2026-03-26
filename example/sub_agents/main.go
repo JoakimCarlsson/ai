@@ -1,3 +1,4 @@
+// Example sub_agents demonstrates multi-agent orchestration with sub-agents.
 package main
 
 import (
@@ -19,8 +20,8 @@ type searchParams struct {
 
 type searchTool struct{}
 
-func (s *searchTool) Info() tool.ToolInfo {
-	return tool.NewToolInfo(
+func (s *searchTool) Info() tool.Info {
+	return tool.NewInfo(
 		"web_search",
 		"Search the web for information",
 		searchParams{},
@@ -29,8 +30,8 @@ func (s *searchTool) Info() tool.ToolInfo {
 
 func (s *searchTool) Run(
 	_ context.Context,
-	params tool.ToolCall,
-) (tool.ToolResponse, error) {
+	params tool.Call,
+) (tool.Response, error) {
 	var input searchParams
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
 		return tool.NewTextErrorResponse(err.Error()), nil

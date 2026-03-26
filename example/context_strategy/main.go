@@ -1,3 +1,4 @@
+// Example context_strategy demonstrates sliding-window context management for long agent conversations.
 package main
 
 import (

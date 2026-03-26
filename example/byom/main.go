@@ -1,3 +1,4 @@
+// Example byom demonstrates registering a custom OpenAI-compatible provider and streaming chat.
 package main
 
 import (

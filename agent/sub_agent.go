@@ -34,8 +34,8 @@ func newSubAgentTool(config SubAgentConfig) *subAgentTool {
 	return &subAgentTool{config: config}
 }
 
-func (t *subAgentTool) Info() tool.ToolInfo {
-	return tool.NewToolInfo(
+func (t *subAgentTool) Info() tool.Info {
+	return tool.NewInfo(
 		t.config.Name,
 		t.config.Description,
 		subAgentInput{},
@@ -44,8 +44,8 @@ func (t *subAgentTool) Info() tool.ToolInfo {
 
 func (t *subAgentTool) Run(
 	ctx context.Context,
-	params tool.ToolCall,
-) (tool.ToolResponse, error) {
+	params tool.Call,
+) (tool.Response, error) {
 	var input subAgentInput
 	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
 		return tool.NewTextErrorResponse(
@@ -93,7 +93,7 @@ func (t *subAgentTool) runSync(
 	ctx context.Context,
 	task string,
 	opts ...ChatOption,
-) (tool.ToolResponse, error) {
+) (tool.Response, error) {
 	resp, err := t.config.Agent.Chat(ctx, task, opts...)
 	if err != nil {
 		return tool.NewTextErrorResponse(

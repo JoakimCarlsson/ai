@@ -1,3 +1,4 @@
+// Example agent_debate demonstrates two streaming agents conversing with Postgres-backed sessions and pgvector memory.
 package main
 
 import (
