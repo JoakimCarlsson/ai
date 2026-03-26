@@ -2,6 +2,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
+REPO_URL="$(git remote get-url origin | sed 's/\.git$//' | sed 's|git@github.com:|https://github.com/|')"
 VALID_MODULES=("root" "postgres" "sqlite" "pgvector")
 
 usage() {
@@ -172,39 +173,45 @@ cmd_release() {
 		range="HEAD"
 	fi
 
-	local body="## Module versions in this release"$'\n\n'
-	body+="| Module | Version |"$'\n'
-	body+="|--------|---------|"$'\n'
-
+	local body="## Module Highlights"$'\n'
 	local found_tags=false
 
-	local root_tags
-	root_tags=$(git tag -l 'v[0-9]*' --sort=-creatordate --merged HEAD)
-	for tag in $root_tags; do
+	is_new_tag() {
+		local tag="$1"
 		if [[ -n "$prev_release" ]]; then
-			if git merge-base --is-ancestor "$prev_release" "$tag" 2>/dev/null && \
-			   ! git merge-base --is-ancestor "$tag" "$prev_release" 2>/dev/null; then
-				body+="| \`github.com/joakimcarlsson/ai\` | ${tag} |"$'\n'
-				found_tags=true
-			fi
+			git merge-base --is-ancestor "$prev_release" "$tag" 2>/dev/null && \
+				! git merge-base --is-ancestor "$tag" "$prev_release" 2>/dev/null
 		else
-			body+="| \`github.com/joakimcarlsson/ai\` | ${tag} |"$'\n'
+			return 0
+		fi
+	}
+
+	local root_tags
+	root_tags=$(git tag -l 'v[0-9]*' --sort=-version:refname --merged HEAD)
+	for tag in $root_tags; do
+		if is_new_tag "$tag"; then
+			body+="* \`github.com/joakimcarlsson/ai\`: [${tag}](${REPO_URL}/tree/${tag})"$'\n'
+			local commits
+			if [[ -n "$prev_release" ]]; then
+				commits=$(git log --oneline "${prev_release}..${tag}" -- ':!integrations/' 2>/dev/null || true)
+			fi
+			if [[ -n "${commits:-}" ]]; then
+				while IFS= read -r line; do
+					body+="  * ${line#* }"$'\n'
+				done <<< "$commits"
+			fi
 			found_tags=true
 		fi
 	done
 
 	for mod in postgres sqlite pgvector; do
 		local mod_tags
-		mod_tags=$(git tag -l "integrations/${mod}/v*" --sort=-creatordate --merged HEAD)
+		mod_tags=$(git tag -l "integrations/${mod}/v*" --sort=-version:refname --merged HEAD)
 		for tag in $mod_tags; do
-			if [[ -n "$prev_release" ]]; then
-				if git merge-base --is-ancestor "$prev_release" "$tag" 2>/dev/null && \
-				   ! git merge-base --is-ancestor "$tag" "$prev_release" 2>/dev/null; then
-					body+="| \`github.com/joakimcarlsson/ai/integrations/${mod}\` | $(tag_to_version "$tag") |"$'\n'
-					found_tags=true
-				fi
-			else
-				body+="| \`github.com/joakimcarlsson/ai/integrations/${mod}\` | $(tag_to_version "$tag") |"$'\n'
+			if is_new_tag "$tag"; then
+				local ver
+				ver="$(tag_to_version "$tag")"
+				body+="* \`github.com/joakimcarlsson/ai/integrations/${mod}\`: [${ver}](${REPO_URL}/tree/${tag})"$'\n'
 				found_tags=true
 			fi
 		done
@@ -212,14 +219,6 @@ cmd_release() {
 
 	if [[ "$found_tags" == false ]]; then
 		echo "Warning: no module tags found since last release"
-		body+="| *(none)* | |"$'\n'
-	fi
-
-	body+=$'\n'"## Changes"$'\n\n'
-	if [[ -n "$prev_release" ]]; then
-		body+=$(git log --oneline "$range")
-	else
-		body+=$(git log --oneline -20)
 	fi
 
 	if [[ "$publish" == true ]]; then
