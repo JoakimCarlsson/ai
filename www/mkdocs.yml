@@ -5,6 +5,7 @@ repo_name: joakimcarlsson/ai
 
 theme:
   name: material
+  custom_dir: overrides
   palette:
     - scheme: slate
       primary: indigo
