@@ -31,7 +31,7 @@ func (w *weatherTool) Info() tool.Info {
 }
 
 func (w *weatherTool) Run(
-	ctx context.Context,
+	_ context.Context,
 	params tool.Call,
 ) (tool.Response, error) {
 	var input weatherParams

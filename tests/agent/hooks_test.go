@@ -109,7 +109,7 @@ func TestPreToolUse_Modify(t *testing.T) {
 	}
 
 	hooks := agent.Hooks{
-		PreToolUse: func(_ context.Context, tc agent.ToolUseContext) (agent.PreToolUseResult, error) {
+		PreToolUse: func(context.Context, agent.ToolUseContext) (agent.PreToolUseResult, error) {
 			return agent.PreToolUseResult{
 				Action: agent.HookModify,
 				Input:  `{"text":"modified"}`,
@@ -189,7 +189,7 @@ func TestPostToolUse_Modify(t *testing.T) {
 	echoTl := &echoTool{}
 
 	hooks := agent.Hooks{
-		PostToolUse: func(_ context.Context, tc agent.PostToolUseContext) (agent.PostToolUseResult, error) {
+		PostToolUse: func(context.Context, agent.PostToolUseContext) (agent.PostToolUseResult, error) {
 			return agent.PostToolUseResult{
 				Action: agent.HookModify,
 				Output: "intercepted output",

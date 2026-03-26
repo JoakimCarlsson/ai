@@ -139,7 +139,7 @@ func (t *listTasksTool) Info() tool.Info {
 
 func (t *listTasksTool) Run(
 	ctx context.Context,
-	params tool.Call,
+	_ tool.Call,
 ) (tool.Response, error) {
 	tm := taskManagerFromContext(ctx)
 	if tm == nil {

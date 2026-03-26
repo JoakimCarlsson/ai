@@ -45,7 +45,7 @@ func (t *handoffTool) Info() tool.Info {
 }
 
 func (t *handoffTool) Run(
-	ctx context.Context,
+	_ context.Context,
 	params tool.Call,
 ) (tool.Response, error) {
 	var input handoffInput

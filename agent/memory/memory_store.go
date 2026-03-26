@@ -16,10 +16,10 @@ type memoryStore struct {
 	idGenerator IDGenerator
 }
 
-// MemoryStore creates an in-memory Store that uses the provided embedder
+// NewStore creates an in-memory Store that uses the provided embedder
 // for vector similarity search. Data is not persisted and will be lost
 // when the process exits.
-func MemoryStore(embedder embeddings.Embedding, opts ...StoreOption) Store {
+func NewStore(embedder embeddings.Embedding, opts ...StoreOption) Store {
 	cfg := defaultStoreConfig()
 	for _, opt := range opts {
 		opt(&cfg)
@@ -112,7 +112,7 @@ func (s *memoryStore) Search(
 }
 
 func (s *memoryStore) GetAll(
-	ctx context.Context,
+	_ context.Context,
 	id string,
 	limit int,
 ) ([]Entry, error) {
@@ -132,7 +132,7 @@ func (s *memoryStore) GetAll(
 	return results, nil
 }
 
-func (s *memoryStore) Delete(ctx context.Context, memoryID string) error {
+func (s *memoryStore) Delete(_ context.Context, memoryID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

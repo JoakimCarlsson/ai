@@ -14,7 +14,7 @@
 //
 // The package provides two built-in stores that require an embeddings client:
 //
-//   - [MemoryStore]: In-memory storage with vector search
+//   - [NewStore]: In-memory storage with vector search
 //   - [FileStore]: File-based storage with vector search
 //
 // For production use, see the integrations/pgvector package for PostgreSQL with pgvector.

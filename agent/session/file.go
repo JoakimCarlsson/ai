@@ -66,7 +66,7 @@ func (s *fileSession) ID() string {
 }
 
 func (s *fileSession) GetMessages(
-	ctx context.Context,
+	_ context.Context,
 	limit *int,
 ) ([]message.Message, error) {
 	s.mu.RLock()
@@ -89,7 +89,7 @@ func (s *fileSession) GetMessages(
 }
 
 func (s *fileSession) AddMessages(
-	ctx context.Context,
+	_ context.Context,
 	msgs []message.Message,
 ) error {
 	s.mu.Lock()
@@ -105,7 +105,7 @@ func (s *fileSession) AddMessages(
 }
 
 func (s *fileSession) SetMessages(
-	ctx context.Context,
+	_ context.Context,
 	msgs []message.Message,
 ) error {
 	s.mu.Lock()
@@ -115,7 +115,7 @@ func (s *fileSession) SetMessages(
 }
 
 func (s *fileSession) PopMessage(
-	ctx context.Context,
+	context.Context,
 ) (*message.Message, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -139,7 +139,7 @@ func (s *fileSession) PopMessage(
 	return &msg, nil
 }
 
-func (s *fileSession) Clear(ctx context.Context) error {
+func (s *fileSession) Clear(context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

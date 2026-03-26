@@ -7,7 +7,7 @@ Memory enables cross-conversation fact storage and retrieval using vector-based 
 ```go
 import "github.com/joakimcarlsson/ai/agent/memory"
 
-store := memory.MemoryStore(embedder)
+store := memory.NewStore(embedder)
 
 myAgent := agent.New(llmClient,
     agent.WithSystemPrompt("You are a personal assistant."),
@@ -25,7 +25,7 @@ response, _ := myAgent.Chat(ctx, "My name is Alice and I'm allergic to peanuts."
 
 ```go
 // In-memory vector store
-store := memory.MemoryStore(embedder)
+store := memory.NewStore(embedder)
 
 // File-persisted vector store
 store := memory.FileStore("./memories", embedder)

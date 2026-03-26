@@ -51,7 +51,7 @@ func dynamicProviderExample(client llm.LLM) {
 	a := agent.New(
 		client,
 		agent.WithInstructionProvider(
-			func(ctx context.Context, state map[string]any) (string, error) {
+			func(_ context.Context, state map[string]any) (string, error) {
 				role, _ := state["role"].(string)
 				if role == "" {
 					role = "an assistant"

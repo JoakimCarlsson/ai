@@ -57,7 +57,7 @@ func NewCounter() (*Counter, error) {
 
 // CountTokens counts tokens for messages, system prompt, and tools.
 func (c *Counter) CountTokens(
-	ctx context.Context,
+	_ context.Context,
 	opts CountOptions,
 ) (*TokenCount, error) {
 	var result TokenCount
