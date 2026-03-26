@@ -23,6 +23,67 @@ func (w *WeatherTool) Run(ctx context.Context, params tool.Call) (tool.Response,
 }
 ```
 
+## Function Tools
+
+For simple tools that are just a function, use `functiontool.New` to skip the struct boilerplate:
+
+```go
+import "github.com/joakimcarlsson/ai/tool/functiontool"
+
+type WeatherParams struct {
+    Location string `json:"location" desc:"City name"`
+    Units    string `json:"units" desc:"Temperature units" enum:"celsius,fahrenheit" required:"false"`
+}
+
+weatherTool := functiontool.New("get_weather", "Get current weather for a location",
+    func(ctx context.Context, p WeatherParams) (string, error) {
+        return fmt.Sprintf("Sunny, 22°C in %s", p.Location), nil
+    },
+)
+```
+
+The JSON schema is inferred from the parameter struct using the same struct tags as `tool.NewInfo`. The result is a standard `BaseTool` that works with the registry, toolsets, hooks, and agent system.
+
+### Supported Signatures
+
+The function's first parameter can optionally be `context.Context`, and the second can be a struct for input parameters. Both are optional:
+
+```go
+// With context and params
+functiontool.New("name", "desc", func(ctx context.Context, p Params) (string, error) { ... })
+
+// Params only (no context)
+functiontool.New("name", "desc", func(p Params) (string, error) { ... })
+
+// Context only (no input schema)
+functiontool.New("name", "desc", func(ctx context.Context) (string, error) { ... })
+
+// No inputs at all
+functiontool.New("name", "desc", func() (string, error) { ... })
+```
+
+### Return Types
+
+The first return value determines the response type:
+
+```go
+// String → tool.NewTextResponse
+func(p Params) (string, error)
+
+// tool.Response → passed through directly
+func(p Params) (tool.Response, error)
+
+// Any other type → tool.NewJSONResponse (auto-marshaled)
+func(p Params) (MyStruct, error)
+```
+
+### Options
+
+```go
+// Require human confirmation before execution
+functiontool.New("delete", "Delete records", deleteFn, functiontool.WithConfirmation())
+```
+
 ## Using Tools with LLM
 
 ```go
