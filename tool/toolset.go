@@ -83,6 +83,44 @@ func (c *compositeToolset) Tools(ctx context.Context) []BaseTool {
 	return tools
 }
 
+// WithConfirmation wraps a toolset so that every tool it returns has RequireConfirmation set to true.
+// The wrapped tools delegate Run() to the originals unchanged.
+func WithConfirmation(inner Toolset) Toolset {
+	return &confirmationToolset{inner: inner}
+}
+
+type confirmationToolset struct {
+	inner Toolset
+}
+
+func (c *confirmationToolset) Name() string { return c.inner.Name() }
+
+func (c *confirmationToolset) Tools(ctx context.Context) []BaseTool {
+	tools := c.inner.Tools(ctx)
+	wrapped := make([]BaseTool, len(tools))
+	for i, t := range tools {
+		wrapped[i] = &confirmationToolWrapper{inner: t}
+	}
+	return wrapped
+}
+
+type confirmationToolWrapper struct {
+	inner BaseTool
+}
+
+func (w *confirmationToolWrapper) Info() Info {
+	info := w.inner.Info()
+	info.RequireConfirmation = true
+	return info
+}
+
+func (w *confirmationToolWrapper) Run(
+	ctx context.Context,
+	params Call,
+) (Response, error) {
+	return w.inner.Run(ctx, params)
+}
+
 type mcpToolset struct {
 	name    string
 	servers map[string]MCPServer

@@ -59,6 +59,7 @@ nav:
     - Persistent Memory: agent/memory.md
     - Streaming: agent/streaming.md
     - Hooks: agent/hooks.md
+    - Tool Confirmation: agent/confirmation.md
     - Sub-Agents: agent/sub-agents.md
     - Background Agents: agent/background-agents.md
     - Handoffs: agent/handoffs.md

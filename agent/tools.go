@@ -2,11 +2,14 @@ package agent
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/tool"
+	"github.com/joakimcarlsson/ai/types"
 )
 
 func (a *Agent) executeSingleTool(
@@ -42,8 +45,77 @@ func (a *Agent) executeSingleTool(
 		tc.Input = preResult.Input
 	}
 
+	if a.confirmationProvider != nil {
+		if t, ok := registry.Get(tc.Name); ok && t.Info().RequireConfirmation {
+			req := tool.ConfirmationRequest{
+				ToolCallID: tc.ID,
+				ToolName:   tc.Name,
+				Input:      tc.Input,
+			}
+			if eventChan := confirmationChanFromContext(ctx); eventChan != nil {
+				eventChan <- ChatEvent{
+					Type:                types.EventConfirmationRequired,
+					ConfirmationRequest: &req,
+				}
+			}
+			approved, providerErr := a.confirmationProvider(ctx, req)
+			if providerErr != nil {
+				return ToolExecutionResult{
+					ToolCallID: tc.ID,
+					ToolName:   tc.Name,
+					Input:      tc.Input,
+					Output: fmt.Sprintf(
+						"Confirmation error: %v",
+						providerErr,
+					),
+					IsError: true,
+				}
+			}
+			if !approved {
+				return ToolExecutionResult{
+					ToolCallID: tc.ID,
+					ToolName:   tc.Name,
+					Input:      tc.Input,
+					Output:     "Tool call requires confirmation — rejected by user",
+					IsError:    true,
+				}
+			}
+		}
+	}
+
+	execCtx := ctx
+	if a.confirmationProvider != nil {
+		handler := func(hint string, payload any) error {
+			req := tool.ConfirmationRequest{
+				ToolCallID: tc.ID,
+				ToolName:   tc.Name,
+				Input:      tc.Input,
+				Hint:       hint,
+				Payload:    payload,
+			}
+			if eventChan := confirmationChanFromContext(ctx); eventChan != nil {
+				eventChan <- ChatEvent{
+					Type:                types.EventConfirmationRequired,
+					ConfirmationRequest: &req,
+				}
+			}
+			approved, providerErr := a.confirmationProvider(ctx, req)
+			if providerErr != nil {
+				return fmt.Errorf(
+					"confirmation provider error: %w",
+					providerErr,
+				)
+			}
+			if !approved {
+				return tool.ErrConfirmationRejected
+			}
+			return nil
+		}
+		execCtx = tool.WithConfirmationHandler(execCtx, handler)
+	}
+
 	start := time.Now()
-	resp, execErr := registry.Execute(ctx, tool.Call{
+	resp, execErr := registry.Execute(execCtx, tool.Call{
 		ID:    tc.ID,
 		Name:  tc.Name,
 		Input: tc.Input,
@@ -59,7 +131,11 @@ func (a *Agent) executeSingleTool(
 	}
 
 	if execErr != nil {
-		result.Output = execErr.Error()
+		if errors.Is(execErr, tool.ErrConfirmationRejected) {
+			result.Output = "Tool execution halted — confirmation rejected by user"
+		} else {
+			result.Output = execErr.Error()
+		}
 	} else {
 		result.Output = resp.Content
 	}

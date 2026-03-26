@@ -281,7 +281,8 @@ func (a *Agent) runLoopStream(
 			}
 		}
 
-		toolResults := activeAgent.executeTools(ctx, toolCalls)
+		execCtx := withConfirmationChan(ctx, eventChan)
+		toolResults := activeAgent.executeTools(execCtx, toolCalls)
 
 		for _, result := range toolResults {
 			eventChan <- ChatEvent{

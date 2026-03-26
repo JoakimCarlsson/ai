@@ -35,4 +35,6 @@ const (
 	EventWarning EventType = "warning"
 	// EventHandoff indicates control is being transferred to a different agent.
 	EventHandoff EventType = "handoff"
+	// EventConfirmationRequired indicates a tool is requesting user confirmation before proceeding.
+	EventConfirmationRequired EventType = "confirmation_required"
 )

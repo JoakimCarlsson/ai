@@ -5,6 +5,7 @@ import (
 
 	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/providers"
+	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
 )
 
@@ -65,4 +66,6 @@ type ChatEvent struct {
 	Error error
 	// AgentName is set on EventHandoff events to indicate the target agent.
 	AgentName string
+	// ConfirmationRequest is set on EventConfirmationRequired events with the details of the pending request.
+	ConfirmationRequest *tool.ConfirmationRequest
 }
