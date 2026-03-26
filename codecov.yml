@@ -1,0 +1,37 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 2%
+    patch:
+      default:
+        target: 80%
+
+ignore:
+  - "example/**"
+  - "integrations/**"
+  - "providers/**"
+  - "audio/**"
+  - "transcription/**"
+  - "image_generation/**"
+  - "fim/**"
+  - "embeddings/**"
+  - "rerankers/**"
+  - "model/**"
+  - "types/**"
+  - "www/**"
+  - "tests/**"
+  - "tool/mcp-tools.go"
+  - "tool/mcp-pool.go"
+
+flags:
+  unit:
+    carryforward: true
+  integration:
+    carryforward: true
+
+comment:
+  layout: "condensed_header, condensed_files, condensed_footer"
+  behavior: default
+  require_changes: false
