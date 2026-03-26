@@ -57,6 +57,8 @@ const (
 	OpenRouterSonarReasoning    ID = "openrouter.sonar-reasoning"
 	OpenRouterSonarReasoningPro ID = "openrouter.sonar-reasoning-pro"
 	OpenRouterSonarDeepResearch ID = "openrouter.sonar-deep-research"
+	OpenRouterGPTOss20b         ID = "openrouter.gpt-oss-20b"
+	OpenRouterGPTOss120b        ID = "openrouter.gpt-oss-120b"
 )
 
 // OpenRouterModels maps OpenRouter model IDs to their configurations.
@@ -775,5 +777,33 @@ var OpenRouterModels = map[ID]Model{
 		DefaultMaxTokens:      PerplexityModels[SonarDeepResearch].DefaultMaxTokens,
 		CanReason:             PerplexityModels[SonarDeepResearch].CanReason,
 		SupportsStructuredOut: PerplexityModels[SonarDeepResearch].SupportsStructuredOut,
+	},
+	OpenRouterGPTOss20b: {
+		ID:                    OpenRouterGPTOss20b,
+		Name:                  "OpenRouter – GPT-OSS 20B",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "openai/gpt-oss-20b",
+		CostPer1MIn:           0.03,
+		CostPer1MInCached:     0.0,
+		CostPer1MOut:          0.10,
+		CostPer1MOutCached:    0.0,
+		ContextWindow:         131_072,
+		DefaultMaxTokens:      131072,
+		CanReason:             true,
+		SupportsStructuredOut: true,
+	},
+	OpenRouterGPTOss120b: {
+		ID:                    OpenRouterGPTOss120b,
+		Name:                  "OpenRouter – GPT-OSS 120B",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "openai/gpt-oss-120b",
+		CostPer1MIn:           0.039,
+		CostPer1MInCached:     0.0,
+		CostPer1MOut:          0.10,
+		CostPer1MOutCached:    0.0,
+		ContextWindow:         131_072,
+		DefaultMaxTokens:      131072,
+		CanReason:             true,
+		SupportsStructuredOut: true,
 	},
 }

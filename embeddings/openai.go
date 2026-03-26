@@ -9,6 +9,7 @@ import (
 )
 
 type openaiOptions struct {
+	baseURL    string
 	dimensions *int
 	user       string
 }
@@ -36,6 +37,12 @@ func newOpenAIClient(opts embeddingClientOptions) OpenAIClient {
 		openaiClientOptions = append(
 			openaiClientOptions,
 			option.WithAPIKey(opts.apiKey),
+		)
+	}
+	if openaiOpts.baseURL != "" {
+		openaiClientOptions = append(
+			openaiClientOptions,
+			option.WithBaseURL(openaiOpts.baseURL),
 		)
 	}
 
@@ -148,6 +155,14 @@ func (o *openaiClient) embedContextualized(
 	_ ...string,
 ) (*ContextualizedEmbeddingResponse, error) {
 	return nil, fmt.Errorf("OpenAI does not support contextualized embeddings")
+}
+
+// WithBaseURL sets a custom base URL for the OpenAI API endpoint.
+// This enables compatibility with Azure OpenAI and other OpenAI-compatible services.
+func WithBaseURL(baseURL string) OpenAIOption {
+	return func(options *openaiOptions) {
+		options.baseURL = baseURL
+	}
 }
 
 // WithUser sets a unique identifier for the end-user making the request.
