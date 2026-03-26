@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -264,4 +265,78 @@ func (t *echoTool) Run(
 	params tool.Call,
 ) (tool.Response, error) {
 	return tool.NewTextResponse("echo: " + params.Input), nil
+}
+
+type errorTool struct{}
+
+func (t *errorTool) Info() tool.Info {
+	return tool.NewInfo("error_tool", "Always returns an error", struct{}{})
+}
+
+func (t *errorTool) Run(
+	_ context.Context,
+	_ tool.Call,
+) (tool.Response, error) {
+	return tool.Response{}, fmt.Errorf("tool failed")
+}
+
+type isErrorTool struct{}
+
+func (t *isErrorTool) Info() tool.Info {
+	return tool.NewInfo(
+		"is_error_tool",
+		"Returns a response with IsError flag",
+		struct{}{},
+	)
+}
+
+func (t *isErrorTool) Run(
+	_ context.Context,
+	_ tool.Call,
+) (tool.Response, error) {
+	return tool.NewTextErrorResponse("something broke"), nil
+}
+
+type concurrencyTrackingTool struct {
+	maxConcurrent     *atomic.Int32
+	currentConcurrent *atomic.Int32
+	delay             time.Duration
+}
+
+func newConcurrencyTrackingTool(delay time.Duration) *concurrencyTrackingTool {
+	return &concurrencyTrackingTool{
+		maxConcurrent:     &atomic.Int32{},
+		currentConcurrent: &atomic.Int32{},
+		delay:             delay,
+	}
+}
+
+func (t *concurrencyTrackingTool) Info() tool.Info {
+	return tool.NewInfo("tracking_tool", "Tracks concurrency", struct {
+		Text string `json:"text" desc:"Input text"`
+	}{})
+}
+
+func (t *concurrencyTrackingTool) Run(
+	_ context.Context,
+	params tool.Call,
+) (tool.Response, error) {
+	cur := t.currentConcurrent.Add(1)
+	defer t.currentConcurrent.Add(-1)
+
+	for {
+		old := t.maxConcurrent.Load()
+		if cur <= old {
+			break
+		}
+		if t.maxConcurrent.CompareAndSwap(old, cur) {
+			break
+		}
+	}
+
+	if t.delay > 0 {
+		time.Sleep(t.delay)
+	}
+
+	return tool.NewTextResponse("tracked: " + params.Input), nil
 }

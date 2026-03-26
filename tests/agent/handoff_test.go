@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/joakimcarlsson/ai/agent"
@@ -281,5 +282,253 @@ func TestHandoff_AgentNameInStreamResponse(t *testing.T) {
 
 	if agentName != "target" {
 		t.Errorf("expected AgentName 'target' in response, got %q", agentName)
+	}
+}
+
+func TestHandoff_MessageHistoryPreserved(t *testing.T) {
+	var receivedMsgs []message.Message
+	var mu sync.Mutex
+
+	targetBase := newMockLLM(mockResponse{Content: "target response"})
+	targetLLM := &toolResultCapturingLLM{
+		base: targetBase,
+		onCall: func(msgs []message.Message) {
+			mu.Lock()
+			receivedMsgs = msgs
+			mu.Unlock()
+		},
+	}
+	target := agent.New(
+		targetLLM,
+		agent.WithSystemPrompt("Target system prompt"),
+	)
+
+	sourceLLM := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "transfer_to_target",
+					Input: `{}`,
+					Type:  "function",
+				},
+			},
+		},
+	)
+	source := agent.New(sourceLLM,
+		agent.WithSystemPrompt("Source system prompt"),
+		agent.WithHandoffs(agent.HandoffConfig{
+			Name:        "target",
+			Description: "Target",
+			Agent:       target,
+		}),
+	)
+
+	_, err := source.Chat(context.Background(), "hello world")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	var hasUserMsg bool
+	for _, msg := range receivedMsgs {
+		if msg.Role == message.User {
+			txt := msg.Content().Text
+			if txt == "hello world" {
+				hasUserMsg = true
+			}
+		}
+	}
+	if !hasUserMsg {
+		t.Error(
+			"expected target agent to receive original user message in history",
+		)
+	}
+
+	var hasAssistant bool
+	for _, msg := range receivedMsgs {
+		if msg.Role == message.Assistant {
+			hasAssistant = true
+		}
+	}
+	if !hasAssistant {
+		t.Error(
+			"expected target agent to receive assistant messages from source in history",
+		)
+	}
+}
+
+func TestHandoff_SystemPromptSwapped(t *testing.T) {
+	var receivedMsgs []message.Message
+	var mu sync.Mutex
+
+	targetBase := newMockLLM(mockResponse{Content: "target response"})
+	targetLLM := &toolResultCapturingLLM{
+		base: targetBase,
+		onCall: func(msgs []message.Message) {
+			mu.Lock()
+			receivedMsgs = msgs
+			mu.Unlock()
+		},
+	}
+	target := agent.New(
+		targetLLM,
+		agent.WithSystemPrompt("I am the TARGET agent"),
+	)
+
+	sourceLLM := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "transfer_to_target",
+					Input: `{}`,
+					Type:  "function",
+				},
+			},
+		},
+	)
+	source := agent.New(sourceLLM,
+		agent.WithSystemPrompt("I am the SOURCE agent"),
+		agent.WithHandoffs(agent.HandoffConfig{
+			Name:        "target",
+			Description: "Target",
+			Agent:       target,
+		}),
+	)
+
+	_, err := source.Chat(context.Background(), "test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	var systemPrompts []string
+	for _, msg := range receivedMsgs {
+		if msg.Role == message.System {
+			systemPrompts = append(systemPrompts, msg.Content().Text)
+		}
+	}
+
+	if len(systemPrompts) != 1 {
+		t.Fatalf(
+			"expected exactly 1 system message after handoff, got %d",
+			len(systemPrompts),
+		)
+	}
+	if systemPrompts[0] != "I am the TARGET agent" {
+		t.Errorf("expected target system prompt, got %q", systemPrompts[0])
+	}
+}
+
+func TestHandoff_CircularMaxIterations(t *testing.T) {
+	agentALLM := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-a1",
+					Name:  "transfer_to_b",
+					Input: `{}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-a2",
+					Name:  "transfer_to_b",
+					Input: `{}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-a3",
+					Name:  "transfer_to_b",
+					Input: `{}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "agent A fallback"},
+	)
+
+	agentBLLM := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-b1",
+					Name:  "transfer_to_a",
+					Input: `{}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-b2",
+					Name:  "transfer_to_a",
+					Input: `{}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-b3",
+					Name:  "transfer_to_a",
+					Input: `{}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "agent B fallback"},
+	)
+
+	agentBStub := agent.New(agentBLLM, agent.WithSystemPrompt("Agent B"))
+
+	agentAFull := agent.New(agentALLM,
+		agent.WithSystemPrompt("Agent A"),
+		agent.WithHandoffs(agent.HandoffConfig{
+			Name:        "b",
+			Description: "Transfer to B",
+			Agent:       agentBStub,
+		}),
+	)
+
+	agentBFull := agent.New(agentBLLM,
+		agent.WithSystemPrompt("Agent B"),
+		agent.WithHandoffs(agent.HandoffConfig{
+			Name:        "a",
+			Description: "Transfer to A",
+			Agent:       agentAFull,
+		}),
+	)
+
+	root := agent.New(agentALLM,
+		agent.WithSystemPrompt("Agent A"),
+		agent.WithHandoffs(agent.HandoffConfig{
+			Name:        "b",
+			Description: "Transfer to B",
+			Agent:       agentBFull,
+		}),
+	)
+
+	resp, err := root.Chat(context.Background(), "ping pong")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if resp.Content == "" && len(resp.ToolCalls) == 0 {
+		t.Error("expected either content or pending tool calls")
 	}
 }
