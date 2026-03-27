@@ -23,12 +23,83 @@ func (a *Agent) ChatStream(
 	go func() {
 		defer close(eventChan)
 
+		startTime := time.Now()
+		taskID, agentName, branch := a.hookContext(ctx)
+
+		runBeforeRun(ctx, a.hooks, RunContext{
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+			Input:     userMessage,
+		})
+
 		if a.taskManager != nil {
 			ctx = withTaskManager(ctx, a.taskManager)
 			defer func() {
 				a.taskManager.CancelAll()
 				a.taskManager.WaitAll()
 			}()
+		}
+
+		umResult, umErr := runOnUserMessage(ctx, a.hooks, UserMessageContext{
+			Message:   userMessage,
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+		})
+		if umErr != nil {
+			eventChan <- ChatEvent{
+				Type:  types.EventError,
+				Error: fmt.Errorf("on-user-message hook: %w", umErr),
+			}
+			return
+		}
+		if umResult.Action == HookDeny {
+			eventChan <- ChatEvent{
+				Type:  types.EventError,
+				Error: fmt.Errorf("message denied: %s", umResult.DenyReason),
+			}
+			return
+		}
+		if umResult.Action == HookModify {
+			userMessage = umResult.Message
+		}
+
+		baResult, baErr := runBeforeAgent(ctx, a.hooks, LifecycleContext{
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+			Input:     userMessage,
+		})
+		if baErr != nil {
+			eventChan <- ChatEvent{
+				Type:  types.EventError,
+				Error: fmt.Errorf("before-agent hook: %w", baErr),
+			}
+			return
+		}
+		if baResult.Action == HookDeny ||
+			(baResult.Action == HookModify && baResult.Response != nil) {
+			resp := baResult.Response
+			runAfterAgent(ctx, a.hooks, LifecycleContext{
+				AgentName: agentName,
+				TaskID:    taskID,
+				Branch:    branch,
+				Response:  resp,
+			})
+			runAfterRun(ctx, a.hooks, RunContext{
+				AgentName: agentName,
+				TaskID:    taskID,
+				Branch:    branch,
+				Input:     userMessage,
+				Response:  resp,
+				Duration:  time.Since(startTime),
+			})
+			eventChan <- ChatEvent{
+				Type:     types.EventComplete,
+				Response: resp,
+			}
+			return
 		}
 
 		messages, err := a.buildMessages(ctx, userMessage)
@@ -38,7 +109,48 @@ func (a *Agent) ChatStream(
 		}
 
 		cfg := applyChatOptions(opts)
-		a.runLoopStream(ctx, messages, cfg, eventChan)
+		resp, loopErr := a.runLoopStream(ctx, messages, cfg, eventChan)
+
+		if loopErr == nil && resp != nil {
+			aaResult, aaErr := runAfterAgent(ctx, a.hooks, LifecycleContext{
+				AgentName: agentName,
+				TaskID:    taskID,
+				Branch:    branch,
+				Response:  resp,
+			})
+			if aaErr != nil {
+				eventChan <- ChatEvent{
+					Type:  types.EventError,
+					Error: fmt.Errorf("after-agent hook: %w", aaErr),
+				}
+				runAfterRun(ctx, a.hooks, RunContext{
+					AgentName: agentName,
+					TaskID:    taskID,
+					Branch:    branch,
+					Input:     userMessage,
+					Error:     aaErr,
+					Duration:  time.Since(startTime),
+				})
+				return
+			}
+			if aaResult.Action == HookModify && aaResult.Response != nil {
+				resp = aaResult.Response
+			}
+			eventChan <- ChatEvent{
+				Type:     types.EventComplete,
+				Response: resp,
+			}
+		}
+
+		runAfterRun(ctx, a.hooks, RunContext{
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+			Input:     userMessage,
+			Response:  resp,
+			Error:     loopErr,
+			Duration:  time.Since(startTime),
+		})
 	}()
 
 	return eventChan
@@ -71,12 +183,56 @@ func (a *Agent) ContinueStream(
 			return
 		}
 
+		startTime := time.Now()
+		taskID, agentName, branch := a.hookContext(ctx)
+
+		runBeforeRun(ctx, a.hooks, RunContext{
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+		})
+
 		if a.taskManager != nil {
 			ctx = withTaskManager(ctx, a.taskManager)
 			defer func() {
 				a.taskManager.CancelAll()
 				a.taskManager.WaitAll()
 			}()
+		}
+
+		baResult, baErr := runBeforeAgent(ctx, a.hooks, LifecycleContext{
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+		})
+		if baErr != nil {
+			eventChan <- ChatEvent{
+				Type:  types.EventError,
+				Error: fmt.Errorf("before-agent hook: %w", baErr),
+			}
+			return
+		}
+		if baResult.Action == HookDeny ||
+			(baResult.Action == HookModify && baResult.Response != nil) {
+			resp := baResult.Response
+			runAfterAgent(ctx, a.hooks, LifecycleContext{
+				AgentName: agentName,
+				TaskID:    taskID,
+				Branch:    branch,
+				Response:  resp,
+			})
+			runAfterRun(ctx, a.hooks, RunContext{
+				AgentName: agentName,
+				TaskID:    taskID,
+				Branch:    branch,
+				Response:  resp,
+				Duration:  time.Since(startTime),
+			})
+			eventChan <- ChatEvent{
+				Type:     types.EventComplete,
+				Response: resp,
+			}
+			return
 		}
 
 		messages, err := a.buildContinueMessages(ctx)
@@ -101,7 +257,46 @@ func (a *Agent) ContinueStream(
 		}
 
 		cfg := applyChatOptions(opts)
-		a.runLoopStream(ctx, messages, cfg, eventChan)
+		resp, loopErr := a.runLoopStream(ctx, messages, cfg, eventChan)
+
+		if loopErr == nil && resp != nil {
+			aaResult, aaErr := runAfterAgent(ctx, a.hooks, LifecycleContext{
+				AgentName: agentName,
+				TaskID:    taskID,
+				Branch:    branch,
+				Response:  resp,
+			})
+			if aaErr != nil {
+				eventChan <- ChatEvent{
+					Type:  types.EventError,
+					Error: fmt.Errorf("after-agent hook: %w", aaErr),
+				}
+				runAfterRun(ctx, a.hooks, RunContext{
+					AgentName: agentName,
+					TaskID:    taskID,
+					Branch:    branch,
+					Error:     aaErr,
+					Duration:  time.Since(startTime),
+				})
+				return
+			}
+			if aaResult.Action == HookModify && aaResult.Response != nil {
+				resp = aaResult.Response
+			}
+			eventChan <- ChatEvent{
+				Type:     types.EventComplete,
+				Response: resp,
+			}
+		}
+
+		runAfterRun(ctx, a.hooks, RunContext{
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+			Response:  resp,
+			Error:     loopErr,
+			Duration:  time.Since(startTime),
+		})
 	}()
 
 	return eventChan
@@ -112,7 +307,7 @@ func (a *Agent) runLoopStream(
 	messages []message.Message,
 	cfg chatConfig,
 	eventChan chan<- ChatEvent,
-) {
+) (*ChatResponse, error) {
 	startTime := time.Now()
 	var totalUsage llm.TokenUsage
 	var totalToolCalls int
@@ -149,12 +344,15 @@ func (a *Agent) runLoopStream(
 		)
 		if hookErr != nil {
 			eventChan <- ChatEvent{Type: types.EventError, Error: fmt.Errorf("pre-model-call hook: %w", hookErr)}
-			return
+			return nil, hookErr
 		}
 		if mcResult.Action == HookModify {
 			messages = mcResult.Messages
 			allTools = mcResult.Tools
 		}
+
+		var streamErr error
+		var streamRecovered bool
 
 		for event := range activeAgent.llm.StreamResponse(ctx, messages, allTools) {
 			switch event.Type {
@@ -185,33 +383,62 @@ func (a *Agent) runLoopStream(
 					Branch:    branch,
 					Error:     event.Error,
 				})
-				eventChan <- ChatEvent{Type: types.EventError, Error: event.Error}
-				return
+				meResult, meErr := runOnModelError(
+					ctx,
+					activeAgent.hooks,
+					ModelErrorContext{
+						Messages:  messages,
+						Tools:     allTools,
+						Error:     event.Error,
+						AgentName: agentName,
+						TaskID:    taskID,
+						Branch:    branch,
+					},
+				)
+				if meErr == nil && meResult.Action == HookModify &&
+					meResult.Response != nil {
+					finalResponse = meResult.Response
+					toolCalls = meResult.Response.ToolCalls
+					streamRecovered = true
+				} else {
+					streamErr = event.Error
+				}
 			}
+		}
+
+		if streamErr != nil && !streamRecovered {
+			eventChan <- ChatEvent{Type: types.EventError, Error: streamErr}
+			return nil, streamErr
 		}
 
 		turns++
 		if finalResponse != nil {
 			totalUsage.Add(finalResponse.Usage)
-			mrResult, hookErr := runPostModelCall(
-				ctx,
-				activeAgent.hooks,
-				ModelResponseContext{
-					Response:  finalResponse,
-					Duration:  time.Since(turnStart),
-					AgentName: agentName,
-					TaskID:    taskID,
-					Branch:    branch,
-				},
-			)
-			if hookErr != nil {
-				eventChan <- ChatEvent{Type: types.EventError, Error: fmt.Errorf("post-model-call hook: %w", hookErr)}
-				return
+			if !streamRecovered {
+				mrResult, hookErr := runPostModelCall(
+					ctx,
+					activeAgent.hooks,
+					ModelResponseContext{
+						Response:  finalResponse,
+						Duration:  time.Since(turnStart),
+						AgentName: agentName,
+						TaskID:    taskID,
+						Branch:    branch,
+					},
+				)
+				if hookErr != nil {
+					eventChan <- ChatEvent{Type: types.EventError, Error: fmt.Errorf("post-model-call hook: %w", hookErr)}
+					return nil, hookErr
+				}
+				if mrResult.Action == HookModify && mrResult.Response != nil {
+					finalResponse = mrResult.Response
+					toolCalls = finalResponse.ToolCalls
+				}
 			}
-			if mrResult.Action == HookModify && mrResult.Response != nil {
-				finalResponse = mrResult.Response
-				toolCalls = finalResponse.ToolCalls
-			}
+		}
+
+		if streamRecovered && finalResponse != nil {
+			fullContent = finalResponse.Content
 		}
 
 		if len(toolCalls) == 0 || !activeAgent.autoExecute ||
@@ -255,11 +482,7 @@ func (a *Agent) runLoopStream(
 				chatResp.AgentName = findAgentName(a, activeAgent)
 			}
 
-			eventChan <- ChatEvent{
-				Type:     types.EventComplete,
-				Response: chatResp,
-			}
-			return
+			return chatResp, nil
 		}
 
 		totalToolCalls += len(toolCalls)
@@ -328,7 +551,7 @@ func (a *Agent) runLoopStream(
 			)
 			if err != nil {
 				eventChan <- ChatEvent{Type: types.EventError, Error: err}
-				return
+				return nil, err
 			}
 			iteration = 0
 			continue

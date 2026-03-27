@@ -20,6 +20,15 @@ func (a *Agent) Chat(
 	opts ...ChatOption,
 ) (*ChatResponse, error) {
 	cfg := applyChatOptions(opts)
+	startTime := time.Now()
+	taskID, agentName, branch := a.hookContext(ctx)
+
+	runBeforeRun(ctx, a.hooks, RunContext{
+		AgentName: agentName,
+		TaskID:    taskID,
+		Branch:    branch,
+		Input:     userMessage,
+	})
 
 	if a.taskManager != nil {
 		ctx = withTaskManager(ctx, a.taskManager)
@@ -29,12 +38,84 @@ func (a *Agent) Chat(
 		}()
 	}
 
+	umResult, err := runOnUserMessage(ctx, a.hooks, UserMessageContext{
+		Message:   userMessage,
+		AgentName: agentName,
+		TaskID:    taskID,
+		Branch:    branch,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("on-user-message hook: %w", err)
+	}
+	if umResult.Action == HookDeny {
+		return nil, fmt.Errorf("message denied: %s", umResult.DenyReason)
+	}
+	if umResult.Action == HookModify {
+		userMessage = umResult.Message
+	}
+
+	baResult, err := runBeforeAgent(ctx, a.hooks, LifecycleContext{
+		AgentName: agentName,
+		TaskID:    taskID,
+		Branch:    branch,
+		Input:     userMessage,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("before-agent hook: %w", err)
+	}
+	if baResult.Action == HookDeny ||
+		(baResult.Action == HookModify && baResult.Response != nil) {
+		resp := baResult.Response
+		runAfterAgent(ctx, a.hooks, LifecycleContext{
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+			Response:  resp,
+		})
+		runAfterRun(ctx, a.hooks, RunContext{
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+			Input:     userMessage,
+			Response:  resp,
+			Duration:  time.Since(startTime),
+		})
+		return resp, nil
+	}
+
 	messages, err := a.buildMessages(ctx, userMessage)
 	if err != nil {
 		return nil, err
 	}
 
-	return a.runLoop(ctx, messages, cfg)
+	resp, err := a.runLoop(ctx, messages, cfg)
+
+	if err == nil {
+		aaResult, aaErr := runAfterAgent(ctx, a.hooks, LifecycleContext{
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+			Response:  resp,
+		})
+		if aaErr != nil {
+			return nil, fmt.Errorf("after-agent hook: %w", aaErr)
+		}
+		if aaResult.Action == HookModify && aaResult.Response != nil {
+			resp = aaResult.Response
+		}
+	}
+
+	runAfterRun(ctx, a.hooks, RunContext{
+		AgentName: agentName,
+		TaskID:    taskID,
+		Branch:    branch,
+		Input:     userMessage,
+		Response:  resp,
+		Error:     err,
+		Duration:  time.Since(startTime),
+	})
+
+	return resp, err
 }
 
 // Continue resumes the agent loop with externally-executed tool results.
@@ -57,6 +138,14 @@ func (a *Agent) Continue(
 	}
 
 	cfg := applyChatOptions(opts)
+	startTime := time.Now()
+	taskID, agentName, branch := a.hookContext(ctx)
+
+	runBeforeRun(ctx, a.hooks, RunContext{
+		AgentName: agentName,
+		TaskID:    taskID,
+		Branch:    branch,
+	})
 
 	if a.taskManager != nil {
 		ctx = withTaskManager(ctx, a.taskManager)
@@ -64,6 +153,33 @@ func (a *Agent) Continue(
 			a.taskManager.CancelAll()
 			a.taskManager.WaitAll()
 		}()
+	}
+
+	baResult, err := runBeforeAgent(ctx, a.hooks, LifecycleContext{
+		AgentName: agentName,
+		TaskID:    taskID,
+		Branch:    branch,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("before-agent hook: %w", err)
+	}
+	if baResult.Action == HookDeny ||
+		(baResult.Action == HookModify && baResult.Response != nil) {
+		resp := baResult.Response
+		runAfterAgent(ctx, a.hooks, LifecycleContext{
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+			Response:  resp,
+		})
+		runAfterRun(ctx, a.hooks, RunContext{
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+			Response:  resp,
+			Duration:  time.Since(startTime),
+		})
+		return resp, nil
 	}
 
 	messages, err := a.buildContinueMessages(ctx)
@@ -85,7 +201,33 @@ func (a *Agent) Continue(
 		return nil, err
 	}
 
-	return a.runLoop(ctx, messages, cfg)
+	resp, err := a.runLoop(ctx, messages, cfg)
+
+	if err == nil {
+		aaResult, aaErr := runAfterAgent(ctx, a.hooks, LifecycleContext{
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+			Response:  resp,
+		})
+		if aaErr != nil {
+			return nil, fmt.Errorf("after-agent hook: %w", aaErr)
+		}
+		if aaResult.Action == HookModify && aaResult.Response != nil {
+			resp = aaResult.Response
+		}
+	}
+
+	runAfterRun(ctx, a.hooks, RunContext{
+		AgentName: agentName,
+		TaskID:    taskID,
+		Branch:    branch,
+		Response:  resp,
+		Error:     err,
+		Duration:  time.Since(startTime),
+	})
+
+	return resp, err
 }
 
 func (a *Agent) runLoop(
@@ -145,7 +287,23 @@ func (a *Agent) runLoop(
 			},
 		)
 		if err != nil {
-			return nil, err
+			meResult, meErr := runOnModelError(
+				ctx,
+				activeAgent.hooks,
+				ModelErrorContext{
+					Messages:  messages,
+					Tools:     allTools,
+					Error:     err,
+					AgentName: agentName,
+					TaskID:    taskID,
+					Branch:    branch,
+				},
+			)
+			if meErr != nil || meResult.Action != HookModify ||
+				meResult.Response == nil {
+				return nil, err
+			}
+			resp = meResult.Response
 		}
 		if hookErr != nil {
 			return nil, fmt.Errorf("post-model-call hook: %w", hookErr)
