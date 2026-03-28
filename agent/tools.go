@@ -140,6 +140,19 @@ func (a *Agent) executeSingleTool(
 		result.Output = resp.Content
 	}
 
+	if result.IsError {
+		errResult, _ := runOnToolError(ctx, a.hooks, ToolErrorContext{
+			ToolUseContext: hookTC,
+			Error:          execErr,
+			Output:         result.Output,
+			Duration:       elapsed,
+		})
+		if errResult.Action == HookModify {
+			result.Output = errResult.Output
+			result.IsError = false
+		}
+	}
+
 	postResult, _ := runPostToolUse(ctx, a.hooks, PostToolUseContext{
 		ToolUseContext: hookTC,
 		Output:         result.Output,

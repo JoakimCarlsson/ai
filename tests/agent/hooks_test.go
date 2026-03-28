@@ -955,7 +955,264 @@ func TestMultipleHookChains(t *testing.T) {
 	}
 }
 
-// simpleTool is a test helper for creating tools with custom behavior.
+func TestOnEvent_FiresForAllHookTypes(t *testing.T) {
+	var mu sync.Mutex
+	var eventTypes []agent.HookEventType
+
+	hooks := agent.Hooks{
+		OnEvent: func(_ context.Context, evt agent.HookEvent) {
+			mu.Lock()
+			eventTypes = append(eventTypes, evt.Type)
+			mu.Unlock()
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "done"},
+	)
+
+	a := agent.New(mock,
+		agent.WithTools(&echoTool{}),
+		agent.WithHooks(hooks),
+	)
+
+	_, err := a.Chat(context.Background(), "test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	typesSeen := make(map[agent.HookEventType]bool)
+	for _, et := range eventTypes {
+		typesSeen[et] = true
+	}
+
+	expected := []agent.HookEventType{
+		agent.HookEventBeforeRun,
+		agent.HookEventUserMessage,
+		agent.HookEventBeforeAgent,
+		agent.HookEventPreModelCall,
+		agent.HookEventPostModelCall,
+		agent.HookEventPreToolUse,
+		agent.HookEventPostToolUse,
+		agent.HookEventAfterAgent,
+		agent.HookEventAfterRun,
+	}
+	for _, et := range expected {
+		if !typesSeen[et] {
+			t.Errorf("expected OnEvent to fire for %q", et)
+		}
+	}
+}
+
+func TestOnEvent_ToolError(t *testing.T) {
+	var mu sync.Mutex
+	var eventTypes []agent.HookEventType
+
+	hooks := agent.Hooks{
+		OnEvent: func(_ context.Context, evt agent.HookEvent) {
+			mu.Lock()
+			eventTypes = append(eventTypes, evt.Type)
+			mu.Unlock()
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "error_tool",
+					Input: `{}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "done"},
+	)
+
+	a := agent.New(mock,
+		agent.WithTools(&errorTool{}),
+		agent.WithHooks(hooks),
+	)
+
+	_, err := a.Chat(context.Background(), "test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	typesSeen := make(map[agent.HookEventType]bool)
+	for _, et := range eventTypes {
+		typesSeen[et] = true
+	}
+
+	if !typesSeen[agent.HookEventToolError] {
+		t.Error("expected OnEvent to fire for tool_error")
+	}
+}
+
+func TestNewObservingHooks_IncludesNewHookTypes(t *testing.T) {
+	collector := &hookEventCollector{}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "error_tool",
+					Input: `{}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "done"},
+	)
+
+	a := agent.New(mock,
+		agent.WithTools(&errorTool{}),
+		agent.WithHooks(
+			agent.NewObservingHooks(collector.collect),
+		),
+	)
+
+	_, err := a.Chat(context.Background(), "test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	events := collector.all()
+	typesSeen := make(map[agent.HookEventType]bool)
+	for _, evt := range events {
+		typesSeen[evt.Type] = true
+	}
+
+	expected := []agent.HookEventType{
+		agent.HookEventBeforeRun,
+		agent.HookEventAfterRun,
+		agent.HookEventBeforeAgent,
+		agent.HookEventAfterAgent,
+		agent.HookEventUserMessage,
+		agent.HookEventToolError,
+	}
+	for _, et := range expected {
+		if !typesSeen[et] {
+			t.Errorf(
+				"expected NewObservingHooks to emit %q event",
+				et,
+			)
+		}
+	}
+}
+
+func TestOnEvent_StreamFiresForAllHookTypes(t *testing.T) {
+	var mu sync.Mutex
+	var eventTypes []agent.HookEventType
+
+	hooks := agent.Hooks{
+		OnEvent: func(_ context.Context, evt agent.HookEvent) {
+			mu.Lock()
+			eventTypes = append(eventTypes, evt.Type)
+			mu.Unlock()
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "done"},
+	)
+
+	a := agent.New(mock,
+		agent.WithTools(&echoTool{}),
+		agent.WithHooks(hooks),
+	)
+
+	for event := range a.ChatStream(context.Background(), "test") {
+		_ = event
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	typesSeen := make(map[agent.HookEventType]bool)
+	for _, et := range eventTypes {
+		typesSeen[et] = true
+	}
+
+	expected := []agent.HookEventType{
+		agent.HookEventBeforeRun,
+		agent.HookEventUserMessage,
+		agent.HookEventBeforeAgent,
+		agent.HookEventPreModelCall,
+		agent.HookEventPostModelCall,
+		agent.HookEventPreToolUse,
+		agent.HookEventPostToolUse,
+		agent.HookEventAfterAgent,
+		agent.HookEventAfterRun,
+	}
+	for _, et := range expected {
+		if !typesSeen[et] {
+			t.Errorf(
+				"expected OnEvent to fire for %q in stream",
+				et,
+			)
+		}
+	}
+}
+
+func TestOnEvent_ModelError(t *testing.T) {
+	var mu sync.Mutex
+	var eventTypes []agent.HookEventType
+
+	hooks := agent.Hooks{
+		OnEvent: func(_ context.Context, evt agent.HookEvent) {
+			mu.Lock()
+			eventTypes = append(eventTypes, evt.Type)
+			mu.Unlock()
+		},
+	}
+
+	mock := newMockLLM(mockResponse{Err: fmt.Errorf("boom")})
+	a := agent.New(mock, agent.WithHooks(hooks))
+
+	a.Chat(context.Background(), "test")
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	typesSeen := make(map[agent.HookEventType]bool)
+	for _, et := range eventTypes {
+		typesSeen[et] = true
+	}
+
+	if !typesSeen[agent.HookEventModelError] {
+		t.Error("expected OnEvent to fire for model_error")
+	}
+}
+
 type simpleTool struct {
 	name string
 	run  func(ctx context.Context, params tool.Call) (tool.Response, error)

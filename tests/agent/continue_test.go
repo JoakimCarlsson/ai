@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/joakimcarlsson/ai/agent"
@@ -252,5 +253,668 @@ func TestContinue_PendingToolCallsPersisted(t *testing.T) {
 		t.Error(
 			"expected session to contain assistant message with tool calls, but none found",
 		)
+	}
+}
+
+func TestContinueStream_BeforeAgent_ShortCircuit(t *testing.T) {
+	store := session.MemoryStore()
+
+	callCount := 0
+	hooks := agent.Hooks{
+		BeforeAgent: func(_ context.Context, _ agent.LifecycleContext) (agent.LifecycleResult, error) {
+			callCount++
+			if callCount > 1 {
+				return agent.LifecycleResult{
+					Action: agent.HookModify,
+					Response: &agent.ChatResponse{
+						Content: "short-circuited continue",
+					},
+				}, nil
+			}
+			return agent.LifecycleResult{Action: agent.HookAllow}, nil
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "unreachable"},
+	)
+
+	a := agent.New(mock,
+		agent.WithAutoExecute(false),
+		agent.WithTools(&echoTool{}),
+		agent.WithSession("test-cs-ba", store),
+		agent.WithHooks(hooks),
+	)
+
+	resp, err := a.Chat(context.Background(), "start")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(resp.ToolCalls) == 0 {
+		t.Fatal("expected pending tool calls")
+	}
+
+	var finalContent string
+	for event := range a.ContinueStream(
+		context.Background(),
+		[]message.ToolResult{
+			{ToolCallID: "tc-1", Name: "echo", Content: "result"},
+		},
+	) {
+		if event.Type == types.EventComplete && event.Response != nil {
+			finalContent = event.Response.Content
+		}
+	}
+
+	if finalContent != "short-circuited continue" {
+		t.Fatalf(
+			"expected 'short-circuited continue', got %q",
+			finalContent,
+		)
+	}
+}
+
+func TestContinueStream_BeforeAgent_Error(t *testing.T) {
+	store := session.MemoryStore()
+
+	callCount := 0
+	hooks := agent.Hooks{
+		BeforeAgent: func(_ context.Context, _ agent.LifecycleContext) (agent.LifecycleResult, error) {
+			callCount++
+			if callCount > 1 {
+				return agent.LifecycleResult{}, fmt.Errorf("before-agent error")
+			}
+			return agent.LifecycleResult{Action: agent.HookAllow}, nil
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "unreachable"},
+	)
+
+	a := agent.New(mock,
+		agent.WithAutoExecute(false),
+		agent.WithTools(&echoTool{}),
+		agent.WithSession("test-cs-ba-err", store),
+		agent.WithHooks(hooks),
+	)
+
+	resp, err := a.Chat(context.Background(), "start")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(resp.ToolCalls) == 0 {
+		t.Fatal("expected pending tool calls")
+	}
+
+	var gotError bool
+	for event := range a.ContinueStream(
+		context.Background(),
+		[]message.ToolResult{
+			{ToolCallID: "tc-1", Name: "echo", Content: "result"},
+		},
+	) {
+		if event.Type == types.EventError {
+			gotError = true
+		}
+	}
+
+	if !gotError {
+		t.Fatal("expected error event from BeforeAgent in ContinueStream")
+	}
+}
+
+func TestContinueStream_AfterAgent_ModifyResponse(t *testing.T) {
+	store := session.MemoryStore()
+
+	hooks := agent.Hooks{
+		AfterAgent: func(_ context.Context, ac agent.LifecycleContext) (agent.LifecycleResult, error) {
+			modified := *ac.Response
+			modified.Content = "modified: " + modified.Content
+			return agent.LifecycleResult{
+				Action:   agent.HookModify,
+				Response: &modified,
+			}, nil
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "final"},
+	)
+
+	a := agent.New(mock,
+		agent.WithAutoExecute(false),
+		agent.WithTools(&echoTool{}),
+		agent.WithSession("test-cs-aa", store),
+		agent.WithHooks(hooks),
+	)
+
+	resp, _ := a.Chat(context.Background(), "start")
+	if len(resp.ToolCalls) == 0 {
+		t.Fatal("expected pending tool calls")
+	}
+
+	var finalContent string
+	for event := range a.ContinueStream(
+		context.Background(),
+		[]message.ToolResult{
+			{ToolCallID: "tc-1", Name: "echo", Content: "result"},
+		},
+	) {
+		if event.Type == types.EventComplete && event.Response != nil {
+			finalContent = event.Response.Content
+		}
+	}
+
+	if finalContent != "modified: final" {
+		t.Fatalf("expected 'modified: final', got %q", finalContent)
+	}
+}
+
+func TestContinueStream_AfterAgent_Error(t *testing.T) {
+	store := session.MemoryStore()
+
+	callCount := 0
+	hooks := agent.Hooks{
+		AfterAgent: func(_ context.Context, _ agent.LifecycleContext) (agent.LifecycleResult, error) {
+			callCount++
+			if callCount > 1 {
+				return agent.LifecycleResult{}, fmt.Errorf("after-agent error")
+			}
+			return agent.LifecycleResult{Action: agent.HookAllow}, nil
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "final"},
+	)
+
+	a := agent.New(mock,
+		agent.WithAutoExecute(false),
+		agent.WithTools(&echoTool{}),
+		agent.WithSession("test-cs-aa-err", store),
+		agent.WithHooks(hooks),
+	)
+
+	resp, _ := a.Chat(context.Background(), "start")
+	if len(resp.ToolCalls) == 0 {
+		t.Fatal("expected pending tool calls")
+	}
+
+	var gotError bool
+	for event := range a.ContinueStream(
+		context.Background(),
+		[]message.ToolResult{
+			{ToolCallID: "tc-1", Name: "echo", Content: "result"},
+		},
+	) {
+		if event.Type == types.EventError {
+			gotError = true
+		}
+	}
+
+	if !gotError {
+		t.Fatal("expected error event from AfterAgent in ContinueStream")
+	}
+}
+
+func TestContinue_BeforeAgent_ShortCircuit(t *testing.T) {
+	store := session.MemoryStore()
+
+	callCount := 0
+	hooks := agent.Hooks{
+		BeforeAgent: func(_ context.Context, _ agent.LifecycleContext) (agent.LifecycleResult, error) {
+			callCount++
+			if callCount > 1 {
+				return agent.LifecycleResult{
+					Action: agent.HookModify,
+					Response: &agent.ChatResponse{
+						Content: "short-circuited",
+					},
+				}, nil
+			}
+			return agent.LifecycleResult{Action: agent.HookAllow}, nil
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "unreachable"},
+	)
+
+	a := agent.New(mock,
+		agent.WithAutoExecute(false),
+		agent.WithTools(&echoTool{}),
+		agent.WithSession("test-c-ba", store),
+		agent.WithHooks(hooks),
+	)
+
+	resp, _ := a.Chat(context.Background(), "start")
+	if len(resp.ToolCalls) == 0 {
+		t.Fatal("expected pending tool calls")
+	}
+
+	resp, err := a.Continue(context.Background(), []message.ToolResult{
+		{ToolCallID: "tc-1", Name: "echo", Content: "result"},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.Content != "short-circuited" {
+		t.Fatalf(
+			"expected 'short-circuited', got %q",
+			resp.Content,
+		)
+	}
+}
+
+func TestContinue_BeforeAgent_Error(t *testing.T) {
+	store := session.MemoryStore()
+
+	callCount := 0
+	hooks := agent.Hooks{
+		BeforeAgent: func(_ context.Context, _ agent.LifecycleContext) (agent.LifecycleResult, error) {
+			callCount++
+			if callCount > 1 {
+				return agent.LifecycleResult{}, fmt.Errorf("before-agent error")
+			}
+			return agent.LifecycleResult{Action: agent.HookAllow}, nil
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
+			},
+		},
+	)
+
+	a := agent.New(mock,
+		agent.WithAutoExecute(false),
+		agent.WithTools(&echoTool{}),
+		agent.WithSession("test-c-ba-err", store),
+		agent.WithHooks(hooks),
+	)
+
+	resp, _ := a.Chat(context.Background(), "start")
+	if len(resp.ToolCalls) == 0 {
+		t.Fatal("expected pending tool calls")
+	}
+
+	_, err := a.Continue(context.Background(), []message.ToolResult{
+		{ToolCallID: "tc-1", Name: "echo", Content: "result"},
+	})
+	if err == nil {
+		t.Fatal("expected error from BeforeAgent in Continue")
+	}
+}
+
+func TestContinue_AfterAgent_ModifyResponse(t *testing.T) {
+	store := session.MemoryStore()
+
+	hooks := agent.Hooks{
+		AfterAgent: func(_ context.Context, ac agent.LifecycleContext) (agent.LifecycleResult, error) {
+			if ac.Response == nil {
+				return agent.LifecycleResult{
+					Action: agent.HookAllow,
+				}, nil
+			}
+			modified := *ac.Response
+			modified.Content = "modified: " + modified.Content
+			return agent.LifecycleResult{
+				Action:   agent.HookModify,
+				Response: &modified,
+			}, nil
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "final"},
+	)
+
+	a := agent.New(mock,
+		agent.WithAutoExecute(false),
+		agent.WithTools(&echoTool{}),
+		agent.WithSession("test-c-aa", store),
+		agent.WithHooks(hooks),
+	)
+
+	resp, _ := a.Chat(context.Background(), "start")
+	if len(resp.ToolCalls) == 0 {
+		t.Fatal("expected pending tool calls")
+	}
+
+	resp, err := a.Continue(context.Background(), []message.ToolResult{
+		{ToolCallID: "tc-1", Name: "echo", Content: "result"},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.Content != "modified: final" {
+		t.Fatalf("expected 'modified: final', got %q", resp.Content)
+	}
+}
+
+func TestContinue_AfterAgent_Error(t *testing.T) {
+	store := session.MemoryStore()
+
+	callCount := 0
+	hooks := agent.Hooks{
+		AfterAgent: func(_ context.Context, _ agent.LifecycleContext) (agent.LifecycleResult, error) {
+			callCount++
+			if callCount > 1 {
+				return agent.LifecycleResult{}, fmt.Errorf("after-agent error")
+			}
+			return agent.LifecycleResult{Action: agent.HookAllow}, nil
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "final"},
+	)
+
+	a := agent.New(mock,
+		agent.WithAutoExecute(false),
+		agent.WithTools(&echoTool{}),
+		agent.WithSession("test-c-aa-err", store),
+		agent.WithHooks(hooks),
+	)
+
+	resp, _ := a.Chat(context.Background(), "start")
+	if len(resp.ToolCalls) == 0 {
+		t.Fatal("expected pending tool calls")
+	}
+
+	_, err := a.Continue(context.Background(), []message.ToolResult{
+		{ToolCallID: "tc-1", Name: "echo", Content: "result"},
+	})
+	if err == nil {
+		t.Fatal("expected error from AfterAgent in Continue")
+	}
+}
+
+func TestContinue_BeforeRun_AfterRun_Fire(t *testing.T) {
+	store := session.MemoryStore()
+
+	var beforeFired, afterFired bool
+	hooks := agent.Hooks{
+		BeforeRun: func(_ context.Context, _ agent.RunContext) {
+			beforeFired = true
+		},
+		AfterRun: func(_ context.Context, _ agent.RunContext) {
+			afterFired = true
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "final"},
+	)
+
+	a := agent.New(mock,
+		agent.WithAutoExecute(false),
+		agent.WithTools(&echoTool{}),
+		agent.WithSession("test-c-run", store),
+		agent.WithHooks(hooks),
+	)
+
+	a.Chat(context.Background(), "start")
+	beforeFired = false
+	afterFired = false
+
+	a.Continue(context.Background(), []message.ToolResult{
+		{ToolCallID: "tc-1", Name: "echo", Content: "result"},
+	})
+
+	if !beforeFired {
+		t.Fatal("BeforeRun should fire in Continue")
+	}
+	if !afterFired {
+		t.Fatal("AfterRun should fire in Continue")
+	}
+}
+
+func TestContinueStream_BeforeRun_AfterRun_Fire(t *testing.T) {
+	store := session.MemoryStore()
+
+	var beforeFired, afterFired bool
+	hooks := agent.Hooks{
+		BeforeRun: func(_ context.Context, _ agent.RunContext) {
+			beforeFired = true
+		},
+		AfterRun: func(_ context.Context, _ agent.RunContext) {
+			afterFired = true
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "final"},
+	)
+
+	a := agent.New(mock,
+		agent.WithAutoExecute(false),
+		agent.WithTools(&echoTool{}),
+		agent.WithSession("test-cs-run", store),
+		agent.WithHooks(hooks),
+	)
+
+	a.Chat(context.Background(), "start")
+	beforeFired = false
+	afterFired = false
+
+	for event := range a.ContinueStream(
+		context.Background(),
+		[]message.ToolResult{
+			{ToolCallID: "tc-1", Name: "echo", Content: "result"},
+		},
+	) {
+		_ = event
+	}
+
+	if !beforeFired {
+		t.Fatal("BeforeRun should fire in ContinueStream")
+	}
+	if !afterFired {
+		t.Fatal("AfterRun should fire in ContinueStream")
+	}
+}
+
+func TestContinue_BeforeAgent_Deny(t *testing.T) {
+	store := session.MemoryStore()
+
+	callCount := 0
+	hooks := agent.Hooks{
+		BeforeAgent: func(_ context.Context, _ agent.LifecycleContext) (agent.LifecycleResult, error) {
+			callCount++
+			if callCount > 1 {
+				return agent.LifecycleResult{Action: agent.HookDeny}, nil
+			}
+			return agent.LifecycleResult{Action: agent.HookAllow}, nil
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
+			},
+		},
+	)
+
+	a := agent.New(mock,
+		agent.WithAutoExecute(false),
+		agent.WithTools(&echoTool{}),
+		agent.WithSession("test-c-deny", store),
+		agent.WithHooks(hooks),
+	)
+
+	resp, _ := a.Chat(context.Background(), "start")
+	if len(resp.ToolCalls) == 0 {
+		t.Fatal("expected pending tool calls")
+	}
+
+	_, err := a.Continue(context.Background(), []message.ToolResult{
+		{ToolCallID: "tc-1", Name: "echo", Content: "result"},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if mock.CallCount() != 1 {
+		t.Fatal("LLM should only have been called once (Chat, not Continue)")
+	}
+}
+
+func TestContinueStream_BeforeAgent_Deny(t *testing.T) {
+	store := session.MemoryStore()
+
+	callCount := 0
+	hooks := agent.Hooks{
+		BeforeAgent: func(_ context.Context, _ agent.LifecycleContext) (agent.LifecycleResult, error) {
+			callCount++
+			if callCount > 1 {
+				return agent.LifecycleResult{Action: agent.HookDeny}, nil
+			}
+			return agent.LifecycleResult{Action: agent.HookAllow}, nil
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+					Type:  "function",
+				},
+			},
+		},
+	)
+
+	a := agent.New(mock,
+		agent.WithAutoExecute(false),
+		agent.WithTools(&echoTool{}),
+		agent.WithSession("test-cs-deny", store),
+		agent.WithHooks(hooks),
+	)
+
+	resp, _ := a.Chat(context.Background(), "start")
+	if len(resp.ToolCalls) == 0 {
+		t.Fatal("expected pending tool calls")
+	}
+
+	var gotComplete bool
+	for event := range a.ContinueStream(
+		context.Background(),
+		[]message.ToolResult{
+			{ToolCallID: "tc-1", Name: "echo", Content: "result"},
+		},
+	) {
+		if event.Type == types.EventComplete {
+			gotComplete = true
+		}
+	}
+
+	if !gotComplete {
+		t.Fatal("expected complete event even on deny")
 	}
 }
