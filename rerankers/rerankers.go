@@ -47,6 +47,7 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/tracing"
 )
 
 // RerankerUsage tracks the resource consumption for reranking operations.
@@ -152,7 +153,25 @@ func (r *baseReranker[C]) Rerank(
 		}, nil
 	}
 
-	return r.client.rerank(ctx, query, documents)
+	ctx, span := tracing.StartRerankSpan(
+		ctx,
+		r.options.model.APIModel,
+		string(r.options.model.Provider),
+	)
+	defer span.End()
+	span.SetAttributes(tracing.AttrDocumentCount.Int(len(documents)))
+
+	resp, err := r.client.rerank(ctx, query, documents)
+	if err != nil {
+		tracing.SetError(span, err)
+		return nil, err
+	}
+
+	tracing.SetResponseAttrs(span,
+		tracing.AttrUsageTotalTokens.Int64(int64(resp.Usage.TotalTokens)),
+		tracing.AttrResultCount.Int(len(resp.Results)),
+	)
+	return resp, nil
 }
 
 func (r *baseReranker[C]) Model() model.RerankerModel {

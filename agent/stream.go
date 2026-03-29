@@ -7,6 +7,7 @@ import (
 
 	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/providers"
+	"github.com/joakimcarlsson/ai/tracing"
 	"github.com/joakimcarlsson/ai/types"
 )
 
@@ -25,6 +26,9 @@ func (a *Agent) ChatStream(
 
 		startTime := time.Now()
 		taskID, agentName, branch := a.hookContext(ctx)
+
+		ctx, span := tracing.StartAgentSpan(ctx, agentName)
+		defer span.End()
 
 		runBeforeRun(ctx, a.hooks, RunContext{
 			AgentName: agentName,
@@ -48,6 +52,7 @@ func (a *Agent) ChatStream(
 			Branch:    branch,
 		})
 		if umErr != nil {
+			tracing.SetError(span, umErr)
 			eventChan <- ChatEvent{
 				Type:  types.EventError,
 				Error: fmt.Errorf("on-user-message hook: %w", umErr),
@@ -72,6 +77,7 @@ func (a *Agent) ChatStream(
 			Input:     userMessage,
 		})
 		if baErr != nil {
+			tracing.SetError(span, baErr)
 			eventChan <- ChatEvent{
 				Type:  types.EventError,
 				Error: fmt.Errorf("before-agent hook: %w", baErr),
@@ -104,6 +110,7 @@ func (a *Agent) ChatStream(
 
 		messages, err := a.buildMessages(ctx, userMessage)
 		if err != nil {
+			tracing.SetError(span, err)
 			eventChan <- ChatEvent{Type: types.EventError, Error: err}
 			return
 		}
@@ -119,6 +126,7 @@ func (a *Agent) ChatStream(
 				Response:  resp,
 			})
 			if aaErr != nil {
+				tracing.SetError(span, aaErr)
 				eventChan <- ChatEvent{
 					Type:  types.EventError,
 					Error: fmt.Errorf("after-agent hook: %w", aaErr),
@@ -136,10 +144,20 @@ func (a *Agent) ChatStream(
 			if aaResult.Action == HookModify && aaResult.Response != nil {
 				resp = aaResult.Response
 			}
+			tracing.SetResponseAttrs(span,
+				tracing.AttrUsageInputTokens.Int64(resp.Usage.InputTokens),
+				tracing.AttrUsageOutputTokens.Int64(resp.Usage.OutputTokens),
+				tracing.AttrAgentTotalTurns.Int(resp.TotalTurns),
+				tracing.AttrAgentTotalToolCalls.Int(resp.TotalToolCalls),
+			)
 			eventChan <- ChatEvent{
 				Type:     types.EventComplete,
 				Response: resp,
 			}
+		}
+
+		if loopErr != nil {
+			tracing.SetError(span, loopErr)
 		}
 
 		runAfterRun(ctx, a.hooks, RunContext{
@@ -186,6 +204,9 @@ func (a *Agent) ContinueStream(
 		startTime := time.Now()
 		taskID, agentName, branch := a.hookContext(ctx)
 
+		ctx, span := tracing.StartAgentSpan(ctx, agentName)
+		defer span.End()
+
 		runBeforeRun(ctx, a.hooks, RunContext{
 			AgentName: agentName,
 			TaskID:    taskID,
@@ -206,6 +227,7 @@ func (a *Agent) ContinueStream(
 			Branch:    branch,
 		})
 		if baErr != nil {
+			tracing.SetError(span, baErr)
 			eventChan <- ChatEvent{
 				Type:  types.EventError,
 				Error: fmt.Errorf("before-agent hook: %w", baErr),
@@ -237,6 +259,7 @@ func (a *Agent) ContinueStream(
 
 		messages, err := a.buildContinueMessages(ctx)
 		if err != nil {
+			tracing.SetError(span, err)
 			eventChan <- ChatEvent{Type: types.EventError, Error: err}
 			return
 		}
@@ -252,6 +275,7 @@ func (a *Agent) ContinueStream(
 		messages = append(messages, toolMsg)
 
 		if err := a.session.AddMessages(ctx, []message.Message{toolMsg}); err != nil {
+			tracing.SetError(span, err)
 			eventChan <- ChatEvent{Type: types.EventError, Error: err}
 			return
 		}
@@ -267,6 +291,7 @@ func (a *Agent) ContinueStream(
 				Response:  resp,
 			})
 			if aaErr != nil {
+				tracing.SetError(span, aaErr)
 				eventChan <- ChatEvent{
 					Type:  types.EventError,
 					Error: fmt.Errorf("after-agent hook: %w", aaErr),
@@ -283,10 +308,20 @@ func (a *Agent) ContinueStream(
 			if aaResult.Action == HookModify && aaResult.Response != nil {
 				resp = aaResult.Response
 			}
+			tracing.SetResponseAttrs(span,
+				tracing.AttrUsageInputTokens.Int64(resp.Usage.InputTokens),
+				tracing.AttrUsageOutputTokens.Int64(resp.Usage.OutputTokens),
+				tracing.AttrAgentTotalTurns.Int(resp.TotalTurns),
+				tracing.AttrAgentTotalToolCalls.Int(resp.TotalToolCalls),
+			)
 			eventChan <- ChatEvent{
 				Type:     types.EventComplete,
 				Response: resp,
 			}
+		}
+
+		if loopErr != nil {
+			tracing.SetError(span, loopErr)
 		}
 
 		runAfterRun(ctx, a.hooks, RunContext{

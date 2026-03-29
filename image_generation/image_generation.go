@@ -39,6 +39,7 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/tracing"
 )
 
 // ImageGenerationUsage tracks the resource consumption for image generation operations.
@@ -203,7 +204,24 @@ func (i *baseImageGeneration[C]) GenerateImage(
 	prompt string,
 	options ...GenerationOption,
 ) (*ImageGenerationResponse, error) {
-	return i.client.generate(ctx, prompt, options...)
+	ctx, span := tracing.StartImageSpan(
+		ctx,
+		i.options.model.APIModel,
+		string(i.options.model.Provider),
+	)
+	defer span.End()
+
+	resp, err := i.client.generate(ctx, prompt, options...)
+	if err != nil {
+		tracing.SetError(span, err)
+		return nil, err
+	}
+
+	tracing.SetResponseAttrs(span,
+		tracing.AttrUsageInputTokens.Int64(int64(resp.Usage.PromptTokens)),
+		tracing.AttrResultCount.Int(len(resp.Images)),
+	)
+	return resp, nil
 }
 
 func (i *baseImageGeneration[C]) GenerateImageStreaming(
@@ -212,13 +230,23 @@ func (i *baseImageGeneration[C]) GenerateImageStreaming(
 	callback StreamCallback,
 	options ...GenerationOption,
 ) error {
-	// Check if the client supports streaming
+	ctx, span := tracing.StartImageSpan(
+		ctx,
+		i.options.model.APIModel,
+		string(i.options.model.Provider),
+	)
+	defer span.End()
+
 	if streamingClient, ok := any(i.client).(StreamingImageGenerationClient); ok {
-		return streamingClient.generateStreaming(
+		err := streamingClient.generateStreaming(
 			ctx,
 			prompt,
 			callback,
 			options...)
+		if err != nil {
+			tracing.SetError(span, err)
+		}
+		return err
 	}
 	return ErrStreamingNotSupported
 }

@@ -34,6 +34,7 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/tracing"
 )
 
 // FinishReason indicates why the model stopped generating tokens.
@@ -170,18 +171,90 @@ func NewFIM(
 	return nil, fmt.Errorf("fim provider not supported: %s", provider)
 }
 
+func (f *baseFIM[C]) fimSpanAttrs() []tracing.Attr {
+	var attrs []tracing.Attr
+	if f.options.maxTokens > 0 {
+		attrs = append(
+			attrs,
+			tracing.AttrRequestMaxTokens.Int64(f.options.maxTokens),
+		)
+	}
+	if f.options.temperature != nil {
+		attrs = append(
+			attrs,
+			tracing.AttrRequestTemperature.Float64(*f.options.temperature),
+		)
+	}
+	if f.options.topP != nil {
+		attrs = append(attrs, tracing.AttrRequestTopP.Float64(*f.options.topP))
+	}
+	return attrs
+}
+
 func (f *baseFIM[C]) Complete(
 	ctx context.Context,
 	req Request,
 ) (*Response, error) {
-	return f.client.complete(ctx, req)
+	ctx, span := tracing.StartFIMSpan(
+		ctx,
+		f.options.model.APIModel,
+		string(f.options.model.Provider),
+		f.fimSpanAttrs()...,
+	)
+	defer span.End()
+
+	resp, err := f.client.complete(ctx, req)
+	if err != nil {
+		tracing.SetError(span, err)
+		return nil, err
+	}
+
+	tracing.SetResponseAttrs(span,
+		tracing.AttrUsageInputTokens.Int64(resp.Usage.InputTokens),
+		tracing.AttrUsageOutputTokens.Int64(resp.Usage.OutputTokens),
+		tracing.AttrResponseFinishReason.String(string(resp.FinishReason)),
+	)
+	return resp, nil
 }
 
 func (f *baseFIM[C]) CompleteStream(
 	ctx context.Context,
 	req Request,
 ) <-chan Event {
-	return f.client.stream(ctx, req)
+	ctx, span := tracing.StartFIMSpan(
+		ctx,
+		f.options.model.APIModel,
+		string(f.options.model.Provider),
+		f.fimSpanAttrs()...,
+	)
+
+	innerCh := f.client.stream(ctx, req)
+	outCh := make(chan Event)
+	go func() {
+		defer close(outCh)
+		defer span.End()
+		for evt := range innerCh {
+			if evt.Type == EventComplete && evt.Response != nil {
+				tracing.SetResponseAttrs(
+					span,
+					tracing.AttrUsageInputTokens.Int64(
+						evt.Response.Usage.InputTokens,
+					),
+					tracing.AttrUsageOutputTokens.Int64(
+						evt.Response.Usage.OutputTokens,
+					),
+					tracing.AttrResponseFinishReason.String(
+						string(evt.Response.FinishReason),
+					),
+				)
+			}
+			if evt.Type == EventError && evt.Error != nil {
+				tracing.SetError(span, evt.Error)
+			}
+			outCh <- evt
+		}
+	}()
+	return outCh
 }
 
 func (f *baseFIM[C]) Model() model.Model {

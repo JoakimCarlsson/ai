@@ -39,6 +39,7 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/tracing"
 )
 
 // Usage tracks the resource consumption for audio generation operations.
@@ -221,7 +222,25 @@ func (a *baseAudioGeneration[C]) GenerateAudio(
 	text string,
 	options ...GenerationOption,
 ) (*Response, error) {
-	return a.client.generate(ctx, text, options...)
+	ctx, span := tracing.StartAudioSpan(
+		ctx,
+		a.options.model.APIModel,
+		string(a.options.model.Provider),
+	)
+	defer span.End()
+	span.SetAttributes(tracing.AttrInputCount.Int(len(text)))
+
+	resp, err := a.client.generate(ctx, text, options...)
+	if err != nil {
+		tracing.SetError(span, err)
+		return nil, err
+	}
+
+	tracing.SetResponseAttrs(
+		span,
+		tracing.AttrUsageCharacters.Int64(int64(resp.Usage.Characters)),
+	)
+	return resp, nil
 }
 
 func (a *baseAudioGeneration[C]) StreamAudio(
@@ -229,7 +248,32 @@ func (a *baseAudioGeneration[C]) StreamAudio(
 	text string,
 	options ...GenerationOption,
 ) (<-chan Chunk, error) {
-	return a.client.stream(ctx, text, options...)
+	ctx, span := tracing.StartAudioSpan(
+		ctx,
+		a.options.model.APIModel,
+		string(a.options.model.Provider),
+	)
+	span.SetAttributes(tracing.AttrInputCount.Int(len(text)))
+
+	innerCh, err := a.client.stream(ctx, text, options...)
+	if err != nil {
+		tracing.SetError(span, err)
+		span.End()
+		return nil, err
+	}
+
+	outCh := make(chan Chunk)
+	go func() {
+		defer close(outCh)
+		defer span.End()
+		for chunk := range innerCh {
+			if chunk.Error != nil {
+				tracing.SetError(span, chunk.Error)
+			}
+			outCh <- chunk
+		}
+	}()
+	return outCh, nil
 }
 
 func (a *baseAudioGeneration[C]) ListVoices(

@@ -39,6 +39,7 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/tracing"
 )
 
 // Usage tracks resource consumption for transcription operations.
@@ -162,7 +163,27 @@ func (s *baseSpeechToText[C]) Transcribe(
 	audioFile []byte,
 	options ...Option,
 ) (*Response, error) {
-	return s.client.transcribe(ctx, audioFile, options...)
+	ctx, span := tracing.StartTranscribeSpan(
+		ctx,
+		s.options.model.APIModel,
+		string(s.options.model.Provider),
+		"transcribe",
+	)
+	defer span.End()
+
+	resp, err := s.client.transcribe(ctx, audioFile, options...)
+	if err != nil {
+		tracing.SetError(span, err)
+		return nil, err
+	}
+
+	tracing.SetResponseAttrs(span,
+		tracing.AttrUsageInputTokens.Int64(resp.Usage.InputTokens),
+		tracing.AttrUsageOutputTokens.Int64(resp.Usage.OutputTokens),
+		tracing.AttrDurationSec.Float64(resp.Duration),
+		tracing.AttrLanguage.String(resp.Language),
+	)
+	return resp, nil
 }
 
 func (s *baseSpeechToText[C]) Translate(
@@ -170,7 +191,27 @@ func (s *baseSpeechToText[C]) Translate(
 	audioFile []byte,
 	options ...Option,
 ) (*Response, error) {
-	return s.client.translate(ctx, audioFile, options...)
+	ctx, span := tracing.StartTranscribeSpan(
+		ctx,
+		s.options.model.APIModel,
+		string(s.options.model.Provider),
+		"translate",
+	)
+	defer span.End()
+
+	resp, err := s.client.translate(ctx, audioFile, options...)
+	if err != nil {
+		tracing.SetError(span, err)
+		return nil, err
+	}
+
+	tracing.SetResponseAttrs(span,
+		tracing.AttrUsageInputTokens.Int64(resp.Usage.InputTokens),
+		tracing.AttrUsageOutputTokens.Int64(resp.Usage.OutputTokens),
+		tracing.AttrDurationSec.Float64(resp.Duration),
+		tracing.AttrLanguage.String(resp.Language),
+	)
+	return resp, nil
 }
 
 func (s *baseSpeechToText[C]) Model() model.TranscriptionModel {
