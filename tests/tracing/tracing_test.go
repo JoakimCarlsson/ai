@@ -284,6 +284,127 @@ func TestExecuteTool_DeniedByHook_NoToolSpan(t *testing.T) {
 	}
 }
 
+func TestMergedToolSpan_MultipleTools(t *testing.T) {
+	exporter := setupTracing(t)
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc1",
+					Name:  "echo",
+					Input: `{"text":"a"}`,
+				},
+				{
+					ID:    "tc2",
+					Name:  "echo",
+					Input: `{"text":"b"}`,
+				},
+			},
+			FinishReason: message.FinishReasonToolUse,
+		},
+		mockResponse{Content: "done"},
+	)
+
+	a := agent.New(mock, agent.WithTools(&echoTool{}))
+	_, err := a.Chat(context.Background(), "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	spans := exporter.GetSpans()
+	mergedSpan := findSpan(spans, "execute_tools")
+	if mergedSpan == nil {
+		t.Fatal("expected execute_tools merged span for 2+ tools")
+	}
+
+	if spanAttrInt(mergedSpan, "gen_ai.request.tool_count") != 2 {
+		t.Errorf(
+			"expected tool_count 2, got %d",
+			spanAttrInt(mergedSpan, "gen_ai.request.tool_count"),
+		)
+	}
+
+	var toolSpanCount int
+	for _, s := range spans {
+		if len(s.Name) >= len("execute_tool ") &&
+			s.Name[:len("execute_tool ")] == "execute_tool " {
+			if s.Parent.SpanID() != mergedSpan.SpanContext.SpanID() {
+				t.Error(
+					"execute_tool should be child of execute_tools",
+				)
+			}
+			toolSpanCount++
+		}
+	}
+	if toolSpanCount != 2 {
+		t.Errorf("expected 2 execute_tool spans, got %d", toolSpanCount)
+	}
+}
+
+func TestMergedToolSpan_SingleTool_NoMergedSpan(t *testing.T) {
+	exporter := setupTracing(t)
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc1",
+					Name:  "echo",
+					Input: `{"text":"a"}`,
+				},
+			},
+			FinishReason: message.FinishReasonToolUse,
+		},
+		mockResponse{Content: "done"},
+	)
+
+	a := agent.New(mock, agent.WithTools(&echoTool{}))
+	_, err := a.Chat(context.Background(), "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	spans := exporter.GetSpans()
+	mergedSpan := findSpan(spans, "execute_tools")
+	if mergedSpan != nil {
+		t.Error("expected no execute_tools span for single tool call")
+	}
+
+	toolSpan := findSpan(spans, "execute_tool")
+	if toolSpan == nil {
+		t.Fatal("expected execute_tool span")
+	}
+}
+
+func TestSetup_New_WithProcessors(t *testing.T) {
+	exp := tracetest.NewInMemoryExporter()
+	providers, err := tracing.New(
+		context.Background(),
+		tracing.WithSpanProcessors(
+			sdktrace.NewSimpleSpanProcessor(exp),
+		),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = providers.Shutdown(context.Background()) }()
+
+	ctx, span := tracing.StartGenerateSpan(
+		context.Background(),
+		"test-model",
+		"test-system",
+	)
+	_ = ctx
+	span.End()
+
+	spans := exp.GetSpans()
+	if len(spans) == 0 {
+		t.Fatal("expected spans from setup helper")
+	}
+	if findSpan(spans, "generate_content") == nil {
+		t.Error("expected generate_content span")
+	}
+}
+
 func setupMetrics(
 	t *testing.T,
 ) *sdkmetric.ManualReader {

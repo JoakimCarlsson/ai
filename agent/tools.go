@@ -182,6 +182,16 @@ func (a *Agent) executeTools(
 
 	results := make([]ToolExecutionResult, len(toolCalls))
 
+	if len(toolCalls) > 1 {
+		var mergedSpan tracing.Span
+		ctx, mergedSpan = tracing.StartSpan(ctx,
+			"execute_tools",
+			tracing.AttrOperationName.String("execute_tools"),
+			tracing.AttrToolCount.Int(len(toolCalls)),
+		)
+		defer mergedSpan.End()
+	}
+
 	if !a.parallelTools {
 		for i, tc := range toolCalls {
 			results[i] = a.executeSingleTool(ctx, registry, tc)

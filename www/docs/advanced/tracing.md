@@ -4,7 +4,44 @@ Built-in OpenTelemetry instrumentation for all provider calls and agent executio
 
 ## Setup
 
-Configure a global `TracerProvider` before making any calls. The library automatically creates spans for every operation.
+Use the built-in setup helper to initialize traces, metrics, and logs in one call:
+
+```go
+import (
+    "github.com/joakimcarlsson/ai/tracing"
+    "go.opentelemetry.io/otel/sdk/resource"
+    semconv "go.opentelemetry.io/otel/semconv/v1.36.0"
+)
+
+res, _ := resource.New(ctx, resource.WithAttributes(
+    semconv.ServiceNameKey.String("my-ai-service"),
+    semconv.ServiceVersionKey.String("1.0.0"),
+))
+
+providers, _ := tracing.New(ctx,
+    tracing.WithResource(res),
+    tracing.WithOTLPEndpoint("localhost:4318"),
+)
+defer providers.Shutdown(ctx)
+```
+
+This creates and globally registers a `TracerProvider`, `MeterProvider`, and `LoggerProvider` — all configured with OTLP HTTP exporters pointing at the given endpoint.
+
+### Setup Options
+
+| Option | Description |
+|--------|-------------|
+| `WithResource(r)` | Set service resource (name, version, environment) |
+| `WithOTLPEndpoint(url)` | Configure OTLP HTTP exporters for all signals |
+| `WithSpanProcessors(p...)` | Register custom span processors |
+| `WithMetricReaders(r...)` | Register custom metric readers |
+| `WithLogProcessors(p...)` | Register custom log processors |
+
+If no `WithOTLPEndpoint` is provided, the helper checks the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable.
+
+### Manual Setup
+
+You can also configure providers manually using the standard OpenTelemetry SDK:
 
 ```go
 import (
@@ -20,7 +57,7 @@ defer tp.Shutdown(ctx)
 otel.SetTracerProvider(tp)
 ```
 
-That's it. All subsequent LLM calls, tool executions, and agent runs will produce spans and metrics.
+All subsequent LLM calls, tool executions, and agent runs will produce spans and metrics.
 
 ## Span Hierarchy
 
@@ -29,9 +66,20 @@ When using the agent framework, spans form a parent-child tree:
 ```
 invoke_agent {agent_name}
 ├── generate_content {model}       (LLM turn 1)
-├── execute_tool {tool_name}       (tool call)
+├── execute_tool {tool_name}       (single tool call)
 ├── generate_content {model}       (LLM turn 2)
 └── ...
+```
+
+When the LLM requests multiple tool calls at once, they are grouped under a parent span:
+
+```
+invoke_agent {agent_name}
+├── generate_content {model}
+├── execute_tools                  (merged parent for 2+ tools)
+│   ├── execute_tool {tool_a}
+│   └── execute_tool {tool_b}
+└── generate_content {model}
 ```
 
 When using providers standalone (no agent), each call produces a root span:
@@ -245,23 +293,27 @@ import (
     "log"
     "os"
 
-    "go.opentelemetry.io/otel"
-    "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
-    sdktrace "go.opentelemetry.io/otel/sdk/trace"
+    "go.opentelemetry.io/otel/sdk/resource"
+    semconv "go.opentelemetry.io/otel/semconv/v1.36.0"
 
     "github.com/joakimcarlsson/ai/agent"
     "github.com/joakimcarlsson/ai/model"
     llm "github.com/joakimcarlsson/ai/providers"
     "github.com/joakimcarlsson/ai/tool/functiontool"
+    "github.com/joakimcarlsson/ai/tracing"
 )
 
 func main() {
     ctx := context.Background()
 
-    exporter, _ := stdouttrace.New(stdouttrace.WithPrettyPrint())
-    tp := sdktrace.NewTracerProvider(sdktrace.WithBatcher(exporter))
-    defer func() { _ = tp.Shutdown(ctx) }()
-    otel.SetTracerProvider(tp)
+    res, _ := resource.New(ctx, resource.WithAttributes(
+        semconv.ServiceNameKey.String("my-ai-service"),
+    ))
+    providers, _ := tracing.New(ctx,
+        tracing.WithResource(res),
+        tracing.WithOTLPEndpoint("localhost:4318"),
+    )
+    defer func() { _ = providers.Shutdown(ctx) }()
 
     client, _ := llm.NewLLM(model.ProviderOpenAI,
         llm.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
