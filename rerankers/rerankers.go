@@ -153,6 +153,7 @@ func (r *baseReranker[C]) Rerank(
 		}, nil
 	}
 
+	start := time.Now()
 	ctx, span := tracing.StartRerankSpan(
 		ctx,
 		r.options.model.APIModel,
@@ -164,12 +165,32 @@ func (r *baseReranker[C]) Rerank(
 	resp, err := r.client.rerank(ctx, query, documents)
 	if err != nil {
 		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx,
+			"rerank",
+			r.options.model.APIModel,
+			string(r.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
 		return nil, err
 	}
 
 	tracing.SetResponseAttrs(span,
 		tracing.AttrUsageTotalTokens.Int64(int64(resp.Usage.TotalTokens)),
 		tracing.AttrResultCount.Int(len(resp.Results)),
+	)
+	tracing.RecordMetrics(
+		ctx,
+		"rerank",
+		r.options.model.APIModel,
+		string(r.options.model.Provider),
+		time.Since(start),
+		int64(resp.Usage.TotalTokens),
+		0,
+		nil,
 	)
 	return resp, nil
 }

@@ -489,12 +489,36 @@ func messageText(msg message.Message) string {
 	return msg.Content().Text
 }
 
+func (p *baseLLM[C]) recordMetrics(
+	ctx context.Context,
+	start time.Time,
+	resp *Response,
+	err error,
+) {
+	var inputTokens, outputTokens int64
+	if resp != nil {
+		inputTokens = resp.Usage.InputTokens
+		outputTokens = resp.Usage.OutputTokens
+	}
+	tracing.RecordMetrics(
+		ctx,
+		"generate_content",
+		p.options.model.APIModel,
+		string(p.options.model.Provider),
+		time.Since(start),
+		inputTokens,
+		outputTokens,
+		err,
+	)
+}
+
 func (p *baseLLM[C]) SendMessages(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
 ) (*Response, error) {
 	messages = p.cleanMessages(messages)
+	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
 		ctx,
@@ -507,11 +531,13 @@ func (p *baseLLM[C]) SendMessages(
 	response, err := p.client.send(ctx, messages, tools)
 	if err != nil {
 		tracing.SetError(span, err)
+		p.recordMetrics(ctx, start, nil, err)
 		return nil, err
 	}
 
 	p.recordResponseAttrs(span, response, len(tools))
 	p.logMessages(ctx, messages, response)
+	p.recordMetrics(ctx, start, response, nil)
 
 	return response, nil
 }
@@ -530,6 +556,7 @@ func (p *baseLLM[C]) SendMessagesWithStructuredOutput(
 	}
 
 	messages = p.cleanMessages(messages)
+	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
 		ctx,
@@ -547,11 +574,13 @@ func (p *baseLLM[C]) SendMessagesWithStructuredOutput(
 	)
 	if err != nil {
 		tracing.SetError(span, err)
+		p.recordMetrics(ctx, start, nil, err)
 		return nil, err
 	}
 
 	p.recordResponseAttrs(span, response, len(tools))
 	p.logMessages(ctx, messages, response)
+	p.recordMetrics(ctx, start, response, nil)
 
 	return response, nil
 }
@@ -570,6 +599,7 @@ func (p *baseLLM[C]) StreamResponse(
 	tools []tool.BaseTool,
 ) <-chan Event {
 	messages = p.cleanMessages(messages)
+	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
 		ctx,
@@ -591,9 +621,11 @@ func (p *baseLLM[C]) StreamResponse(
 					evt.Response.Content,
 					string(evt.Response.FinishReason),
 				)
+				p.recordMetrics(ctx, start, evt.Response, nil)
 			}
 			if evt.Type == types.EventError && evt.Error != nil {
 				tracing.SetError(span, evt.Error)
+				p.recordMetrics(ctx, start, nil, evt.Error)
 			}
 			outCh <- evt
 		}
@@ -618,6 +650,7 @@ func (p *baseLLM[C]) StreamResponseWithStructuredOutput(
 	}
 
 	messages = p.cleanMessages(messages)
+	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
 		ctx,
@@ -644,9 +677,11 @@ func (p *baseLLM[C]) StreamResponseWithStructuredOutput(
 					evt.Response.Content,
 					string(evt.Response.FinishReason),
 				)
+				p.recordMetrics(ctx, start, evt.Response, nil)
 			}
 			if evt.Type == types.EventError && evt.Error != nil {
 				tracing.SetError(span, evt.Error)
+				p.recordMetrics(ctx, start, nil, evt.Error)
 			}
 			outCh <- evt
 		}

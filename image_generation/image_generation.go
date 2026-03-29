@@ -204,6 +204,7 @@ func (i *baseImageGeneration[C]) GenerateImage(
 	prompt string,
 	options ...GenerationOption,
 ) (*ImageGenerationResponse, error) {
+	start := time.Now()
 	ctx, span := tracing.StartImageSpan(
 		ctx,
 		i.options.model.APIModel,
@@ -214,12 +215,32 @@ func (i *baseImageGeneration[C]) GenerateImage(
 	resp, err := i.client.generate(ctx, prompt, options...)
 	if err != nil {
 		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx,
+			"generate_image",
+			i.options.model.APIModel,
+			string(i.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
 		return nil, err
 	}
 
 	tracing.SetResponseAttrs(span,
 		tracing.AttrUsageInputTokens.Int64(int64(resp.Usage.PromptTokens)),
 		tracing.AttrResultCount.Int(len(resp.Images)),
+	)
+	tracing.RecordMetrics(
+		ctx,
+		"generate_image",
+		i.options.model.APIModel,
+		string(i.options.model.Provider),
+		time.Since(start),
+		int64(resp.Usage.PromptTokens),
+		0,
+		nil,
 	)
 	return resp, nil
 }
@@ -230,6 +251,7 @@ func (i *baseImageGeneration[C]) GenerateImageStreaming(
 	callback StreamCallback,
 	options ...GenerationOption,
 ) error {
+	start := time.Now()
 	ctx, span := tracing.StartImageSpan(
 		ctx,
 		i.options.model.APIModel,
@@ -243,6 +265,16 @@ func (i *baseImageGeneration[C]) GenerateImageStreaming(
 			prompt,
 			callback,
 			options...)
+		tracing.RecordMetrics(
+			ctx,
+			"generate_image",
+			i.options.model.APIModel,
+			string(i.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
 		if err != nil {
 			tracing.SetError(span, err)
 		}

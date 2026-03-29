@@ -163,6 +163,7 @@ func (s *baseSpeechToText[C]) Transcribe(
 	audioFile []byte,
 	options ...Option,
 ) (*Response, error) {
+	start := time.Now()
 	ctx, span := tracing.StartTranscribeSpan(
 		ctx,
 		s.options.model.APIModel,
@@ -174,6 +175,16 @@ func (s *baseSpeechToText[C]) Transcribe(
 	resp, err := s.client.transcribe(ctx, audioFile, options...)
 	if err != nil {
 		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx,
+			"transcribe",
+			s.options.model.APIModel,
+			string(s.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
 		return nil, err
 	}
 
@@ -183,6 +194,16 @@ func (s *baseSpeechToText[C]) Transcribe(
 		tracing.AttrDurationSec.Float64(resp.Duration),
 		tracing.AttrLanguage.String(resp.Language),
 	)
+	tracing.RecordMetrics(
+		ctx,
+		"transcribe",
+		s.options.model.APIModel,
+		string(s.options.model.Provider),
+		time.Since(start),
+		resp.Usage.InputTokens,
+		resp.Usage.OutputTokens,
+		nil,
+	)
 	return resp, nil
 }
 
@@ -191,6 +212,7 @@ func (s *baseSpeechToText[C]) Translate(
 	audioFile []byte,
 	options ...Option,
 ) (*Response, error) {
+	start := time.Now()
 	ctx, span := tracing.StartTranscribeSpan(
 		ctx,
 		s.options.model.APIModel,
@@ -202,6 +224,16 @@ func (s *baseSpeechToText[C]) Translate(
 	resp, err := s.client.translate(ctx, audioFile, options...)
 	if err != nil {
 		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx,
+			"translate",
+			s.options.model.APIModel,
+			string(s.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
 		return nil, err
 	}
 
@@ -210,6 +242,16 @@ func (s *baseSpeechToText[C]) Translate(
 		tracing.AttrUsageOutputTokens.Int64(resp.Usage.OutputTokens),
 		tracing.AttrDurationSec.Float64(resp.Duration),
 		tracing.AttrLanguage.String(resp.Language),
+	)
+	tracing.RecordMetrics(
+		ctx,
+		"translate",
+		s.options.model.APIModel,
+		string(s.options.model.Provider),
+		time.Since(start),
+		resp.Usage.InputTokens,
+		resp.Usage.OutputTokens,
+		nil,
 	)
 	return resp, nil
 }

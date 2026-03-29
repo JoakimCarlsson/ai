@@ -195,6 +195,7 @@ func (f *baseFIM[C]) Complete(
 	ctx context.Context,
 	req Request,
 ) (*Response, error) {
+	start := time.Now()
 	ctx, span := tracing.StartFIMSpan(
 		ctx,
 		f.options.model.APIModel,
@@ -206,6 +207,16 @@ func (f *baseFIM[C]) Complete(
 	resp, err := f.client.complete(ctx, req)
 	if err != nil {
 		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx,
+			"fim_complete",
+			f.options.model.APIModel,
+			string(f.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
 		return nil, err
 	}
 
@@ -214,6 +225,16 @@ func (f *baseFIM[C]) Complete(
 		tracing.AttrUsageOutputTokens.Int64(resp.Usage.OutputTokens),
 		tracing.AttrResponseFinishReason.String(string(resp.FinishReason)),
 	)
+	tracing.RecordMetrics(
+		ctx,
+		"fim_complete",
+		f.options.model.APIModel,
+		string(f.options.model.Provider),
+		time.Since(start),
+		resp.Usage.InputTokens,
+		resp.Usage.OutputTokens,
+		nil,
+	)
 	return resp, nil
 }
 
@@ -221,6 +242,7 @@ func (f *baseFIM[C]) CompleteStream(
 	ctx context.Context,
 	req Request,
 ) <-chan Event {
+	start := time.Now()
 	ctx, span := tracing.StartFIMSpan(
 		ctx,
 		f.options.model.APIModel,
@@ -247,9 +269,29 @@ func (f *baseFIM[C]) CompleteStream(
 						string(evt.Response.FinishReason),
 					),
 				)
+				tracing.RecordMetrics(
+					ctx,
+					"fim_complete",
+					f.options.model.APIModel,
+					string(f.options.model.Provider),
+					time.Since(start),
+					evt.Response.Usage.InputTokens,
+					evt.Response.Usage.OutputTokens,
+					nil,
+				)
 			}
 			if evt.Type == EventError && evt.Error != nil {
 				tracing.SetError(span, evt.Error)
+				tracing.RecordMetrics(
+					ctx,
+					"fim_complete",
+					f.options.model.APIModel,
+					string(f.options.model.Provider),
+					time.Since(start),
+					0,
+					0,
+					evt.Error,
+				)
 			}
 			outCh <- evt
 		}

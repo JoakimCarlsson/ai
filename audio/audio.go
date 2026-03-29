@@ -222,6 +222,7 @@ func (a *baseAudioGeneration[C]) GenerateAudio(
 	text string,
 	options ...GenerationOption,
 ) (*Response, error) {
+	start := time.Now()
 	ctx, span := tracing.StartAudioSpan(
 		ctx,
 		a.options.model.APIModel,
@@ -233,12 +234,32 @@ func (a *baseAudioGeneration[C]) GenerateAudio(
 	resp, err := a.client.generate(ctx, text, options...)
 	if err != nil {
 		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx,
+			"generate_audio",
+			a.options.model.APIModel,
+			string(a.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
 		return nil, err
 	}
 
 	tracing.SetResponseAttrs(
 		span,
 		tracing.AttrUsageCharacters.Int64(int64(resp.Usage.Characters)),
+	)
+	tracing.RecordMetrics(
+		ctx,
+		"generate_audio",
+		a.options.model.APIModel,
+		string(a.options.model.Provider),
+		time.Since(start),
+		0,
+		0,
+		nil,
 	)
 	return resp, nil
 }
@@ -248,6 +269,7 @@ func (a *baseAudioGeneration[C]) StreamAudio(
 	text string,
 	options ...GenerationOption,
 ) (<-chan Chunk, error) {
+	start := time.Now()
 	ctx, span := tracing.StartAudioSpan(
 		ctx,
 		a.options.model.APIModel,
@@ -258,6 +280,16 @@ func (a *baseAudioGeneration[C]) StreamAudio(
 	innerCh, err := a.client.stream(ctx, text, options...)
 	if err != nil {
 		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx,
+			"generate_audio",
+			a.options.model.APIModel,
+			string(a.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
 		span.End()
 		return nil, err
 	}
@@ -272,6 +304,16 @@ func (a *baseAudioGeneration[C]) StreamAudio(
 			}
 			outCh <- chunk
 		}
+		tracing.RecordMetrics(
+			ctx,
+			"generate_audio",
+			a.options.model.APIModel,
+			string(a.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			nil,
+		)
 	}()
 	return outCh, nil
 }

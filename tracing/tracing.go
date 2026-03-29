@@ -4,7 +4,6 @@ package tracing
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -20,17 +19,9 @@ type Attr = attribute.KeyValue
 // Span is an alias for trace.Span.
 type Span = trace.Span
 
-var (
-	tracer     trace.Tracer
-	tracerOnce sync.Once
-)
-
-// Tracer returns the shared OpenTelemetry tracer instance.
+// Tracer returns the OpenTelemetry tracer instance.
 func Tracer() trace.Tracer {
-	tracerOnce.Do(func() {
-		tracer = otel.Tracer(instrumentationName)
-	})
-	return tracer
+	return otel.Tracer(instrumentationName)
 }
 
 // GenAI semantic convention attribute keys.

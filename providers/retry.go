@@ -12,6 +12,8 @@ import (
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/joakimcarlsson/ai/types"
 	"github.com/openai/openai-go"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // RetryConfig holds parameters for LLM request retry behavior.
@@ -277,6 +279,13 @@ func ExecuteWithRetry[T any](
 			"retry_after_ms", retryAfterMs,
 			"error", err.Error())
 
+		span := trace.SpanFromContext(ctx)
+		span.AddEvent("retry", trace.WithAttributes(
+			attribute.Int("attempt", attempts),
+			attribute.Int64("retry_after_ms", retryAfterMs),
+			attribute.String("error", err.Error()),
+		))
+
 		select {
 		case <-ctx.Done():
 			return result, ctx.Err()
@@ -322,6 +331,13 @@ func ExecuteStreamWithRetry(
 			"max_retries", config.MaxRetries,
 			"retry_after_ms", retryAfterMs,
 			"error", err.Error())
+
+		span := trace.SpanFromContext(ctx)
+		span.AddEvent("retry", trace.WithAttributes(
+			attribute.Int("attempt", attempts),
+			attribute.Int64("retry_after_ms", retryAfterMs),
+			attribute.String("error", err.Error()),
+		))
 
 		select {
 		case <-ctx.Done():

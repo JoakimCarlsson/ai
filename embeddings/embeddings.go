@@ -204,6 +204,7 @@ func (e *baseEmbedding[C]) GenerateEmbeddings(
 		}, nil
 	}
 
+	start := time.Now()
 	ctx, span := tracing.StartEmbeddingSpan(
 		ctx,
 		e.options.model.APIModel,
@@ -215,12 +216,32 @@ func (e *baseEmbedding[C]) GenerateEmbeddings(
 	resp, err := e.client.embed(ctx, texts, inputType...)
 	if err != nil {
 		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx,
+			"generate_embeddings",
+			e.options.model.APIModel,
+			string(e.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
 		return nil, err
 	}
 
 	tracing.SetResponseAttrs(
 		span,
 		tracing.AttrUsageTotalTokens.Int64(int64(resp.Usage.TotalTokens)),
+	)
+	tracing.RecordMetrics(
+		ctx,
+		"generate_embeddings",
+		e.options.model.APIModel,
+		string(e.options.model.Provider),
+		time.Since(start),
+		int64(resp.Usage.TotalTokens),
+		0,
+		nil,
 	)
 	return resp, nil
 }
@@ -238,6 +259,7 @@ func (e *baseEmbedding[C]) GenerateMultimodalEmbeddings(
 		}, nil
 	}
 
+	start := time.Now()
 	ctx, span := tracing.StartEmbeddingSpan(
 		ctx,
 		e.options.model.APIModel,
@@ -249,12 +271,32 @@ func (e *baseEmbedding[C]) GenerateMultimodalEmbeddings(
 	resp, err := e.client.embedMultimodal(ctx, inputs, inputType...)
 	if err != nil {
 		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx,
+			"generate_embeddings",
+			e.options.model.APIModel,
+			string(e.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
 		return nil, err
 	}
 
 	tracing.SetResponseAttrs(
 		span,
 		tracing.AttrUsageTotalTokens.Int64(int64(resp.Usage.TotalTokens)),
+	)
+	tracing.RecordMetrics(
+		ctx,
+		"generate_embeddings",
+		e.options.model.APIModel,
+		string(e.options.model.Provider),
+		time.Since(start),
+		int64(resp.Usage.TotalTokens),
+		0,
+		nil,
 	)
 	return resp, nil
 }
@@ -272,6 +314,7 @@ func (e *baseEmbedding[C]) GenerateContextualizedEmbeddings(
 		}, nil
 	}
 
+	start := time.Now()
 	ctx, span := tracing.StartEmbeddingSpan(
 		ctx,
 		e.options.model.APIModel,
@@ -283,12 +326,32 @@ func (e *baseEmbedding[C]) GenerateContextualizedEmbeddings(
 	resp, err := e.client.embedContextualized(ctx, documentChunks, inputType...)
 	if err != nil {
 		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx,
+			"generate_embeddings",
+			e.options.model.APIModel,
+			string(e.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
 		return nil, err
 	}
 
 	tracing.SetResponseAttrs(
 		span,
 		tracing.AttrUsageTotalTokens.Int64(int64(resp.Usage.TotalTokens)),
+	)
+	tracing.RecordMetrics(
+		ctx,
+		"generate_embeddings",
+		e.options.model.APIModel,
+		string(e.options.model.Provider),
+		time.Since(start),
+		int64(resp.Usage.TotalTokens),
+		0,
+		nil,
 	)
 	return resp, nil
 }
