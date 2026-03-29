@@ -1,5 +1,7 @@
 # Contributing
 
+Thank you for considering contributing to the Go AI Client Library!
+
 ## Development Setup
 
 ```bash
@@ -10,6 +12,48 @@ make fmt      # format code
 make lint     # run vet + linter
 make test     # run unit tests
 ```
+
+## Contributing Workflow
+
+1. Fork the repository and clone your fork
+2. Create a feature branch from `main` (`git checkout -b feature/my-feature`)
+3. Make your changes
+4. Run `make fmt && make lint` to ensure formatting and linting pass
+5. Run `make test` to ensure all tests pass
+6. Commit your changes using [conventional commits](#commit-conventions)
+7. Push to your fork and open a pull request against `main`
+
+## Pull Request Guidelines
+
+- Keep PRs focused on a single change
+- Provide a clear description of what the PR does and why
+- Ensure CI passes (build, unit tests, integration tests, formatting, linting)
+- Link related issues in the PR description
+
+## Code Style
+
+- Do not add comments to code
+- Formatting is enforced by `goimports` and `golines -m 80` (80 char line limit)
+- Linting is enforced by `golangci-lint` (see [.golangci.yml](.golangci.yml) for the full config)
+- Run `make fmt && make lint` before committing
+
+## Testing
+
+- **Unit tests:** `make test` (runs `go test -short ./...`)
+- **Integration tests:** `go test -v -timeout 180s ./tests/...`
+- Write tests for new functionality
+- Ensure existing tests continue to pass
+
+## Commit Conventions
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `feat:` new feature
+- `fix:` bug fix
+- `chore:` maintenance, dependency updates, etc.
+- `docs:` documentation changes
+- `refactor:` code restructuring without behavior change
+- `test:` adding or updating tests
 
 ## Project Structure
 
@@ -25,62 +69,14 @@ Integration `go.mod` files contain a `replace` directive pointing to `../..`
 for local development. This directive is ignored when the module is consumed
 as a dependency (per Go module spec), so it does not affect consumers.
 
-## Versioning
+## Working with Sub-modules
 
-Each module is versioned independently using path-prefixed git tags. The tag
-prefix **must** match the subdirectory path exactly — this is how the Go module
-system resolves versions.
-
-| Module | Tag format | Example |
-|--------|-----------|---------|
-| Root | `vX.Y.Z` | `v0.15.0` |
-| postgres | `integrations/postgres/vX.Y.Z` | `integrations/postgres/v0.1.0` |
-| sqlite | `integrations/sqlite/vX.Y.Z` | `integrations/sqlite/v1.1.0` |
-| pgvector | `integrations/pgvector/vX.Y.Z` | `integrations/pgvector/v0.1.0` |
-
-All modules follow [semantic versioning](https://semver.org). The root module
-and integration modules are versioned independently.
-
-## Release Process
-
-Releases follow the AWS SDK v2 pattern: CI on main is the safety net, git tags
-drive `go get` resolution, and dated GitHub Releases provide changelogs.
-
-### 1. Ensure main is green
-
-CI must pass on the latest commit before tagging.
-
-### 2. Tag modules that changed
+When making changes that affect integration sub-modules, run `go mod tidy` in each affected module directory:
 
 ```bash
-# Tag a single module (dry-run — creates local tag only)
-scripts/release.sh tag -m postgres -v v0.1.0
-
-# Tag and push
-make release-tag MODULE=postgres VERSION=v0.1.0
+cd integrations/postgres && go mod tidy && cd ../..
+cd integrations/sqlite && go mod tidy && cd ../..
+cd integrations/pgvector && go mod tidy && cd ../..
 ```
 
-For integration modules, the `require` version for the root module in
-`integrations/<name>/go.mod` must match the latest published root tag.
-The script warns if this is stale.
-
-### 3. Warm the Go module proxy
-
-```bash
-scripts/release.sh warm -t integrations/postgres/v0.1.0
-```
-
-This ensures the tagged version is immediately available via `go get`.
-
-### 4. Create a dated GitHub Release
-
-```bash
-# Dry-run (shows what would be published)
-scripts/release.sh release
-
-# Publish
-make release-publish
-```
-
-This creates a `release-YYYY-MM-DD` tag and a GitHub Release listing all
-module versions tagged since the previous release.
+The `replace` directives in each sub-module's `go.mod` ensure they resolve the root module locally during development, so you don't need to publish a new version to test changes.
