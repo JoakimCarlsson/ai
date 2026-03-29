@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"go.opentelemetry.io/otel/codes"
+
 	"github.com/joakimcarlsson/ai/agent"
 	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/providers"
@@ -667,5 +669,114 @@ func TestOnModelError_RecoveryNilResponse(t *testing.T) {
 	_, err := a.Chat(context.Background(), "test")
 	if err == nil {
 		t.Fatal("expected error when recovery response is nil")
+	}
+}
+
+func TestChat_CreatesInvokeAgentSpan(t *testing.T) {
+	exporter := setupTracing(t)
+	mock := newMockLLM(mockResponse{Content: "hello"})
+
+	a := agent.New(mock)
+	_, err := a.Chat(context.Background(), "hi")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	spans := exporter.GetSpans()
+	span := findSpan(spans, "invoke_agent")
+	if span == nil {
+		t.Fatal("expected invoke_agent span")
+	}
+	if spanAttr(span, "gen_ai.operation.name") != "invoke_agent" {
+		t.Errorf(
+			"expected operation.name 'invoke_agent', got %q",
+			spanAttr(span, "gen_ai.operation.name"),
+		)
+	}
+}
+
+func TestChat_RecordsErrorOnSpan(t *testing.T) {
+	exporter := setupTracing(t)
+	mock := newMockLLM(
+		mockResponse{Err: fmt.Errorf("provider error")},
+	)
+
+	a := agent.New(mock)
+	_, err := a.Chat(context.Background(), "hi")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+
+	spans := exporter.GetSpans()
+	span := findSpan(spans, "invoke_agent")
+	if span == nil {
+		t.Fatal("expected invoke_agent span")
+	}
+	if span.Status.Code != codes.Error {
+		t.Error("expected error status on invoke_agent span")
+	}
+}
+
+func TestChat_RecordsUsageAttrs(t *testing.T) {
+	exporter := setupTracing(t)
+	mock := newMockLLM(mockResponse{
+		Content: "done",
+		Usage: llm.TokenUsage{
+			InputTokens:  100,
+			OutputTokens: 50,
+		},
+	})
+
+	a := agent.New(mock)
+	_, err := a.Chat(context.Background(), "hi")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	spans := exporter.GetSpans()
+	span := findSpan(spans, "invoke_agent")
+	if span == nil {
+		t.Fatal("expected invoke_agent span")
+	}
+	if spanAttrInt(span, "gen_ai.usage.input_tokens") != 100 {
+		t.Errorf(
+			"expected input_tokens 100, got %d",
+			spanAttrInt(span, "gen_ai.usage.input_tokens"),
+		)
+	}
+	if spanAttrInt(span, "gen_ai.usage.output_tokens") != 50 {
+		t.Errorf(
+			"expected output_tokens 50, got %d",
+			spanAttrInt(span, "gen_ai.usage.output_tokens"),
+		)
+	}
+	if spanAttrInt(span, "gen_ai.agent.total_turns") != 1 {
+		t.Errorf(
+			"expected total_turns 1, got %d",
+			spanAttrInt(span, "gen_ai.agent.total_turns"),
+		)
+	}
+}
+
+func TestContinue_RecordsErrorOnSpan(t *testing.T) {
+	exporter := setupTracing(t)
+
+	a := agent.New(
+		newMockLLM(mockResponse{Content: "hi"}),
+	)
+	_, err := a.Continue(
+		context.Background(),
+		[]message.ToolResult{
+			{ToolCallID: "tc1", Content: "result"},
+		},
+	)
+	if err == nil {
+		t.Fatal("expected error (no session)")
+	}
+
+	spans := exporter.GetSpans()
+	span := findSpan(spans, "invoke_agent")
+	if span != nil && span.Status.Code != codes.Error {
+		t.Error("expected error status on invoke_agent span")
 	}
 }
