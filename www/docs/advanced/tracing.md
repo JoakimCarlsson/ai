@@ -1,6 +1,6 @@
 # OpenTelemetry Tracing
 
-Built-in OpenTelemetry instrumentation for all provider calls and agent execution. When no `TracerProvider` is configured, tracing is a zero-cost no-op.
+Built-in OpenTelemetry instrumentation for all provider calls and agent execution. Includes traces, metrics, and structured log records following [GenAI semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/). When no providers are configured, everything is a zero-cost no-op.
 
 ## Setup
 
@@ -20,7 +20,7 @@ defer tp.Shutdown(ctx)
 otel.SetTracerProvider(tp)
 ```
 
-That's it. All subsequent LLM calls, tool executions, and agent runs will produce spans.
+That's it. All subsequent LLM calls, tool executions, and agent runs will produce spans and metrics.
 
 ## Span Hierarchy
 
@@ -64,7 +64,7 @@ Every provider package is instrumented at the public API level — one span per 
 
 ## Span Attributes
 
-Spans carry [GenAI semantic convention](https://opentelemetry.io/docs/specs/semconv/gen-ai/) attributes.
+Spans carry GenAI semantic convention attributes.
 
 ### LLM (`generate_content`)
 
@@ -103,15 +103,55 @@ Spans carry [GenAI semantic convention](https://opentelemetry.io/docs/specs/semc
 
 Streaming calls (`StreamResponse`, `StreamAudio`, `CompleteStream`) are fully traced. The span covers the entire stream lifetime — from the initial call until the channel closes. Response attributes (token usage, finish reason) are recorded when the final event arrives.
 
+## Metrics
+
+Every provider call records two metrics via the global `MeterProvider`:
+
+| Metric | Type | Unit | Description |
+|--------|------|------|-------------|
+| `gen_ai.client.operation.duration` | Float64Histogram | `s` | Duration of each provider call |
+| `gen_ai.client.token.usage` | Int64Counter | `{token}` | Token consumption per call |
+
+Both metrics carry these attributes:
+
+| Attribute | Description |
+|-----------|-------------|
+| `gen_ai.operation.name` | Operation type (`generate_content`, `generate_embeddings`, `rerank`, etc.) |
+| `gen_ai.system` | Provider name (`openai`, `anthropic`, `voyage`, etc.) |
+| `gen_ai.request.model` | Model identifier |
+| `error.type` | Error message (only on failed calls) |
+
+The token usage counter additionally carries `gen_ai.token.type` (`input` or `output`) to distinguish token direction. Token metrics are only recorded when the count is non-zero.
+
+### Metrics Setup
+
+Metrics work the same as traces — configure a global `MeterProvider`:
+
+```go
+import (
+    "go.opentelemetry.io/otel"
+    sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+    "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
+)
+
+exporter, _ := otlpmetrichttp.New(ctx)
+mp := sdkmetric.NewMeterProvider(sdkmetric.WithReader(
+    sdkmetric.NewPeriodicReader(exporter),
+))
+defer mp.Shutdown(ctx)
+
+otel.SetMeterProvider(mp)
+```
+
 ## Log Records
 
-LLM calls emit OpenTelemetry log records tied to the active span:
+LLM calls emit OpenTelemetry log records tied to the active span. Log bodies are structured JSON following GenAI semantic conventions:
 
-| Event Name | Content |
-|------------|---------|
-| `gen_ai.system.message` | System prompt |
-| `gen_ai.user.message` | User message |
-| `gen_ai.choice` | Model response |
+| Event Name | Body Structure |
+|------------|----------------|
+| `gen_ai.system.message` | `{"content": "..."}` |
+| `gen_ai.user.message` | `{"content": "..."}` |
+| `gen_ai.choice` | `{"index": 0, "content": "...", "finish_reason": "..."}` |
 
 Log records require a global `LoggerProvider` to be configured. Without one, they are silently dropped.
 
@@ -124,6 +164,19 @@ export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
 ```
 
 When disabled, log bodies contain `<elided>` instead of the actual content.
+
+## Retry Visibility
+
+When a provider call is retried (rate limits, transient errors), each retry attempt is recorded as a span event on the `generate_content` span:
+
+```
+Event: "retry"
+  attempt = 1
+  retry_after_ms = 2000
+  error = "429 Too Many Requests"
+```
+
+This gives visibility into retries without creating additional spans, making it easy to diagnose latency spikes caused by rate limiting.
 
 ## OTLP Export
 
@@ -164,7 +217,7 @@ export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 
 ## Standalone Provider Tracing
 
-Tracing works without the agent framework. Any provider call creates spans automatically:
+Tracing works without the agent framework. Any provider call creates spans and records metrics automatically:
 
 ```go
 otel.SetTracerProvider(tp)
@@ -175,6 +228,7 @@ client, _ := llm.NewLLM(model.ProviderAnthropic,
 )
 
 // This call produces a "generate_content claude-sonnet-4-6-20250514" span
+// and records duration + token usage metrics
 response, _ := client.SendMessages(ctx, messages, nil)
 ```
 

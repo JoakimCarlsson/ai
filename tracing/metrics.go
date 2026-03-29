@@ -2,7 +2,6 @@ package tracing
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -10,40 +9,31 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-var (
-	meter     metric.Meter
-	meterOnce sync.Once
-
-	operationDuration metric.Float64Histogram
-	tokenUsage        metric.Int64Counter
-)
-
-// Meter returns the shared OpenTelemetry meter instance.
+// Meter returns the OpenTelemetry meter instance.
 func Meter() metric.Meter {
-	meterOnce.Do(func() {
-		meter = otel.Meter(instrumentationName)
-
-		operationDuration, _ = meter.Float64Histogram(
-			"gen_ai.client.operation.duration",
-			metric.WithDescription(
-				"Duration of AI provider operations",
-			),
-			metric.WithUnit("s"),
-		)
-
-		tokenUsage, _ = meter.Int64Counter(
-			"gen_ai.client.token.usage",
-			metric.WithDescription(
-				"Token consumption by AI provider operations",
-			),
-			metric.WithUnit("{token}"),
-		)
-	})
-	return meter
+	return otel.Meter(instrumentationName)
 }
 
-func initMetrics() {
-	Meter()
+func getOperationDuration() metric.Float64Histogram {
+	h, _ := Meter().Float64Histogram(
+		"gen_ai.client.operation.duration",
+		metric.WithDescription(
+			"Duration of AI provider operations",
+		),
+		metric.WithUnit("s"),
+	)
+	return h
+}
+
+func getTokenUsage() metric.Int64Counter {
+	c, _ := Meter().Int64Counter(
+		"gen_ai.client.token.usage",
+		metric.WithDescription(
+			"Token consumption by AI provider operations",
+		),
+		metric.WithUnit("{token}"),
+	)
+	return c
 }
 
 // RecordMetrics records operation duration and token usage metrics.
@@ -57,8 +47,6 @@ func RecordMetrics(
 	outputTokens int64,
 	err error,
 ) {
-	initMetrics()
-
 	attrs := []attribute.KeyValue{
 		AttrOperationName.String(operation),
 		AttrSystem.String(system),
@@ -73,10 +61,10 @@ func RecordMetrics(
 	}
 
 	opt := metric.WithAttributes(attrs...)
-	operationDuration.Record(ctx, duration.Seconds(), opt)
+	getOperationDuration().Record(ctx, duration.Seconds(), opt)
 
 	if inputTokens > 0 {
-		tokenUsage.Add(ctx, inputTokens, metric.WithAttributes(
+		getTokenUsage().Add(ctx, inputTokens, metric.WithAttributes(
 			append(
 				attrs,
 				attribute.String("gen_ai.token.type", "input"),
@@ -84,7 +72,7 @@ func RecordMetrics(
 		))
 	}
 	if outputTokens > 0 {
-		tokenUsage.Add(ctx, outputTokens, metric.WithAttributes(
+		getTokenUsage().Add(ctx, outputTokens, metric.WithAttributes(
 			append(
 				attrs,
 				attribute.String("gen_ai.token.type", "output"),
