@@ -8,13 +8,13 @@ import (
 	"log"
 	"os"
 
-	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/joakimcarlsson/ai/agent"
 	"github.com/joakimcarlsson/ai/model"
 	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/tool"
+	"github.com/joakimcarlsson/ai/tracing"
 )
 
 type spanPrinter struct{}
@@ -54,10 +54,14 @@ func (s spanPrinter) Shutdown(_ context.Context) error {
 func main() {
 	ctx := context.Background()
 
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithSyncer(spanPrinter{}),
+	providers, err := tracing.New(ctx,
+		tracing.WithSpanProcessors(
+			sdktrace.NewSimpleSpanProcessor(spanPrinter{}),
+		),
 	)
-	otel.SetTracerProvider(tp)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	llmClient, err := llm.NewLLM(
 		model.ProviderOpenAI,
@@ -90,7 +94,7 @@ func main() {
 	fmt.Println("\n--- Response ---")
 	fmt.Println(response.Content)
 
-	_ = tp.Shutdown(ctx)
+	_ = providers.Shutdown(ctx)
 }
 
 type weatherParams struct {

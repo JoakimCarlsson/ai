@@ -375,6 +375,63 @@ func TestMergedToolSpan_SingleTool_NoMergedSpan(t *testing.T) {
 	}
 }
 
+func TestMergedToolSpan_Stream_MultipleTools(t *testing.T) {
+	exporter := setupTracing(t)
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc1",
+					Name:  "echo",
+					Input: `{"text":"a"}`,
+				},
+				{
+					ID:    "tc2",
+					Name:  "echo",
+					Input: `{"text":"b"}`,
+				},
+			},
+			FinishReason: message.FinishReasonToolUse,
+		},
+		mockResponse{Content: "done"},
+	)
+
+	a := agent.New(mock, agent.WithTools(&echoTool{}))
+	for evt := range a.ChatStream(
+		context.Background(),
+		"test",
+	) {
+		_ = evt
+	}
+
+	spans := exporter.GetSpans()
+	mergedSpan := findSpan(spans, "execute_tools")
+	if mergedSpan == nil {
+		t.Fatal(
+			"expected execute_tools merged span in streaming mode",
+		)
+	}
+
+	var toolSpanCount int
+	for _, s := range spans {
+		if len(s.Name) >= len("execute_tool ") &&
+			s.Name[:len("execute_tool ")] == "execute_tool " {
+			if s.Parent.SpanID() != mergedSpan.SpanContext.SpanID() {
+				t.Error(
+					"execute_tool should be child of execute_tools in streaming",
+				)
+			}
+			toolSpanCount++
+		}
+	}
+	if toolSpanCount != 2 {
+		t.Errorf(
+			"expected 2 execute_tool spans, got %d",
+			toolSpanCount,
+		)
+	}
+}
+
 func TestSetup_New_WithProcessors(t *testing.T) {
 	exp := tracetest.NewInMemoryExporter()
 	providers, err := tracing.New(

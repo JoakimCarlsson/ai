@@ -4,39 +4,22 @@ import (
 	"context"
 	"os"
 	"strings"
-	"sync"
 
 	"go.opentelemetry.io/otel/log"
 	logglobal "go.opentelemetry.io/otel/log/global"
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-var (
-	logger     log.Logger
-	loggerOnce sync.Once
-
-	captureContent     bool
-	captureContentOnce sync.Once
-)
-
-// Logger returns the shared OpenTelemetry logger instance.
+// Logger returns the OpenTelemetry logger instance.
 func Logger() log.Logger {
-	loggerOnce.Do(func() {
-		logger = logglobal.GetLoggerProvider().Logger(
-			instrumentationName,
-		)
-	})
-	return logger
+	return logglobal.GetLoggerProvider().Logger(instrumentationName)
 }
 
 func shouldCaptureContent() bool {
-	captureContentOnce.Do(func() {
-		val := os.Getenv(
-			"OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT",
-		)
-		captureContent = strings.EqualFold(val, "true")
-	})
-	return captureContent
+	val := os.Getenv(
+		"OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT",
+	)
+	return strings.EqualFold(val, "true")
 }
 
 func elideContent(content string) string {
