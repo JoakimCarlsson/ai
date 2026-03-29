@@ -39,6 +39,7 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/tracing"
 )
 
 // EmbeddingUsage tracks the resource consumption for embedding generation.
@@ -203,7 +204,46 @@ func (e *baseEmbedding[C]) GenerateEmbeddings(
 		}, nil
 	}
 
-	return e.client.embed(ctx, texts, inputType...)
+	start := time.Now()
+	ctx, span := tracing.StartEmbeddingSpan(
+		ctx,
+		e.options.model.APIModel,
+		string(e.options.model.Provider),
+	)
+	defer span.End()
+	span.SetAttributes(tracing.AttrInputCount.Int(len(texts)))
+
+	resp, err := e.client.embed(ctx, texts, inputType...)
+	if err != nil {
+		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx,
+			"generate_embeddings",
+			e.options.model.APIModel,
+			string(e.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
+		return nil, err
+	}
+
+	tracing.SetResponseAttrs(
+		span,
+		tracing.AttrUsageTotalTokens.Int64(int64(resp.Usage.TotalTokens)),
+	)
+	tracing.RecordMetrics(
+		ctx,
+		"generate_embeddings",
+		e.options.model.APIModel,
+		string(e.options.model.Provider),
+		time.Since(start),
+		int64(resp.Usage.TotalTokens),
+		0,
+		nil,
+	)
+	return resp, nil
 }
 
 func (e *baseEmbedding[C]) GenerateMultimodalEmbeddings(
@@ -219,7 +259,46 @@ func (e *baseEmbedding[C]) GenerateMultimodalEmbeddings(
 		}, nil
 	}
 
-	return e.client.embedMultimodal(ctx, inputs, inputType...)
+	start := time.Now()
+	ctx, span := tracing.StartEmbeddingSpan(
+		ctx,
+		e.options.model.APIModel,
+		string(e.options.model.Provider),
+	)
+	defer span.End()
+	span.SetAttributes(tracing.AttrInputCount.Int(len(inputs)))
+
+	resp, err := e.client.embedMultimodal(ctx, inputs, inputType...)
+	if err != nil {
+		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx,
+			"generate_embeddings",
+			e.options.model.APIModel,
+			string(e.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
+		return nil, err
+	}
+
+	tracing.SetResponseAttrs(
+		span,
+		tracing.AttrUsageTotalTokens.Int64(int64(resp.Usage.TotalTokens)),
+	)
+	tracing.RecordMetrics(
+		ctx,
+		"generate_embeddings",
+		e.options.model.APIModel,
+		string(e.options.model.Provider),
+		time.Since(start),
+		int64(resp.Usage.TotalTokens),
+		0,
+		nil,
+	)
+	return resp, nil
 }
 
 func (e *baseEmbedding[C]) GenerateContextualizedEmbeddings(
@@ -235,7 +314,46 @@ func (e *baseEmbedding[C]) GenerateContextualizedEmbeddings(
 		}, nil
 	}
 
-	return e.client.embedContextualized(ctx, documentChunks, inputType...)
+	start := time.Now()
+	ctx, span := tracing.StartEmbeddingSpan(
+		ctx,
+		e.options.model.APIModel,
+		string(e.options.model.Provider),
+	)
+	defer span.End()
+	span.SetAttributes(tracing.AttrDocumentCount.Int(len(documentChunks)))
+
+	resp, err := e.client.embedContextualized(ctx, documentChunks, inputType...)
+	if err != nil {
+		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx,
+			"generate_embeddings",
+			e.options.model.APIModel,
+			string(e.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
+		return nil, err
+	}
+
+	tracing.SetResponseAttrs(
+		span,
+		tracing.AttrUsageTotalTokens.Int64(int64(resp.Usage.TotalTokens)),
+	)
+	tracing.RecordMetrics(
+		ctx,
+		"generate_embeddings",
+		e.options.model.APIModel,
+		string(e.options.model.Provider),
+		time.Since(start),
+		int64(resp.Usage.TotalTokens),
+		0,
+		nil,
+	)
+	return resp, nil
 }
 
 func (e *baseEmbedding[C]) Model() model.EmbeddingModel {

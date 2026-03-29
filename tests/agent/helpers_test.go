@@ -5,7 +5,12 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"testing"
 	"time"
+
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/model"
@@ -339,4 +344,51 @@ func (t *concurrencyTrackingTool) Run(
 	}
 
 	return tool.NewTextResponse("tracked: " + params.Input), nil
+}
+
+func setupTracing(t *testing.T) *tracetest.InMemoryExporter {
+	t.Helper()
+	exporter := tracetest.NewInMemoryExporter()
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithSyncer(exporter),
+	)
+	prev := otel.GetTracerProvider()
+	otel.SetTracerProvider(tp)
+	t.Cleanup(func() {
+		otel.SetTracerProvider(prev)
+		_ = tp.Shutdown(context.Background())
+		exporter.Reset()
+	})
+	return exporter
+}
+
+func findSpan(
+	spans tracetest.SpanStubs,
+	prefix string,
+) *tracetest.SpanStub {
+	for i, s := range spans {
+		if len(s.Name) >= len(prefix) &&
+			s.Name[:len(prefix)] == prefix {
+			return &spans[i]
+		}
+	}
+	return nil
+}
+
+func spanAttr(span *tracetest.SpanStub, key string) string {
+	for _, attr := range span.Attributes {
+		if string(attr.Key) == key {
+			return attr.Value.Emit()
+		}
+	}
+	return ""
+}
+
+func spanAttrInt(span *tracetest.SpanStub, key string) int64 {
+	for _, attr := range span.Attributes {
+		if string(attr.Key) == key {
+			return attr.Value.AsInt64()
+		}
+	}
+	return -1
 }

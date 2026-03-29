@@ -9,6 +9,7 @@ import (
 
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/tool"
+	"github.com/joakimcarlsson/ai/tracing"
 	"github.com/joakimcarlsson/ai/types"
 )
 
@@ -44,6 +45,9 @@ func (a *Agent) executeSingleTool(
 	if preResult.Action == HookModify {
 		tc.Input = preResult.Input
 	}
+
+	ctx, span := tracing.StartToolSpan(ctx, tc.Name, tc.ID)
+	defer span.End()
 
 	if a.confirmationProvider != nil {
 		if t, ok := registry.Get(tc.Name); ok && t.Info().RequireConfirmation {
@@ -141,6 +145,7 @@ func (a *Agent) executeSingleTool(
 	}
 
 	if result.IsError {
+		tracing.SetError(span, execErr)
 		errResult, _ := runOnToolError(ctx, a.hooks, ToolErrorContext{
 			ToolUseContext: hookTC,
 			Error:          execErr,
@@ -176,6 +181,16 @@ func (a *Agent) executeTools(
 	}
 
 	results := make([]ToolExecutionResult, len(toolCalls))
+
+	if len(toolCalls) > 1 {
+		var mergedSpan tracing.Span
+		ctx, mergedSpan = tracing.StartSpan(ctx,
+			"execute_tools",
+			tracing.AttrOperationName.String("execute_tools"),
+			tracing.AttrToolCount.Int(len(toolCalls)),
+		)
+		defer mergedSpan.End()
+	}
 
 	if !a.parallelTools {
 		for i, tc := range toolCalls {

@@ -6,6 +6,8 @@ import (
 	"sync"
 	"testing"
 
+	"go.opentelemetry.io/otel/codes"
+
 	"github.com/joakimcarlsson/ai/agent"
 	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/providers"
@@ -484,5 +486,71 @@ func TestOnEvent_ModelError_Stream(t *testing.T) {
 
 	if !typesSeen[agent.HookEventModelError] {
 		t.Error("expected OnEvent to fire for model_error in stream")
+	}
+}
+
+func TestChatStream_CreatesSpans(t *testing.T) {
+	exporter := setupTracing(t)
+	mock := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc1",
+					Name:  "echo",
+					Input: `{"text":"hi"}`,
+				},
+			},
+			FinishReason: message.FinishReasonToolUse,
+		},
+		mockResponse{Content: "done"},
+	)
+
+	a := agent.New(mock, agent.WithTools(&echoTool{}))
+	for evt := range a.ChatStream(
+		context.Background(),
+		"test",
+	) {
+		_ = evt
+	}
+
+	spans := exporter.GetSpans()
+	if findSpan(spans, "invoke_agent") == nil {
+		t.Fatal("expected invoke_agent span")
+	}
+	if findSpan(spans, "execute_tool") == nil {
+		t.Fatal("expected execute_tool span")
+	}
+}
+
+func TestChatStream_HookError_RecordsOnSpan(t *testing.T) {
+	exporter := setupTracing(t)
+
+	mock := newMockLLM(mockResponse{Content: "hi"})
+	a := agent.New(mock,
+		agent.WithHooks(agent.Hooks{
+			OnUserMessage: func(
+				_ context.Context,
+				_ agent.UserMessageContext,
+			) (agent.UserMessageResult, error) {
+				return agent.UserMessageResult{},
+					fmt.Errorf("hook failed")
+			},
+		}),
+	)
+
+	for evt := range a.ChatStream(
+		context.Background(),
+		"test",
+	) {
+		_ = evt
+	}
+
+	spans := exporter.GetSpans()
+	span := findSpan(spans, "invoke_agent")
+	if span == nil {
+		t.Fatal("expected invoke_agent span")
+	}
+	if span.Status.Code != codes.Error {
+		t.Error("expected error status on span from hook error")
 	}
 }

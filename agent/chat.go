@@ -7,6 +7,7 @@ import (
 
 	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/providers"
+	"github.com/joakimcarlsson/ai/tracing"
 )
 
 // Chat sends a message to the agent and returns the response.
@@ -22,6 +23,11 @@ func (a *Agent) Chat(
 	cfg := applyChatOptions(opts)
 	startTime := time.Now()
 	taskID, agentName, branch := a.hookContext(ctx)
+
+	ctx, span := tracing.StartAgentSpan(ctx, agentName)
+	defer func() {
+		span.End()
+	}()
 
 	runBeforeRun(ctx, a.hooks, RunContext{
 		AgentName: agentName,
@@ -115,6 +121,17 @@ func (a *Agent) Chat(
 		Duration:  time.Since(startTime),
 	})
 
+	if err != nil {
+		tracing.SetError(span, err)
+	} else if resp != nil {
+		tracing.SetResponseAttrs(span,
+			tracing.AttrUsageInputTokens.Int64(resp.Usage.InputTokens),
+			tracing.AttrUsageOutputTokens.Int64(resp.Usage.OutputTokens),
+			tracing.AttrAgentTotalTurns.Int(resp.TotalTurns),
+			tracing.AttrAgentTotalToolCalls.Int(resp.TotalToolCalls),
+		)
+	}
+
 	return resp, err
 }
 
@@ -140,6 +157,11 @@ func (a *Agent) Continue(
 	cfg := applyChatOptions(opts)
 	startTime := time.Now()
 	taskID, agentName, branch := a.hookContext(ctx)
+
+	ctx, span := tracing.StartAgentSpan(ctx, agentName)
+	defer func() {
+		span.End()
+	}()
 
 	runBeforeRun(ctx, a.hooks, RunContext{
 		AgentName: agentName,
@@ -226,6 +248,17 @@ func (a *Agent) Continue(
 		Error:     err,
 		Duration:  time.Since(startTime),
 	})
+
+	if err != nil {
+		tracing.SetError(span, err)
+	} else if resp != nil {
+		tracing.SetResponseAttrs(span,
+			tracing.AttrUsageInputTokens.Int64(resp.Usage.InputTokens),
+			tracing.AttrUsageOutputTokens.Int64(resp.Usage.OutputTokens),
+			tracing.AttrAgentTotalTurns.Int(resp.TotalTurns),
+			tracing.AttrAgentTotalToolCalls.Int(resp.TotalToolCalls),
+		)
+	}
 
 	return resp, err
 }

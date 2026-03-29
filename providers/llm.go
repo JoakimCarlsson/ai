@@ -55,6 +55,7 @@ import (
 	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
+	"github.com/joakimcarlsson/ai/tracing"
 	"github.com/joakimcarlsson/ai/types"
 )
 
@@ -414,17 +415,129 @@ func (p *baseLLM[C]) cleanMessages(
 	return
 }
 
+func (p *baseLLM[C]) generateSpanAttrs() []tracing.Attr {
+	attrs := []tracing.Attr{
+		tracing.AttrRequestMaxTokens.Int64(p.options.maxTokens),
+	}
+	if p.options.temperature != nil {
+		attrs = append(
+			attrs,
+			tracing.AttrRequestTemperature.Float64(*p.options.temperature),
+		)
+	}
+	if p.options.topP != nil {
+		attrs = append(attrs, tracing.AttrRequestTopP.Float64(*p.options.topP))
+	}
+	return attrs
+}
+
+func (p *baseLLM[C]) recordResponseAttrs(
+	span tracing.Span,
+	resp *Response,
+	toolCount int,
+) {
+	attrs := []tracing.Attr{
+		tracing.AttrUsageInputTokens.Int64(resp.Usage.InputTokens),
+		tracing.AttrUsageOutputTokens.Int64(resp.Usage.OutputTokens),
+		tracing.AttrResponseFinishReason.String(string(resp.FinishReason)),
+	}
+	if resp.Usage.CacheCreationTokens > 0 {
+		attrs = append(
+			attrs,
+			tracing.AttrUsageCacheCreation.Int64(
+				resp.Usage.CacheCreationTokens,
+			),
+		)
+	}
+	if resp.Usage.CacheReadTokens > 0 {
+		attrs = append(
+			attrs,
+			tracing.AttrUsageCacheRead.Int64(resp.Usage.CacheReadTokens),
+		)
+	}
+	if len(resp.ToolCalls) > 0 {
+		attrs = append(
+			attrs,
+			tracing.AttrToolCallCount.Int(len(resp.ToolCalls)),
+		)
+	}
+	if toolCount > 0 {
+		attrs = append(attrs, tracing.AttrToolCount.Int(toolCount))
+	}
+	tracing.SetResponseAttrs(span, attrs...)
+}
+
+func (p *baseLLM[C]) logMessages(
+	ctx context.Context,
+	messages []message.Message,
+	resp *Response,
+) {
+	for _, msg := range messages {
+		switch msg.Role {
+		case message.System:
+			tracing.LogSystemMessage(ctx, messageText(msg))
+		case message.User:
+			tracing.LogUserMessage(ctx, messageText(msg))
+		}
+	}
+	if resp != nil {
+		tracing.LogChoice(ctx, resp.Content, string(resp.FinishReason))
+	}
+}
+
+func messageText(msg message.Message) string {
+	return msg.Content().Text
+}
+
+func (p *baseLLM[C]) recordMetrics(
+	ctx context.Context,
+	start time.Time,
+	resp *Response,
+	err error,
+) {
+	var inputTokens, outputTokens int64
+	if resp != nil {
+		inputTokens = resp.Usage.InputTokens
+		outputTokens = resp.Usage.OutputTokens
+	}
+	tracing.RecordMetrics(
+		ctx,
+		"generate_content",
+		p.options.model.APIModel,
+		string(p.options.model.Provider),
+		time.Since(start),
+		inputTokens,
+		outputTokens,
+		err,
+	)
+}
+
 func (p *baseLLM[C]) SendMessages(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
 ) (*Response, error) {
 	messages = p.cleanMessages(messages)
-	response, err := p.client.send(ctx, messages, tools)
+	start := time.Now()
 
+	ctx, span := tracing.StartGenerateSpan(
+		ctx,
+		p.options.model.APIModel,
+		string(p.options.model.Provider),
+		p.generateSpanAttrs()...,
+	)
+	defer span.End()
+
+	response, err := p.client.send(ctx, messages, tools)
 	if err != nil {
+		tracing.SetError(span, err)
+		p.recordMetrics(ctx, start, nil, err)
 		return nil, err
 	}
+
+	p.recordResponseAttrs(span, response, len(tools))
+	p.logMessages(ctx, messages, response)
+	p.recordMetrics(ctx, start, response, nil)
 
 	return response, nil
 }
@@ -443,16 +556,31 @@ func (p *baseLLM[C]) SendMessagesWithStructuredOutput(
 	}
 
 	messages = p.cleanMessages(messages)
+	start := time.Now()
+
+	ctx, span := tracing.StartGenerateSpan(
+		ctx,
+		p.options.model.APIModel,
+		string(p.options.model.Provider),
+		p.generateSpanAttrs()...,
+	)
+	defer span.End()
+
 	response, err := p.client.sendWithStructuredOutput(
 		ctx,
 		messages,
 		tools,
 		outputSchema,
 	)
-
 	if err != nil {
+		tracing.SetError(span, err)
+		p.recordMetrics(ctx, start, nil, err)
 		return nil, err
 	}
+
+	p.recordResponseAttrs(span, response, len(tools))
+	p.logMessages(ctx, messages, response)
+	p.recordMetrics(ctx, start, response, nil)
 
 	return response, nil
 }
@@ -471,7 +599,38 @@ func (p *baseLLM[C]) StreamResponse(
 	tools []tool.BaseTool,
 ) <-chan Event {
 	messages = p.cleanMessages(messages)
-	return p.client.stream(ctx, messages, tools)
+	start := time.Now()
+
+	ctx, span := tracing.StartGenerateSpan(
+		ctx,
+		p.options.model.APIModel,
+		string(p.options.model.Provider),
+		p.generateSpanAttrs()...,
+	)
+
+	innerCh := p.client.stream(ctx, messages, tools)
+	outCh := make(chan Event)
+	go func() {
+		defer close(outCh)
+		defer span.End()
+		for evt := range innerCh {
+			if evt.Type == types.EventComplete && evt.Response != nil {
+				p.recordResponseAttrs(span, evt.Response, len(tools))
+				tracing.LogChoice(
+					ctx,
+					evt.Response.Content,
+					string(evt.Response.FinishReason),
+				)
+				p.recordMetrics(ctx, start, evt.Response, nil)
+			}
+			if evt.Type == types.EventError && evt.Error != nil {
+				tracing.SetError(span, evt.Error)
+				p.recordMetrics(ctx, start, nil, evt.Error)
+			}
+			outCh <- evt
+		}
+	}()
+	return outCh
 }
 
 func (p *baseLLM[C]) StreamResponseWithStructuredOutput(
@@ -491,12 +650,43 @@ func (p *baseLLM[C]) StreamResponseWithStructuredOutput(
 	}
 
 	messages = p.cleanMessages(messages)
-	return p.client.streamWithStructuredOutput(
+	start := time.Now()
+
+	ctx, span := tracing.StartGenerateSpan(
+		ctx,
+		p.options.model.APIModel,
+		string(p.options.model.Provider),
+		p.generateSpanAttrs()...,
+	)
+
+	innerCh := p.client.streamWithStructuredOutput(
 		ctx,
 		messages,
 		tools,
 		outputSchema,
 	)
+	outCh := make(chan Event)
+	go func() {
+		defer close(outCh)
+		defer span.End()
+		for evt := range innerCh {
+			if evt.Type == types.EventComplete && evt.Response != nil {
+				p.recordResponseAttrs(span, evt.Response, len(tools))
+				tracing.LogChoice(
+					ctx,
+					evt.Response.Content,
+					string(evt.Response.FinishReason),
+				)
+				p.recordMetrics(ctx, start, evt.Response, nil)
+			}
+			if evt.Type == types.EventError && evt.Error != nil {
+				tracing.SetError(span, evt.Error)
+				p.recordMetrics(ctx, start, nil, evt.Error)
+			}
+			outCh <- evt
+		}
+	}()
+	return outCh
 }
 
 // WithAPIKey sets the API key for authenticating with the LLM provider
