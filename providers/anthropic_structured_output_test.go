@@ -218,9 +218,11 @@ func TestStreamWithStructuredOutput(t *testing.T) {
 	}
 	if finalResponse == nil {
 		t.Fatal("expected a complete event with response")
+		return
 	}
 	if finalResponse.StructuredOutput == nil {
 		t.Fatal("expected StructuredOutput to be non-nil")
+		return
 	}
 	if !finalResponse.UsedNativeStructuredOutput {
 		t.Error("expected UsedNativeStructuredOutput to be true")

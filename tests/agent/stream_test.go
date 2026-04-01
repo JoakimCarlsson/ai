@@ -549,6 +549,7 @@ func TestChatStream_HookError_RecordsOnSpan(t *testing.T) {
 	span := findSpan(spans, "invoke_agent")
 	if span == nil {
 		t.Fatal("expected invoke_agent span")
+		return
 	}
 	if span.Status.Code != codes.Error {
 		t.Error("expected error status on span from hook error")
