@@ -11,6 +11,22 @@ const (
 	ElevenTurboV2_5      ID = "eleven_turbo_v2_5"
 	ElevenTurboV2        ID = "eleven_turbo_v2"
 
+	OpenAITTS1    ID = "tts-1"
+	OpenAITTS1HD  ID = "tts-1-hd"
+	OpenAIMiniTTS ID = "gpt-4o-mini-tts"
+
+	ProviderDeepgram   Provider = "deepgram"
+	ProviderAssemblyAI Provider = "assemblyai"
+
+	DeepgramNova3 ID = "nova-3"
+	DeepgramNova2 ID = "nova-2"
+
+	AssemblyAIBest ID = "best"
+	AssemblyAINano ID = "nano"
+
+	ElevenLabsScribeV1 ID = "scribe_v1"
+	ElevenLabsScribeV2 ID = "scribe_v2"
+
 	Whisper1                ID = "whisper-1"
 	GPT4oTranscribe         ID = "gpt-4o-transcribe"
 	GPT4oMiniTranscribe     ID = "gpt-4o-mini-transcribe"
@@ -300,5 +316,197 @@ var OpenAITranscriptionModels = map[ID]TranscriptionModel{
 		SupportsTranslation:      false,
 		SupportsStreaming:        true,
 		SupportedResponseFormats: []string{"json", "text", "diarized_json"},
+	},
+}
+
+// OpenAIAudioModels maps OpenAI TTS model IDs to their configurations.
+var OpenAIAudioModels = map[ID]AudioModel{
+	OpenAITTS1: {
+		ID:             OpenAITTS1,
+		Name:           "OpenAI TTS-1",
+		Provider:       ProviderOpenAI,
+		APIModel:       "tts-1",
+		CostPer1MChars: 15.00,
+		MaxCharacters:  4096,
+		SupportedFormats: []string{
+			"mp3",
+			"opus",
+			"aac",
+			"flac",
+			"wav",
+			"pcm",
+		},
+		DefaultFormat:     "mp3",
+		SupportsStreaming: true,
+	},
+	OpenAITTS1HD: {
+		ID:             OpenAITTS1HD,
+		Name:           "OpenAI TTS-1 HD",
+		Provider:       ProviderOpenAI,
+		APIModel:       "tts-1-hd",
+		CostPer1MChars: 30.00,
+		MaxCharacters:  4096,
+		SupportedFormats: []string{
+			"mp3",
+			"opus",
+			"aac",
+			"flac",
+			"wav",
+			"pcm",
+		},
+		DefaultFormat:     "mp3",
+		SupportsStreaming: true,
+	},
+	OpenAIMiniTTS: {
+		ID:             OpenAIMiniTTS,
+		Name:           "GPT-4o Mini TTS",
+		Provider:       ProviderOpenAI,
+		APIModel:       "gpt-4o-mini-tts",
+		CostPer1MChars: 12.00,
+		MaxCharacters:  4096,
+		SupportedFormats: []string{
+			"mp3",
+			"opus",
+			"aac",
+			"flac",
+			"wav",
+			"pcm",
+		},
+		DefaultFormat:     "mp3",
+		SupportsStreaming: true,
+	},
+}
+
+// DeepgramTranscriptionModels maps Deepgram model IDs to their configurations.
+var DeepgramTranscriptionModels = map[ID]TranscriptionModel{
+	DeepgramNova3: {
+		ID:            DeepgramNova3,
+		Name:          "Deepgram Nova 3",
+		Provider:      ProviderDeepgram,
+		APIModel:      "nova-3",
+		CostPer1MIn:   0.0077,
+		MaxFileSizeMB: 2000,
+		SupportedFormats: []string{
+			"mp3", "mp4", "wav", "flac",
+			"ogg", "webm", "m4a",
+		},
+		SupportsTimestamps:     true,
+		SupportsWordTimestamps: true,
+		SupportsDiarization:    true,
+		SupportsTranslation:    false,
+		SupportsStreaming:      true,
+		SupportedResponseFormats: []string{
+			"json", "text", "srt", "vtt",
+		},
+	},
+	DeepgramNova2: {
+		ID:            DeepgramNova2,
+		Name:          "Deepgram Nova 2",
+		Provider:      ProviderDeepgram,
+		APIModel:      "nova-2",
+		CostPer1MIn:   0.0058,
+		MaxFileSizeMB: 2000,
+		SupportedFormats: []string{
+			"mp3", "mp4", "wav", "flac",
+			"ogg", "webm", "m4a",
+		},
+		SupportsTimestamps:     true,
+		SupportsWordTimestamps: true,
+		SupportsDiarization:    true,
+		SupportsTranslation:    false,
+		SupportsStreaming:      true,
+		SupportedResponseFormats: []string{
+			"json", "text", "srt", "vtt",
+		},
+	},
+}
+
+// AssemblyAITranscriptionModels maps AssemblyAI model IDs to their configurations.
+var AssemblyAITranscriptionModels = map[ID]TranscriptionModel{
+	AssemblyAIBest: {
+		ID:            AssemblyAIBest,
+		Name:          "AssemblyAI Best",
+		Provider:      ProviderAssemblyAI,
+		APIModel:      "best",
+		CostPer1MIn:   0.0062,
+		MaxFileSizeMB: 5000,
+		SupportedFormats: []string{
+			"mp3", "mp4", "wav", "flac",
+			"ogg", "webm", "m4a",
+		},
+		SupportsTimestamps:     true,
+		SupportsWordTimestamps: true,
+		SupportsDiarization:    true,
+		SupportsTranslation:    false,
+		SupportsStreaming:      false,
+		SupportedResponseFormats: []string{
+			"json", "text", "srt", "vtt",
+		},
+	},
+	AssemblyAINano: {
+		ID:            AssemblyAINano,
+		Name:          "AssemblyAI Nano",
+		Provider:      ProviderAssemblyAI,
+		APIModel:      "nano",
+		CostPer1MIn:   0.0020,
+		MaxFileSizeMB: 5000,
+		SupportedFormats: []string{
+			"mp3", "mp4", "wav", "flac",
+			"ogg", "webm", "m4a",
+		},
+		SupportsTimestamps:     true,
+		SupportsWordTimestamps: true,
+		SupportsDiarization:    true,
+		SupportsTranslation:    false,
+		SupportsStreaming:      false,
+		SupportedResponseFormats: []string{
+			"json", "text", "srt", "vtt",
+		},
+	},
+}
+
+// ElevenLabsTranscriptionModels maps ElevenLabs Scribe model IDs to their configurations.
+var ElevenLabsTranscriptionModels = map[ID]TranscriptionModel{
+	ElevenLabsScribeV1: {
+		ID:            ElevenLabsScribeV1,
+		Name:          "ElevenLabs Scribe v1",
+		Provider:      ProviderElevenLabs,
+		APIModel:      "scribe_v1",
+		CostPer1MIn:   0.0067,
+		MaxFileSizeMB: 3000,
+		SupportedFormats: []string{
+			"mp3", "mp4", "wav", "flac",
+			"ogg", "webm", "m4a", "aac",
+			"aiff", "opus",
+		},
+		SupportsTimestamps:     true,
+		SupportsWordTimestamps: true,
+		SupportsDiarization:    true,
+		SupportsTranslation:    false,
+		SupportsStreaming:      false,
+		SupportedResponseFormats: []string{
+			"json", "text", "srt",
+		},
+	},
+	ElevenLabsScribeV2: {
+		ID:            ElevenLabsScribeV2,
+		Name:          "ElevenLabs Scribe v2",
+		Provider:      ProviderElevenLabs,
+		APIModel:      "scribe_v2",
+		CostPer1MIn:   0.0067,
+		MaxFileSizeMB: 3000,
+		SupportedFormats: []string{
+			"mp3", "mp4", "wav", "flac",
+			"ogg", "webm", "m4a", "aac",
+			"aiff", "opus",
+		},
+		SupportsTimestamps:     true,
+		SupportsWordTimestamps: true,
+		SupportsDiarization:    true,
+		SupportsTranslation:    false,
+		SupportsStreaming:      false,
+		SupportedResponseFormats: []string{
+			"json", "text", "srt",
+		},
 	},
 }

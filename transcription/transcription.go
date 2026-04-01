@@ -110,7 +110,11 @@ type transcriptionClientOptions struct {
 	model   model.TranscriptionModel
 	timeout *time.Duration
 
-	openaiOptions []OpenAIOption
+	openaiOptions         []OpenAIOption
+	deepgramOptions       []DeepgramOption
+	googleCloudSTTOptions []GoogleCloudSTTOption
+	assemblyAIOptions     []AssemblyAIOption
+	elevenLabsOptions     []ElevenLabsOption
 }
 
 // ClientOption configures a speech-to-text client.
@@ -145,10 +149,31 @@ func NewSpeechToText(
 		o(&clientOptions)
 	}
 
-	if provider == model.ProviderOpenAI {
+	switch provider {
+	case model.ProviderOpenAI:
 		return &baseSpeechToText[OpenAIClient]{
 			options: clientOptions,
 			client:  newOpenAIClient(clientOptions),
+		}, nil
+	case model.ProviderDeepgram:
+		return &baseSpeechToText[DeepgramClient]{
+			options: clientOptions,
+			client:  newDeepgramClient(clientOptions),
+		}, nil
+	case model.ProviderGoogleCloud:
+		return &baseSpeechToText[GoogleCloudClient]{
+			options: clientOptions,
+			client:  newGoogleCloudClient(clientOptions),
+		}, nil
+	case model.ProviderAssemblyAI:
+		return &baseSpeechToText[AssemblyAIClient]{
+			options: clientOptions,
+			client:  newAssemblyAIClient(clientOptions),
+		}, nil
+	case model.ProviderElevenLabs:
+		return &baseSpeechToText[ElevenLabsClient]{
+			options: clientOptions,
+			client:  newElevenLabsClient(clientOptions),
 		}, nil
 	}
 
@@ -287,6 +312,42 @@ func WithOpenAIOptions(
 ) ClientOption {
 	return func(options *transcriptionClientOptions) {
 		options.openaiOptions = openaiOptions
+	}
+}
+
+// WithDeepgramOptions applies Deepgram-specific configuration options.
+func WithDeepgramOptions(
+	deepgramOptions ...DeepgramOption,
+) ClientOption {
+	return func(options *transcriptionClientOptions) {
+		options.deepgramOptions = deepgramOptions
+	}
+}
+
+// WithGoogleCloudSTTOptions applies Google Cloud STT-specific configuration options.
+func WithGoogleCloudSTTOptions(
+	gcOptions ...GoogleCloudSTTOption,
+) ClientOption {
+	return func(options *transcriptionClientOptions) {
+		options.googleCloudSTTOptions = gcOptions
+	}
+}
+
+// WithAssemblyAIOptions applies AssemblyAI-specific configuration options.
+func WithAssemblyAIOptions(
+	aaiOptions ...AssemblyAIOption,
+) ClientOption {
+	return func(options *transcriptionClientOptions) {
+		options.assemblyAIOptions = aaiOptions
+	}
+}
+
+// WithElevenLabsSTTOptions applies ElevenLabs Scribe-specific configuration options.
+func WithElevenLabsSTTOptions(
+	elOptions ...ElevenLabsOption,
+) ClientOption {
+	return func(options *transcriptionClientOptions) {
+		options.elevenLabsOptions = elOptions
 	}
 }
 

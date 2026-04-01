@@ -97,6 +97,7 @@ type rerankerClientOptions struct {
 	timeout    *time.Duration
 
 	voyageOptions []VoyageOption
+	cohereOptions []CohereOption
 }
 
 // RerankerClientOption configures a reranker client.
@@ -130,14 +131,23 @@ func NewReranker(
 		o(&clientOptions)
 	}
 
-	if provider == model.ProviderVoyage {
+	switch provider {
+	case model.ProviderVoyage:
 		return &baseReranker[VoyageClient]{
 			options: clientOptions,
 			client:  newVoyageClient(clientOptions),
 		}, nil
+	case model.ProviderCohere:
+		return &baseReranker[CohereClient]{
+			options: clientOptions,
+			client:  newCohereClient(clientOptions),
+		}, nil
 	}
 
-	return nil, fmt.Errorf("reranker provider not supported: %s", provider)
+	return nil, fmt.Errorf(
+		"reranker provider not supported: %s",
+		provider,
+	)
 }
 
 func (r *baseReranker[C]) Rerank(
@@ -247,5 +257,12 @@ func WithTimeout(timeout time.Duration) RerankerClientOption {
 func WithVoyageOptions(voyageOptions ...VoyageOption) RerankerClientOption {
 	return func(options *rerankerClientOptions) {
 		options.voyageOptions = voyageOptions
+	}
+}
+
+// WithCohereOptions applies Cohere-specific configuration options.
+func WithCohereOptions(cohereOptions ...CohereOption) RerankerClientOption {
+	return func(options *rerankerClientOptions) {
+		options.cohereOptions = cohereOptions
 	}
 }
