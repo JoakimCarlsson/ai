@@ -191,6 +191,7 @@ func TestContinue_Stream(t *testing.T) {
 	}
 	if finalResp == nil {
 		t.Fatal("expected response from ContinueStream")
+		return
 	}
 	if finalResp.Content != "streamed result" {
 		t.Errorf("unexpected response: %q", finalResp.Content)

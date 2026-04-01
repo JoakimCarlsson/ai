@@ -154,6 +154,7 @@ func TestMetrics_Stream(t *testing.T) {
 
 	if resp == nil {
 		t.Fatal("expected a ChatResponse from stream")
+		return
 	}
 	if resp.TotalTurns != 2 {
 		t.Errorf("expected TotalTurns=2, got %d", resp.TotalTurns)
