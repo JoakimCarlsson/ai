@@ -381,7 +381,7 @@ var DeepgramTranscriptionModels = map[ID]TranscriptionModel{
 		Name:          "Deepgram Nova 3",
 		Provider:      ProviderDeepgram,
 		APIModel:      "nova-3",
-		CostPer1MIn:   0.0043,
+		CostPer1MIn:   0.0077,
 		MaxFileSizeMB: 2000,
 		SupportedFormats: []string{
 			"mp3", "mp4", "wav", "flac",
@@ -401,7 +401,7 @@ var DeepgramTranscriptionModels = map[ID]TranscriptionModel{
 		Name:          "Deepgram Nova 2",
 		Provider:      ProviderDeepgram,
 		APIModel:      "nova-2",
-		CostPer1MIn:   0.0036,
+		CostPer1MIn:   0.0058,
 		MaxFileSizeMB: 2000,
 		SupportedFormats: []string{
 			"mp3", "mp4", "wav", "flac",
@@ -425,7 +425,7 @@ var AssemblyAITranscriptionModels = map[ID]TranscriptionModel{
 		Name:          "AssemblyAI Best",
 		Provider:      ProviderAssemblyAI,
 		APIModel:      "best",
-		CostPer1MIn:   0.65,
+		CostPer1MIn:   0.0062,
 		MaxFileSizeMB: 5000,
 		SupportedFormats: []string{
 			"mp3", "mp4", "wav", "flac",
@@ -445,7 +445,7 @@ var AssemblyAITranscriptionModels = map[ID]TranscriptionModel{
 		Name:          "AssemblyAI Nano",
 		Provider:      ProviderAssemblyAI,
 		APIModel:      "nano",
-		CostPer1MIn:   0.20,
+		CostPer1MIn:   0.0020,
 		MaxFileSizeMB: 5000,
 		SupportedFormats: []string{
 			"mp3", "mp4", "wav", "flac",

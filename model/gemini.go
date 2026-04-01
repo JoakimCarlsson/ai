@@ -321,7 +321,7 @@ var GeminiEmbeddingModels = map[ID]EmbeddingModel{
 		Name:                "Gemini Text Embedding 004",
 		Provider:            ProviderGemini,
 		APIModel:            "text-embedding-004",
-		CostPer1MTokens:     0.00,
+		CostPer1MTokens:     0.15,
 		MaxInputTokens:      2048,
 		EmbeddingDims:       768,
 		SupportedDimensions: []int{768, 512, 256},

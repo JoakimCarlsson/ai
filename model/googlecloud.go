@@ -19,7 +19,7 @@ var GoogleCloudTranscriptionModels = map[ID]TranscriptionModel{
 		Name:          "Google Cloud STT Default",
 		Provider:      ProviderGoogleCloud,
 		APIModel:      "default",
-		CostPer1MIn:   0.024,
+		CostPer1MIn:   0.016,
 		MaxFileSizeMB: 480,
 		SupportedFormats: []string{
 			"flac", "linear16", "mulaw",
@@ -40,7 +40,7 @@ var GoogleCloudTranscriptionModels = map[ID]TranscriptionModel{
 		Name:          "Google Cloud STT Long",
 		Provider:      ProviderGoogleCloud,
 		APIModel:      "long",
-		CostPer1MIn:   0.024,
+		CostPer1MIn:   0.016,
 		MaxFileSizeMB: 480,
 		SupportedFormats: []string{
 			"flac", "linear16", "mulaw",

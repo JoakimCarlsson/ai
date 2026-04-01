@@ -16,7 +16,7 @@ var BedrockEmbeddingModels = map[ID]EmbeddingModel{
 		Name:            "Amazon Titan Embed Text v2",
 		Provider:        ProviderBedrock,
 		APIModel:        "amazon.titan-embed-text-v2:0",
-		CostPer1MTokens: 0.02,
+		CostPer1MTokens: 0.10,
 		MaxInputTokens:  8192,
 		EmbeddingDims:   1024,
 		SupportedDimensions: []int{

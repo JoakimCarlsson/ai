@@ -55,7 +55,7 @@ var CohereEmbeddingModels = map[ID]EmbeddingModel{
 		Name:            "Cohere Embed v4.0",
 		Provider:        ProviderCohere,
 		APIModel:        "embed-v4.0",
-		CostPer1MTokens: 0.10,
+		CostPer1MTokens: 0.12,
 		MaxInputTokens:  128_000,
 		EmbeddingDims:   1024,
 		MaxBatchSize:    96,
