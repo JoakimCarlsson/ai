@@ -171,6 +171,7 @@ func TestContinue_Stream(t *testing.T) {
 	}
 	if firstResp == nil {
 		t.Fatal("expected response from first ChatStream")
+		return
 	}
 	if len(firstResp.ToolCalls) != 1 {
 		t.Fatalf(
