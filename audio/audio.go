@@ -166,7 +166,10 @@ type audioGenerationClientOptions struct {
 	model   model.AudioModel
 	timeout *time.Duration
 
-	elevenLabsOptions []ElevenLabsOption
+	elevenLabsOptions     []ElevenLabsOption
+	openaiAudioOptions    []OpenAIAudioOption
+	googleCloudTTSOptions []GoogleCloudTTSOption
+	azureSpeechOptions    []AzureSpeechOption
 }
 
 // GenerationClientOption configures an audio generation client when passed to NewAudioGeneration.
@@ -204,10 +207,26 @@ func NewAudioGeneration(
 		o(&clientOptions)
 	}
 
-	if provider == model.ProviderElevenLabs {
+	switch provider {
+	case model.ProviderElevenLabs:
 		return &baseAudioGeneration[ElevenLabsClient]{
 			options: clientOptions,
 			client:  newElevenLabsClient(clientOptions),
+		}, nil
+	case model.ProviderOpenAI:
+		return &baseAudioGeneration[OpenAIClient]{
+			options: clientOptions,
+			client:  newOpenAIClient(clientOptions),
+		}, nil
+	case model.ProviderGoogleCloud:
+		return &baseAudioGeneration[GoogleCloudClient]{
+			options: clientOptions,
+			client:  newGoogleCloudClient(clientOptions),
+		}, nil
+	case model.ProviderAzureSpeech:
+		return &baseAudioGeneration[AzureClient]{
+			options: clientOptions,
+			client:  newAzureClient(clientOptions),
 		}, nil
 	}
 
@@ -355,6 +374,33 @@ func WithElevenLabsOptions(
 ) GenerationClientOption {
 	return func(options *audioGenerationClientOptions) {
 		options.elevenLabsOptions = elevenLabsOptions
+	}
+}
+
+// WithOpenAIAudioOptions applies OpenAI-specific TTS configuration options.
+func WithOpenAIAudioOptions(
+	openaiOptions ...OpenAIAudioOption,
+) GenerationClientOption {
+	return func(options *audioGenerationClientOptions) {
+		options.openaiAudioOptions = openaiOptions
+	}
+}
+
+// WithGoogleCloudTTSOptions applies Google Cloud TTS-specific configuration options.
+func WithGoogleCloudTTSOptions(
+	gcOptions ...GoogleCloudTTSOption,
+) GenerationClientOption {
+	return func(options *audioGenerationClientOptions) {
+		options.googleCloudTTSOptions = gcOptions
+	}
+}
+
+// WithAzureSpeechOptions applies Azure Speech Services-specific configuration options.
+func WithAzureSpeechOptions(
+	azOptions ...AzureSpeechOption,
+) GenerationClientOption {
+	return func(options *audioGenerationClientOptions) {
+		options.azureSpeechOptions = azOptions
 	}
 }
 

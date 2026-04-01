@@ -19,6 +19,8 @@ const (
 	Imagen4            ID = "imagen-4.0"
 	Imagen4Ultra       ID = "imagen-4.0-ultra"
 	Imagen4Fast        ID = "imagen-4.0-fast"
+
+	GeminiTextEmbedding004 ID = "text-embedding-004"
 )
 
 // GeminiModels maps Gemini chat model IDs to their configurations.
@@ -309,5 +311,20 @@ var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 		DefaultSize:        "1:1",
 		SupportedQualities: []string{"default"},
 		DefaultQuality:     "default",
+	},
+}
+
+// GeminiEmbeddingModels maps Gemini embedding model IDs to their configurations.
+var GeminiEmbeddingModels = map[ID]EmbeddingModel{
+	GeminiTextEmbedding004: {
+		ID:                  GeminiTextEmbedding004,
+		Name:                "Gemini Text Embedding 004",
+		Provider:            ProviderGemini,
+		APIModel:            "text-embedding-004",
+		CostPer1MTokens:     0.00,
+		MaxInputTokens:      2048,
+		EmbeddingDims:       768,
+		SupportedDimensions: []int{768, 512, 256},
+		MaxBatchSize:        100,
 	},
 }

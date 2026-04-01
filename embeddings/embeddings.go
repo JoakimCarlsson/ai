@@ -130,8 +130,11 @@ type embeddingClientOptions struct {
 	timeout    *time.Duration
 	dimensions *int
 
-	voyageOptions []VoyageOption
-	openaiOptions []OpenAIOption
+	voyageOptions  []VoyageOption
+	openaiOptions  []OpenAIOption
+	cohereOptions  []CohereOption
+	geminiOptions  []GeminiOption
+	bedrockOptions []BedrockOption
 }
 
 // EmbeddingClientOption configures embedding client construction when passed to NewEmbedding.
@@ -185,6 +188,21 @@ func NewEmbedding(
 		return &baseEmbedding[OpenAIClient]{
 			options: clientOptions,
 			client:  newOpenAIClient(clientOptions),
+		}, nil
+	case model.ProviderCohere:
+		return &baseEmbedding[CohereClient]{
+			options: clientOptions,
+			client:  newCohereClient(clientOptions),
+		}, nil
+	case model.ProviderGemini:
+		return &baseEmbedding[GeminiClient]{
+			options: clientOptions,
+			client:  newGeminiClient(clientOptions),
+		}, nil
+	case model.ProviderBedrock:
+		return &baseEmbedding[BedrockClient]{
+			options: clientOptions,
+			client:  newBedrockClient(clientOptions),
 		}, nil
 	}
 
@@ -408,5 +426,26 @@ func WithVoyageOptions(voyageOptions ...VoyageOption) EmbeddingClientOption {
 func WithOpenAIOptions(openaiOptions ...OpenAIOption) EmbeddingClientOption {
 	return func(options *embeddingClientOptions) {
 		options.openaiOptions = openaiOptions
+	}
+}
+
+// WithCohereOptions applies Cohere-specific configuration options.
+func WithCohereOptions(cohereOptions ...CohereOption) EmbeddingClientOption {
+	return func(options *embeddingClientOptions) {
+		options.cohereOptions = cohereOptions
+	}
+}
+
+// WithGeminiOptions applies Gemini-specific configuration options.
+func WithGeminiOptions(geminiOptions ...GeminiOption) EmbeddingClientOption {
+	return func(options *embeddingClientOptions) {
+		options.geminiOptions = geminiOptions
+	}
+}
+
+// WithBedrockOptions applies AWS Bedrock-specific configuration options.
+func WithBedrockOptions(bedrockOptions ...BedrockOption) EmbeddingClientOption {
+	return func(options *embeddingClientOptions) {
+		options.bedrockOptions = bedrockOptions
 	}
 }
