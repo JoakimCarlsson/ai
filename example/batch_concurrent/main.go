@@ -19,14 +19,15 @@ func main() {
 	client, err := llm.NewLLM(
 		model.ProviderOpenAI,
 		llm.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-		llm.WithModel(model.OpenAIModels[model.GPT5Nano]),
+		llm.WithModel(model.OpenAIModels[model.GPT4oMini]),
 		llm.WithMaxTokens(200),
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	proc := batch.New(
+	proc, err := batch.New(
+		model.ProviderOpenAI,
 		batch.WithLLM(client),
 		batch.WithMaxConcurrency(5),
 		batch.WithProgressCallback(func(p batch.Progress) {
@@ -36,6 +37,9 @@ func main() {
 			)
 		}),
 	)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	requests := []batch.Request{
 		{
@@ -72,7 +76,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("\nCompleted: %d, Failed: %d\n\n", resp.Completed, resp.Failed)
+	fmt.Printf(
+		"\nCompleted: %d, Failed: %d\n\n",
+		resp.Completed, resp.Failed,
+	)
 	for _, r := range resp.Results {
 		if r.Err != nil {
 			fmt.Printf("[%s] Error: %v\n", r.ID, r.Err)

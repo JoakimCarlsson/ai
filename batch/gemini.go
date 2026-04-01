@@ -15,15 +15,60 @@ import (
 	"google.golang.org/genai"
 )
 
-type geminiNativeExecutor struct {
-	client *genai.Client
-	model  string
+// GeminiOption configures Gemini-specific batch client options.
+type GeminiOption func(*geminiOptions)
+
+type geminiOptions struct {
+	backend genai.Backend
 }
 
-func (e *geminiNativeExecutor) execute(
+// WithGeminiBackend sets the Gemini backend (GeminiAPI or VertexAI).
+func WithGeminiBackend(backend genai.Backend) GeminiOption {
+	return func(o *geminiOptions) {
+		o.backend = backend
+	}
+}
+
+type geminiBatchClient struct {
+	providerOptions clientOptions
+	options         geminiOptions
+	client          *genai.Client
+	model           string
+}
+
+func newGeminiBatchClient(opts clientOptions) *geminiBatchClient {
+	geminiOpts := geminiOptions{
+		backend: genai.BackendGeminiAPI,
+	}
+	for _, o := range opts.geminiOptions {
+		o(&geminiOpts)
+	}
+
+	client, _ := genai.NewClient(
+		context.Background(),
+		&genai.ClientConfig{
+			APIKey:  opts.apiKey,
+			Backend: geminiOpts.backend,
+		},
+	)
+
+	apiModel := opts.model.APIModel
+	if apiModel == "" && opts.embeddingModel.APIModel != "" {
+		apiModel = opts.embeddingModel.APIModel
+	}
+
+	return &geminiBatchClient{
+		providerOptions: opts,
+		options:         geminiOpts,
+		client:          client,
+		model:           apiModel,
+	}
+}
+
+func (c *geminiBatchClient) executeBatch(
 	ctx context.Context,
 	requests []Request,
-	opts processorOptions,
+	opts clientOptions,
 ) (*Response, error) {
 	chatRequests, embedRequests := splitByType(requests)
 
@@ -44,13 +89,28 @@ func (e *geminiNativeExecutor) execute(
 	}
 
 	if len(chatRequests) > 0 {
-		if err := e.processChatBatch(ctx, chatRequests, results, chatIdxMap, opts); err != nil {
-			return nil, fmt.Errorf("batch: gemini chat batch failed: %w", err)
+		if err := c.processChatBatch(
+			ctx,
+			chatRequests,
+			results,
+			chatIdxMap,
+			opts,
+		); err != nil {
+			return nil, fmt.Errorf(
+				"batch: gemini chat batch failed: %w",
+				err,
+			)
 		}
 	}
 
 	if len(embedRequests) > 0 {
-		if err := e.processEmbeddingBatch(ctx, embedRequests, results, embedIdxMap, opts); err != nil {
+		if err := c.processEmbeddingBatch(
+			ctx,
+			embedRequests,
+			results,
+			embedIdxMap,
+			opts,
+		); err != nil {
 			return nil, fmt.Errorf(
 				"batch: gemini embedding batch failed: %w",
 				err,
@@ -75,12 +135,12 @@ func (e *geminiNativeExecutor) execute(
 	}, nil
 }
 
-func (e *geminiNativeExecutor) processChatBatch(
+func (c *geminiBatchClient) processChatBatch(
 	ctx context.Context,
 	requests []Request,
 	results []Result,
 	idxMap map[int]int,
-	opts processorOptions,
+	opts clientOptions,
 ) error {
 	inlined := make([]*genai.InlinedRequest, len(requests))
 	for i, req := range requests {
@@ -88,7 +148,9 @@ func (e *geminiNativeExecutor) processChatBatch(
 		config := &genai.GenerateContentConfig{}
 		if len(system) > 0 {
 			config.SystemInstruction = &genai.Content{
-				Parts: []*genai.Part{{Text: strings.Join(system, "\n\n")}},
+				Parts: []*genai.Part{
+					{Text: strings.Join(system, "\n\n")},
+				},
 			}
 		}
 		if len(req.Tools) > 0 {
@@ -96,7 +158,7 @@ func (e *geminiNativeExecutor) processChatBatch(
 		}
 
 		inlined[i] = &genai.InlinedRequest{
-			Model:    e.model,
+			Model:    c.model,
 			Contents: contents,
 			Config:   config,
 			Metadata: map[string]string{"custom_id": req.ID},
@@ -109,9 +171,12 @@ func (e *geminiNativeExecutor) processChatBatch(
 		)
 	}
 
-	job, err := e.client.Batches.Create(ctx, e.model, &genai.BatchJobSource{
-		InlinedRequests: inlined,
-	}, &genai.CreateBatchJobConfig{})
+	job, err := c.client.Batches.Create(
+		ctx,
+		c.model,
+		&genai.BatchJobSource{InlinedRequests: inlined},
+		&genai.CreateBatchJobConfig{},
+	)
 	if err != nil {
 		return fmt.Errorf("failed to create batch job: %w", err)
 	}
@@ -121,7 +186,13 @@ func (e *geminiNativeExecutor) processChatBatch(
 		pollInterval = 30 * time.Second
 	}
 
-	job, err = e.pollUntilDone(ctx, job.Name, pollInterval, len(results), opts)
+	job, err = c.pollUntilDone(
+		ctx,
+		job.Name,
+		pollInterval,
+		len(results),
+		opts,
+	)
 	if err != nil {
 		return err
 	}
@@ -134,7 +205,10 @@ func (e *geminiNativeExecutor) processChatBatch(
 			}
 
 			if resp.Error != nil {
-				results[globalIdx].Err = fmt.Errorf("%s", resp.Error.Message)
+				results[globalIdx].Err = fmt.Errorf(
+					"%s",
+					resp.Error.Message,
+				)
 				continue
 			}
 
@@ -149,24 +223,22 @@ func (e *geminiNativeExecutor) processChatBatch(
 	return nil
 }
 
-func (e *geminiNativeExecutor) processEmbeddingBatch(
+func (c *geminiBatchClient) processEmbeddingBatch(
 	ctx context.Context,
 	requests []Request,
 	results []Result,
 	idxMap map[int]int,
-	opts processorOptions,
+	opts clientOptions,
 ) error {
 	var allContents []*genai.Content
 	contentToReq := make(map[int]int)
-	contentToTextIdx := make(map[int]int)
 	idx := 0
 	for reqI, req := range requests {
-		for textI, text := range req.Texts {
+		for _, text := range req.Texts {
 			allContents = append(allContents, &genai.Content{
 				Parts: []*genai.Part{{Text: text}},
 			})
 			contentToReq[idx] = reqI
-			contentToTextIdx[idx] = textI
 			idx++
 		}
 	}
@@ -177,9 +249,14 @@ func (e *geminiNativeExecutor) processEmbeddingBatch(
 		)
 	}
 
-	job, err := e.client.Batches.CreateEmbeddings(
+	embedModel := c.model
+	if opts.embeddingModel.APIModel != "" {
+		embedModel = opts.embeddingModel.APIModel
+	}
+
+	job, err := c.client.Batches.CreateEmbeddings(
 		ctx,
-		&e.model,
+		&embedModel,
 		&genai.EmbeddingsBatchJobSource{
 			InlinedRequests: &genai.EmbedContentBatch{
 				Contents: allContents,
@@ -188,7 +265,10 @@ func (e *geminiNativeExecutor) processEmbeddingBatch(
 		&genai.CreateEmbeddingsBatchJobConfig{},
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create embedding batch job: %w", err)
+		return fmt.Errorf(
+			"failed to create embedding batch job: %w",
+			err,
+		)
 	}
 
 	pollInterval := opts.pollInterval
@@ -196,12 +276,19 @@ func (e *geminiNativeExecutor) processEmbeddingBatch(
 		pollInterval = 30 * time.Second
 	}
 
-	job, err = e.pollUntilDone(ctx, job.Name, pollInterval, len(results), opts)
+	job, err = c.pollUntilDone(
+		ctx,
+		job.Name,
+		pollInterval,
+		len(results),
+		opts,
+	)
 	if err != nil {
 		return err
 	}
 
-	if job.Dest != nil && len(job.Dest.InlinedEmbedContentResponses) > 0 {
+	if job.Dest != nil &&
+		len(job.Dest.InlinedEmbedContentResponses) > 0 {
 		reqEmbeddings := make(map[int][][]float32)
 		reqTokens := make(map[int]int64)
 
@@ -210,11 +297,15 @@ func (e *geminiNativeExecutor) processEmbeddingBatch(
 
 			if resp.Error != nil {
 				globalIdx := idxMap[reqIdx]
-				results[globalIdx].Err = fmt.Errorf("%s", resp.Error.Message)
+				results[globalIdx].Err = fmt.Errorf(
+					"%s",
+					resp.Error.Message,
+				)
 				continue
 			}
 
-			if resp.Response != nil && resp.Response.Embedding != nil {
+			if resp.Response != nil &&
+				resp.Response.Embedding != nil {
 				reqEmbeddings[reqIdx] = append(
 					reqEmbeddings[reqIdx],
 					resp.Response.Embedding.Values,
@@ -240,12 +331,12 @@ func (e *geminiNativeExecutor) processEmbeddingBatch(
 	return nil
 }
 
-func (e *geminiNativeExecutor) pollUntilDone(
+func (c *geminiBatchClient) pollUntilDone(
 	ctx context.Context,
 	jobName string,
 	interval time.Duration,
 	total int,
-	opts processorOptions,
+	opts clientOptions,
 ) (*genai.BatchJob, error) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -255,7 +346,7 @@ func (e *geminiNativeExecutor) pollUntilDone(
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case <-ticker.C:
-			job, err := e.client.Batches.Get(ctx, jobName, nil)
+			job, err := c.client.Batches.Get(ctx, jobName, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -264,8 +355,12 @@ func (e *geminiNativeExecutor) pollUntilDone(
 				completed := 0
 				failed := 0
 				if job.CompletionStats != nil {
-					completed = int(job.CompletionStats.SuccessfulCount)
-					failed = int(job.CompletionStats.FailedCount)
+					completed = int(
+						job.CompletionStats.SuccessfulCount,
+					)
+					failed = int(
+						job.CompletionStats.FailedCount,
+					)
 				}
 				opts.progressCallback(Progress{
 					Total:     total,
@@ -276,7 +371,8 @@ func (e *geminiNativeExecutor) pollUntilDone(
 			}
 
 			switch job.State {
-			case genai.JobStateSucceeded, genai.JobStatePartiallySucceeded:
+			case genai.JobStateSucceeded,
+				genai.JobStatePartiallySucceeded:
 				return job, nil
 			case genai.JobStateFailed:
 				msg := "batch job failed"
@@ -293,10 +389,10 @@ func (e *geminiNativeExecutor) pollUntilDone(
 	}
 }
 
-func (e *geminiNativeExecutor) executeAsync(
+func (c *geminiBatchClient) executeBatchAsync(
 	ctx context.Context,
 	requests []Request,
-	opts processorOptions,
+	opts clientOptions,
 ) (<-chan Event, error) {
 	ch := make(chan Event, 16)
 
@@ -312,14 +408,17 @@ func (e *geminiNativeExecutor) executeAsync(
 			}
 		}
 
-		resp, err := e.execute(ctx, requests, wrappedOpts)
+		resp, err := c.executeBatch(ctx, requests, wrappedOpts)
 		if err != nil {
 			ch <- Event{Type: EventError, Err: err}
 			return
 		}
 
 		for i := range resp.Results {
-			ch <- Event{Type: EventItem, Result: &resp.Results[i]}
+			ch <- Event{
+				Type:   EventItem,
+				Result: &resp.Results[i],
+			}
 		}
 
 		ch <- Event{
@@ -348,13 +447,18 @@ func convertMessagesToGemini(
 			system = append(system, msg.Content().String())
 		case message.User:
 			contents = append(contents, &genai.Content{
-				Role:  "user",
-				Parts: []*genai.Part{{Text: msg.Content().String()}},
+				Role: "user",
+				Parts: []*genai.Part{
+					{Text: msg.Content().String()},
+				},
 			})
 		case message.Assistant:
 			parts := []*genai.Part{}
 			if msg.Content().String() != "" {
-				parts = append(parts, &genai.Part{Text: msg.Content().String()})
+				parts = append(
+					parts,
+					&genai.Part{Text: msg.Content().String()},
+				)
 			}
 			for _, tc := range msg.ToolCalls() {
 				var args map[string]any
@@ -373,8 +477,13 @@ func convertMessagesToGemini(
 		case message.Tool:
 			for _, tr := range msg.ToolResults() {
 				var respData map[string]any
-				if err := json.Unmarshal([]byte(tr.Content), &respData); err != nil {
-					respData = map[string]any{"result": tr.Content}
+				if err := json.Unmarshal(
+					[]byte(tr.Content),
+					&respData,
+				); err != nil {
+					respData = map[string]any{
+						"result": tr.Content,
+					}
 				}
 				contents = append(contents, &genai.Content{
 					Role: "user",
@@ -400,11 +509,17 @@ func convertToolsToGemini(tools []tool.BaseTool) []*genai.Tool {
 	var declarations []*genai.FunctionDeclaration
 	for _, t := range tools {
 		info := t.Info()
-		declarations = append(declarations, &genai.FunctionDeclaration{
-			Name:        info.Name,
-			Description: info.Description,
-			Parameters:  convertToGenaiSchema(info.Parameters, info.Required),
-		})
+		declarations = append(
+			declarations,
+			&genai.FunctionDeclaration{
+				Name:        info.Name,
+				Description: info.Description,
+				Parameters: convertToGenaiSchema(
+					info.Parameters,
+					info.Required,
+				),
+			},
+		)
 	}
 
 	return []*genai.Tool{{FunctionDeclarations: declarations}}
@@ -449,11 +564,14 @@ func convertToGenaiSchema(
 	return schema
 }
 
-func convertGeminiResponse(resp *genai.GenerateContentResponse) *llm.Response {
+func convertGeminiResponse(
+	resp *genai.GenerateContentResponse,
+) *llm.Response {
 	content := ""
 	var toolCalls []message.ToolCall
 
-	if len(resp.Candidates) > 0 && resp.Candidates[0].Content != nil {
+	if len(resp.Candidates) > 0 &&
+		resp.Candidates[0].Content != nil {
 		for _, part := range resp.Candidates[0].Content.Parts {
 			switch {
 			case part.Text != "":
@@ -490,9 +608,15 @@ func convertGeminiResponse(resp *genai.GenerateContentResponse) *llm.Response {
 	usage := llm.TokenUsage{}
 	if resp.UsageMetadata != nil {
 		usage = llm.TokenUsage{
-			InputTokens:     int64(resp.UsageMetadata.PromptTokenCount),
-			OutputTokens:    int64(resp.UsageMetadata.CandidatesTokenCount),
-			CacheReadTokens: int64(resp.UsageMetadata.CachedContentTokenCount),
+			InputTokens: int64(
+				resp.UsageMetadata.PromptTokenCount,
+			),
+			OutputTokens: int64(
+				resp.UsageMetadata.CandidatesTokenCount,
+			),
+			CacheReadTokens: int64(
+				resp.UsageMetadata.CachedContentTokenCount,
+			),
 		}
 	}
 

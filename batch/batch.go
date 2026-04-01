@@ -9,13 +9,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/joakimcarlsson/ai/embeddings"
 	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/model"
 	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/tool"
-	"github.com/openai/openai-go"
-	"google.golang.org/genai"
 )
 
 // ErrNoLLMClient is returned when a chat request is submitted without an LLM client.
@@ -61,133 +59,181 @@ type Response struct {
 	Total     int
 }
 
-type executor interface {
-	execute(
+// Processor submits and manages batch requests.
+type Processor interface {
+	Process(ctx context.Context, requests []Request) (*Response, error)
+	ProcessAsync(ctx context.Context, requests []Request) (<-chan Event, error)
+}
+
+type batchClient interface {
+	executeBatch(
 		ctx context.Context,
 		requests []Request,
-		opts processorOptions,
+		opts clientOptions,
 	) (*Response, error)
-	executeAsync(
+	executeBatchAsync(
 		ctx context.Context,
 		requests []Request,
-		opts processorOptions,
+		opts clientOptions,
 	) (<-chan Event, error)
 }
 
-type processorOptions struct {
-	llmClient        llm.LLM
-	embeddingClient  embeddings.Embedding
+type clientOptions struct {
+	apiKey           string
+	model            model.Model
+	embeddingModel   model.EmbeddingModel
+	maxTokens        int64
 	maxConcurrency   int
 	progressCallback ProgressCallback
 	pollInterval     time.Duration
+	timeout          *time.Duration
 
-	openaiClient    *openai.Client
-	anthropicClient *anthropic.Client
-	geminiClient    *genai.Client
-	geminiModel     string
+	llmClient       llm.LLM
+	embeddingClient embeddings.Embedding
+
+	openaiOptions    []OpenAIOption
+	anthropicOptions []AnthropicOption
+	geminiOptions    []GeminiOption
 }
 
-// Option configures a Processor.
-type Option func(*processorOptions)
+// Option configures a batch Processor.
+type Option func(*clientOptions)
 
-// WithLLM sets the LLM client used for chat completion requests in concurrent mode.
-func WithLLM(client llm.LLM) Option {
-	return func(o *processorOptions) {
-		o.llmClient = client
+// WithAPIKey sets the API key for authentication with the batch provider.
+func WithAPIKey(apiKey string) Option {
+	return func(o *clientOptions) {
+		o.apiKey = apiKey
 	}
 }
 
-// WithEmbedding sets the embedding client used for embedding requests in concurrent mode.
-func WithEmbedding(client embeddings.Embedding) Option {
-	return func(o *processorOptions) {
-		o.embeddingClient = client
+// WithModel sets the LLM model for chat completion batch requests.
+func WithModel(m model.Model) Option {
+	return func(o *clientOptions) {
+		o.model = m
+	}
+}
+
+// WithEmbeddingModel sets the embedding model for embedding batch requests.
+func WithEmbeddingModel(m model.EmbeddingModel) Option {
+	return func(o *clientOptions) {
+		o.embeddingModel = m
+	}
+}
+
+// WithMaxTokens sets the maximum number of tokens to generate per request.
+func WithMaxTokens(maxTokens int64) Option {
+	return func(o *clientOptions) {
+		o.maxTokens = maxTokens
 	}
 }
 
 // WithMaxConcurrency sets the maximum number of concurrent requests for the fallback executor.
 func WithMaxConcurrency(n int) Option {
-	return func(o *processorOptions) {
+	return func(o *clientOptions) {
 		o.maxConcurrency = n
 	}
 }
 
 // WithProgressCallback sets a callback invoked with progress updates during batch processing.
 func WithProgressCallback(fn ProgressCallback) Option {
-	return func(o *processorOptions) {
+	return func(o *clientOptions) {
 		o.progressCallback = fn
 	}
 }
 
 // WithPollInterval sets the polling interval for native batch APIs.
 func WithPollInterval(d time.Duration) Option {
-	return func(o *processorOptions) {
+	return func(o *clientOptions) {
 		o.pollInterval = d
 	}
 }
 
-// WithOpenAIClient enables the OpenAI native Batch API executor.
-func WithOpenAIClient(client openai.Client) Option {
-	return func(o *processorOptions) {
-		o.openaiClient = &client
+// WithTimeout sets the maximum duration for batch requests.
+func WithTimeout(timeout time.Duration) Option {
+	return func(o *clientOptions) {
+		o.timeout = &timeout
 	}
 }
 
-// WithAnthropicClient enables the Anthropic Message Batches API executor.
-func WithAnthropicClient(client anthropic.Client) Option {
-	return func(o *processorOptions) {
-		o.anthropicClient = &client
+// WithLLM sets an existing LLM client for concurrent fallback mode.
+func WithLLM(client llm.LLM) Option {
+	return func(o *clientOptions) {
+		o.llmClient = client
 	}
 }
 
-// WithGeminiClient enables the Gemini/Vertex AI batch executor.
-func WithGeminiClient(client *genai.Client, model string) Option {
-	return func(o *processorOptions) {
-		o.geminiClient = client
-		o.geminiModel = model
+// WithEmbedding sets an existing embedding client for concurrent fallback mode.
+func WithEmbedding(client embeddings.Embedding) Option {
+	return func(o *clientOptions) {
+		o.embeddingClient = client
 	}
 }
 
-// Processor submits and manages batch requests.
-type Processor struct {
-	options  processorOptions
-	executor executor
+// WithOpenAIOptions applies OpenAI-specific configuration options.
+func WithOpenAIOptions(opts ...OpenAIOption) Option {
+	return func(o *clientOptions) {
+		o.openaiOptions = opts
+	}
 }
 
-// New creates a Processor with the given options.
-func New(opts ...Option) *Processor {
-	options := processorOptions{
+// WithAnthropicOptions applies Anthropic-specific configuration options.
+func WithAnthropicOptions(opts ...AnthropicOption) Option {
+	return func(o *clientOptions) {
+		o.anthropicOptions = opts
+	}
+}
+
+// WithGeminiOptions applies Gemini-specific configuration options.
+func WithGeminiOptions(opts ...GeminiOption) Option {
+	return func(o *clientOptions) {
+		o.geminiOptions = opts
+	}
+}
+
+type baseProcessor[C batchClient] struct {
+	options clientOptions
+	client  C
+}
+
+// New creates a batch Processor for the specified provider.
+func New(
+	provider model.Provider,
+	opts ...Option,
+) (Processor, error) {
+	options := clientOptions{
 		maxConcurrency: 10,
 		pollInterval:   30 * time.Second,
+		maxTokens:      4096,
 	}
 	for _, o := range opts {
 		o(&options)
 	}
 
-	p := &Processor{options: options}
-	p.executor = p.selectExecutor()
-	return p
-}
-
-func (p *Processor) selectExecutor() executor {
-	switch {
-	case p.options.openaiClient != nil:
-		return &openaiNativeExecutor{client: p.options.openaiClient}
-	case p.options.anthropicClient != nil:
-		return &anthropicNativeExecutor{
-			client: p.options.anthropicClient,
-		}
-	case p.options.geminiClient != nil:
-		return &geminiNativeExecutor{
-			client: p.options.geminiClient,
-			model:  p.options.geminiModel,
-		}
+	switch provider {
+	case model.ProviderOpenAI:
+		return &baseProcessor[*openaiClient]{
+			options: options,
+			client:  newOpenAIBatchClient(options),
+		}, nil
+	case model.ProviderAnthropic:
+		return &baseProcessor[*anthropicClient]{
+			options: options,
+			client:  newAnthropicBatchClient(options),
+		}, nil
+	case model.ProviderGemini:
+		return &baseProcessor[*geminiBatchClient]{
+			options: options,
+			client:  newGeminiBatchClient(options),
+		}, nil
 	default:
-		return &concurrentExecutor{}
+		return &baseProcessor[*concurrentClient]{
+			options: options,
+			client:  &concurrentClient{},
+		}, nil
 	}
 }
 
-// Process submits all requests and blocks until the batch completes.
-func (p *Processor) Process(
+func (p *baseProcessor[C]) Process(
 	ctx context.Context,
 	requests []Request,
 ) (*Response, error) {
@@ -201,11 +247,10 @@ func (p *Processor) Process(
 		}
 	}
 
-	return p.executor.execute(ctx, requests, p.options)
+	return p.client.executeBatch(ctx, requests, p.options)
 }
 
-// ProcessAsync submits all requests and returns a channel of Events for progress tracking.
-func (p *Processor) ProcessAsync(
+func (p *baseProcessor[C]) ProcessAsync(
 	ctx context.Context,
 	requests []Request,
 ) (<-chan Event, error) {
@@ -225,5 +270,5 @@ func (p *Processor) ProcessAsync(
 		}
 	}
 
-	return p.executor.executeAsync(ctx, requests, p.options)
+	return p.client.executeBatchAsync(ctx, requests, p.options)
 }

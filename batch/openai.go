@@ -13,10 +13,62 @@ import (
 	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 )
 
-type openaiNativeExecutor struct {
-	client *openai.Client
+// OpenAIOption configures OpenAI-specific batch client options.
+type OpenAIOption func(*openaiOptions)
+
+type openaiOptions struct {
+	baseURL      string
+	extraHeaders map[string]string
+}
+
+// WithOpenAIBaseURL sets a custom API endpoint for OpenAI-compatible services.
+func WithOpenAIBaseURL(baseURL string) OpenAIOption {
+	return func(o *openaiOptions) {
+		o.baseURL = baseURL
+	}
+}
+
+// WithOpenAIExtraHeaders adds custom HTTP headers to batch API requests.
+func WithOpenAIExtraHeaders(headers map[string]string) OpenAIOption {
+	return func(o *openaiOptions) {
+		o.extraHeaders = headers
+	}
+}
+
+type openaiClient struct {
+	providerOptions clientOptions
+	options         openaiOptions
+	client          openai.Client
+}
+
+func newOpenAIBatchClient(opts clientOptions) *openaiClient {
+	openaiOpts := openaiOptions{}
+	for _, o := range opts.openaiOptions {
+		o(&openaiOpts)
+	}
+
+	clientOpts := []option.RequestOption{}
+	if opts.apiKey != "" {
+		clientOpts = append(clientOpts, option.WithAPIKey(opts.apiKey))
+	}
+	if openaiOpts.baseURL != "" {
+		clientOpts = append(
+			clientOpts,
+			option.WithBaseURL(openaiOpts.baseURL),
+		)
+	}
+	for key, value := range openaiOpts.extraHeaders {
+		clientOpts = append(clientOpts, option.WithHeader(key, value))
+	}
+
+	return &openaiClient{
+		providerOptions: opts,
+		options:         openaiOpts,
+		client:          openai.NewClient(clientOpts...),
+	}
 }
 
 type openaiRequestLine struct {
@@ -39,10 +91,10 @@ type openaiResponseLine struct {
 	} `json:"error"`
 }
 
-func (e *openaiNativeExecutor) execute(
+func (c *openaiClient) executeBatch(
 	ctx context.Context,
 	requests []Request,
-	opts processorOptions,
+	opts clientOptions,
 ) (*Response, error) {
 	chatRequests, embedRequests := splitByType(requests)
 
@@ -54,18 +106,29 @@ func (e *openaiNativeExecutor) execute(
 	}
 
 	if len(chatRequests) > 0 {
-		if err := e.processBatch(
-			ctx, chatRequests, openai.BatchNewParamsEndpointV1ChatCompletions,
-			results, idxMap, opts,
+		if err := c.processBatch(
+			ctx,
+			chatRequests,
+			openai.BatchNewParamsEndpointV1ChatCompletions,
+			results,
+			idxMap,
+			opts,
 		); err != nil {
-			return nil, fmt.Errorf("batch: openai chat batch failed: %w", err)
+			return nil, fmt.Errorf(
+				"batch: openai chat batch failed: %w",
+				err,
+			)
 		}
 	}
 
 	if len(embedRequests) > 0 {
-		if err := e.processBatch(
-			ctx, embedRequests, openai.BatchNewParamsEndpointV1Embeddings,
-			results, idxMap, opts,
+		if err := c.processBatch(
+			ctx,
+			embedRequests,
+			openai.BatchNewParamsEndpointV1Embeddings,
+			results,
+			idxMap,
+			opts,
 		); err != nil {
 			return nil, fmt.Errorf(
 				"batch: openai embedding batch failed: %w",
@@ -91,15 +154,21 @@ func (e *openaiNativeExecutor) execute(
 	}, nil
 }
 
-func (e *openaiNativeExecutor) processBatch(
+func (c *openaiClient) processBatch(
 	ctx context.Context,
 	requests []Request,
 	endpoint openai.BatchNewParamsEndpoint,
 	results []Result,
 	idxMap map[string]int,
-	opts processorOptions,
+	opts clientOptions,
 ) error {
-	jsonlData, err := e.buildJSONL(requests, endpoint)
+	apiModel := opts.model.APIModel
+	if endpoint == openai.BatchNewParamsEndpointV1Embeddings &&
+		opts.embeddingModel.APIModel != "" {
+		apiModel = opts.embeddingModel.APIModel
+	}
+
+	jsonlData, err := c.buildJSONL(requests, endpoint, apiModel)
 	if err != nil {
 		return fmt.Errorf("failed to build JSONL: %w", err)
 	}
@@ -111,7 +180,7 @@ func (e *openaiNativeExecutor) processBatch(
 		})
 	}
 
-	file, err := e.client.Files.New(ctx, openai.FileNewParams{
+	file, err := c.client.Files.New(ctx, openai.FileNewParams{
 		File:    bytes.NewReader(jsonlData),
 		Purpose: openai.FilePurposeBatch,
 	})
@@ -119,7 +188,7 @@ func (e *openaiNativeExecutor) processBatch(
 		return fmt.Errorf("failed to upload batch file: %w", err)
 	}
 
-	batch, err := e.client.Batches.New(ctx, openai.BatchNewParams{
+	batch, err := c.client.Batches.New(ctx, openai.BatchNewParams{
 		InputFileID:      file.ID,
 		Endpoint:         endpoint,
 		CompletionWindow: openai.BatchNewParamsCompletionWindow24h,
@@ -133,7 +202,7 @@ func (e *openaiNativeExecutor) processBatch(
 		pollInterval = 30 * time.Second
 	}
 
-	batch, err = e.pollUntilDone(
+	batch, err = c.pollUntilDone(
 		ctx,
 		batch.ID,
 		pollInterval,
@@ -145,21 +214,28 @@ func (e *openaiNativeExecutor) processBatch(
 	}
 
 	if batch.OutputFileID != "" {
-		if err := e.parseOutputFile(ctx, batch.OutputFileID, endpoint, results, idxMap); err != nil {
+		if err := c.parseOutputFile(
+			ctx,
+			batch.OutputFileID,
+			endpoint,
+			results,
+			idxMap,
+		); err != nil {
 			return fmt.Errorf("failed to parse output file: %w", err)
 		}
 	}
 
 	if batch.ErrorFileID != "" {
-		e.parseErrorFile(ctx, batch.ErrorFileID, results, idxMap)
+		c.parseErrorFile(ctx, batch.ErrorFileID, results, idxMap)
 	}
 
 	return nil
 }
 
-func (e *openaiNativeExecutor) buildJSONL(
+func (c *openaiClient) buildJSONL(
 	requests []Request,
 	endpoint openai.BatchNewParamsEndpoint,
+	apiModel string,
 ) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
@@ -170,11 +246,14 @@ func (e *openaiNativeExecutor) buildJSONL(
 
 		switch endpoint {
 		case openai.BatchNewParamsEndpointV1ChatCompletions:
-			body, err = e.buildChatBody(req)
+			body, err = buildChatBody(req, apiModel)
 		case openai.BatchNewParamsEndpointV1Embeddings:
-			body, err = e.buildEmbeddingBody(req)
+			body, err = buildEmbeddingBody(req, apiModel)
 		default:
-			return nil, fmt.Errorf("unsupported endpoint: %s", endpoint)
+			return nil, fmt.Errorf(
+				"unsupported endpoint: %s",
+				endpoint,
+			)
 		}
 
 		if err != nil {
@@ -199,13 +278,15 @@ func (e *openaiNativeExecutor) buildJSONL(
 	return buf.Bytes(), nil
 }
 
-func (e *openaiNativeExecutor) buildChatBody(
+func buildChatBody(
 	req Request,
+	apiModel string,
 ) (json.RawMessage, error) {
 	msgs := convertMessagesToOpenAI(req.Messages)
 	tools := convertToolsToOpenAI(req.Tools)
 
 	params := map[string]any{
+		"model":    apiModel,
 		"messages": msgs,
 	}
 	if len(tools) > 0 {
@@ -215,21 +296,23 @@ func (e *openaiNativeExecutor) buildChatBody(
 	return json.Marshal(params)
 }
 
-func (e *openaiNativeExecutor) buildEmbeddingBody(
+func buildEmbeddingBody(
 	req Request,
+	apiModel string,
 ) (json.RawMessage, error) {
 	params := map[string]any{
+		"model": apiModel,
 		"input": req.Texts,
 	}
 	return json.Marshal(params)
 }
 
-func (e *openaiNativeExecutor) pollUntilDone(
+func (c *openaiClient) pollUntilDone(
 	ctx context.Context,
 	batchID string,
 	interval time.Duration,
 	total int,
-	opts processorOptions,
+	opts clientOptions,
 ) (*openai.Batch, error) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -239,7 +322,7 @@ func (e *openaiNativeExecutor) pollUntilDone(
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case <-ticker.C:
-			batch, err := e.client.Batches.Get(ctx, batchID)
+			batch, err := c.client.Batches.Get(ctx, batchID)
 			if err != nil {
 				return nil, err
 			}
@@ -257,24 +340,33 @@ func (e *openaiNativeExecutor) pollUntilDone(
 			case openai.BatchStatusCompleted:
 				return batch, nil
 			case openai.BatchStatusFailed:
-				return batch, fmt.Errorf("batch failed: %s", batch.ID)
+				return batch, fmt.Errorf(
+					"batch failed: %s",
+					batch.ID,
+				)
 			case openai.BatchStatusExpired:
-				return batch, fmt.Errorf("batch expired: %s", batch.ID)
+				return batch, fmt.Errorf(
+					"batch expired: %s",
+					batch.ID,
+				)
 			case openai.BatchStatusCancelled:
-				return batch, fmt.Errorf("batch cancelled: %s", batch.ID)
+				return batch, fmt.Errorf(
+					"batch cancelled: %s",
+					batch.ID,
+				)
 			}
 		}
 	}
 }
 
-func (e *openaiNativeExecutor) parseOutputFile(
+func (c *openaiClient) parseOutputFile(
 	ctx context.Context,
 	fileID string,
 	endpoint openai.BatchNewParamsEndpoint,
 	results []Result,
 	idxMap map[string]int,
 ) error {
-	resp, err := e.client.Files.Content(ctx, fileID)
+	resp, err := c.client.Files.Content(ctx, fileID)
 	if err != nil {
 		return err
 	}
@@ -316,7 +408,9 @@ func (e *openaiNativeExecutor) parseOutputFile(
 
 		switch endpoint {
 		case openai.BatchNewParamsEndpointV1ChatCompletions:
-			results[idx].ChatResponse = parseChatCompletion(line.Response.Body)
+			results[idx].ChatResponse = parseChatCompletion(
+				line.Response.Body,
+			)
 		case openai.BatchNewParamsEndpointV1Embeddings:
 			results[idx].EmbedResponse = parseEmbeddingResponse(
 				line.Response.Body,
@@ -327,13 +421,13 @@ func (e *openaiNativeExecutor) parseOutputFile(
 	return nil
 }
 
-func (e *openaiNativeExecutor) parseErrorFile(
+func (c *openaiClient) parseErrorFile(
 	ctx context.Context,
 	fileID string,
 	results []Result,
 	idxMap map[string]int,
 ) {
-	resp, err := e.client.Files.Content(ctx, fileID)
+	resp, err := c.client.Files.Content(ctx, fileID)
 	if err != nil {
 		return
 	}
@@ -362,10 +456,10 @@ func (e *openaiNativeExecutor) parseErrorFile(
 	}
 }
 
-func (e *openaiNativeExecutor) executeAsync(
+func (c *openaiClient) executeBatchAsync(
 	ctx context.Context,
 	requests []Request,
-	opts processorOptions,
+	opts clientOptions,
 ) (<-chan Event, error) {
 	ch := make(chan Event, 16)
 
@@ -381,14 +475,17 @@ func (e *openaiNativeExecutor) executeAsync(
 			}
 		}
 
-		resp, err := e.execute(ctx, requests, wrappedOpts)
+		resp, err := c.executeBatch(ctx, requests, wrappedOpts)
 		if err != nil {
 			ch <- Event{Type: EventError, Err: err}
 			return
 		}
 
 		for i := range resp.Results {
-			ch <- Event{Type: EventItem, Result: &resp.Results[i]}
+			ch <- Event{
+				Type:   EventItem,
+				Result: &resp.Results[i],
+			}
 		}
 
 		ch <- Event{
@@ -417,7 +514,9 @@ func splitByType(requests []Request) (chat, embed []Request) {
 	return
 }
 
-func convertMessagesToOpenAI(msgs []message.Message) []map[string]any {
+func convertMessagesToOpenAI(
+	msgs []message.Message,
+) []map[string]any {
 	var result []map[string]any
 	for _, msg := range msgs {
 		switch msg.Role {

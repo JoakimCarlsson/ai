@@ -1,27 +1,24 @@
 # Batch Processing
 
-Process bulk LLM and embedding requests efficiently using provider-native batch APIs (50% cost savings) or bounded concurrent execution.
+Process bulk LLM and embedding requests efficiently using provider-native batch APIs or bounded concurrent execution.
 
-## Concurrent Processing
+## Native Batch APIs
 
-Works with any provider. Sends requests concurrently with a configurable concurrency limit.
+Native batch APIs submit all requests as a single job that processes asynchronously on the provider side. Providers may offer reduced pricing for batch workloads (see the provider support table below for details). Results are typically returned within 24 hours, often much faster.
+
+### OpenAI
 
 ```go
 import (
     "github.com/joakimcarlsson/ai/batch"
-    "github.com/joakimcarlsson/ai/message"
     "github.com/joakimcarlsson/ai/model"
-    llm "github.com/joakimcarlsson/ai/providers"
 )
 
-client, _ := llm.NewLLM(model.ProviderOpenAI,
-    llm.WithAPIKey("your-api-key"),
-    llm.WithModel(model.OpenAIModels[model.GPT4o]),
-)
-
-proc := batch.New(
-    batch.WithLLM(client),
-    batch.WithMaxConcurrency(10),
+proc, _ := batch.New(
+    model.ProviderOpenAI,
+    batch.WithAPIKey("your-api-key"),
+    batch.WithModel(model.OpenAIModels[model.GPT4o]),
+    batch.WithPollInterval(30 * time.Second),
 )
 
 requests := []batch.Request{
@@ -51,6 +48,48 @@ for _, r := range resp.Results {
 }
 ```
 
+### Anthropic
+
+```go
+proc, _ := batch.New(
+    model.ProviderAnthropic,
+    batch.WithAPIKey("your-api-key"),
+    batch.WithModel(model.AnthropicModels[model.Claude4Sonnet]),
+    batch.WithMaxTokens(1024),
+    batch.WithPollInterval(30 * time.Second),
+)
+```
+
+### Gemini / Vertex AI
+
+```go
+proc, _ := batch.New(
+    model.ProviderGemini,
+    batch.WithAPIKey("your-api-key"),
+    batch.WithModel(model.GeminiModels[model.Gemini25Flash]),
+    batch.WithPollInterval(30 * time.Second),
+)
+```
+
+## Concurrent Fallback
+
+For providers without native batch APIs, pass an existing LLM client. Requests run concurrently with a configurable concurrency limit.
+
+```go
+client, _ := llm.NewLLM(model.ProviderGroq,
+    llm.WithAPIKey("your-api-key"),
+    llm.WithModel(model.GroqModels[model.Llama4Scout]),
+)
+
+proc, _ := batch.New(
+    model.ProviderGroq,
+    batch.WithLLM(client),
+    batch.WithMaxConcurrency(10),
+)
+
+resp, _ := proc.Process(ctx, requests)
+```
+
 ## Batch Embeddings
 
 ```go
@@ -59,7 +98,8 @@ embedder, _ := embeddings.NewEmbedding(model.ProviderVoyage,
     embeddings.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
 )
 
-proc := batch.New(
+proc, _ := batch.New(
+    model.ProviderVoyage,
     batch.WithEmbedding(embedder),
     batch.WithMaxConcurrency(5),
 )
@@ -72,76 +112,14 @@ requests := []batch.Request{
 resp, _ := proc.Process(ctx, requests)
 ```
 
-## Native Batch APIs
-
-Native batch APIs submit all requests as a single job that processes asynchronously on the provider side. This gives 50% cost savings and higher rate limits, with a 24-hour turnaround (typically much faster).
-
-### OpenAI
-
-```go
-import (
-    "github.com/openai/openai-go"
-    "github.com/openai/openai-go/option"
-)
-
-client := openai.NewClient(option.WithAPIKey("your-api-key"))
-
-proc := batch.New(
-    batch.WithOpenAIClient(client),
-    batch.WithPollInterval(30 * time.Second),
-)
-
-resp, err := proc.Process(ctx, requests)
-```
-
-Also works with Mistral and Azure OpenAI (same batch format, different base URL).
-
-### Anthropic
-
-```go
-import (
-    "github.com/anthropics/anthropic-sdk-go"
-    "github.com/anthropics/anthropic-sdk-go/option"
-)
-
-client := anthropic.NewClient(option.WithAPIKey("your-api-key"))
-
-proc := batch.New(
-    batch.WithAnthropicClient(client),
-    batch.WithPollInterval(30 * time.Second),
-)
-
-resp, err := proc.Process(ctx, requests)
-```
-
-### Gemini / Vertex AI
-
-```go
-import "google.golang.org/genai"
-
-client, _ := genai.NewClient(ctx, &genai.ClientConfig{
-    APIKey:  "your-api-key",
-    Backend: genai.BackendGeminiAPI,
-})
-
-proc := batch.New(
-    batch.WithGeminiClient(client, "gemini-2.5-flash"),
-    batch.WithPollInterval(30 * time.Second),
-)
-
-resp, err := proc.Process(ctx, requests)
-```
-
 ## Provider Support
 
-| Provider | Native Batch | Cost Savings | Supported Endpoints |
-|----------|-------------|-------------|---------------------|
+| Provider | Native Batch | Discount (as of writing) | Supported Endpoints |
+|----------|-------------|--------------------------|---------------------|
 | OpenAI | ✅ | 50% | Chat, Embeddings |
 | Anthropic | ✅ | 50% | Messages |
 | Gemini | ✅ | 50% | Content, Embeddings |
 | Vertex AI | ✅ | ~50% | Content, Embeddings |
-| Mistral | ✅ | 50% | Chat, Embeddings |
-| Azure OpenAI | ✅ | 50% | Chat, Embeddings |
 | All others | Concurrent fallback | — | Chat, Embeddings |
 
 ## Progress Tracking
@@ -149,8 +127,10 @@ resp, err := proc.Process(ctx, requests)
 ### Callback
 
 ```go
-proc := batch.New(
-    batch.WithLLM(client),
+proc, _ := batch.New(
+    model.ProviderOpenAI,
+    batch.WithAPIKey("your-api-key"),
+    batch.WithModel(model.OpenAIModels[model.GPT4o]),
     batch.WithProgressCallback(func(p batch.Progress) {
         fmt.Printf("%d/%d completed, %d failed [%s]\n",
             p.Completed, p.Total, p.Failed, p.Status)
@@ -183,11 +163,9 @@ Individual request failures never fail the batch. Each result carries its own er
 
 ```go
 resp, err := proc.Process(ctx, requests)
-// err is only non-nil for systemic failures (context cancelled, file upload failed)
 
 for _, r := range resp.Results {
     if r.Err != nil {
-        // this request failed, others may have succeeded
         continue
     }
     // use r.ChatResponse or r.EmbedResponse
@@ -200,11 +178,15 @@ fmt.Printf("Completed: %d, Failed: %d\n", resp.Completed, resp.Failed)
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `WithLLM(client)` | LLM client for concurrent chat requests | — |
-| `WithEmbedding(client)` | Embedding client for concurrent embedding requests | — |
+| `WithAPIKey(key)` | API key for native batch providers | — |
+| `WithModel(model)` | LLM model for chat batch requests | — |
+| `WithEmbeddingModel(model)` | Embedding model for embedding batch requests | — |
+| `WithMaxTokens(n)` | Max tokens per request | 4096 |
+| `WithLLM(client)` | Existing LLM client for concurrent fallback | — |
+| `WithEmbedding(client)` | Existing embedding client for concurrent fallback | — |
 | `WithMaxConcurrency(n)` | Max parallel requests in concurrent mode | 10 |
 | `WithProgressCallback(fn)` | Progress update callback | — |
 | `WithPollInterval(d)` | Polling interval for native batch APIs | 30s |
-| `WithOpenAIClient(client)` | Enable OpenAI native batch | — |
-| `WithAnthropicClient(client)` | Enable Anthropic native batch | — |
-| `WithGeminiClient(client, model)` | Enable Gemini native batch | — |
+| `WithTimeout(d)` | Request timeout | — |
+| `WithOpenAIOptions(...)` | OpenAI-specific options (base URL, headers) | — |
+| `WithGeminiOptions(...)` | Gemini-specific options (backend) | — |

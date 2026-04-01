@@ -6,28 +6,52 @@ import (
 	"time"
 
 	"github.com/anthropics/anthropic-sdk-go"
+	"github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/tool"
 )
 
-type anthropicNativeExecutor struct {
-	client *anthropic.Client
+// AnthropicOption configures Anthropic-specific batch client options.
+type AnthropicOption func(*anthropicOptions)
+
+type anthropicOptions struct{}
+
+type anthropicClient struct {
+	providerOptions clientOptions
+	options         anthropicOptions
+	client          anthropic.Client
 }
 
-func (e *anthropicNativeExecutor) execute(
+func newAnthropicBatchClient(opts clientOptions) *anthropicClient {
+	anthropicOpts := anthropicOptions{}
+	for _, o := range opts.anthropicOptions {
+		o(&anthropicOpts)
+	}
+
+	clientOpts := []option.RequestOption{}
+	if opts.apiKey != "" {
+		clientOpts = append(clientOpts, option.WithAPIKey(opts.apiKey))
+	}
+
+	return &anthropicClient{
+		providerOptions: opts,
+		options:         anthropicOpts,
+		client:          anthropic.NewClient(clientOpts...),
+	}
+}
+
+func (c *anthropicClient) executeBatch(
 	ctx context.Context,
 	requests []Request,
-	opts processorOptions,
+	opts clientOptions,
 ) (*Response, error) {
-	chatRequests := make([]Request, 0, len(requests))
 	for _, r := range requests {
 		if r.Type != RequestTypeChat {
 			return nil, fmt.Errorf(
 				"batch: anthropic native batch only supports chat requests",
 			)
 		}
-		chatRequests = append(chatRequests, r)
 	}
 
 	results := make([]Result, len(requests))
@@ -39,21 +63,24 @@ func (e *anthropicNativeExecutor) execute(
 
 	batchRequests := make(
 		[]anthropic.MessageBatchNewParamsRequest,
-		len(chatRequests),
+		len(requests),
 	)
-	for i, req := range chatRequests {
+	for i, req := range requests {
 		msgs, system := convertMessagesToAnthropic(req.Messages)
 		tools := convertToolsToAnthropic(req.Tools)
 
 		params := anthropic.MessageBatchNewParamsRequestParams{
-			MaxTokens: 4096,
+			MaxTokens: opts.maxTokens,
 			Messages:  msgs,
-			Model:     "claude-sonnet-4-20250514",
+			Model:     anthropic.Model(opts.model.APIModel),
 			Tools:     tools,
 		}
 
 		if len(system) > 0 {
-			systemBlocks := make([]anthropic.TextBlockParam, len(system))
+			systemBlocks := make(
+				[]anthropic.TextBlockParam,
+				len(system),
+			)
 			for j, s := range system {
 				systemBlocks[j] = anthropic.TextBlockParam{Text: s}
 			}
@@ -73,7 +100,7 @@ func (e *anthropicNativeExecutor) execute(
 		})
 	}
 
-	batch, err := e.client.Messages.Batches.New(
+	batch, err := c.client.Messages.Batches.New(
 		ctx,
 		anthropic.MessageBatchNewParams{
 			Requests: batchRequests,
@@ -91,7 +118,7 @@ func (e *anthropicNativeExecutor) execute(
 		pollInterval = 30 * time.Second
 	}
 
-	batch, err = e.pollUntilDone(
+	batch, err = c.pollUntilDone(
 		ctx,
 		batch.ID,
 		pollInterval,
@@ -99,10 +126,18 @@ func (e *anthropicNativeExecutor) execute(
 		opts,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("batch: anthropic batch polling failed: %w", err)
+		return nil, fmt.Errorf(
+			"batch: anthropic batch polling failed: %w",
+			err,
+		)
 	}
 
-	if err := e.retrieveResults(ctx, batch.ID, results, idxMap); err != nil {
+	if err := c.retrieveResults(
+		ctx,
+		batch.ID,
+		results,
+		idxMap,
+	); err != nil {
 		return nil, fmt.Errorf(
 			"batch: failed to retrieve anthropic results: %w",
 			err,
@@ -126,12 +161,12 @@ func (e *anthropicNativeExecutor) execute(
 	}, nil
 }
 
-func (e *anthropicNativeExecutor) pollUntilDone(
+func (c *anthropicClient) pollUntilDone(
 	ctx context.Context,
 	batchID string,
 	interval time.Duration,
 	total int,
-	opts processorOptions,
+	opts clientOptions,
 ) (*anthropic.MessageBatch, error) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -141,7 +176,10 @@ func (e *anthropicNativeExecutor) pollUntilDone(
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case <-ticker.C:
-			batch, err := e.client.Messages.Batches.Get(ctx, batchID)
+			batch, err := c.client.Messages.Batches.Get(
+				ctx,
+				batchID,
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -151,7 +189,9 @@ func (e *anthropicNativeExecutor) pollUntilDone(
 					Total:     total,
 					Completed: int(batch.RequestCounts.Succeeded),
 					Failed: int(
-						batch.RequestCounts.Errored + batch.RequestCounts.Canceled + batch.RequestCounts.Expired,
+						batch.RequestCounts.Errored +
+							batch.RequestCounts.Canceled +
+							batch.RequestCounts.Expired,
 					),
 					Status: "polling",
 				})
@@ -167,13 +207,16 @@ func (e *anthropicNativeExecutor) pollUntilDone(
 	}
 }
 
-func (e *anthropicNativeExecutor) retrieveResults(
+func (c *anthropicClient) retrieveResults(
 	ctx context.Context,
 	batchID string,
 	results []Result,
 	idxMap map[string]int,
 ) error {
-	stream := e.client.Messages.Batches.ResultsStreaming(ctx, batchID)
+	stream := c.client.Messages.Batches.ResultsStreaming(
+		ctx,
+		batchID,
+	)
 	defer stream.Close()
 
 	for stream.Next() {
@@ -192,7 +235,10 @@ func (e *anthropicNativeExecutor) retrieveResults(
 			)
 		case "errored":
 			errored := entry.Result.AsErrored()
-			results[idx].Err = fmt.Errorf("%s", errored.Error.Error.Message)
+			results[idx].Err = fmt.Errorf(
+				"%s",
+				errored.Error.Error.Message,
+			)
 		case "canceled":
 			results[idx].Err = fmt.Errorf("request was canceled")
 		case "expired":
@@ -207,10 +253,10 @@ func (e *anthropicNativeExecutor) retrieveResults(
 	return nil
 }
 
-func (e *anthropicNativeExecutor) executeAsync(
+func (c *anthropicClient) executeBatchAsync(
 	ctx context.Context,
 	requests []Request,
-	opts processorOptions,
+	opts clientOptions,
 ) (<-chan Event, error) {
 	ch := make(chan Event, 16)
 
@@ -226,14 +272,17 @@ func (e *anthropicNativeExecutor) executeAsync(
 			}
 		}
 
-		resp, err := e.execute(ctx, requests, wrappedOpts)
+		resp, err := c.executeBatch(ctx, requests, wrappedOpts)
 		if err != nil {
 			ch <- Event{Type: EventError, Err: err}
 			return
 		}
 
 		for i := range resp.Results {
-			ch <- Event{Type: EventItem, Result: &resp.Results[i]}
+			ch <- Event{
+				Type:   EventItem,
+				Result: &resp.Results[i],
+			}
 		}
 
 		ch <- Event{
@@ -268,7 +317,9 @@ func convertMessagesToAnthropic(
 			)
 		case message.Assistant:
 			if msg.Content().String() != "" {
-				content := anthropic.NewTextBlock(msg.Content().String())
+				content := anthropic.NewTextBlock(
+					msg.Content().String(),
+				)
 				anthropicMsgs = append(
 					anthropicMsgs,
 					anthropic.NewAssistantMessage(content),
@@ -277,11 +328,14 @@ func convertMessagesToAnthropic(
 		case message.Tool:
 			var results []anthropic.ContentBlockParamUnion
 			for _, tr := range msg.ToolResults() {
-				results = append(results, anthropic.NewToolResultBlock(
-					tr.ToolCallID,
-					tr.Content,
-					tr.IsError,
-				))
+				results = append(
+					results,
+					anthropic.NewToolResultBlock(
+						tr.ToolCallID,
+						tr.Content,
+						tr.IsError,
+					),
+				)
 			}
 			anthropicMsgs = append(
 				anthropicMsgs,
@@ -293,7 +347,9 @@ func convertMessagesToAnthropic(
 	return anthropicMsgs, systemMsgs
 }
 
-func convertToolsToAnthropic(tools []tool.BaseTool) []anthropic.ToolUnionParam {
+func convertToolsToAnthropic(
+	tools []tool.BaseTool,
+) []anthropic.ToolUnionParam {
 	if len(tools) == 0 {
 		return nil
 	}

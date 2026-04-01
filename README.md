@@ -17,6 +17,7 @@ A comprehensive, multi-provider Go library for interacting with various AI model
 - **Image Generation** — Text-to-image with OpenAI, Gemini, and xAI
 - **Audio** — Text-to-speech (ElevenLabs, OpenAI, Google Cloud, Azure Speech) and speech-to-text (OpenAI Whisper, ElevenLabs Scribe, Deepgram, AssemblyAI, Google Cloud)
 - **Rerankers** — Document reranking with Voyage AI and Cohere
+- **Batch Processing** — Async bulk requests via native batch APIs (OpenAI, Anthropic, Gemini) or bounded concurrent execution for any provider
 - **MCP Integration** — Model Context Protocol support for advanced tooling
 - **Cost Tracking** — Built-in token and character usage with cost calculation
 
@@ -104,6 +105,43 @@ response, _ := myAgent.Chat(ctx, "What's the weather in Tokyo?")
 ```
 
 The agent framework supports [sub-agents](https://joakimcarlsson.github.io/ai/agent/sub-agents/), [handoffs](https://joakimcarlsson.github.io/ai/agent/handoffs/), [fan-out](https://joakimcarlsson.github.io/ai/agent/fan-out/), [continue/resume](https://joakimcarlsson.github.io/ai/agent/continue/), [context strategies](https://joakimcarlsson.github.io/ai/agent/context-strategies/), [persistent memory](https://joakimcarlsson.github.io/ai/agent/memory/), and [instruction templates](https://joakimcarlsson.github.io/ai/agent/instruction-templates/).
+
+## Batch Processing
+
+Process bulk requests with native batch APIs or bounded concurrency.
+
+```go
+import (
+    "github.com/joakimcarlsson/ai/batch"
+    "github.com/joakimcarlsson/ai/model"
+)
+
+// Native batch API — OpenAI, Anthropic, or Gemini
+proc, _ := batch.New(
+    model.ProviderOpenAI,
+    batch.WithAPIKey("your-api-key"),
+    batch.WithModel(model.OpenAIModels[model.GPT4o]),
+)
+
+// Concurrent fallback — works with any provider
+proc, _ := batch.New(
+    model.ProviderGroq,
+    batch.WithLLM(groqClient),
+    batch.WithMaxConcurrency(10),
+)
+
+requests := []batch.Request{
+    {ID: "q1", Type: batch.RequestTypeChat, Messages: msgs1},
+    {ID: "q2", Type: batch.RequestTypeChat, Messages: msgs2},
+}
+
+resp, _ := proc.Process(ctx, requests)
+for _, r := range resp.Results {
+    fmt.Printf("[%s] %s\n", r.ID, r.ChatResponse.Content)
+}
+```
+
+Per-item error handling, progress callbacks, and async channel-based tracking are all supported. See the [batch processing docs](https://joakimcarlsson.github.io/ai/advanced/batch-processing/) for details.
 
 ## Versioning
 

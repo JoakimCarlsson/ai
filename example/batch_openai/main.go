@@ -1,4 +1,4 @@
-// Example batch_openai demonstrates the OpenAI native Batch API with 50% cost savings.
+// Example batch_openai demonstrates the OpenAI native Batch API.
 package main
 
 import (
@@ -10,18 +10,16 @@ import (
 
 	"github.com/joakimcarlsson/ai/batch"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
+	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
 	ctx := context.Background()
 
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	client := openai.NewClient(option.WithAPIKey(apiKey))
-
-	proc := batch.New(
-		batch.WithOpenAIClient(client),
+	proc, err := batch.New(
+		model.ProviderOpenAI,
+		batch.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+		batch.WithModel(model.OpenAIModels[model.GPT5Nano]),
 		batch.WithPollInterval(10*time.Second),
 		batch.WithProgressCallback(func(p batch.Progress) {
 			fmt.Printf(
@@ -30,6 +28,9 @@ func main() {
 			)
 		}),
 	)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	requests := []batch.Request{
 		{
@@ -37,7 +38,9 @@ func main() {
 			Type: batch.RequestTypeChat,
 			Messages: []message.Message{
 				message.NewSystemMessage("You are a translator."),
-				message.NewUserMessage("Translate 'hello world' to Spanish."),
+				message.NewUserMessage(
+					"Translate 'hello world' to Spanish.",
+				),
 			},
 		},
 		{
@@ -45,7 +48,9 @@ func main() {
 			Type: batch.RequestTypeChat,
 			Messages: []message.Message{
 				message.NewSystemMessage("You are a translator."),
-				message.NewUserMessage("Translate 'hello world' to French."),
+				message.NewUserMessage(
+					"Translate 'hello world' to French.",
+				),
 			},
 		},
 		{
@@ -53,7 +58,9 @@ func main() {
 			Type: batch.RequestTypeChat,
 			Messages: []message.Message{
 				message.NewSystemMessage("You are a translator."),
-				message.NewUserMessage("Translate 'hello world' to German."),
+				message.NewUserMessage(
+					"Translate 'hello world' to German.",
+				),
 			},
 		},
 	}
@@ -63,7 +70,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("\nCompleted: %d, Failed: %d\n\n", resp.Completed, resp.Failed)
+	fmt.Printf(
+		"\nCompleted: %d, Failed: %d\n\n",
+		resp.Completed, resp.Failed,
+	)
 	for _, r := range resp.Results {
 		if r.Err != nil {
 			fmt.Printf("[%s] Error: %v\n", r.ID, r.Err)

@@ -6,12 +6,12 @@ import (
 	"sync/atomic"
 )
 
-type concurrentExecutor struct{}
+type concurrentClient struct{}
 
-func (e *concurrentExecutor) execute(
+func (c *concurrentClient) executeBatch(
 	ctx context.Context,
 	requests []Request,
-	opts processorOptions,
+	opts clientOptions,
 ) (*Response, error) {
 	results := make([]Result, len(requests))
 	var wg sync.WaitGroup
@@ -51,7 +51,11 @@ func (e *concurrentExecutor) execute(
 				if opts.llmClient == nil {
 					result.Err = ErrNoLLMClient
 				} else {
-					resp, err := opts.llmClient.SendMessages(ctx, r.Messages, r.Tools)
+					resp, err := opts.llmClient.SendMessages(
+						ctx,
+						r.Messages,
+						r.Tools,
+					)
 					if err != nil {
 						result.Err = err
 					} else {
@@ -62,7 +66,10 @@ func (e *concurrentExecutor) execute(
 				if opts.embeddingClient == nil {
 					result.Err = ErrNoEmbeddingClient
 				} else {
-					resp, err := opts.embeddingClient.GenerateEmbeddings(ctx, r.Texts)
+					resp, err := opts.embeddingClient.GenerateEmbeddings(
+						ctx,
+						r.Texts,
+					)
 					if err != nil {
 						result.Err = err
 					} else {
@@ -100,10 +107,10 @@ func (e *concurrentExecutor) execute(
 	}, nil
 }
 
-func (e *concurrentExecutor) executeAsync(
+func (c *concurrentClient) executeBatchAsync(
 	ctx context.Context,
 	requests []Request,
-	opts processorOptions,
+	opts clientOptions,
 ) (<-chan Event, error) {
 	ch := make(chan Event, len(requests)+1)
 
@@ -131,10 +138,17 @@ func (e *concurrentExecutor) executeAsync(
 					case sem <- struct{}{}:
 						defer func() { <-sem }()
 					case <-ctx.Done():
-						result := Result{ID: r.ID, Index: idx, Err: ctx.Err()}
+						result := Result{
+							ID:    r.ID,
+							Index: idx,
+							Err:   ctx.Err(),
+						}
 						results[idx] = result
 						failed.Add(1)
-						ch <- Event{Type: EventItem, Result: &result}
+						ch <- Event{
+							Type:   EventItem,
+							Result: &result,
+						}
 						return
 					}
 				}
@@ -146,7 +160,11 @@ func (e *concurrentExecutor) executeAsync(
 					if opts.llmClient == nil {
 						result.Err = ErrNoLLMClient
 					} else {
-						resp, err := opts.llmClient.SendMessages(ctx, r.Messages, r.Tools)
+						resp, err := opts.llmClient.SendMessages(
+							ctx,
+							r.Messages,
+							r.Tools,
+						)
 						if err != nil {
 							result.Err = err
 						} else {
@@ -157,7 +175,10 @@ func (e *concurrentExecutor) executeAsync(
 					if opts.embeddingClient == nil {
 						result.Err = ErrNoEmbeddingClient
 					} else {
-						resp, err := opts.embeddingClient.GenerateEmbeddings(ctx, r.Texts)
+						resp, err := opts.embeddingClient.GenerateEmbeddings(
+							ctx,
+							r.Texts,
+						)
 						if err != nil {
 							result.Err = err
 						} else {
@@ -174,7 +195,10 @@ func (e *concurrentExecutor) executeAsync(
 					completed.Add(1)
 				}
 
-				ch <- Event{Type: EventItem, Result: &result}
+				ch <- Event{
+					Type:   EventItem,
+					Result: &result,
+				}
 				ch <- Event{
 					Type: EventProgress,
 					Progress: &Progress{

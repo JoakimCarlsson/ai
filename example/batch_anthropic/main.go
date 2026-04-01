@@ -1,4 +1,4 @@
-// Example batch_anthropic demonstrates the Anthropic Message Batches API with 50% cost savings.
+// Example batch_anthropic demonstrates the Anthropic Message Batches API.
 package main
 
 import (
@@ -8,20 +8,19 @@ import (
 	"os"
 	"time"
 
-	"github.com/anthropics/anthropic-sdk-go"
-	"github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/joakimcarlsson/ai/batch"
 	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
 	ctx := context.Background()
 
-	apiKey := os.Getenv("ANTHROPIC_API_KEY")
-	client := anthropic.NewClient(option.WithAPIKey(apiKey))
-
-	proc := batch.New(
-		batch.WithAnthropicClient(client),
+	proc, err := batch.New(
+		model.ProviderAnthropic,
+		batch.WithAPIKey(os.Getenv("ANTHROPIC_API_KEY")),
+		batch.WithModel(model.AnthropicModels[model.Claude4Sonnet]),
+		batch.WithMaxTokens(1024),
 		batch.WithPollInterval(10*time.Second),
 		batch.WithProgressCallback(func(p batch.Progress) {
 			fmt.Printf(
@@ -30,27 +29,36 @@ func main() {
 			)
 		}),
 	)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	requests := []batch.Request{
 		{
 			ID:   "haiku-nature",
 			Type: batch.RequestTypeChat,
 			Messages: []message.Message{
-				message.NewUserMessage("Write a haiku about nature."),
+				message.NewUserMessage(
+					"Write a haiku about nature.",
+				),
 			},
 		},
 		{
 			ID:   "haiku-tech",
 			Type: batch.RequestTypeChat,
 			Messages: []message.Message{
-				message.NewUserMessage("Write a haiku about technology."),
+				message.NewUserMessage(
+					"Write a haiku about technology.",
+				),
 			},
 		},
 		{
 			ID:   "haiku-ocean",
 			Type: batch.RequestTypeChat,
 			Messages: []message.Message{
-				message.NewUserMessage("Write a haiku about the ocean."),
+				message.NewUserMessage(
+					"Write a haiku about the ocean.",
+				),
 			},
 		},
 	}
@@ -60,7 +68,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("\nCompleted: %d, Failed: %d\n\n", resp.Completed, resp.Failed)
+	fmt.Printf(
+		"\nCompleted: %d, Failed: %d\n\n",
+		resp.Completed, resp.Failed,
+	)
 	for _, r := range resp.Results {
 		if r.Err != nil {
 			fmt.Printf("[%s] Error: %v\n", r.ID, r.Err)

@@ -125,6 +125,13 @@ func (m *mockEmbedding) Model() model.EmbeddingModel {
 	return model.EmbeddingModel{ID: "mock-embed"}
 }
 
+func newConcurrentProc(
+	opts ...batch.Option,
+) batch.Processor {
+	proc, _ := batch.New("concurrent-test", opts...)
+	return proc
+}
+
 func TestConcurrentProcess(t *testing.T) {
 	mock := &mockLLM{
 		responses: []mockLLMResponse{
@@ -134,7 +141,10 @@ func TestConcurrentProcess(t *testing.T) {
 		},
 	}
 
-	proc := batch.New(batch.WithLLM(mock), batch.WithMaxConcurrency(2))
+	proc := newConcurrentProc(
+		batch.WithLLM(mock),
+		batch.WithMaxConcurrency(2),
+	)
 
 	requests := []batch.Request{
 		{
@@ -188,7 +198,10 @@ func TestConcurrentProcessPerItemErrors(t *testing.T) {
 		},
 	}
 
-	proc := batch.New(batch.WithLLM(mock), batch.WithMaxConcurrency(1))
+	proc := newConcurrentProc(
+		batch.WithLLM(mock),
+		batch.WithMaxConcurrency(1),
+	)
 
 	requests := []batch.Request{
 		{
@@ -240,7 +253,7 @@ func TestConcurrentProcessEmbeddings(t *testing.T) {
 		},
 	}
 
-	proc := batch.New(batch.WithEmbedding(mock))
+	proc := newConcurrentProc(batch.WithEmbedding(mock))
 
 	requests := []batch.Request{
 		{
@@ -270,7 +283,7 @@ func TestConcurrentProcessEmbeddings(t *testing.T) {
 }
 
 func TestConcurrentProcessNoClient(t *testing.T) {
-	proc := batch.New()
+	proc := newConcurrentProc()
 
 	requests := []batch.Request{
 		{
@@ -297,7 +310,7 @@ func TestConcurrentProcessNoClient(t *testing.T) {
 }
 
 func TestConcurrentProcessEmptyRequests(t *testing.T) {
-	proc := batch.New()
+	proc := newConcurrentProc()
 	resp, err := proc.Process(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -311,7 +324,7 @@ func TestConcurrentProcessAutoID(t *testing.T) {
 	mock := &mockLLM{
 		responses: []mockLLMResponse{{Content: "ok"}},
 	}
-	proc := batch.New(batch.WithLLM(mock))
+	proc := newConcurrentProc(batch.WithLLM(mock))
 
 	requests := []batch.Request{
 		{
@@ -354,7 +367,7 @@ func TestConcurrentProcessConcurrencyLimit(t *testing.T) {
 		delay:             20 * time.Millisecond,
 	}
 
-	proc := batch.New(
+	proc := newConcurrentProc(
 		batch.WithLLM(concurrencyLLM),
 		batch.WithMaxConcurrency(3),
 	)
@@ -463,7 +476,7 @@ func TestProcessAsync(t *testing.T) {
 		},
 	}
 
-	proc := batch.New(
+	proc := newConcurrentProc(
 		batch.WithLLM(mock),
 		batch.WithMaxConcurrency(2),
 	)
@@ -511,7 +524,7 @@ func TestProcessAsync(t *testing.T) {
 }
 
 func TestProcessAsyncEmpty(t *testing.T) {
-	proc := batch.New()
+	proc := newConcurrentProc()
 	ch, err := proc.ProcessAsync(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -538,7 +551,7 @@ func TestProgressCallback(t *testing.T) {
 	var mu sync.Mutex
 	var updates []batch.Progress
 
-	proc := batch.New(
+	proc := newConcurrentProc(
 		batch.WithLLM(mock),
 		batch.WithMaxConcurrency(1),
 		batch.WithProgressCallback(func(p batch.Progress) {
@@ -584,7 +597,7 @@ func TestConcurrentProcessContextCancellation(t *testing.T) {
 		},
 	}
 
-	proc := batch.New(
+	proc := newConcurrentProc(
 		batch.WithLLM(mock),
 		batch.WithMaxConcurrency(1),
 	)
@@ -617,5 +630,36 @@ func TestConcurrentProcessContextCancellation(t *testing.T) {
 		t.Error(
 			"expected at least one failure due to context cancellation",
 		)
+	}
+}
+
+func TestNativeProviderSelection(t *testing.T) {
+	proc, err := batch.New(
+		model.ProviderOpenAI,
+		batch.WithAPIKey("test-key"),
+		batch.WithModel(model.OpenAIModels[model.GPT4o]),
+	)
+	if err != nil {
+		t.Fatalf("unexpected error creating OpenAI batch: %v", err)
+	}
+	if proc == nil {
+		t.Fatal("expected non-nil processor for OpenAI")
+	}
+
+	proc, err = batch.New(
+		model.ProviderAnthropic,
+		batch.WithAPIKey("test-key"),
+		batch.WithModel(
+			model.AnthropicModels[model.Claude4Sonnet],
+		),
+	)
+	if err != nil {
+		t.Fatalf(
+			"unexpected error creating Anthropic batch: %v",
+			err,
+		)
+	}
+	if proc == nil {
+		t.Fatal("expected non-nil processor for Anthropic")
 	}
 }
