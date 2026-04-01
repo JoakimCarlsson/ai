@@ -114,6 +114,7 @@ type transcriptionClientOptions struct {
 	deepgramOptions       []DeepgramOption
 	googleCloudSTTOptions []GoogleCloudSTTOption
 	assemblyAIOptions     []AssemblyAIOption
+	elevenLabsOptions     []ElevenLabsOption
 }
 
 // ClientOption configures a speech-to-text client.
@@ -168,6 +169,11 @@ func NewSpeechToText(
 		return &baseSpeechToText[AssemblyAIClient]{
 			options: clientOptions,
 			client:  newAssemblyAIClient(clientOptions),
+		}, nil
+	case model.ProviderElevenLabs:
+		return &baseSpeechToText[ElevenLabsClient]{
+			options: clientOptions,
+			client:  newElevenLabsClient(clientOptions),
 		}, nil
 	}
 
@@ -333,6 +339,15 @@ func WithAssemblyAIOptions(
 ) ClientOption {
 	return func(options *transcriptionClientOptions) {
 		options.assemblyAIOptions = aaiOptions
+	}
+}
+
+// WithElevenLabsSTTOptions applies ElevenLabs Scribe-specific configuration options.
+func WithElevenLabsSTTOptions(
+	elOptions ...ElevenLabsOption,
+) ClientOption {
+	return func(options *transcriptionClientOptions) {
+		options.elevenLabsOptions = elOptions
 	}
 }
 

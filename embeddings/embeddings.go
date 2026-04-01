@@ -135,6 +135,7 @@ type embeddingClientOptions struct {
 	cohereOptions  []CohereOption
 	geminiOptions  []GeminiOption
 	bedrockOptions []BedrockOption
+	mistralOptions []MistralOption
 }
 
 // EmbeddingClientOption configures embedding client construction when passed to NewEmbedding.
@@ -203,6 +204,11 @@ func NewEmbedding(
 		return &baseEmbedding[BedrockClient]{
 			options: clientOptions,
 			client:  newBedrockClient(clientOptions),
+		}, nil
+	case model.ProviderMistral:
+		return &baseEmbedding[MistralClient]{
+			options: clientOptions,
+			client:  newMistralClient(clientOptions),
 		}, nil
 	}
 
@@ -447,5 +453,12 @@ func WithGeminiOptions(geminiOptions ...GeminiOption) EmbeddingClientOption {
 func WithBedrockOptions(bedrockOptions ...BedrockOption) EmbeddingClientOption {
 	return func(options *embeddingClientOptions) {
 		options.bedrockOptions = bedrockOptions
+	}
+}
+
+// WithMistralOptions applies Mistral-specific configuration options.
+func WithMistralOptions(mistralOptions ...MistralOption) EmbeddingClientOption {
+	return func(options *embeddingClientOptions) {
+		options.mistralOptions = mistralOptions
 	}
 }

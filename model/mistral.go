@@ -23,6 +23,9 @@ const (
 	Mistral7B         ID = "mistral-7b"
 	MagistralMedium12 ID = "magistral-medium-1.2"
 	MagistralSmall12  ID = "magistral-small-1.2"
+
+	MistralEmbed   ID = "mistral-embed"
+	CodestralEmbed ID = "codestral-embed"
 )
 
 // MistralModels maps Mistral model IDs to their configurations.
@@ -294,5 +297,33 @@ var MistralModels = map[ID]Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+	},
+}
+
+// MistralEmbeddingModels maps Mistral embedding model IDs to their configurations.
+var MistralEmbeddingModels = map[ID]EmbeddingModel{
+	MistralEmbed: {
+		ID:              MistralEmbed,
+		Name:            "Mistral Embed",
+		Provider:        ProviderMistral,
+		APIModel:        "mistral-embed",
+		CostPer1MTokens: 0.01,
+		MaxInputTokens:  8192,
+		EmbeddingDims:   1024,
+		MaxBatchSize:    512,
+	},
+	CodestralEmbed: {
+		ID:              CodestralEmbed,
+		Name:            "Codestral Embed",
+		Provider:        ProviderMistral,
+		APIModel:        "codestral-embed",
+		CostPer1MTokens: 0.15,
+		MaxInputTokens:  32768,
+		EmbeddingDims:   1536,
+		SupportedDimensions: []int{
+			1536, 1024, 768, 512, 256,
+		},
+		SupportsOutputDtype: true,
+		MaxBatchSize:        512,
 	},
 }

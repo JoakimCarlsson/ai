@@ -24,6 +24,9 @@ const (
 	AssemblyAIBest ID = "best"
 	AssemblyAINano ID = "nano"
 
+	ElevenLabsScribeV1 ID = "scribe_v1"
+	ElevenLabsScribeV2 ID = "scribe_v2"
+
 	Whisper1                ID = "whisper-1"
 	GPT4oTranscribe         ID = "gpt-4o-transcribe"
 	GPT4oMiniTranscribe     ID = "gpt-4o-mini-transcribe"
@@ -458,6 +461,52 @@ var AssemblyAITranscriptionModels = map[ID]TranscriptionModel{
 		SupportsStreaming:      false,
 		SupportedResponseFormats: []string{
 			"json", "text", "srt", "vtt",
+		},
+	},
+}
+
+// ElevenLabsTranscriptionModels maps ElevenLabs Scribe model IDs to their configurations.
+var ElevenLabsTranscriptionModels = map[ID]TranscriptionModel{
+	ElevenLabsScribeV1: {
+		ID:            ElevenLabsScribeV1,
+		Name:          "ElevenLabs Scribe v1",
+		Provider:      ProviderElevenLabs,
+		APIModel:      "scribe_v1",
+		CostPer1MIn:   0.0067,
+		MaxFileSizeMB: 3000,
+		SupportedFormats: []string{
+			"mp3", "mp4", "wav", "flac",
+			"ogg", "webm", "m4a", "aac",
+			"aiff", "opus",
+		},
+		SupportsTimestamps:     true,
+		SupportsWordTimestamps: true,
+		SupportsDiarization:    true,
+		SupportsTranslation:    false,
+		SupportsStreaming:      false,
+		SupportedResponseFormats: []string{
+			"json", "text", "srt",
+		},
+	},
+	ElevenLabsScribeV2: {
+		ID:            ElevenLabsScribeV2,
+		Name:          "ElevenLabs Scribe v2",
+		Provider:      ProviderElevenLabs,
+		APIModel:      "scribe_v2",
+		CostPer1MIn:   0.0067,
+		MaxFileSizeMB: 3000,
+		SupportedFormats: []string{
+			"mp3", "mp4", "wav", "flac",
+			"ogg", "webm", "m4a", "aac",
+			"aiff", "opus",
+		},
+		SupportsTimestamps:     true,
+		SupportsWordTimestamps: true,
+		SupportsDiarization:    true,
+		SupportsTranslation:    false,
+		SupportsStreaming:      false,
+		SupportedResponseFormats: []string{
+			"json", "text", "srt",
 		},
 	},
 }
