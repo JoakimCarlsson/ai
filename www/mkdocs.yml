@@ -74,6 +74,7 @@ nav:
     - SQLite: integrations/sqlite.md
     - pgvector: integrations/pgvector.md
   - Advanced:
+    - Batch Processing: advanced/batch-processing.md
     - BYOM: advanced/byom.md
     - MCP Integration: advanced/mcp.md
     - Tool Calling: advanced/tools.md
