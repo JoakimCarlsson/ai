@@ -307,7 +307,7 @@ var MistralEmbeddingModels = map[ID]EmbeddingModel{
 		Name:            "Mistral Embed",
 		Provider:        ProviderMistral,
 		APIModel:        "mistral-embed",
-		CostPer1MTokens: 0.01,
+		CostPer1MTokens: 0.10,
 		MaxInputTokens:  8192,
 		EmbeddingDims:   1024,
 		MaxBatchSize:    512,
