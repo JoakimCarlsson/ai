@@ -15,8 +15,8 @@ A comprehensive, multi-provider Go library for interacting with various AI model
 - **Agent Framework** — Multi-agent orchestration with sub-agents, handoffs, fan-out, session management, persistent memory, and context strategies
 - **Embedding Models** — Text, multimodal, and contextualized embeddings
 - **Image Generation** — Text-to-image with OpenAI, Gemini, and xAI
-- **Audio** — Text-to-speech (ElevenLabs) and speech-to-text (OpenAI Whisper)
-- **Rerankers** — Document reranking for improved search relevance
+- **Audio** — Text-to-speech (ElevenLabs, OpenAI, Google Cloud, Azure Speech) and speech-to-text (OpenAI Whisper, ElevenLabs Scribe, Deepgram, AssemblyAI, Google Cloud)
+- **Rerankers** — Document reranking with Voyage AI and Cohere
 - **MCP Integration** — Model Context Protocol support for advanced tooling
 - **Cost Tracking** — Built-in token and character usage with cost calculation
 
@@ -66,19 +66,25 @@ func main() {
 
 ## Supported Providers
 
-| Provider | LLM | Embeddings | Images | Audio | STT | Rerankers |
-|----------|-----|------------|--------|-------|-----|-----------|
-| OpenAI | ✅ | ✅ | ✅ | | ✅ | |
+| Provider | LLM | Embeddings | Images | TTS | STT | Rerankers |
+|----------|-----|------------|--------|-----|-----|-----------|
+| OpenAI | ✅ | ✅ | ✅ | ✅ | ✅ | |
 | Anthropic | ✅ | | | | | |
-| Google Gemini | ✅ | | ✅ | | | |
-| AWS Bedrock | ✅ | | | | | |
+| Google Gemini | ✅ | ✅ | ✅ | | | |
+| Google Cloud | | | | ✅ | ✅ | |
+| AWS Bedrock | ✅ | ✅ | | | | |
 | Azure OpenAI | ✅ | | | | | |
+| Azure Speech | | | | ✅ | | |
 | Vertex AI | ✅ | | | | | |
 | Groq | ✅ | | | | | |
 | OpenRouter | ✅ | | | | | |
 | xAI | ✅ | | ✅ | | | |
 | Voyage AI | | ✅ | | | | ✅ |
-| ElevenLabs | | | | ✅ | | |
+| Cohere | ✅ | ✅ | | | | ✅ |
+| Mistral | ✅ | ✅ | | | | |
+| ElevenLabs | | | | ✅ | ✅ | |
+| Deepgram | | | | | ✅ | |
+| AssemblyAI | | | | | ✅ | |
 
 ## Agent Framework
 
