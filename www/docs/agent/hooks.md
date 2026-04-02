@@ -33,6 +33,11 @@ myAgent := agent.New(llmClient,
 | `AfterRun` | At the end of Chat/ChatStream | Observe only |
 | `OnUserMessage` | When a user message arrives | Allow, Deny, or Modify message |
 | `OnEvent` | On every hook event emitted | Observe only |
+| `OnTeammateJoin` | When a teammate is spawned | Observe only |
+| `OnTeammateLeave` | When a teammate leaves (stopped) | Observe only |
+| `OnTeammateComplete` | When a teammate finishes successfully | Observe only |
+| `OnTeammateError` | When a teammate encounters an error | Observe only |
+| `OnTeamMessage` | When a message is sent between members | Observe only |
 
 ## HookAction
 
@@ -301,6 +306,11 @@ All observing hooks return `HookAllow` — they never block or modify execution.
 | `HookEventBeforeRun` | `"before_run"` | Start of Chat/ChatStream |
 | `HookEventAfterRun` | `"after_run"` | End of Chat/ChatStream |
 | `HookEventUserMessage` | `"user_message"` | User message received |
+| `HookEventTeammateJoin` | `"teammate_join"` | Teammate spawned in a team |
+| `HookEventTeammateLeave` | `"teammate_leave"` | Teammate left (stopped) |
+| `HookEventTeamMessage` | `"team_message"` | Message sent between team members |
+| `HookEventTeammateComplete` | `"teammate_complete"` | Teammate finished successfully |
+| `HookEventTeammateError` | `"teammate_error"` | Teammate encountered an error |
 
 ## Branch
 
@@ -430,6 +440,35 @@ type SubagentEventContext struct {
     Duration  time.Duration
 }
 ```
+
+### TeammateEventContext
+
+Passed to `OnTeammateJoin`, `OnTeammateLeave`, `OnTeammateComplete`, and `OnTeammateError`:
+
+```go
+type TeammateEventContext struct {
+    TeamName   string
+    MemberID   string
+    MemberName string
+    Task       string
+    Result     string
+    Error      error
+    Duration   time.Duration
+}
+```
+
+### TeamMessageContext
+
+Passed to `OnTeamMessage`:
+
+```go
+type TeamMessageContext struct {
+    TeamName string
+    Message  team.Message
+}
+```
+
+See [Team Coordination](team-coordination.md) for full details on team hooks and messaging.
 
 ### LifecycleContext
 

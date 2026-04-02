@@ -1,6 +1,6 @@
 # Agent Framework
 
-The agent package provides multi-agent orchestration with automatic tool execution, session management, persistent memory, sub-agents, handoffs, fan-out, and context strategies.
+The agent package provides multi-agent orchestration with automatic tool execution, session management, persistent memory, sub-agents, handoffs, fan-out, team coordination, and context strategies.
 
 ## Basic Agent
 
@@ -50,6 +50,9 @@ When you call `Chat()`, the agent:
 | `WithSubAgents(configs...)` | Register child agents | none |
 | `WithHandoffs(configs...)` | Register peer agents for transfer | none |
 | `WithFanOut(configs...)` | Register parallel task distribution | none |
+| `WithTeam(config)` | Enable team coordination with peer-to-peer messaging | none |
+| `WithCoordinatorMode()` | Restrict lead agent to team-only tools | disabled |
+| `WithTeammateTemplates(map)` | Pre-configured agent templates for teammates | none |
 
 ## ChatResponse
 

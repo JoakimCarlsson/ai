@@ -55,6 +55,10 @@ for event := range myAgent.ContinueStream(ctx, toolResults) {
 | `EventThinkingDelta` | `Thinking` | Chain-of-thought reasoning (if model supports it) |
 | `EventHandoff` | `AgentName` | Control transferred to another agent |
 | `EventConfirmationRequired` | `ConfirmationRequest` | Tool awaiting human approval ([details](confirmation.md)) |
+| `EventTeammateSpawned` | `AgentName` | A new teammate was spawned in a [team](team-coordination.md) |
+| `EventTeamMessage` | `AgentName` | A message was sent between team members |
+| `EventTeammateComplete` | `AgentName` | A teammate finished its task successfully |
+| `EventTeammateError` | `AgentName`, `Error` | A teammate encountered an error |
 | `EventComplete` | `Response` | Streaming finished — contains the full `ChatResponse` |
 | `EventError` | `Error` | An error occurred during streaming |
 | `EventWarning` | `Error` | A non-fatal warning |
