@@ -62,6 +62,58 @@ func TestTeamRunner_StreamEvents(t *testing.T) {
 	}
 }
 
+func TestTeamRunner_StreamTeamMessageEvent(t *testing.T) {
+	teammateLLM := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-t1",
+					Name:  "send_message",
+					Input: `{"to":"__lead__","content":"hello lead"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "done"},
+	)
+
+	leadLLM := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "spawn_teammate",
+					Input: `{"name":"talker","task":"Send a message"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "All done."},
+	)
+
+	lead := agent.New(leadLLM,
+		agent.WithSystemPrompt("Lead"),
+		agent.WithTeam(team.Config{Name: "msg-stream-team"}),
+		agent.WithTeammateTemplates(map[string]*agent.Agent{
+			"talker": agent.New(teammateLLM,
+				agent.WithSystemPrompt("Talker"),
+			),
+		}),
+	)
+
+	var sawTeamMessage bool
+
+	for event := range lead.ChatStream(context.Background(), "Go") {
+		if event.Type == types.EventTeamMessage {
+			sawTeamMessage = true
+		}
+	}
+
+	if !sawTeamMessage {
+		t.Error("expected EventTeamMessage event")
+	}
+}
+
 func TestTeamRunner_TeammateCompletion(t *testing.T) {
 	teammateLLM := newMockLLM(
 		mockResponse{Content: "finished work"},

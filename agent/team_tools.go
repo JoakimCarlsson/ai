@@ -7,6 +7,7 @@ import (
 
 	"github.com/joakimcarlsson/ai/agent/team"
 	"github.com/joakimcarlsson/ai/tool"
+	"github.com/joakimcarlsson/ai/types"
 )
 
 type spawnTeammateInput struct {
@@ -166,6 +167,13 @@ func (t *sendMessageTool) Run(
 			TeamName: tm.Name(),
 			Message:  msg,
 		})
+	}
+
+	if eventChan := teamEventChanFromContext(ctx); eventChan != nil {
+		eventChan <- ChatEvent{
+			Type:      types.EventTeamMessage,
+			AgentName: sender,
+		}
 	}
 
 	return tool.NewTextResponse(
