@@ -37,4 +37,12 @@ const (
 	EventHandoff EventType = "handoff"
 	// EventConfirmationRequired indicates a tool is requesting user confirmation before proceeding.
 	EventConfirmationRequired EventType = "confirmation_required"
+	// EventTeammateSpawned indicates a new teammate has been spawned in a team.
+	EventTeammateSpawned EventType = "teammate_spawned"
+	// EventTeamMessage indicates a message was sent between team members.
+	EventTeamMessage EventType = "team_message"
+	// EventTeammateComplete indicates a teammate has finished its task successfully.
+	EventTeammateComplete EventType = "teammate_complete"
+	// EventTeammateError indicates a teammate encountered an error during its task.
+	EventTeammateError EventType = "teammate_error"
 )
