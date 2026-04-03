@@ -16,11 +16,18 @@ func spawnTeammate(
 	name string,
 	a *Agent,
 	task string,
+	timeout time.Duration,
 	hooks []Hooks,
 	eventChan chan<- ChatEvent,
 	opts ...ChatOption,
 ) (string, error) {
-	taskCtx, cancel := context.WithCancel(ctx)
+	var taskCtx context.Context
+	var cancel context.CancelFunc
+	if timeout > 0 {
+		taskCtx, cancel = context.WithTimeout(ctx, timeout)
+	} else {
+		taskCtx, cancel = context.WithCancel(ctx)
+	}
 
 	member, err := t.AddMember(name, task, cancel)
 	if err != nil {

@@ -10,8 +10,9 @@ import (
 
 // Config configures a team that a lead agent manages.
 type Config struct {
-	Name    string
-	MaxSize int
+	Name           string
+	MaxSize        int
+	DefaultTimeout time.Duration
 }
 
 // MemberStatus represents the lifecycle state of a teammate.
@@ -68,6 +69,11 @@ func (t *Team) Name() string {
 // MaxSize returns the team's maximum member count.
 func (t *Team) MaxSize() int {
 	return t.config.MaxSize
+}
+
+// DefaultTimeout returns the team's default timeout for teammates.
+func (t *Team) DefaultTimeout() time.Duration {
+	return t.config.DefaultTimeout
 }
 
 // AddMember registers a new teammate in the roster and mailbox.

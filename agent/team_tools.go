@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/joakimcarlsson/ai/agent/team"
 	"github.com/joakimcarlsson/ai/tool"
@@ -12,9 +13,11 @@ import (
 
 type spawnTeammateInput struct {
 	Name         string `json:"name"          desc:"Unique name for the teammate (used for messaging)"`
+	Template     string `json:"template"      desc:"Template name to use for the teammate's configuration. Falls back to name if empty." required:"false"`
 	Task         string `json:"task"          desc:"The task to assign to the teammate"`
 	SystemPrompt string `json:"system_prompt" desc:"System prompt for the teammate agent"              required:"false"`
 	MaxTurns     int    `json:"max_turns"     desc:"Maximum tool-execution turns. 0 uses default."     required:"false"`
+	Timeout      int    `json:"timeout"       desc:"Timeout in seconds for the teammate. 0 uses team default." required:"false"`
 }
 
 type spawnTeammateTool struct {
@@ -53,7 +56,11 @@ func (t *spawnTeammateTool) Run(
 	}
 
 	var teammate *Agent
-	if tmpl, ok := t.leadAgent.teammateTemplates[input.Name]; ok {
+	templateKey := input.Template
+	if templateKey == "" {
+		templateKey = input.Name
+	}
+	if tmpl, ok := t.leadAgent.teammateTemplates[templateKey]; ok {
 		teammate = tmpl
 	} else {
 		prompt := input.SystemPrompt
@@ -74,6 +81,13 @@ func (t *spawnTeammateTool) Run(
 		opts = append(opts, WithMaxTurns(input.MaxTurns))
 	}
 
+	var timeout time.Duration
+	if input.Timeout > 0 {
+		timeout = time.Duration(input.Timeout) * time.Second
+	} else {
+		timeout = tm.DefaultTimeout()
+	}
+
 	eventChan := teamEventChanFromContext(ctx)
 
 	memberID, err := spawnTeammate(
@@ -82,6 +96,7 @@ func (t *spawnTeammateTool) Run(
 		input.Name,
 		teammate,
 		input.Task,
+		timeout,
 		t.leadAgent.hooks,
 		eventChan,
 		opts...)
