@@ -501,6 +501,26 @@ func (a *Agent) runLoopStream(
 			fullContent = finalResponse.Content
 		}
 
+		if len(toolCalls) == 0 {
+			if t := team.FromContext(ctx); t != nil && t.ActiveCount() > 0 {
+				assistantMsg := message.NewAssistantMessage()
+				assistantMsg.Model = activeAgent.llm.Model().ID
+				if fullContent != "" {
+					assistantMsg.AppendContent(fullContent)
+				}
+				messages = append(messages, assistantMsg)
+				messages = append(messages, message.NewSystemMessage(
+					"You still have active teammates running. You MUST NOT produce a final response yet. "+
+						"Call list_teammates to check their status, then read_messages to get updates.",
+				))
+				if activeAgent.session != nil {
+					_ = activeAgent.session.AddMessages(ctx, []message.Message{assistantMsg})
+				}
+				iteration++
+				continue
+			}
+		}
+
 		if len(toolCalls) == 0 || !activeAgent.autoExecute ||
 			(maxIter > 0 && iteration >= maxIter) {
 			if activeAgent.session != nil {
