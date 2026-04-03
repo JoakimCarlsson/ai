@@ -3,6 +3,7 @@ package agent
 import (
 	"time"
 
+	"github.com/joakimcarlsson/ai/agent/team"
 	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/tool"
@@ -68,4 +69,6 @@ type ChatEvent struct {
 	AgentName string
 	// ConfirmationRequest is set on EventConfirmationRequired events with the details of the pending request.
 	ConfirmationRequest *tool.ConfirmationRequest
+	// TeamMessage is set on EventTeamMessage events with the message details.
+	TeamMessage *team.Message
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/joakimcarlsson/ai/agent/team"
 	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/tracing"
@@ -42,6 +43,18 @@ func (a *Agent) ChatStream(
 			defer func() {
 				a.taskManager.CancelAll()
 				a.taskManager.WaitAll()
+			}()
+		}
+
+		if a.team != nil {
+			ctx = team.WithContext(ctx, a.team)
+			ctx = team.WithLeadContext(ctx)
+			ctx = withTeamEventChan(ctx, eventChan)
+			ctx = withTeamHooks(ctx, a.hooks)
+			a.team.Mailbox.RegisterRecipient("__lead__")
+			defer func() {
+				a.team.WaitAll()
+				a.team.Mailbox.Close()
 			}()
 		}
 
@@ -218,6 +231,18 @@ func (a *Agent) ContinueStream(
 			defer func() {
 				a.taskManager.CancelAll()
 				a.taskManager.WaitAll()
+			}()
+		}
+
+		if a.team != nil {
+			ctx = team.WithContext(ctx, a.team)
+			ctx = team.WithLeadContext(ctx)
+			ctx = withTeamEventChan(ctx, eventChan)
+			ctx = withTeamHooks(ctx, a.hooks)
+			a.team.Mailbox.RegisterRecipient("__lead__")
+			defer func() {
+				a.team.WaitAll()
+				a.team.Mailbox.Close()
 			}()
 		}
 

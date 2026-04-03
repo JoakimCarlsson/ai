@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/joakimcarlsson/ai/agent/team"
 	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/tool"
@@ -93,6 +94,23 @@ type SubagentEventContext struct {
 	Duration  time.Duration
 }
 
+// TeammateEventContext provides context about a teammate lifecycle event.
+type TeammateEventContext struct {
+	TeamName   string
+	MemberID   string
+	MemberName string
+	Task       string
+	Result     string
+	Error      error
+	Duration   time.Duration
+}
+
+// TeamMessageContext provides context about a message sent between team members.
+type TeamMessageContext struct {
+	TeamName string
+	Message  team.Message
+}
+
 // ToolErrorContext provides context about a tool execution error to error-recovery hooks.
 type ToolErrorContext struct {
 	ToolUseContext
@@ -166,20 +184,25 @@ type UserMessageResult struct {
 
 // Hooks defines callback functions that intercept and optionally modify agent execution events.
 type Hooks struct {
-	PreToolUse      func(ctx context.Context, tc ToolUseContext) (PreToolUseResult, error)
-	PostToolUse     func(ctx context.Context, tc PostToolUseContext) (PostToolUseResult, error)
-	PreModelCall    func(ctx context.Context, mc ModelCallContext) (ModelCallResult, error)
-	PostModelCall   func(ctx context.Context, mc ModelResponseContext) (ModelResponseResult, error)
-	OnSubagentStart func(ctx context.Context, sc SubagentEventContext)
-	OnSubagentStop  func(ctx context.Context, sc SubagentEventContext)
-	OnToolError     func(ctx context.Context, tc ToolErrorContext) (ToolErrorResult, error)
-	OnModelError    func(ctx context.Context, mc ModelErrorContext) (ModelErrorResult, error)
-	BeforeAgent     func(ctx context.Context, ac LifecycleContext) (LifecycleResult, error)
-	AfterAgent      func(ctx context.Context, ac LifecycleContext) (LifecycleResult, error)
-	BeforeRun       func(ctx context.Context, rc RunContext)
-	AfterRun        func(ctx context.Context, rc RunContext)
-	OnUserMessage   func(ctx context.Context, uc UserMessageContext) (UserMessageResult, error)
-	OnEvent         func(ctx context.Context, evt HookEvent)
+	PreToolUse         func(ctx context.Context, tc ToolUseContext) (PreToolUseResult, error)
+	PostToolUse        func(ctx context.Context, tc PostToolUseContext) (PostToolUseResult, error)
+	PreModelCall       func(ctx context.Context, mc ModelCallContext) (ModelCallResult, error)
+	PostModelCall      func(ctx context.Context, mc ModelResponseContext) (ModelResponseResult, error)
+	OnSubagentStart    func(ctx context.Context, sc SubagentEventContext)
+	OnSubagentStop     func(ctx context.Context, sc SubagentEventContext)
+	OnToolError        func(ctx context.Context, tc ToolErrorContext) (ToolErrorResult, error)
+	OnModelError       func(ctx context.Context, mc ModelErrorContext) (ModelErrorResult, error)
+	BeforeAgent        func(ctx context.Context, ac LifecycleContext) (LifecycleResult, error)
+	AfterAgent         func(ctx context.Context, ac LifecycleContext) (LifecycleResult, error)
+	BeforeRun          func(ctx context.Context, rc RunContext)
+	AfterRun           func(ctx context.Context, rc RunContext)
+	OnUserMessage      func(ctx context.Context, uc UserMessageContext) (UserMessageResult, error)
+	OnEvent            func(ctx context.Context, evt HookEvent)
+	OnTeammateJoin     func(ctx context.Context, tc TeammateEventContext)
+	OnTeammateLeave    func(ctx context.Context, tc TeammateEventContext)
+	OnTeamMessage      func(ctx context.Context, mc TeamMessageContext)
+	OnTeammateComplete func(ctx context.Context, tc TeammateEventContext)
+	OnTeammateError    func(ctx context.Context, tc TeammateEventContext)
 }
 
 // HookEventType identifies the kind of hook event being emitted.
@@ -187,19 +210,24 @@ type HookEventType string
 
 // HookEventType values for each stage of the agent execution pipeline.
 const (
-	HookEventPreToolUse    HookEventType = "pre_tool_use"
-	HookEventPostToolUse   HookEventType = "post_tool_use"
-	HookEventPreModelCall  HookEventType = "pre_model_call"
-	HookEventPostModelCall HookEventType = "post_model_call"
-	HookEventSubagentStart HookEventType = "subagent_start"
-	HookEventSubagentStop  HookEventType = "subagent_stop"
-	HookEventToolError     HookEventType = "tool_error"
-	HookEventModelError    HookEventType = "model_error"
-	HookEventBeforeAgent   HookEventType = "before_agent"
-	HookEventAfterAgent    HookEventType = "after_agent"
-	HookEventBeforeRun     HookEventType = "before_run"
-	HookEventAfterRun      HookEventType = "after_run"
-	HookEventUserMessage   HookEventType = "user_message"
+	HookEventPreToolUse       HookEventType = "pre_tool_use"
+	HookEventPostToolUse      HookEventType = "post_tool_use"
+	HookEventPreModelCall     HookEventType = "pre_model_call"
+	HookEventPostModelCall    HookEventType = "post_model_call"
+	HookEventSubagentStart    HookEventType = "subagent_start"
+	HookEventSubagentStop     HookEventType = "subagent_stop"
+	HookEventToolError        HookEventType = "tool_error"
+	HookEventModelError       HookEventType = "model_error"
+	HookEventBeforeAgent      HookEventType = "before_agent"
+	HookEventAfterAgent       HookEventType = "after_agent"
+	HookEventBeforeRun        HookEventType = "before_run"
+	HookEventAfterRun         HookEventType = "after_run"
+	HookEventUserMessage      HookEventType = "user_message"
+	HookEventTeammateJoin     HookEventType = "teammate_join"
+	HookEventTeammateLeave    HookEventType = "teammate_leave"
+	HookEventTeamMessage      HookEventType = "team_message"
+	HookEventTeammateComplete HookEventType = "teammate_complete"
+	HookEventTeammateError    HookEventType = "teammate_error"
 )
 
 // HookEvent is a structured record of an agent execution event emitted by observing hooks.
@@ -396,6 +424,51 @@ func NewObservingHooks(fn func(HookEvent)) Hooks {
 				Action:  HookAllow,
 				Message: uc.Message,
 			}, nil
+		},
+		OnTeammateJoin: func(_ context.Context, tc TeammateEventContext) {
+			fn(HookEvent{
+				Type:      HookEventTeammateJoin,
+				Timestamp: time.Now(),
+				AgentName: tc.MemberName,
+				Input:     tc.Task,
+			})
+		},
+		OnTeammateLeave: func(_ context.Context, tc TeammateEventContext) {
+			fn(HookEvent{
+				Type:      HookEventTeammateLeave,
+				Timestamp: time.Now(),
+				AgentName: tc.MemberName,
+			})
+		},
+		OnTeamMessage: func(_ context.Context, mc TeamMessageContext) {
+			fn(HookEvent{
+				Type:      HookEventTeamMessage,
+				Timestamp: time.Now(),
+				AgentName: mc.Message.From,
+				Input:     mc.Message.Content,
+			})
+		},
+		OnTeammateComplete: func(_ context.Context, tc TeammateEventContext) {
+			fn(HookEvent{
+				Type:      HookEventTeammateComplete,
+				Timestamp: time.Now(),
+				AgentName: tc.MemberName,
+				Output:    tc.Result,
+				Duration:  tc.Duration,
+			})
+		},
+		OnTeammateError: func(_ context.Context, tc TeammateEventContext) {
+			evt := HookEvent{
+				Type:      HookEventTeammateError,
+				Timestamp: time.Now(),
+				AgentName: tc.MemberName,
+				IsError:   true,
+				Duration:  tc.Duration,
+			}
+			if tc.Error != nil {
+				evt.Error = tc.Error.Error()
+			}
+			fn(evt)
 		},
 	}
 }

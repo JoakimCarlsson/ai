@@ -65,6 +65,7 @@ nav:
     - Background Agents: agent/background-agents.md
     - Handoffs: agent/handoffs.md
     - Fan-Out: agent/fan-out.md
+    - Team Coordination: agent/team-coordination.md
     - Continue/Resume: agent/continue.md
     - Context Strategies: agent/context-strategies.md
     - Toolsets: agent/toolsets.md

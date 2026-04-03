@@ -6,6 +6,7 @@ import (
 
 	"github.com/joakimcarlsson/ai/agent/memory"
 	"github.com/joakimcarlsson/ai/agent/session"
+	"github.com/joakimcarlsson/ai/agent/team"
 	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/tokens"
 	"github.com/joakimcarlsson/ai/tool"
@@ -37,6 +38,9 @@ type Agent struct {
 	taskManager          *TaskManager
 	hooks                []Hooks
 	confirmationProvider ConfirmationProvider
+	team                 *team.Team
+	coordinatorMode      bool
+	teammateTemplates    map[string]*Agent
 }
 
 func (a *Agent) getMemoryLLM() llm.LLM {
@@ -88,6 +92,19 @@ func (a *Agent) getToolsWithContext(ctx context.Context) []tool.BaseTool {
 
 	if a.taskManager != nil {
 		allTools = append(allTools, createTaskTools()...)
+	}
+
+	if t := team.FromContext(ctx); t != nil {
+		allTools = append(allTools, createTeamCommunicationTools()...)
+		if team.IsLead(ctx) {
+			allTools = append(allTools, createTeamLeadTools(a)...)
+		}
+		if t.TaskBoard != nil {
+			allTools = append(allTools, createTaskBoardTools()...)
+		}
+		if a.coordinatorMode && team.IsLead(ctx) {
+			allTools = filterToTeamTools(allTools)
+		}
 	}
 
 	return allTools
