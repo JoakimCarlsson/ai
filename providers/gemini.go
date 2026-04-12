@@ -3,6 +3,7 @@ package llm
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
@@ -215,12 +216,15 @@ func (g *geminiClient) send(
 	if len(tools) > 0 {
 		config.Tools = g.convertTools(tools)
 	}
-	chat, _ := g.client.Chats.Create(
+	chat, err := g.client.Chats.Create(
 		ctx,
 		g.providerOptions.model.APIModel,
 		config,
 		history,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("gemini chat create: %w", err)
+	}
 
 	return ExecuteWithRetry(
 		ctx,
@@ -318,12 +322,18 @@ func (g *geminiClient) stream(
 	if len(tools) > 0 {
 		config.Tools = g.convertTools(tools)
 	}
-	chat, _ := g.client.Chats.Create(
+	chat, err := g.client.Chats.Create(
 		ctx,
 		g.providerOptions.model.APIModel,
 		config,
 		history,
 	)
+	if err != nil {
+		eventChan := make(chan Event, 1)
+		eventChan <- Event{Type: types.EventError, Error: fmt.Errorf("gemini chat create: %w", err)}
+		close(eventChan)
+		return eventChan
+	}
 
 	eventChan := make(chan Event)
 
@@ -588,12 +598,15 @@ func (g *geminiClient) sendWithStructuredOutput(
 		}
 	}
 
-	chat, _ := g.client.Chats.Create(
+	chat, err := g.client.Chats.Create(
 		ctx,
 		g.providerOptions.model.APIModel,
 		config,
 		history,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("gemini chat create: %w", err)
+	}
 
 	return ExecuteWithRetry(
 		ctx,
@@ -701,12 +714,18 @@ func (g *geminiClient) streamWithStructuredOutput(
 	if len(tools) > 0 {
 		config.Tools = g.convertTools(tools)
 	}
-	chat, _ := g.client.Chats.Create(
+	chat, err := g.client.Chats.Create(
 		ctx,
 		g.providerOptions.model.APIModel,
 		config,
 		history,
 	)
+	if err != nil {
+		eventChan := make(chan Event, 1)
+		eventChan <- Event{Type: types.EventError, Error: fmt.Errorf("gemini chat create: %w", err)}
+		close(eventChan)
+		return eventChan
+	}
 
 	eventChan := make(chan Event)
 
