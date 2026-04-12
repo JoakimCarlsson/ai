@@ -29,7 +29,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Unit tests
-        run: go test -short -coverpkg=./... -coverprofile=coverage.out ./...
+        run: go test -short -coverprofile=coverage.out ./...
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -53,7 +53,7 @@ jobs:
           chrome-version: stable
 
       - name: Integration tests
-        run: go test -coverpkg=./... -coverprofile=coverage-integration.out -v -timeout 180s ./tests/...
+        run: go test -coverprofile=coverage-integration.out -v -timeout 180s ./tests/...
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
