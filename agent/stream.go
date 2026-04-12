@@ -529,10 +529,10 @@ func (a *Agent) runLoopStream(
 				if fullContent != "" {
 					assistantMsg.AppendContent(fullContent)
 				}
-				if len(toolCalls) > 0 {
+				if len(toolCalls) > 0 && !activeAgent.autoExecute {
 					assistantMsg.AppendToolCalls(toolCalls)
 				}
-				if fullContent != "" || len(toolCalls) > 0 {
+				if fullContent != "" || len(toolCalls) > 0 && !activeAgent.autoExecute {
 					_ = activeAgent.session.AddMessages(
 						ctx,
 						[]message.Message{assistantMsg},

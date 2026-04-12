@@ -399,10 +399,10 @@ func (a *Agent) runLoop(
 				if resp.Content != "" {
 					assistantMsg.AppendContent(resp.Content)
 				}
-				if len(resp.ToolCalls) > 0 {
+				if len(resp.ToolCalls) > 0 && !activeAgent.autoExecute {
 					assistantMsg.AppendToolCalls(resp.ToolCalls)
 				}
-				if resp.Content != "" || len(resp.ToolCalls) > 0 {
+				if resp.Content != "" || len(resp.ToolCalls) > 0 && !activeAgent.autoExecute {
 					if err := activeAgent.session.AddMessages(ctx, []message.Message{assistantMsg}); err != nil {
 						return nil, err
 					}
