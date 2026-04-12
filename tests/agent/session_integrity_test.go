@@ -155,7 +155,6 @@ func TestSessionIntegrity_MaxIterationsDoesNotDangle(t *testing.T) {
 }
 
 func TestSessionIntegrity_SecondTurnLoadsCleanly(t *testing.T) {
-	callCount := 0
 	mock := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
@@ -191,7 +190,6 @@ func TestSessionIntegrity_SecondTurnLoadsCleanly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("turn 1 failed: %v", err)
 	}
-	callCount++
 	_ = resp1
 
 	resp2, err := a.Chat(ctx, "What did we do?")
