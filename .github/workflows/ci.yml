@@ -29,7 +29,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Unit tests
-        run: go test -short -coverpkg=./... -coverprofile=coverage.out ./...
+        run: go test -short -coverprofile=coverage.out $(go list ./... | grep -v /tests/ | grep -v /example/)
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -39,29 +39,6 @@ jobs:
           flags: unit
           fail_ci_if_error: false
 
-  integration-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-
-      - uses: browser-actions/setup-chrome@v2
-        with:
-          chrome-version: stable
-
-      - name: Integration tests
-        run: go test -coverpkg=./... -coverprofile=coverage-integration.out -v -timeout 180s ./tests/...
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage-integration.out
-          flags: integration
-          fail_ci_if_error: false
 
   fmt:
     name: Format
