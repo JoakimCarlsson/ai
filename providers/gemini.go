@@ -14,11 +14,23 @@ import (
 	"google.golang.org/genai"
 )
 
+// GeminiThinkingLevel controls thinking depth for Gemini models.
+type GeminiThinkingLevel string
+
+// GeminiThinkingLevel values.
+const (
+	GeminiThinkingLevelMinimal GeminiThinkingLevel = "minimal"
+	GeminiThinkingLevelLow     GeminiThinkingLevel = "low"
+	GeminiThinkingLevelMedium  GeminiThinkingLevel = "medium"
+	GeminiThinkingLevelHigh    GeminiThinkingLevel = "high"
+)
+
 type geminiOptions struct {
 	disableCache     bool
 	frequencyPenalty *float64
 	presencePenalty  *float64
 	seed             *int64
+	thinkingLevel    *GeminiThinkingLevel
 }
 
 // GeminiOption configures optional settings for Gemini clients.
@@ -173,6 +185,26 @@ func (g *geminiClient) finishReason(
 	}
 }
 
+func (g *geminiClient) applyThinkingConfig(config *genai.GenerateContentConfig) {
+	if g.options.thinkingLevel == nil || !g.providerOptions.model.CanReason {
+		return
+	}
+	tc := &genai.ThinkingConfig{
+		IncludeThoughts: true,
+	}
+	switch *g.options.thinkingLevel {
+	case GeminiThinkingLevelMinimal:
+		tc.ThinkingLevel = genai.ThinkingLevelMinimal
+	case GeminiThinkingLevelLow:
+		tc.ThinkingLevel = genai.ThinkingLevelLow
+	case GeminiThinkingLevelMedium:
+		tc.ThinkingLevel = genai.ThinkingLevelMedium
+	case GeminiThinkingLevelHigh:
+		tc.ThinkingLevel = genai.ThinkingLevelHigh
+	}
+	config.ThinkingConfig = tc
+}
+
 func (g *geminiClient) send(
 	ctx context.Context,
 	messages []message.Message,
@@ -202,6 +234,7 @@ func (g *geminiClient) send(
 		func(pp *float32) { config.PresencePenalty = pp },
 	)
 	params.applyInt32Seed(g.options.seed, func(s *int32) { config.Seed = s })
+	g.applyThinkingConfig(config)
 
 	if len(g.providerOptions.stopSequences) > 0 {
 		config.StopSequences = g.providerOptions.stopSequences
@@ -246,6 +279,7 @@ func (g *geminiClient) send(
 			if len(resp.Candidates) > 0 && resp.Candidates[0].Content != nil {
 				for _, part := range resp.Candidates[0].Content.Parts {
 					switch {
+					case part.Thought && part.Text != "":
 					case part.Text != "":
 						content = string(part.Text)
 					case part.FunctionCall != nil:
@@ -308,6 +342,7 @@ func (g *geminiClient) stream(
 		func(pp *float32) { config.PresencePenalty = pp },
 	)
 	params.applyInt32Seed(g.options.seed, func(s *int32) { config.Seed = s })
+	g.applyThinkingConfig(config)
 
 	if len(g.providerOptions.stopSequences) > 0 {
 		config.StopSequences = g.providerOptions.stopSequences
@@ -363,6 +398,11 @@ func (g *geminiClient) stream(
 					resp.Candidates[0].Content != nil {
 					for _, part := range resp.Candidates[0].Content.Parts {
 						switch {
+						case part.Thought && part.Text != "":
+							eventChan <- Event{
+								Type:     types.EventThinkingDelta,
+								Thinking: string(part.Text),
+							}
 						case part.Text != "":
 							delta := string(part.Text)
 							currentContent += delta
@@ -467,6 +507,13 @@ func WithGeminiPresencePenalty(presencePenalty float64) GeminiOption {
 func WithGeminiSeed(seed int64) GeminiOption {
 	return func(options *geminiOptions) {
 		options.seed = &seed
+	}
+}
+
+// WithGeminiThinkingLevel sets the thinking level for Gemini models that support reasoning.
+func WithGeminiThinkingLevel(level GeminiThinkingLevel) GeminiOption {
+	return func(options *geminiOptions) {
+		options.thinkingLevel = &level
 	}
 }
 
@@ -586,6 +633,7 @@ func (g *geminiClient) sendWithStructuredOutput(
 		func(pp *float32) { config.PresencePenalty = pp },
 	)
 	params.applyInt32Seed(g.options.seed, func(s *int32) { config.Seed = s })
+	g.applyThinkingConfig(config)
 
 	geminiTools := g.convertTools(tools)
 	if len(geminiTools) > 0 {
@@ -620,7 +668,7 @@ func (g *geminiClient) sendWithStructuredOutput(
 			content := ""
 			for _, candidate := range response.Candidates {
 				for _, part := range candidate.Content.Parts {
-					if part.Text != "" {
+					if part.Text != "" && !part.Thought {
 						content += string(part.Text)
 					}
 				}
@@ -700,6 +748,7 @@ func (g *geminiClient) streamWithStructuredOutput(
 		func(pp *float32) { config.PresencePenalty = pp },
 	)
 	params.applyInt32Seed(g.options.seed, func(s *int32) { config.Seed = s })
+	g.applyThinkingConfig(config)
 
 	if len(g.providerOptions.stopSequences) > 0 {
 		config.StopSequences = g.providerOptions.stopSequences
@@ -755,6 +804,11 @@ func (g *geminiClient) streamWithStructuredOutput(
 					resp.Candidates[0].Content != nil {
 					for _, part := range resp.Candidates[0].Content.Parts {
 						switch {
+						case part.Thought && part.Text != "":
+							eventChan <- Event{
+								Type:     types.EventThinkingDelta,
+								Thinking: string(part.Text),
+							}
 						case part.Text != "":
 							delta := string(part.Text)
 							currentContent += delta

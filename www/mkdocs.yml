@@ -80,6 +80,7 @@ nav:
     - MCP Integration: advanced/mcp.md
     - Tool Calling: advanced/tools.md
     - Structured Output: advanced/structured-output.md
+    - Reasoning: advanced/reasoning.md
     - Cost Tracking: advanced/cost-tracking.md
     - Prompt Templates: advanced/prompt-templates.md
     - OpenTelemetry Tracing: advanced/tracing.md

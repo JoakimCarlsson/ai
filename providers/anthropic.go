@@ -18,10 +18,21 @@ import (
 	"github.com/joakimcarlsson/ai/types"
 )
 
+// AnthropicReasoningEffort controls thinking depth for Anthropic models.
+type AnthropicReasoningEffort string
+
+// AnthropicReasoningEffort values.
+const (
+	AnthropicReasoningEffortLow    AnthropicReasoningEffort = "low"
+	AnthropicReasoningEffortMedium AnthropicReasoningEffort = "medium"
+	AnthropicReasoningEffortHigh   AnthropicReasoningEffort = "high"
+	AnthropicReasoningEffortMax    AnthropicReasoningEffort = "max"
+)
+
 type anthropicOptions struct {
-	useBedrock   bool
-	disableCache bool
-	shouldThink  func(userMessage string) bool
+	useBedrock      bool
+	disableCache    bool
+	reasoningEffort *AnthropicReasoningEffort
 }
 
 // AnthropicOption configures optional settings for Anthropic clients.
@@ -212,30 +223,35 @@ func (a *anthropicClient) preparedMessages(
 	systemMessages []string,
 ) anthropic.MessageNewParams {
 	var thinkingParam anthropic.ThinkingConfigParamUnion
-	lastMessage := messages[len(messages)-1]
-	isUser := lastMessage.Role == anthropic.MessageParamRoleUser
-	messageContent := ""
+	var outputConfig anthropic.OutputConfigParam
 	temperature := anthropic.Float(0)
 	paramBuilder := newParameterBuilder(a.llmOptions)
 	paramBuilder.applyFloat64Temperature(
 		func(t *float64) { temperature = anthropic.Float(*t) },
 	)
-	if isUser {
-		for _, m := range lastMessage.Content {
-			if m.OfText != nil && m.OfText.Text != "" {
-				messageContent = m.OfText.Text
+
+	if a.options.reasoningEffort != nil && a.llmOptions.model.CanReason {
+		temperature = anthropic.Float(1)
+		apiModel := a.llmOptions.model.APIModel
+		if strings.Contains(apiModel, "4-6") || strings.Contains(apiModel, "4.6") {
+			thinkingParam = anthropic.ThinkingConfigParamUnion{
+				OfAdaptive: &anthropic.ThinkingConfigAdaptiveParam{},
 			}
-		}
-		if messageContent != "" && a.options.shouldThink != nil &&
-			a.options.shouldThink(messageContent) {
+			switch *a.options.reasoningEffort {
+			case AnthropicReasoningEffortLow:
+				outputConfig.Effort = anthropic.OutputConfigEffortLow
+			case AnthropicReasoningEffortMedium:
+				outputConfig.Effort = anthropic.OutputConfigEffortMedium
+			case AnthropicReasoningEffortHigh:
+				outputConfig.Effort = anthropic.OutputConfigEffortHigh
+			case AnthropicReasoningEffortMax:
+				outputConfig.Effort = anthropic.OutputConfigEffortMax
+			}
+		} else {
 			thinkingParam = anthropic.ThinkingConfigParamUnion{
 				OfEnabled: &anthropic.ThinkingConfigEnabledParam{
 					BudgetTokens: int64(float64(a.llmOptions.maxTokens) * 0.8),
-					Type:         "enabled",
 				},
-			}
-			if a.llmOptions.temperature == nil {
-				temperature = anthropic.Float(1)
 			}
 		}
 	}
@@ -247,12 +263,13 @@ func (a *anthropicClient) preparedMessages(
 	}
 
 	params := anthropic.MessageNewParams{
-		Model:       anthropic.Model(a.llmOptions.model.APIModel),
-		MaxTokens:   a.llmOptions.maxTokens,
-		Temperature: temperature,
-		Messages:    messages,
-		Tools:       tools,
-		Thinking:    thinkingParam,
+		Model:        anthropic.Model(a.llmOptions.model.APIModel),
+		MaxTokens:    a.llmOptions.maxTokens,
+		Temperature:  temperature,
+		Messages:     messages,
+		Tools:        tools,
+		Thinking:     thinkingParam,
+		OutputConfig: outputConfig,
 	}
 
 	paramBuilder.applyFloat64TopP(
@@ -496,15 +513,10 @@ func WithAnthropicDisableCache() AnthropicOption {
 	}
 }
 
-// DefaultShouldThinkFn checks if the user message contains "think" to enable reasoning mode
-func DefaultShouldThinkFn(s string) bool {
-	return strings.Contains(strings.ToLower(s), "think")
-}
-
-// WithAnthropicShouldThinkFn sets a custom function to determine when to enable reasoning mode
-func WithAnthropicShouldThinkFn(fn func(string) bool) AnthropicOption {
+// WithAnthropicReasoningEffort sets the reasoning effort level for Anthropic models.
+func WithAnthropicReasoningEffort(effort AnthropicReasoningEffort) AnthropicOption {
 	return func(options *anthropicOptions) {
-		options.shouldThink = fn
+		options.reasoningEffort = &effort
 	}
 }
 
