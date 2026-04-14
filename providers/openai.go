@@ -2,6 +2,7 @@ package llm
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -16,10 +17,19 @@ import (
 	"github.com/openai/openai-go/shared"
 )
 
+// OpenAIReasoningEffort controls reasoning depth for OpenAI o-series models.
+type OpenAIReasoningEffort string
+
+const (
+	OpenAIReasoningEffortLow    OpenAIReasoningEffort = "low"
+	OpenAIReasoningEffortMedium OpenAIReasoningEffort = "medium"
+	OpenAIReasoningEffortHigh   OpenAIReasoningEffort = "high"
+)
+
 type openaiOptions struct {
 	baseURL           string
 	disableCache      bool
-	reasoningEffort   string
+	reasoningEffort   *OpenAIReasoningEffort
 	extraHeaders      map[string]string
 	frequencyPenalty  *float64
 	presencePenalty   *float64
@@ -40,9 +50,7 @@ type openaiClient struct {
 type OpenAIClient Client
 
 func newOpenAIClient(opts llmClientOptions) OpenAIClient {
-	openaiOpts := openaiOptions{
-		reasoningEffort: "medium",
-	}
+	openaiOpts := openaiOptions{}
 	for _, o := range opts.openaiOptions {
 		o(&openaiOpts)
 	}
@@ -262,15 +270,15 @@ func (o *openaiClient) preparedParams(
 
 	if o.providerOptions.model.CanReason {
 		params.MaxCompletionTokens = openai.Int(o.providerOptions.maxTokens)
-		switch o.options.reasoningEffort {
-		case "low":
-			params.ReasoningEffort = shared.ReasoningEffortLow
-		case "medium":
-			params.ReasoningEffort = shared.ReasoningEffortMedium
-		case "high":
-			params.ReasoningEffort = shared.ReasoningEffortHigh
-		default:
-			params.ReasoningEffort = shared.ReasoningEffortMedium
+		if o.options.reasoningEffort != nil {
+			switch *o.options.reasoningEffort {
+			case OpenAIReasoningEffortLow:
+				params.ReasoningEffort = shared.ReasoningEffortLow
+			case OpenAIReasoningEffortMedium:
+				params.ReasoningEffort = shared.ReasoningEffortMedium
+			case OpenAIReasoningEffortHigh:
+				params.ReasoningEffort = shared.ReasoningEffortHigh
+			}
 		}
 	} else {
 		params.MaxTokens = openai.Int(o.providerOptions.maxTokens)
@@ -364,6 +372,16 @@ func (o *openaiClient) stream(
 				acc.AddChunk(chunk)
 
 				for _, choice := range chunk.Choices {
+					if field, ok := choice.Delta.JSON.ExtraFields["reasoning_content"]; ok && field.Valid() {
+						var reasoningContent string
+						if json.Unmarshal([]byte(field.Raw()), &reasoningContent) == nil && reasoningContent != "" {
+							eventChan <- Event{
+								Type:     types.EventThinkingDelta,
+								Thinking: reasoningContent,
+							}
+						}
+					}
+
 					if choice.Delta.Content != "" {
 						eventChan <- Event{
 							Type:    types.EventContentDelta,
@@ -465,16 +483,10 @@ func WithOpenAIDisableCache() OpenAIOption {
 	}
 }
 
-// WithReasoningEffort sets the computational effort level for reasoning models (low, medium, high)
-func WithReasoningEffort(effort string) OpenAIOption {
+// WithReasoningEffort sets the reasoning effort level for OpenAI o-series models.
+func WithReasoningEffort(effort OpenAIReasoningEffort) OpenAIOption {
 	return func(options *openaiOptions) {
-		defaultReasoningEffort := "medium"
-		switch effort {
-		case "low", "medium", "high":
-			defaultReasoningEffort = effort
-		default:
-		}
-		options.reasoningEffort = defaultReasoningEffort
+		options.reasoningEffort = &effort
 	}
 }
 
@@ -639,6 +651,16 @@ func (o *openaiClient) streamWithStructuredOutput(
 				acc.AddChunk(chunk)
 
 				for _, choice := range chunk.Choices {
+					if field, ok := choice.Delta.JSON.ExtraFields["reasoning_content"]; ok && field.Valid() {
+						var reasoningContent string
+						if json.Unmarshal([]byte(field.Raw()), &reasoningContent) == nil && reasoningContent != "" {
+							eventChan <- Event{
+								Type:     types.EventThinkingDelta,
+								Thinking: reasoningContent,
+							}
+						}
+					}
+
 					if choice.Delta.Content != "" {
 						eventChan <- Event{
 							Type:    types.EventContentDelta,

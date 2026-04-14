@@ -10,7 +10,7 @@ for event := range myAgent.ChatStream(ctx, "Tell me a story") {
     case types.EventContentDelta:
         fmt.Print(event.Content)
     case types.EventThinkingDelta:
-        // Extended thinking content (if supported)
+        fmt.Print(event.Thinking)
     case types.EventToolUseStart:
         fmt.Printf("\nUsing tool: %s\n", event.ToolCall.Name)
     case types.EventToolUseStop:

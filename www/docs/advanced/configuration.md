@@ -105,9 +105,7 @@ llm.WithAnthropicOptions(
     llm.WithAnthropicBeta("beta-feature"),
     llm.WithAnthropicBedrock(true),
     llm.WithAnthropicDisableCache(),
-    llm.WithAnthropicShouldThinkFn(func(userMsg string) bool {
-        return strings.Contains(userMsg, "think")
-    }),
+    llm.WithAnthropicReasoningEffort(llm.AnthropicReasoningEffortMedium),
 )
 
 // OpenAI
@@ -115,7 +113,7 @@ llm.WithOpenAIOptions(
     llm.WithOpenAIBaseURL("custom-endpoint"),
     llm.WithOpenAIExtraHeaders(map[string]string{"Custom-Header": "value"}),
     llm.WithOpenAIDisableCache(),
-    llm.WithReasoningEffort("high"),                // "low", "medium", "high"
+    llm.WithReasoningEffort(llm.OpenAIReasoningEffortHigh),
     llm.WithOpenAIFrequencyPenalty(0.5),
     llm.WithOpenAIPresencePenalty(0.3),
     llm.WithOpenAISeed(42),
