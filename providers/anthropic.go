@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"strings"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/bedrock"
@@ -20,6 +21,7 @@ import (
 // AnthropicReasoningEffort controls thinking depth for Anthropic models.
 type AnthropicReasoningEffort string
 
+// AnthropicReasoningEffort values.
 const (
 	AnthropicReasoningEffortLow    AnthropicReasoningEffort = "low"
 	AnthropicReasoningEffortMedium AnthropicReasoningEffort = "medium"
@@ -229,18 +231,28 @@ func (a *anthropicClient) preparedMessages(
 	)
 
 	if a.options.reasoningEffort != nil && a.llmOptions.model.CanReason {
-		thinkingParam = anthropic.ThinkingConfigParamUnion{
-			OfAdaptive: &anthropic.ThinkingConfigAdaptiveParam{},
-		}
-		switch *a.options.reasoningEffort {
-		case AnthropicReasoningEffortLow:
-			outputConfig.Effort = anthropic.OutputConfigEffortLow
-		case AnthropicReasoningEffortMedium:
-			outputConfig.Effort = anthropic.OutputConfigEffortMedium
-		case AnthropicReasoningEffortHigh:
-			outputConfig.Effort = anthropic.OutputConfigEffortHigh
-		case AnthropicReasoningEffortMax:
-			outputConfig.Effort = anthropic.OutputConfigEffortMax
+		temperature = anthropic.Float(1)
+		apiModel := a.llmOptions.model.APIModel
+		if strings.Contains(apiModel, "4-6") || strings.Contains(apiModel, "4.6") {
+			thinkingParam = anthropic.ThinkingConfigParamUnion{
+				OfAdaptive: &anthropic.ThinkingConfigAdaptiveParam{},
+			}
+			switch *a.options.reasoningEffort {
+			case AnthropicReasoningEffortLow:
+				outputConfig.Effort = anthropic.OutputConfigEffortLow
+			case AnthropicReasoningEffortMedium:
+				outputConfig.Effort = anthropic.OutputConfigEffortMedium
+			case AnthropicReasoningEffortHigh:
+				outputConfig.Effort = anthropic.OutputConfigEffortHigh
+			case AnthropicReasoningEffortMax:
+				outputConfig.Effort = anthropic.OutputConfigEffortMax
+			}
+		} else {
+			thinkingParam = anthropic.ThinkingConfigParamUnion{
+				OfEnabled: &anthropic.ThinkingConfigEnabledParam{
+					BudgetTokens: int64(float64(a.llmOptions.maxTokens) * 0.8),
+				},
+			}
 		}
 	}
 

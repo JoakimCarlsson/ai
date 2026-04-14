@@ -17,6 +17,7 @@ import (
 // GeminiThinkingLevel controls thinking depth for Gemini models.
 type GeminiThinkingLevel string
 
+// GeminiThinkingLevel values.
 const (
 	GeminiThinkingLevelMinimal GeminiThinkingLevel = "minimal"
 	GeminiThinkingLevelLow     GeminiThinkingLevel = "low"

@@ -1,8 +1,10 @@
 # Reasoning / Extended Thinking
 
-Models that support chain-of-thought reasoning can expose their internal thinking process via `EventThinkingDelta` streaming events.
+Models that support chain-of-thought reasoning can be configured to control reasoning depth. Some providers also expose the model's thinking process via `EventThinkingDelta` streaming events.
 
-## Provider Setup
+## Reasoning Effort
+
+Controls how much effort the model spends on internal reasoning before generating a response.
 
 === "OpenAI"
 
@@ -23,6 +25,8 @@ Models that support chain-of-thought reasoning can expose their internal thinkin
     | Low | `OpenAIReasoningEffortLow` |
     | Medium | `OpenAIReasoningEffortMedium` |
     | High | `OpenAIReasoningEffortHigh` |
+
+    OpenAI's Chat Completions API does not expose thinking content. The model reasons internally but `EventThinkingDelta` events are not emitted.
 
 === "Anthropic"
 
@@ -68,6 +72,8 @@ Models that support chain-of-thought reasoning can expose their internal thinkin
 
 ## Streaming Thinking Events
 
+Anthropic, Gemini, and OpenAI-compatible providers (Ollama, vLLM, etc.) stream thinking content via `EventThinkingDelta`:
+
 ```go
 for event := range client.StreamResponse(ctx, messages, nil) {
     switch event.Type {
@@ -97,4 +103,28 @@ for event := range myAgent.ChatStream(ctx, "Think about this carefully...") {
         fmt.Print(event.Content)
     }
 }
+```
+
+## OpenAI-Compatible Providers
+
+Providers like Ollama and vLLM that serve reasoning models (Qwen, DeepSeek, etc.) via an OpenAI-compatible API do stream thinking content. Use a custom model with `WithOpenAIBaseURL`:
+
+```go
+client, err := llm.NewLLM(
+    model.ProviderOpenAI,
+    llm.WithAPIKey("ollama"),
+    llm.WithModel(model.Model{
+        ID:               "qwen3:14b",
+        Name:             "Qwen3 14B",
+        APIModel:         "qwen3:14b",
+        Provider:         model.ProviderOpenAI,
+        ContextWindow:    32768,
+        DefaultMaxTokens: 4096,
+        CanReason:        true,
+    }),
+    llm.WithMaxTokens(4096),
+    llm.WithOpenAIOptions(
+        llm.WithOpenAIBaseURL("http://localhost:11434/v1"),
+    ),
+)
 ```

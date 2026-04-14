@@ -20,6 +20,7 @@ import (
 // OpenAIReasoningEffort controls reasoning depth for OpenAI o-series models.
 type OpenAIReasoningEffort string
 
+// OpenAIReasoningEffort values.
 const (
 	OpenAIReasoningEffortLow    OpenAIReasoningEffort = "low"
 	OpenAIReasoningEffortMedium OpenAIReasoningEffort = "medium"
@@ -372,13 +373,16 @@ func (o *openaiClient) stream(
 				acc.AddChunk(chunk)
 
 				for _, choice := range chunk.Choices {
-					if field, ok := choice.Delta.JSON.ExtraFields["reasoning_content"]; ok && field.Valid() {
-						var reasoningContent string
-						if json.Unmarshal([]byte(field.Raw()), &reasoningContent) == nil && reasoningContent != "" {
-							eventChan <- Event{
-								Type:     types.EventThinkingDelta,
-								Thinking: reasoningContent,
+					for _, key := range []string{"reasoning", "reasoning_content"} {
+						if field, ok := choice.Delta.JSON.ExtraFields[key]; ok && field.Raw() != "" {
+							var rc string
+							if json.Unmarshal([]byte(field.Raw()), &rc) == nil && rc != "" {
+								eventChan <- Event{
+									Type:     types.EventThinkingDelta,
+									Thinking: rc,
+								}
 							}
+							break
 						}
 					}
 
@@ -651,13 +655,16 @@ func (o *openaiClient) streamWithStructuredOutput(
 				acc.AddChunk(chunk)
 
 				for _, choice := range chunk.Choices {
-					if field, ok := choice.Delta.JSON.ExtraFields["reasoning_content"]; ok && field.Valid() {
-						var reasoningContent string
-						if json.Unmarshal([]byte(field.Raw()), &reasoningContent) == nil && reasoningContent != "" {
-							eventChan <- Event{
-								Type:     types.EventThinkingDelta,
-								Thinking: reasoningContent,
+					for _, key := range []string{"reasoning", "reasoning_content"} {
+						if field, ok := choice.Delta.JSON.ExtraFields[key]; ok && field.Raw() != "" {
+							var rc string
+							if json.Unmarshal([]byte(field.Raw()), &rc) == nil && rc != "" {
+								eventChan <- Event{
+									Type:     types.EventThinkingDelta,
+									Thinking: rc,
+								}
 							}
+							break
 						}
 					}
 

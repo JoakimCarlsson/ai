@@ -1,4 +1,4 @@
-// Example reasoning_openai demonstrates configuring reasoning effort for an OpenAI o-series model.
+// Example reasoning_ollama demonstrates streaming thinking output from an Ollama model via the OpenAI-compatible API.
 package main
 
 import (
@@ -17,11 +17,19 @@ func main() {
 
 	client, err := llm.NewLLM(
 		model.ProviderOpenAI,
-		llm.WithAPIKey(""),
-		llm.WithModel(model.OpenAIModels[model.O4Mini]),
-		llm.WithMaxTokens(16000),
+		llm.WithAPIKey("ollama"),
+		llm.WithModel(model.Model{
+			ID:               "qwen3:14b",
+			Name:             "Qwen3 14B",
+			APIModel:         "qwen3:14b",
+			Provider:         model.ProviderOpenAI,
+			ContextWindow:    32768,
+			DefaultMaxTokens: 4096,
+			CanReason:        true,
+		}),
+		llm.WithMaxTokens(4096),
 		llm.WithOpenAIOptions(
-			llm.WithReasoningEffort(llm.OpenAIReasoningEffortMedium),
+			llm.WithOpenAIBaseURL("http://localhost:11434/v1"),
 		),
 	)
 	if err != nil {
@@ -34,6 +42,8 @@ func main() {
 
 	for event := range client.StreamResponse(ctx, messages, nil) {
 		switch event.Type {
+		case types.EventThinkingDelta:
+			fmt.Print(event.Thinking)
 		case types.EventContentDelta:
 			fmt.Print(event.Content)
 		case types.EventError:
