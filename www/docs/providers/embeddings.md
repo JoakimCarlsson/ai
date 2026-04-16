@@ -93,6 +93,96 @@ embedder, err := embeddings.NewEmbedding(
 )
 ```
 
+## Cohere
+
+```go
+embedder, err := embeddings.NewEmbedding(model.ProviderCohere,
+    embeddings.WithAPIKey(os.Getenv("COHERE_API_KEY")),
+    embeddings.WithModel(model.CohereEmbeddingModels[model.CohereEmbedEnV3]),
+    embeddings.WithCohereOptions(
+        embeddings.WithCohereInputType("search_document"),
+    ),
+)
+
+response, err := embedder.GenerateEmbeddings(ctx, texts)
+```
+
+### Cohere Options
+
+| Option | Description |
+|--------|-------------|
+| `WithCohereInputType(string)` | Input type: `"search_document"`, `"search_query"` |
+| `WithCohereTruncation(string)` | Truncation strategy: `"NONE"`, `"START"`, `"END"` |
+| `WithCohereEmbeddingTypes([]string)` | Types: `"float"`, `"int8"`, `"uint8"`, `"binary"`, `"ubinary"` |
+
+**Models:** `CohereEmbedV4` (1024 dims, 128K tokens), `CohereEmbedMultiV3` (1024 dims), `CohereEmbedEnV3` (1024 dims)
+
+## Google Gemini
+
+```go
+embedder, err := embeddings.NewEmbedding(model.ProviderGemini,
+    embeddings.WithAPIKey(os.Getenv("GEMINI_API_KEY")),
+    embeddings.WithModel(model.GeminiEmbeddingModels[model.GeminiTextEmbedding004]),
+    embeddings.WithGeminiOptions(
+        embeddings.WithGeminiTaskType("RETRIEVAL_DOCUMENT"),
+    ),
+)
+
+response, err := embedder.GenerateEmbeddings(ctx, texts)
+```
+
+### Gemini Options
+
+| Option | Description |
+|--------|-------------|
+| `WithGeminiTaskType(string)` | Task type: `"RETRIEVAL_DOCUMENT"`, `"RETRIEVAL_QUERY"` |
+
+**Models:** `GeminiTextEmbedding004` (768 dims, supports 768/512/256)
+
+## Mistral
+
+```go
+embedder, err := embeddings.NewEmbedding(model.ProviderMistral,
+    embeddings.WithAPIKey(os.Getenv("MISTRAL_API_KEY")),
+    embeddings.WithModel(model.MistralEmbeddingModels[model.MistralEmbed]),
+)
+
+response, err := embedder.GenerateEmbeddings(ctx, texts)
+```
+
+### Mistral Options
+
+| Option | Description |
+|--------|-------------|
+| `WithMistralOutputDimension(int)` | Output dimensionality (for Codestral Embed) |
+| `WithMistralOutputDtype(string)` | Data type: `"float"`, `"int8"`, `"uint8"`, `"binary"`, `"ubinary"` |
+
+**Models:** `MistralEmbed` (1024 dims, 8K tokens), `CodestralEmbed` (1536 dims, supports 1536/1024/768/512/256, 32K tokens)
+
+## AWS Bedrock
+
+```go
+embedder, err := embeddings.NewEmbedding(model.ProviderBedrock,
+    embeddings.WithModel(model.BedrockEmbeddingModels[model.BedrockTitanEmbedV2]),
+    embeddings.WithBedrockOptions(
+        embeddings.WithBedrockRegion("us-east-1"),
+    ),
+)
+
+response, err := embedder.GenerateEmbeddings(ctx, texts)
+```
+
+### Bedrock Options
+
+| Option | Description |
+|--------|-------------|
+| `WithBedrockRegion(string)` | AWS region (default: `"us-east-1"`) |
+| `WithBedrockProfile(string)` | AWS shared config profile for credentials |
+
+**Models:** `BedrockTitanEmbedV2` (1024 dims, supports 256/384/512/1024), `BedrockCohereEmbedEn` (1024 dims), `BedrockCohereEmbedMulti` (1024 dims)
+
+Bedrock uses AWS credentials from the environment or shared config — no API key required.
+
 ## Embedding Interface
 
 ```go

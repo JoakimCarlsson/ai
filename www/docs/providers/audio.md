@@ -148,3 +148,61 @@ client, err := audio.NewAudioGeneration(
     ),
 )
 ```
+
+## Google Cloud Text-to-Speech
+
+```go
+client, err := audio.NewAudioGeneration(
+    model.ProviderGoogleCloud,
+    audio.WithAPIKey(os.Getenv("GOOGLE_CLOUD_API_KEY")),
+    audio.WithModel(model.GoogleCloudAudioModels[model.GoogleCloudTTSWavenet]),
+    audio.WithGoogleCloudTTSOptions(
+        audio.WithGoogleCloudLanguageCode("en-US"),
+        audio.WithGoogleCloudVoiceName("en-US-Wavenet-D"),
+    ),
+)
+
+response, err := client.GenerateAudio(ctx, "Hello! This is Google Cloud TTS.")
+os.WriteFile("output.mp3", response.AudioData, 0644)
+```
+
+### Google Cloud TTS Options
+
+| Option | Description |
+|--------|-------------|
+| `WithGoogleCloudLanguageCode(string)` | BCP-47 language code (default: `"en-US"`) |
+| `WithGoogleCloudSSMLGender(string)` | Voice gender: `"MALE"`, `"FEMALE"`, `"NEUTRAL"` |
+| `WithGoogleCloudVoiceName(string)` | Specific voice name (e.g., `"en-US-Wavenet-D"`) |
+
+**Models:** `GoogleCloudTTSStandard`, `GoogleCloudTTSWavenet`, `GoogleCloudTTSNeural2`
+
+**Supported formats:** LINEAR16, MP3, OGG_OPUS, MULAW, ALAW
+
+## Azure Speech Services
+
+```go
+client, err := audio.NewAudioGeneration(
+    model.ProviderAzureSpeech,
+    audio.WithAPIKey(os.Getenv("AZURE_SPEECH_KEY")),
+    audio.WithModel(model.AzureSpeechAudioModels[model.AzureSpeechNeural]),
+    audio.WithAzureSpeechOptions(
+        audio.WithAzureRegion("eastus"),
+        audio.WithAzureVoiceName("en-US-JennyNeural"),
+    ),
+)
+
+response, err := client.GenerateAudio(ctx, "Hello! This is Azure Speech.")
+os.WriteFile("output.mp3", response.AudioData, 0644)
+```
+
+### Azure Speech Options
+
+| Option | Description |
+|--------|-------------|
+| `WithAzureRegion(string)` | Azure region (default: `"eastus"`) |
+| `WithAzureVoiceName(string)` | Voice name (default: `"en-US-JennyNeural"`) |
+| `WithAzureOutputFormat(string)` | Output audio format |
+
+**Models:** `AzureSpeechNeural`
+
+**Supported formats:** `audio-16khz-128kbitrate-mono-mp3`, `audio-24khz-160kbitrate-mono-mp3` (default), `riff-16khz-16bit-mono-pcm`, `riff-24khz-16bit-mono-pcm`, `ogg-16khz-16bit-mono-opus`, `ogg-24khz-16bit-mono-opus`
