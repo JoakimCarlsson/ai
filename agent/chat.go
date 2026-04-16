@@ -371,26 +371,6 @@ func (a *Agent) runLoop(
 		turns++
 		totalUsage.Add(resp.Usage)
 
-		if len(resp.ToolCalls) == 0 {
-			if t := team.FromContext(ctx); t != nil && t.ActiveCount() > 0 {
-				assistantMsg := message.NewAssistantMessage()
-				assistantMsg.Model = activeAgent.llm.Model().ID
-				if resp.Content != "" {
-					assistantMsg.AppendContent(resp.Content)
-				}
-				messages = append(messages, assistantMsg)
-				messages = append(messages, message.NewSystemMessage(
-					"You still have active teammates running. You MUST NOT produce a final response yet. "+
-						"Call list_teammates to check their status, then read_messages to get updates.",
-				))
-				if activeAgent.session != nil {
-					_ = activeAgent.session.AddMessages(ctx, []message.Message{assistantMsg})
-				}
-				iteration++
-				continue
-			}
-		}
-
 		if len(resp.ToolCalls) == 0 || !activeAgent.autoExecute ||
 			(maxIter > 0 && iteration >= maxIter) {
 			if activeAgent.session != nil {
