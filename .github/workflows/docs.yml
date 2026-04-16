@@ -1,10 +1,8 @@
 name: Deploy Documentation
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -20,9 +18,9 @@ jobs:
     steps:
       - uses: actions/configure-pages@v5
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: cmd/llmstxt/go.mod
 

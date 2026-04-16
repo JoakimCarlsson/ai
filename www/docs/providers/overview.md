@@ -13,6 +13,14 @@
 | Groq | ✅ | ✅ | ✅ | ✅ |
 | OpenRouter | ✅ | ✅ | ✅ | ✅ |
 | xAI (Grok) | ✅ | ✅ | ✅ | ✅ |
+| Mistral | ✅ | ✅ | ✅ | ✅ |
+| DeepSeek | ✅ | ✅ | ❌ | ❌ |
+| Cohere | ✅ | ✅ | ❌ | ❌ |
+| Meta (Llama) | ✅ | ✅ | ❌ | ❌ |
+| Perplexity (Sonar) | ✅ | ✅ | ❌ | ❌ |
+| Qwen | ✅ | ✅ | ❌ | ❌ |
+
+Mistral, DeepSeek, Cohere, Meta, Perplexity, and Qwen use OpenAI-compatible APIs. See the [LLM Providers](llm.md) page for setup details.
 
 ## Embedding & Reranker Providers
 
@@ -20,6 +28,10 @@
 |----------|-----------------|----------------------|---------------------------|-----------|
 | Voyage AI | ✅ | ✅ | ✅ | ✅ |
 | OpenAI | ✅ | ❌ | ❌ | ❌ |
+| Cohere | ✅ | ❌ | ❌ | ✅ |
+| Google Gemini | ✅ | ❌ | ❌ | ❌ |
+| Mistral | ✅ | ❌ | ❌ | ❌ |
+| AWS Bedrock | ✅ | ❌ | ❌ | ❌ |
 
 ## Image Generation Providers
 
@@ -34,9 +46,15 @@
 | Provider | Models | Streaming | Voice Selection | Max Characters |
 |----------|--------|-----------|-----------------|----------------|
 | ElevenLabs | Multilingual v2, Turbo v2.5, Flash v2.5 | ✅ | ✅ | 10,000 - 40,000 |
+| Google Cloud | Standard, WaveNet, Neural2 | ❌ | ✅ | — |
+| Azure Speech | Neural | ❌ | ✅ | — |
 
 ## Speech-to-Text Providers (Transcription)
 
 | Provider | Models | Streaming | Translation | Timestamps | Diarization |
 |----------|--------|-----------|-------------|------------|-------------|
 | OpenAI | Whisper-1, GPT-4o Transcribe, GPT-4o Mini Transcribe | ✅ | ✅ | ✅ | ✅ |
+| Deepgram | Nova 3, Nova 2 | ✅ | ❌ | ✅ | ✅ |
+| AssemblyAI | Best, Nano | ❌ | ❌ | ✅ | ✅ |
+| Google Cloud | Default, Long | ❌ | ❌ | ✅ | ❌ |
+| ElevenLabs | Scribe v1, Scribe v2 | ❌ | ❌ | ✅ | ✅ |
