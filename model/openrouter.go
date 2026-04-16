@@ -31,6 +31,7 @@ const (
 	OpenRouterClaude45Opus      ID = "openrouter.claude-4.5-opus"
 	OpenRouterClaude46Opus      ID = "openrouter.claude-4.6-opus"
 	OpenRouterClaude46Sonnet    ID = "openrouter.claude-4.6-sonnet"
+	OpenRouterClaude47Opus      ID = "openrouter.claude-4.7-opus"
 	OpenRouterGPT52Codex        ID = "openrouter.gpt-5.2-codex"
 	OpenRouterMistralLarge3     ID = "openrouter.mistral-large-3"
 	OpenRouterMistralMedium3    ID = "openrouter.mistral-medium-3"
@@ -413,6 +414,20 @@ var OpenRouterModels = map[ID]Model{
 		DefaultMaxTokens:      AnthropicModels[Claude46Opus].DefaultMaxTokens,
 		CanReason:             AnthropicModels[Claude46Opus].CanReason,
 		SupportsStructuredOut: AnthropicModels[Claude46Opus].SupportsStructuredOut,
+	},
+	OpenRouterClaude47Opus: {
+		ID:                    OpenRouterClaude47Opus,
+		Name:                  "OpenRouter – Claude 4.7 Opus",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "anthropic/claude-opus-4.7",
+		CostPer1MIn:           AnthropicModels[Claude47Opus].CostPer1MIn,
+		CostPer1MInCached:     AnthropicModels[Claude47Opus].CostPer1MInCached,
+		CostPer1MOut:          AnthropicModels[Claude47Opus].CostPer1MOut,
+		CostPer1MOutCached:    AnthropicModels[Claude47Opus].CostPer1MOutCached,
+		ContextWindow:         AnthropicModels[Claude47Opus].ContextWindow,
+		DefaultMaxTokens:      AnthropicModels[Claude47Opus].DefaultMaxTokens,
+		CanReason:             AnthropicModels[Claude47Opus].CanReason,
+		SupportsStructuredOut: AnthropicModels[Claude47Opus].SupportsStructuredOut,
 	},
 	OpenRouterClaude46Sonnet: {
 		ID:                    OpenRouterClaude46Sonnet,
