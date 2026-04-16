@@ -31,14 +31,28 @@ jobs:
       - name: Unit tests
         run: go test -short -coverprofile=coverage.out $(go list ./... | grep -v /tests/ | grep -v /example/)
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage.out
-          flags: unit
-          fail_ci_if_error: false
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
 
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Cache Go build artifacts
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/go-build
+          key: ${{ runner.os }}-go-build-${{ hashFiles('go.mod', 'go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-build-
+
+      - name: Compile test binaries
+        run: go test -run ^$ ./tests/...
+
+      - name: Run integration tests
+        run: go test -v -timeout 300s -count=1 ./tests/...
 
   fmt:
     name: Format
