@@ -36,6 +36,7 @@ const (
 	GPT54Mini          ID = "gpt-5.4-mini"
 	GPT54Nano          ID = "gpt-5.4-nano"
 	GPT54Pro           ID = "gpt-5.4-pro"
+	GPT55              ID = "gpt-5.5"
 	GPT53ChatLatest    ID = "gpt-5.3-chat-latest"
 	O3DeepResearch     ID = "o3-deep-research"
 	O4MiniDeepResearch ID = "o4-mini-deep-research"
@@ -521,6 +522,21 @@ var OpenAIModels = map[ID]Model{
 		CostPer1MInCached:     0.0,
 		CostPer1MOutCached:    0.0,
 		CostPer1MOut:          180.00,
+		ContextWindow:         1_050_000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	GPT55: {
+		ID:                    GPT55,
+		Name:                  "GPT-5.5",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5.5",
+		CostPer1MIn:           5.00,
+		CostPer1MInCached:     0.50,
+		CostPer1MOutCached:    0.0,
+		CostPer1MOut:          30.00,
 		ContextWindow:         1_050_000,
 		DefaultMaxTokens:      128000,
 		CanReason:             true,
