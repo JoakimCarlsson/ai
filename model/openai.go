@@ -49,6 +49,7 @@ const (
 	DALLE3        ID = "dall-e-3"
 	GPTImage1     ID = "gpt-image-1"
 	GPTImage15    ID = "gpt-image-1.5"
+	GPTImage2     ID = "gpt-image-2"
 	GPTImage1Mini ID = "gpt-image-1-mini"
 )
 
@@ -728,6 +729,35 @@ var OpenAIImageGenerationModels = map[ID]ImageGenerationModel{
 				"low":    0.013,
 				"medium": 0.05,
 				"high":   0.2,
+			},
+		},
+		MaxPromptTokens:    4000,
+		SupportedSizes:     []string{"1024x1024", "1024x1536", "1536x1024"},
+		DefaultSize:        "1024x1024",
+		SupportedQualities: []string{"low", "medium", "high"},
+		DefaultQuality:     "medium",
+		SupportsStreaming:  true,
+	},
+	GPTImage2: {
+		ID:       GPTImage2,
+		Name:     "GPT Image 2",
+		Provider: ProviderOpenAI,
+		APIModel: "gpt-image-2",
+		Pricing: map[string]map[string]float64{
+			"1024x1024": {
+				"low":    0.006,
+				"medium": 0.053,
+				"high":   0.211,
+			},
+			"1024x1536": {
+				"low":    0.005,
+				"medium": 0.041,
+				"high":   0.165,
+			},
+			"1536x1024": {
+				"low":    0.005,
+				"medium": 0.041,
+				"high":   0.165,
 			},
 		},
 		MaxPromptTokens:    4000,
