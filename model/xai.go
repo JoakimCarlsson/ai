@@ -15,6 +15,9 @@ const (
 	XAIGrok3MiniFast          ID = "grok-3-mini-fast"
 	XAIGrok2Vision            ID = "grok-2-vision-1212"
 	XAIGrokCodeFast1          ID = "grok-code-fast-1"
+	XAIGrok420Reasoning       ID = "grok-4.20-0309-reasoning"
+	XAIGrok420NonReasoning    ID = "grok-4.20-0309-non-reasoning"
+	XAIGrok420MultiAgent      ID = "grok-4.20-multi-agent-0309"
 	XAIGrok2Image             ID = "grok-2-image-1212"
 )
 
@@ -160,6 +163,45 @@ var XAIModels = map[ID]Model{
 		CostPer1MOut:          1.50,
 		CostPer1MOutCached:    0,
 		ContextWindow:         256_000,
+		DefaultMaxTokens:      20_000,
+		SupportsStructuredOut: true,
+	},
+	XAIGrok420Reasoning: {
+		ID:                    XAIGrok420Reasoning,
+		Name:                  "Grok 4.20 Reasoning",
+		Provider:              ProviderXAI,
+		APIModel:              "grok-4.20-0309-reasoning",
+		CostPer1MIn:           2.0,
+		CostPer1MInCached:     0,
+		CostPer1MOut:          6.0,
+		CostPer1MOutCached:    0,
+		ContextWindow:         2_000_000,
+		DefaultMaxTokens:      20_000,
+		SupportsStructuredOut: true,
+	},
+	XAIGrok420NonReasoning: {
+		ID:                    XAIGrok420NonReasoning,
+		Name:                  "Grok 4.20 Non-Reasoning",
+		Provider:              ProviderXAI,
+		APIModel:              "grok-4.20-0309-non-reasoning",
+		CostPer1MIn:           2.0,
+		CostPer1MInCached:     0,
+		CostPer1MOut:          6.0,
+		CostPer1MOutCached:    0,
+		ContextWindow:         2_000_000,
+		DefaultMaxTokens:      20_000,
+		SupportsStructuredOut: true,
+	},
+	XAIGrok420MultiAgent: {
+		ID:                    XAIGrok420MultiAgent,
+		Name:                  "Grok 4.20 Multi-Agent",
+		Provider:              ProviderXAI,
+		APIModel:              "grok-4.20-multi-agent-0309",
+		CostPer1MIn:           2.0,
+		CostPer1MInCached:     0,
+		CostPer1MOut:          6.0,
+		CostPer1MOutCached:    0,
+		ContextWindow:         2_000_000,
 		DefaultMaxTokens:      20_000,
 		SupportsStructuredOut: true,
 	},

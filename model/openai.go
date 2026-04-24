@@ -36,6 +36,7 @@ const (
 	GPT54Mini          ID = "gpt-5.4-mini"
 	GPT54Nano          ID = "gpt-5.4-nano"
 	GPT54Pro           ID = "gpt-5.4-pro"
+	GPT55              ID = "gpt-5.5"
 	GPT53ChatLatest    ID = "gpt-5.3-chat-latest"
 	O3DeepResearch     ID = "o3-deep-research"
 	O4MiniDeepResearch ID = "o4-mini-deep-research"
@@ -48,6 +49,7 @@ const (
 	DALLE3        ID = "dall-e-3"
 	GPTImage1     ID = "gpt-image-1"
 	GPTImage15    ID = "gpt-image-1.5"
+	GPTImage2     ID = "gpt-image-2"
 	GPTImage1Mini ID = "gpt-image-1-mini"
 )
 
@@ -527,6 +529,21 @@ var OpenAIModels = map[ID]Model{
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 	},
+	GPT55: {
+		ID:                    GPT55,
+		Name:                  "GPT-5.5",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5.5",
+		CostPer1MIn:           5.00,
+		CostPer1MInCached:     0.50,
+		CostPer1MOutCached:    0.0,
+		CostPer1MOut:          30.00,
+		ContextWindow:         1_050_000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
 	GPT53ChatLatest: {
 		ID:                    GPT53ChatLatest,
 		Name:                  "GPT-5.3 chat latest",
@@ -712,6 +729,35 @@ var OpenAIImageGenerationModels = map[ID]ImageGenerationModel{
 				"low":    0.013,
 				"medium": 0.05,
 				"high":   0.2,
+			},
+		},
+		MaxPromptTokens:    4000,
+		SupportedSizes:     []string{"1024x1024", "1024x1536", "1536x1024"},
+		DefaultSize:        "1024x1024",
+		SupportedQualities: []string{"low", "medium", "high"},
+		DefaultQuality:     "medium",
+		SupportsStreaming:  true,
+	},
+	GPTImage2: {
+		ID:       GPTImage2,
+		Name:     "GPT Image 2",
+		Provider: ProviderOpenAI,
+		APIModel: "gpt-image-2",
+		Pricing: map[string]map[string]float64{
+			"1024x1024": {
+				"low":    0.006,
+				"medium": 0.053,
+				"high":   0.211,
+			},
+			"1024x1536": {
+				"low":    0.005,
+				"medium": 0.041,
+				"high":   0.165,
+			},
+			"1536x1024": {
+				"low":    0.005,
+				"medium": 0.041,
+				"high":   0.165,
 			},
 		},
 		MaxPromptTokens:    4000,
