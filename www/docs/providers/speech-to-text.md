@@ -241,6 +241,7 @@ for r := range results {
 | `WithDeepgramStreamEndpointingMs(ms int)` | Deepgram-specific endpointing |
 | `WithAssemblyAIEndOfTurnSilenceMs(ms int)` | AssemblyAI v3 end-of-turn silence threshold |
 | `WithElevenLabsStreamVADSilenceMs(ms int)` | ElevenLabs Scribe v2 VAD silence threshold |
+| `WithOpenAIRealtimeVADSilenceMs(ms int)` | OpenAI Realtime server VAD silence threshold |
 
 ### Provider Streaming Support
 
@@ -249,11 +250,14 @@ for r := range results {
 | Deepgram | ✓ | WebSocket | `wss://api.deepgram.com/v1/listen` |
 | AssemblyAI | ✓ | WebSocket (v3 Universal Streaming) | `wss://streaming.assemblyai.com/v3/ws` |
 | ElevenLabs Scribe v2 | ✓ | WebSocket (base64 JSON audio) | `wss://api.elevenlabs.io/v1/speech-to-text/realtime` |
-| OpenAI Whisper | — | (no streaming product) | returns `ErrStreamingNotSupported` |
-| Google Cloud STT v2 | — | (gRPC, not yet implemented) | returns `ErrStreamingNotSupported` |
+| OpenAI (Realtime, transcription mode) | ✓ | WebSocket (base64 JSON audio, **24 kHz only**) | `wss://api.openai.com/v1/realtime?intent=transcription` |
+| Google Cloud STT v2 | — | gRPC streaming | not yet implemented; returns `ErrStreamingNotSupported` |
+
+For OpenAI streaming you must select a Realtime-compatible transcription model (`GPT4oTranscribe` or `GPT4oMiniTranscribe`); the legacy Whisper model is batch-only and `StreamTranscribe` will fail at the upstream layer if it's wired against `Whisper1`.
 
 See the runnable examples:
 
 - `example/transcription_deepgram_stream/`
 - `example/transcription_assemblyai_stream/`
 - `example/transcription_elevenlabs_stream/`
+- `example/transcription_openai_stream/`
