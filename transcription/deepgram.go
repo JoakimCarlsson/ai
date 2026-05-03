@@ -17,6 +17,16 @@ type deepgramOptions struct {
 	smartFormat         *bool
 	language            string
 	streamEndpointingMs *int
+	numerals            *bool
+	profanityFilter     *bool
+	dictation           *bool
+	vadEvents           *bool
+	streamInterim       *bool
+	keyterms            []string
+	keywords            []string
+	redact              []string
+	search              []string
+	replace             []string
 }
 
 // DeepgramOption configures Deepgram-specific transcription behavior.
@@ -252,5 +262,84 @@ func WithDeepgramStreamEndpointingMs(
 ) DeepgramOption {
 	return func(options *deepgramOptions) {
 		options.streamEndpointingMs = &ms
+	}
+}
+
+// WithDeepgramNumerals converts spoken numbers to numeric format
+// ("nine hundred" → "900").
+func WithDeepgramNumerals(enabled bool) DeepgramOption {
+	return func(options *deepgramOptions) {
+		options.numerals = &enabled
+	}
+}
+
+// WithDeepgramProfanityFilter removes profanity from the transcript.
+func WithDeepgramProfanityFilter(enabled bool) DeepgramOption {
+	return func(options *deepgramOptions) {
+		options.profanityFilter = &enabled
+	}
+}
+
+// WithDeepgramDictation auto-formats spoken punctuation commands
+// ("period" → ".", "new line" → "\n").
+func WithDeepgramDictation(enabled bool) DeepgramOption {
+	return func(options *deepgramOptions) {
+		options.dictation = &enabled
+	}
+}
+
+// WithDeepgramVADEvents enables SpeechStarted / UtteranceEnd events on
+// streaming sessions. Streaming-only.
+func WithDeepgramVADEvents(enabled bool) DeepgramOption {
+	return func(options *deepgramOptions) {
+		options.vadEvents = &enabled
+	}
+}
+
+// WithDeepgramStreamInterimResults toggles emission of interim transcripts.
+// Streaming-only; defaults to true.
+func WithDeepgramStreamInterimResults(enabled bool) DeepgramOption {
+	return func(options *deepgramOptions) {
+		options.streamInterim = &enabled
+	}
+}
+
+// WithDeepgramKeyterms boosts recognition of specific words or phrases
+// (Nova-3+). Up to 100 keyterms per request.
+func WithDeepgramKeyterms(terms ...string) DeepgramOption {
+	return func(options *deepgramOptions) {
+		options.keyterms = terms
+	}
+}
+
+// WithDeepgramKeywords boosts or suppresses recognition of specific words.
+// Format: "keyword" or "keyword:intensifier" (e.g. "claude:2"). For models
+// older than Nova-3.
+func WithDeepgramKeywords(words ...string) DeepgramOption {
+	return func(options *deepgramOptions) {
+		options.keywords = words
+	}
+}
+
+// WithDeepgramRedact redacts sensitive content categories from transcripts.
+// Common values: "pci", "numbers", "ssn".
+func WithDeepgramRedact(categories ...string) DeepgramOption {
+	return func(options *deepgramOptions) {
+		options.redact = categories
+	}
+}
+
+// WithDeepgramSearch runs acoustic pattern matching for the given terms.
+func WithDeepgramSearch(terms ...string) DeepgramOption {
+	return func(options *deepgramOptions) {
+		options.search = terms
+	}
+}
+
+// WithDeepgramReplace substitutes terms in the transcript. Each entry is
+// "find:replace" (find must be lowercase).
+func WithDeepgramReplace(pairs ...string) DeepgramOption {
+	return func(options *deepgramOptions) {
+		options.replace = pairs
 	}
 }

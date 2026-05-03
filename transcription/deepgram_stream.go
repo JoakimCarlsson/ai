@@ -37,6 +37,10 @@ func (d *deepgramClient) streamTranscribe(
 	if d.options.streamEndpointingMs != nil {
 		endpointing = *d.options.streamEndpointingMs
 	}
+	interim := true
+	if d.options.streamInterim != nil {
+		interim = *d.options.streamInterim
+	}
 	sampleRate := opts.SampleRate
 	if sampleRate == 0 {
 		sampleRate = 16000
@@ -54,7 +58,7 @@ func (d *deepgramClient) streamTranscribe(
 	q.Set("encoding", "linear16")
 	q.Set("sample_rate", strconv.Itoa(sampleRate))
 	q.Set("channels", strconv.Itoa(channels))
-	q.Set("interim_results", "true")
+	q.Set("interim_results", strconv.FormatBool(interim))
 	q.Set("endpointing", strconv.Itoa(endpointing))
 	q.Set("model", d.providerOptions.model.APIModel)
 	if lang != "" {
@@ -68,6 +72,33 @@ func (d *deepgramClient) streamTranscribe(
 	}
 	if d.options.diarize != nil && *d.options.diarize {
 		q.Set("diarize", "true")
+	}
+	if d.options.numerals != nil && *d.options.numerals {
+		q.Set("numerals", "true")
+	}
+	if d.options.profanityFilter != nil && *d.options.profanityFilter {
+		q.Set("profanity_filter", "true")
+	}
+	if d.options.dictation != nil && *d.options.dictation {
+		q.Set("dictation", "true")
+	}
+	if d.options.vadEvents != nil && *d.options.vadEvents {
+		q.Set("vad_events", "true")
+	}
+	for _, kt := range d.options.keyterms {
+		q.Add("keyterm", kt)
+	}
+	for _, kw := range d.options.keywords {
+		q.Add("keywords", kw)
+	}
+	for _, r := range d.options.redact {
+		q.Add("redact", r)
+	}
+	for _, s := range d.options.search {
+		q.Add("search", s)
+	}
+	for _, rp := range d.options.replace {
+		q.Add("replace", rp)
 	}
 
 	u := url.URL{
