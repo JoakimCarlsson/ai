@@ -34,7 +34,6 @@ build: workspace
 		(cd "$$dir" && go build ./...) || exit 1; \
 	done
 
-# Unit tests across non-test, non-cmd modules.
 test: workspace
 	@for dir in $(MODULES); do \
 		case "$$dir" in tests|tests/*|cmd/*) continue ;; esac; \
