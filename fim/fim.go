@@ -5,32 +5,31 @@
 // the cursor) and an optional suffix (code after the cursor), with the model filling
 // in the middle. This is particularly useful for code editors and IDE integrations.
 //
-// Supported providers include Mistral (Codestral) and DeepSeek.
+// This package defines the [FIM] interface and the data types that flow through it.
+// Concrete vendor implementations live in subpackages (fim/mistral, fim/deepseek);
+// each subpackage exports its own NewFIM constructor that returns a tracing-wrapped
+// client implementing the interface.
 //
 // Example usage:
 //
-//	client, err := fim.NewFIM(model.ProviderMistral,
-//		fim.WithAPIKey("your-api-key"),
-//		fim.WithModel(model.MistralModels[model.Codestral]),
+//	import (
+//		"github.com/joakimcarlsson/ai/fim"
+//		"github.com/joakimcarlsson/ai/fim/mistral"
 //	)
-//	if err != nil {
-//		log.Fatal(err)
-//	}
+//
+//	client := mistral.NewFIM(
+//		mistral.WithAPIKey("your-api-key"),
+//		mistral.WithModel(model.MistralModels[model.Codestral]),
+//	)
 //
 //	resp, err := client.Complete(ctx, fim.Request{
 //		Prompt: "def add(a, b):\n    ",
 //		Suffix: "\n    return result",
 //	})
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//
-//	fmt.Println(resp.Content)
 package fim
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
@@ -119,99 +118,64 @@ type FIM interface {
 	Model() model.Model
 }
 
-type fimClientOptions struct {
-	apiKey      string
-	model       model.Model
-	maxTokens   int64
-	temperature *float64
-	topP        *float64
-	timeout     *time.Duration
-
-	mistralOptions  []MistralOption
-	deepseekOptions []DeepSeekOption
+// TracingAttrs are construction-time attributes vendor packages forward to the
+// [WithTracing] wrapper so they appear on every span produced for the wrapped
+// client. These come from constructor options that aren't exposed on the FIM
+// interface (max tokens, temperature, top-p, etc.).
+type TracingAttrs struct {
+	MaxTokens   int64
+	Temperature *float64
+	TopP        *float64
 }
 
-// ClientOption configures a FIM client.
-type ClientOption func(*fimClientOptions)
-
-type fimClient interface {
-	complete(ctx context.Context, req Request) (*Response, error)
-	stream(ctx context.Context, req Request) <-chan Event
+// WithTracing wraps a FIM client so every call records OpenTelemetry spans and
+// metrics. The attrs are recorded as construction-time span attributes.
+func WithTracing(inner FIM, attrs TracingAttrs) FIM {
+	return &tracingFIM{inner: inner, attrs: attrs}
 }
 
-type baseFIM[C fimClient] struct {
-	options fimClientOptions
-	client  C
+type tracingFIM struct {
+	inner FIM
+	attrs TracingAttrs
 }
 
-// NewFIM creates a new FIM client for the specified provider.
-// Supported providers are model.ProviderMistral and model.ProviderDeepSeek.
-func NewFIM(
-	provider model.Provider,
-	opts ...ClientOption,
-) (FIM, error) {
-	clientOptions := fimClientOptions{}
-	for _, o := range opts {
-		o(&clientOptions)
-	}
-
-	switch provider {
-	case model.ProviderMistral:
-		return &baseFIM[*mistralClient]{
-			options: clientOptions,
-			client:  newMistralClient(clientOptions),
-		}, nil
-	case model.ProviderDeepSeek:
-		return &baseFIM[*deepseekClient]{
-			options: clientOptions,
-			client:  newDeepSeekClient(clientOptions),
-		}, nil
-	}
-
-	return nil, fmt.Errorf("fim provider not supported: %s", provider)
+func (t *tracingFIM) Model() model.Model {
+	return t.inner.Model()
 }
 
-func (f *baseFIM[C]) fimSpanAttrs() []tracing.Attr {
+func (t *tracingFIM) spanAttrs() []tracing.Attr {
 	var attrs []tracing.Attr
-	if f.options.maxTokens > 0 {
-		attrs = append(
-			attrs,
-			tracing.AttrRequestMaxTokens.Int64(f.options.maxTokens),
-		)
+	if t.attrs.MaxTokens > 0 {
+		attrs = append(attrs, tracing.AttrRequestMaxTokens.Int64(t.attrs.MaxTokens))
 	}
-	if f.options.temperature != nil {
-		attrs = append(
-			attrs,
-			tracing.AttrRequestTemperature.Float64(*f.options.temperature),
-		)
+	if t.attrs.Temperature != nil {
+		attrs = append(attrs, tracing.AttrRequestTemperature.Float64(*t.attrs.Temperature))
 	}
-	if f.options.topP != nil {
-		attrs = append(attrs, tracing.AttrRequestTopP.Float64(*f.options.topP))
+	if t.attrs.TopP != nil {
+		attrs = append(attrs, tracing.AttrRequestTopP.Float64(*t.attrs.TopP))
 	}
 	return attrs
 }
 
-func (f *baseFIM[C]) Complete(
-	ctx context.Context,
-	req Request,
-) (*Response, error) {
+func (t *tracingFIM) Complete(ctx context.Context, req Request) (*Response, error) {
+	m := t.inner.Model()
 	start := time.Now()
 	ctx, span := tracing.StartFIMSpan(
 		ctx,
-		f.options.model.APIModel,
-		string(f.options.model.Provider),
-		f.fimSpanAttrs()...,
+		m.APIModel,
+		string(m.Provider),
+		t.spanAttrs()...,
 	)
 	defer span.End()
 
-	resp, err := f.client.complete(ctx, req)
+	resp, err := t.inner.Complete(ctx, req)
 	if err != nil {
 		tracing.SetError(span, err)
 		tracing.RecordMetrics(
 			ctx,
 			"fim_complete",
-			f.options.model.APIModel,
-			string(f.options.model.Provider),
+			m.APIModel,
+			string(m.Provider),
 			time.Since(start),
 			0,
 			0,
@@ -228,8 +192,8 @@ func (f *baseFIM[C]) Complete(
 	tracing.RecordMetrics(
 		ctx,
 		"fim_complete",
-		f.options.model.APIModel,
-		string(f.options.model.Provider),
+		m.APIModel,
+		string(m.Provider),
 		time.Since(start),
 		resp.Usage.InputTokens,
 		resp.Usage.OutputTokens,
@@ -238,19 +202,17 @@ func (f *baseFIM[C]) Complete(
 	return resp, nil
 }
 
-func (f *baseFIM[C]) CompleteStream(
-	ctx context.Context,
-	req Request,
-) <-chan Event {
+func (t *tracingFIM) CompleteStream(ctx context.Context, req Request) <-chan Event {
+	m := t.inner.Model()
 	start := time.Now()
 	ctx, span := tracing.StartFIMSpan(
 		ctx,
-		f.options.model.APIModel,
-		string(f.options.model.Provider),
-		f.fimSpanAttrs()...,
+		m.APIModel,
+		string(m.Provider),
+		t.spanAttrs()...,
 	)
 
-	innerCh := f.client.stream(ctx, req)
+	innerCh := t.inner.CompleteStream(ctx, req)
 	outCh := make(chan Event)
 	go func() {
 		defer close(outCh)
@@ -259,21 +221,15 @@ func (f *baseFIM[C]) CompleteStream(
 			if evt.Type == EventComplete && evt.Response != nil {
 				tracing.SetResponseAttrs(
 					span,
-					tracing.AttrUsageInputTokens.Int64(
-						evt.Response.Usage.InputTokens,
-					),
-					tracing.AttrUsageOutputTokens.Int64(
-						evt.Response.Usage.OutputTokens,
-					),
-					tracing.AttrResponseFinishReason.String(
-						string(evt.Response.FinishReason),
-					),
+					tracing.AttrUsageInputTokens.Int64(evt.Response.Usage.InputTokens),
+					tracing.AttrUsageOutputTokens.Int64(evt.Response.Usage.OutputTokens),
+					tracing.AttrResponseFinishReason.String(string(evt.Response.FinishReason)),
 				)
 				tracing.RecordMetrics(
 					ctx,
 					"fim_complete",
-					f.options.model.APIModel,
-					string(f.options.model.Provider),
+					m.APIModel,
+					string(m.Provider),
 					time.Since(start),
 					evt.Response.Usage.InputTokens,
 					evt.Response.Usage.OutputTokens,
@@ -285,8 +241,8 @@ func (f *baseFIM[C]) CompleteStream(
 				tracing.RecordMetrics(
 					ctx,
 					"fim_complete",
-					f.options.model.APIModel,
-					string(f.options.model.Provider),
+					m.APIModel,
+					string(m.Provider),
 					time.Since(start),
 					0,
 					0,
@@ -297,64 +253,4 @@ func (f *baseFIM[C]) CompleteStream(
 		}
 	}()
 	return outCh
-}
-
-func (f *baseFIM[C]) Model() model.Model {
-	return f.options.model
-}
-
-// WithAPIKey sets the API key for authentication with the FIM provider.
-func WithAPIKey(apiKey string) ClientOption {
-	return func(options *fimClientOptions) {
-		options.apiKey = apiKey
-	}
-}
-
-// WithModel specifies which model to use for FIM completions.
-func WithModel(m model.Model) ClientOption {
-	return func(options *fimClientOptions) {
-		options.model = m
-	}
-}
-
-// WithMaxTokens sets the default maximum number of tokens to generate.
-func WithMaxTokens(maxTokens int64) ClientOption {
-	return func(options *fimClientOptions) {
-		options.maxTokens = maxTokens
-	}
-}
-
-// WithTemperature sets the default sampling temperature (0.0 to 1.0).
-func WithTemperature(temperature float64) ClientOption {
-	return func(options *fimClientOptions) {
-		options.temperature = &temperature
-	}
-}
-
-// WithTopP sets the default nucleus sampling probability.
-func WithTopP(topP float64) ClientOption {
-	return func(options *fimClientOptions) {
-		options.topP = &topP
-	}
-}
-
-// WithTimeout sets the maximum duration to wait for API responses.
-func WithTimeout(timeout time.Duration) ClientOption {
-	return func(options *fimClientOptions) {
-		options.timeout = &timeout
-	}
-}
-
-// WithMistralOptions applies Mistral-specific configuration options.
-func WithMistralOptions(mistralOptions ...MistralOption) ClientOption {
-	return func(options *fimClientOptions) {
-		options.mistralOptions = mistralOptions
-	}
-}
-
-// WithDeepSeekOptions applies DeepSeek-specific configuration options.
-func WithDeepSeekOptions(deepseekOptions ...DeepSeekOption) ClientOption {
-	return func(options *fimClientOptions) {
-		options.deepseekOptions = deepseekOptions
-	}
 }
