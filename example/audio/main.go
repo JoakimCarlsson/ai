@@ -24,6 +24,9 @@ func main() {
 		audio.WithModel(
 			model.ElevenLabsAudioModels[model.ElevenTurboV2_5],
 		),
+		audio.WithElevenLabsOptions(
+			audio.WithElevenLabsVoiceID("EXAVITQu4vr4xnSDxMaL"),
+		),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -38,11 +41,7 @@ func main() {
 func basicExample(client audio.Generation) {
 	text := "Hello! This is a demonstration of the ElevenLabs text-to-speech API integration."
 
-	response, err := client.GenerateAudio(
-		context.Background(),
-		text,
-		audio.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),
-	)
+	response, err := client.GenerateAudio(context.Background(), text)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,7 +58,6 @@ func customVoiceExample(client audio.Generation) {
 	response, err := client.GenerateAudio(
 		context.Background(),
 		text,
-		audio.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),
 		audio.WithStability(0.75),
 		audio.WithSimilarityBoost(0.85),
 		audio.WithStyle(0.5),
@@ -81,7 +79,6 @@ func streamingExample(client audio.Generation) {
 	chunkChan, err := client.StreamAudio(
 		context.Background(),
 		text,
-		audio.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),
 		audio.WithOptimizeStreamingLatency(3),
 	)
 	if err != nil {

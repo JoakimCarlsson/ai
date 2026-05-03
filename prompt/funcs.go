@@ -159,7 +159,7 @@ func empty(v any) bool {
 		return val.Uint() == 0
 	case reflect.Float32, reflect.Float64:
 		return val.Float() == 0
-	case reflect.Ptr, reflect.Interface:
+	case reflect.Pointer, reflect.Interface:
 		return val.IsNil()
 	default:
 		return false

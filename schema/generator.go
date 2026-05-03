@@ -17,7 +17,7 @@ import (
 // Returns the properties map and list of required field names.
 func GenerateSchema(v any) (map[string]any, []string) {
 	t := reflect.TypeOf(v)
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	if t.Kind() != reflect.Struct {
@@ -90,7 +90,7 @@ func GenerateSchema(v any) (map[string]any, []string) {
 
 		if field.Tag.Get("required") == "true" {
 			required = append(required, name)
-		} else if field.Type.Kind() != reflect.Ptr && !strings.Contains(field.Tag.Get("json"), "omitempty") {
+		} else if field.Type.Kind() != reflect.Pointer && !strings.Contains(field.Tag.Get("json"), "omitempty") {
 			if field.Tag.Get("required") != "false" {
 				required = append(required, name)
 			}
@@ -101,7 +101,7 @@ func GenerateSchema(v any) (map[string]any, []string) {
 }
 
 func goTypeToJSONType(t reflect.Type) string {
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 

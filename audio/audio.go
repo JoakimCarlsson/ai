@@ -18,14 +18,15 @@
 //	client, err := audio.NewAudioGeneration(model.ProviderElevenLabs,
 //		audio.WithAPIKey("your-api-key"),
 //		audio.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
+//		audio.WithElevenLabsOptions(
+//			audio.WithElevenLabsVoiceID("EXAVITQu4vr4xnSDxMaL"),
+//		),
 //	)
 //	if err != nil {
 //		log.Fatal(err)
 //	}
 //
-//	response, err := client.GenerateAudio(ctx, "Hello, how are you today?",
-//		audio.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),
-//	)
+//	response, err := client.GenerateAudio(ctx, "Hello, how are you today?")
 //	if err != nil {
 //		log.Fatal(err)
 //	}
@@ -170,6 +171,7 @@ type audioGenerationClientOptions struct {
 	openaiAudioOptions    []OpenAIAudioOption
 	googleCloudTTSOptions []GoogleCloudTTSOption
 	azureSpeechOptions    []AzureSpeechOption
+	deepgramOptions       []DeepgramOption
 }
 
 // GenerationClientOption configures an audio generation client when passed to NewAudioGeneration.
@@ -227,6 +229,11 @@ func NewAudioGeneration(
 		return &baseAudioGeneration[AzureClient]{
 			options: clientOptions,
 			client:  newAzureClient(clientOptions),
+		}, nil
+	case model.ProviderDeepgram:
+		return &baseAudioGeneration[DeepgramClient]{
+			options: clientOptions,
+			client:  newDeepgramClient(clientOptions),
 		}, nil
 	}
 
@@ -404,10 +411,17 @@ func WithAzureSpeechOptions(
 	}
 }
 
+// WithDeepgramOptions applies Deepgram-specific TTS configuration options.
+func WithDeepgramOptions(
+	dgOptions ...DeepgramOption,
+) GenerationClientOption {
+	return func(options *audioGenerationClientOptions) {
+		options.deepgramOptions = dgOptions
+	}
+}
+
 // GenerationOptions contains parameters for customizing audio generation requests.
 type GenerationOptions struct {
-	// VoiceID specifies which voice to use for audio generation.
-	VoiceID string
 	// OutputFormat specifies the audio format (e.g., "mp3_44100_128", "pcm_16000").
 	OutputFormat string
 	// Stability controls voice consistency (0.0 to 1.0).
@@ -426,13 +440,6 @@ type GenerationOptions struct {
 
 // GenerationOption is a function that configures GenerationOptions.
 type GenerationOption func(*GenerationOptions)
-
-// WithVoiceID sets the voice to use for audio generation.
-func WithVoiceID(voiceID string) GenerationOption {
-	return func(options *GenerationOptions) {
-		options.VoiceID = voiceID
-	}
-}
 
 // WithOutputFormat sets the audio format for the generated audio.
 // Common formats: "mp3_44100_128", "mp3_44100_192", "pcm_16000", "pcm_22050", "pcm_24000", "pcm_44100".

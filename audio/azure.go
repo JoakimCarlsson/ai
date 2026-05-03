@@ -64,9 +64,6 @@ func (a *azureClient) generate(
 	}
 
 	voiceName := a.options.voiceName
-	if opts.VoiceID != "" {
-		voiceName = opts.VoiceID
-	}
 
 	outputFormat := a.options.outputFormat
 	if opts.OutputFormat != "" {

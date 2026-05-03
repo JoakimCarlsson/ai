@@ -1,32 +1,14 @@
 package model
 
-// ElevenLabs provider plus speech and transcription model IDs for this registry.
+// OpenAI text-to-speech model IDs.
 const (
-	ProviderElevenLabs Provider = "elevenlabs"
-
-	ElevenV3             ID = "eleven_v3"
-	ElevenMultilingualV2 ID = "eleven_multilingual_v2"
-	ElevenFlashV2_5      ID = "eleven_flash_v2_5"
-	ElevenFlashV2        ID = "eleven_flash_v2"
-	ElevenTurboV2_5      ID = "eleven_turbo_v2_5"
-	ElevenTurboV2        ID = "eleven_turbo_v2"
-
 	OpenAITTS1    ID = "tts-1"
 	OpenAITTS1HD  ID = "tts-1-hd"
 	OpenAIMiniTTS ID = "gpt-4o-mini-tts"
+)
 
-	ProviderDeepgram   Provider = "deepgram"
-	ProviderAssemblyAI Provider = "assemblyai"
-
-	DeepgramNova3 ID = "nova-3"
-	DeepgramNova2 ID = "nova-2"
-
-	AssemblyAIBest ID = "best"
-	AssemblyAINano ID = "nano"
-
-	ElevenLabsScribeV1 ID = "scribe_v1"
-	ElevenLabsScribeV2 ID = "scribe_v2"
-
+// OpenAI speech-to-text model IDs.
+const (
 	Whisper1                ID = "whisper-1"
 	GPT4oTranscribe         ID = "gpt-4o-transcribe"
 	GPT4oMiniTranscribe     ID = "gpt-4o-mini-transcribe"
@@ -34,7 +16,8 @@ const (
 	GPT4oTranscribeDiarize  ID = "gpt-4o-transcribe-diarize"
 )
 
-// AudioModel represents an audio generation model with its configuration and capabilities.
+// AudioModel represents an audio generation (TTS) model with its
+// configuration and capabilities.
 type AudioModel struct {
 	// ID is the unique identifier for this audio model.
 	ID ID `json:"id"`
@@ -52,119 +35,15 @@ type AudioModel struct {
 	SupportedFormats []string `json:"supported_formats,omitempty"`
 	// DefaultFormat is the default audio format if not specified.
 	DefaultFormat string `json:"default_format,omitempty"`
-	// SupportsStreaming indicates if the model supports streaming audio generation.
+	// SupportsStreaming indicates if the model supports streaming audio
+	// generation.
 	SupportsStreaming bool `json:"supports_streaming"`
 	// LatencyMs is the typical latency in milliseconds for audio generation.
 	LatencyMs int64 `json:"latency_ms,omitempty"`
 }
 
-// ElevenLabsAudioModels maps ElevenLabs and OpenAI speech model IDs to audio configurations.
-var ElevenLabsAudioModels = map[ID]AudioModel{
-	ElevenV3: {
-		ID:            ElevenV3,
-		Name:          "Eleven v3",
-		Provider:      ProviderElevenLabs,
-		APIModel:      "eleven_v3",
-		MaxCharacters: 5000,
-		SupportedFormats: []string{
-			"mp3_44100_128",
-			"mp3_44100_192",
-			"pcm_16000",
-			"pcm_22050",
-			"pcm_24000",
-			"pcm_44100",
-		},
-		DefaultFormat:     "mp3_44100_128",
-		SupportsStreaming: true,
-	},
-	ElevenMultilingualV2: {
-		ID:            ElevenMultilingualV2,
-		Name:          "Eleven Multilingual v2",
-		Provider:      ProviderElevenLabs,
-		APIModel:      "eleven_multilingual_v2",
-		MaxCharacters: 10000,
-		SupportedFormats: []string{
-			"mp3_44100_128",
-			"mp3_44100_192",
-			"pcm_16000",
-			"pcm_22050",
-			"pcm_24000",
-			"pcm_44100",
-		},
-		DefaultFormat:     "mp3_44100_128",
-		SupportsStreaming: true,
-	},
-	ElevenFlashV2_5: {
-		ID:            ElevenFlashV2_5,
-		Name:          "Eleven Flash v2.5",
-		Provider:      ProviderElevenLabs,
-		APIModel:      "eleven_flash_v2_5",
-		MaxCharacters: 40000,
-		SupportedFormats: []string{
-			"mp3_44100_128",
-			"mp3_44100_192",
-			"pcm_16000",
-			"pcm_22050",
-			"pcm_24000",
-			"pcm_44100",
-		},
-		DefaultFormat:     "mp3_44100_128",
-		SupportsStreaming: true,
-	},
-	ElevenFlashV2: {
-		ID:            ElevenFlashV2,
-		Name:          "Eleven Flash v2",
-		Provider:      ProviderElevenLabs,
-		APIModel:      "eleven_flash_v2",
-		MaxCharacters: 30000,
-		SupportedFormats: []string{
-			"mp3_44100_128",
-			"mp3_44100_192",
-			"pcm_16000",
-			"pcm_22050",
-			"pcm_24000",
-			"pcm_44100",
-		},
-		DefaultFormat:     "mp3_44100_128",
-		SupportsStreaming: true,
-	},
-	ElevenTurboV2_5: {
-		ID:            ElevenTurboV2_5,
-		Name:          "Eleven Turbo v2.5",
-		Provider:      ProviderElevenLabs,
-		APIModel:      "eleven_turbo_v2_5",
-		MaxCharacters: 40000,
-		SupportedFormats: []string{
-			"mp3_44100_128",
-			"mp3_44100_192",
-			"pcm_16000",
-			"pcm_22050",
-			"pcm_24000",
-			"pcm_44100",
-		},
-		DefaultFormat:     "mp3_44100_128",
-		SupportsStreaming: true,
-	},
-	ElevenTurboV2: {
-		ID:            ElevenTurboV2,
-		Name:          "Eleven Turbo v2",
-		Provider:      ProviderElevenLabs,
-		APIModel:      "eleven_turbo_v2",
-		MaxCharacters: 30000,
-		SupportedFormats: []string{
-			"mp3_44100_128",
-			"mp3_44100_192",
-			"pcm_16000",
-			"pcm_22050",
-			"pcm_24000",
-			"pcm_44100",
-		},
-		DefaultFormat:     "mp3_44100_128",
-		SupportsStreaming: true,
-	},
-}
-
-// TranscriptionModel represents a speech-to-text transcription model with its configuration and capabilities.
+// TranscriptionModel represents a speech-to-text transcription model with
+// its configuration and capabilities.
 type TranscriptionModel struct {
 	ID                       ID       `json:"id"`
 	Name                     string   `json:"name"`
@@ -182,7 +61,8 @@ type TranscriptionModel struct {
 	SupportedResponseFormats []string `json:"supported_response_formats,omitempty"`
 }
 
-// OpenAITranscriptionModels contains configuration for OpenAI speech-to-text models.
+// OpenAITranscriptionModels contains configuration for OpenAI speech-to-text
+// models.
 var OpenAITranscriptionModels = map[ID]TranscriptionModel{
 	Whisper1: {
 		ID:            Whisper1,
@@ -374,139 +254,5 @@ var OpenAIAudioModels = map[ID]AudioModel{
 		},
 		DefaultFormat:     "mp3",
 		SupportsStreaming: true,
-	},
-}
-
-// DeepgramTranscriptionModels maps Deepgram model IDs to their configurations.
-var DeepgramTranscriptionModels = map[ID]TranscriptionModel{
-	DeepgramNova3: {
-		ID:            DeepgramNova3,
-		Name:          "Deepgram Nova 3",
-		Provider:      ProviderDeepgram,
-		APIModel:      "nova-3",
-		CostPer1MIn:   0.0077,
-		MaxFileSizeMB: 2000,
-		SupportedFormats: []string{
-			"mp3", "mp4", "wav", "flac",
-			"ogg", "webm", "m4a",
-		},
-		SupportsTimestamps:     true,
-		SupportsWordTimestamps: true,
-		SupportsDiarization:    true,
-		SupportsTranslation:    false,
-		SupportsStreaming:      true,
-		SupportedResponseFormats: []string{
-			"json", "text", "srt", "vtt",
-		},
-	},
-	DeepgramNova2: {
-		ID:            DeepgramNova2,
-		Name:          "Deepgram Nova 2",
-		Provider:      ProviderDeepgram,
-		APIModel:      "nova-2",
-		CostPer1MIn:   0.0058,
-		MaxFileSizeMB: 2000,
-		SupportedFormats: []string{
-			"mp3", "mp4", "wav", "flac",
-			"ogg", "webm", "m4a",
-		},
-		SupportsTimestamps:     true,
-		SupportsWordTimestamps: true,
-		SupportsDiarization:    true,
-		SupportsTranslation:    false,
-		SupportsStreaming:      true,
-		SupportedResponseFormats: []string{
-			"json", "text", "srt", "vtt",
-		},
-	},
-}
-
-// AssemblyAITranscriptionModels maps AssemblyAI model IDs to their configurations.
-var AssemblyAITranscriptionModels = map[ID]TranscriptionModel{
-	AssemblyAIBest: {
-		ID:            AssemblyAIBest,
-		Name:          "AssemblyAI Best",
-		Provider:      ProviderAssemblyAI,
-		APIModel:      "best",
-		CostPer1MIn:   0.0062,
-		MaxFileSizeMB: 5000,
-		SupportedFormats: []string{
-			"mp3", "mp4", "wav", "flac",
-			"ogg", "webm", "m4a",
-		},
-		SupportsTimestamps:     true,
-		SupportsWordTimestamps: true,
-		SupportsDiarization:    true,
-		SupportsTranslation:    false,
-		SupportsStreaming:      false,
-		SupportedResponseFormats: []string{
-			"json", "text", "srt", "vtt",
-		},
-	},
-	AssemblyAINano: {
-		ID:            AssemblyAINano,
-		Name:          "AssemblyAI Nano",
-		Provider:      ProviderAssemblyAI,
-		APIModel:      "nano",
-		CostPer1MIn:   0.0020,
-		MaxFileSizeMB: 5000,
-		SupportedFormats: []string{
-			"mp3", "mp4", "wav", "flac",
-			"ogg", "webm", "m4a",
-		},
-		SupportsTimestamps:     true,
-		SupportsWordTimestamps: true,
-		SupportsDiarization:    true,
-		SupportsTranslation:    false,
-		SupportsStreaming:      false,
-		SupportedResponseFormats: []string{
-			"json", "text", "srt", "vtt",
-		},
-	},
-}
-
-// ElevenLabsTranscriptionModels maps ElevenLabs Scribe model IDs to their configurations.
-var ElevenLabsTranscriptionModels = map[ID]TranscriptionModel{
-	ElevenLabsScribeV1: {
-		ID:            ElevenLabsScribeV1,
-		Name:          "ElevenLabs Scribe v1",
-		Provider:      ProviderElevenLabs,
-		APIModel:      "scribe_v1",
-		CostPer1MIn:   0.0067,
-		MaxFileSizeMB: 3000,
-		SupportedFormats: []string{
-			"mp3", "mp4", "wav", "flac",
-			"ogg", "webm", "m4a", "aac",
-			"aiff", "opus",
-		},
-		SupportsTimestamps:     true,
-		SupportsWordTimestamps: true,
-		SupportsDiarization:    true,
-		SupportsTranslation:    false,
-		SupportsStreaming:      false,
-		SupportedResponseFormats: []string{
-			"json", "text", "srt",
-		},
-	},
-	ElevenLabsScribeV2: {
-		ID:            ElevenLabsScribeV2,
-		Name:          "ElevenLabs Scribe v2",
-		Provider:      ProviderElevenLabs,
-		APIModel:      "scribe_v2",
-		CostPer1MIn:   0.0067,
-		MaxFileSizeMB: 3000,
-		SupportedFormats: []string{
-			"mp3", "mp4", "wav", "flac",
-			"ogg", "webm", "m4a", "aac",
-			"aiff", "opus",
-		},
-		SupportsTimestamps:     true,
-		SupportsWordTimestamps: true,
-		SupportsDiarization:    true,
-		SupportsTranslation:    false,
-		SupportsStreaming:      false,
-		SupportedResponseFormats: []string{
-			"json", "text", "srt",
-		},
 	},
 }

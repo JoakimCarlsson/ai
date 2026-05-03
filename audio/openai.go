@@ -11,8 +11,10 @@ import (
 )
 
 type openaiAudioOptions struct {
-	baseURL string
-	speed   *float64
+	baseURL      string
+	speed        *float64
+	voice        string
+	outputFormat string
 }
 
 // OpenAIAudioOption configures OpenAI-specific TTS behavior.
@@ -66,19 +68,25 @@ func (o *openaiClient) generate(
 		opt(&opts)
 	}
 
+	voice := o.options.voice
+	if voice == "" {
+		voice = "alloy"
+	}
 	params := openai.AudioSpeechNewParams{
 		Input: text,
 		Model: openai.SpeechModel(
 			o.providerOptions.model.APIModel,
 		),
-		Voice: openai.AudioSpeechNewParamsVoice(
-			o.resolveVoice(opts),
-		),
+		Voice: openai.AudioSpeechNewParamsVoice(voice),
 	}
 
+	outputFormat := o.options.outputFormat
 	if opts.OutputFormat != "" {
+		outputFormat = opts.OutputFormat
+	}
+	if outputFormat != "" {
 		params.ResponseFormat = openai.AudioSpeechNewParamsResponseFormat(
-			opts.OutputFormat,
+			outputFormat,
 		)
 	}
 	if o.options.speed != nil {
@@ -153,15 +161,6 @@ func (o *openaiClient) listVoices(
 	return voices, nil
 }
 
-func (o *openaiClient) resolveVoice(
-	opts GenerationOptions,
-) string {
-	if opts.VoiceID != "" {
-		return opts.VoiceID
-	}
-	return "alloy"
-}
-
 // WithOpenAIBaseURL sets a custom base URL for the OpenAI API endpoint.
 func WithOpenAIBaseURL(baseURL string) OpenAIAudioOption {
 	return func(options *openaiAudioOptions) {
@@ -173,5 +172,25 @@ func WithOpenAIBaseURL(baseURL string) OpenAIAudioOption {
 func WithOpenAISpeed(speed float64) OpenAIAudioOption {
 	return func(options *openaiAudioOptions) {
 		options.speed = &speed
+	}
+}
+
+// WithOpenAIVoice sets the voice used by every GenerateAudio / StreamAudio
+// call on this client. Voice is set at construction time, like model — there
+// is no per-call override. Valid values: alloy, ash, ballad, coral, echo,
+// fable, onyx, nova, sage, shimmer, verse.
+func WithOpenAIVoice(name string) OpenAIAudioOption {
+	return func(options *openaiAudioOptions) {
+		options.voice = name
+	}
+}
+
+// WithOpenAIOutputFormat sets the audio response format (e.g. "mp3", "opus",
+// "aac", "flac", "wav", "pcm") used by every GenerateAudio / StreamAudio call
+// on this client. Set at construction time. If unset, OpenAI's API default
+// (MP3) applies. Note: "pcm" returns 24kHz signed 16-bit little-endian raw PCM.
+func WithOpenAIOutputFormat(format string) OpenAIAudioOption {
+	return func(options *openaiAudioOptions) {
+		options.outputFormat = format
 	}
 }

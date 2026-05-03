@@ -135,7 +135,7 @@ func New(name, description string, fn any, opts ...Option) tool.BaseTool {
 
 	if numIn > idx {
 		pt := fnType.In(idx)
-		if pt.Kind() == reflect.Ptr {
+		if pt.Kind() == reflect.Pointer {
 			pt = pt.Elem()
 		}
 		if pt.Kind() != reflect.Struct {

@@ -12,6 +12,9 @@ client, err := audio.NewAudioGeneration(
     model.ProviderElevenLabs,
     audio.WithAPIKey("your-api-key"),
     audio.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
+    audio.WithElevenLabsOptions(
+        audio.WithElevenLabsVoiceID("EXAVITQu4vr4xnSDxMaL"),
+    ),
 )
 if err != nil {
     log.Fatal(err)
@@ -20,7 +23,6 @@ if err != nil {
 response, err := client.GenerateAudio(
     context.Background(),
     "Hello! This is a demonstration of text-to-speech.",
-    audio.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),
 )
 if err != nil {
     log.Fatal(err)
@@ -30,13 +32,14 @@ os.WriteFile("output.mp3", response.AudioData, 0644)
 fmt.Printf("Characters used: %d\n", response.Usage.Characters)
 ```
 
+Voice is set when the client is constructed (like model). Each provider has its own helper: `WithElevenLabsVoiceID`, `WithOpenAIVoice`, `WithGoogleCloudVoiceName`, `WithAzureVoiceName`. There is no per-call override.
+
 ## Custom Voice Settings
 
 ```go
 response, err := client.GenerateAudio(
     context.Background(),
     "This uses custom voice settings for enhanced expressiveness.",
-    audio.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),
     audio.WithStability(0.75),              // 0.0-1.0, higher = more consistent
     audio.WithSimilarityBoost(0.85),        // 0.0-1.0, higher = more similar to original
     audio.WithStyle(0.5),                   // 0.0-1.0, higher = more expressive
@@ -50,7 +53,6 @@ response, err := client.GenerateAudio(
 chunkChan, err := client.StreamAudio(
     context.Background(),
     "This is a streaming audio example.",
-    audio.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),
     audio.WithOptimizeStreamingLatency(3), // 0-4, higher = lower latency
 )
 if err != nil {
@@ -92,7 +94,6 @@ Enable character-level timing information for subtitles, word highlighting, or l
 response, err := client.GenerateAudio(
     context.Background(),
     "Hello, world!",
-    audio.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),
     audio.WithAlignmentEnabled(true),
 )
 
@@ -122,11 +123,10 @@ if aligner, ok := client.(audio.ForcedAlignmentProvider); ok {
 }
 ```
 
-## Generation Options
+## Generation Options (per call)
 
 | Option | Description |
 |--------|-------------|
-| `WithVoiceID(id)` | Voice to use for generation |
 | `WithOutputFormat(fmt)` | Audio format (`mp3_44100_128`, `pcm_16000`, etc.) |
 | `WithStability(f)` | Voice consistency, 0.0–1.0 |
 | `WithSimilarityBoost(f)` | Match to original voice, 0.0–1.0 |
@@ -134,6 +134,17 @@ if aligner, ok := client.(audio.ForcedAlignmentProvider); ok {
 | `WithSpeakerBoost(bool)` | Enhanced speaker similarity |
 | `WithOptimizeStreamingLatency(n)` | Latency optimization level, 0–4 |
 | `WithAlignmentEnabled(bool)` | Enable character-level timing data |
+
+## Voice Selection (at construction)
+
+Voice is provider-specific and set when the client is built:
+
+| Provider | Helper |
+|---|---|
+| ElevenLabs | `WithElevenLabsVoiceID(id string)` |
+| OpenAI | `WithOpenAIVoice(name string)` (`alloy`, `nova`, …) |
+| Google Cloud | `WithGoogleCloudVoiceName(name string)` (`en-US-Wavenet-D`, …) |
+| Azure Speech | `WithAzureVoiceName(name string)` (`en-US-JennyNeural`, …) |
 
 ## Client Options
 
@@ -145,6 +156,7 @@ client, err := audio.NewAudioGeneration(
     audio.WithTimeout(30*time.Second),
     audio.WithElevenLabsOptions(
         audio.WithElevenLabsBaseURL("custom-endpoint"),
+        audio.WithElevenLabsVoiceID("EXAVITQu4vr4xnSDxMaL"),
     ),
 )
 ```

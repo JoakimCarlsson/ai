@@ -1,19 +1,25 @@
-.PHONY: install fmt lint test release-tag release-publish llms
+.PHONY: install fmt format lint test release-tag release-publish llms
+
+GOPATH_FWD := $(subst \,/,$(shell go env GOPATH))
+
+ifeq ($(OS),Windows_NT)
+    GOLANGCI := cmd /c "set GOTOOLCHAIN=local&& golangci-lint run ./..."
+else
+    GOLANGCI := GOTOOLCHAIN=local $(GOPATH_FWD)/bin/golangci-lint run ./...
+endif
 
 install:
-	go install github.com/air-verse/air@latest
 	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/segmentio/golines@latest
 
 fmt:
-	$(shell go env GOPATH)/bin/goimports -w .
-	$(shell go env GOPATH)/bin/golines -m 80 -w .
+	$(GOPATH_FWD)/bin/goimports -w .
+	$(GOPATH_FWD)/bin/golines -m 80 -w .
 
-lint: export GOTOOLCHAIN=local
 lint:
 	go vet ./...
-	$(shell go env GOPATH)/bin/golangci-lint run ./...
+	$(GOLANGCI)
 
 test:
 	go test -short ./...
