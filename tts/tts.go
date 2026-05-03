@@ -1,42 +1,27 @@
 // Package tts provides a unified interface for generating audio from text using
 // various AI providers.
 //
-// This package abstracts the differences between audio generation providers like ElevenLabs
-// and OpenAI TTS, offering a consistent API for text-to-speech conversion with support for
-// voice selection, audio streaming, and usage tracking.
+// This package defines the [Generation] interface and the data types that flow
+// through it. Concrete vendor implementations live in subpackages (tts/openai,
+// tts/elevenlabs, tts/google, tts/azure, tts/deepgram); each subpackage exports
+// its own NewGeneration constructor that returns a tracing-wrapped client
+// implementing the interface.
 //
-// Key features include:
-//   - Text-to-speech generation from text
-//   - Support for multiple output formats (mp3, pcm, wav)
-//   - Streaming audio generation for real-time playback
-//   - Voice listing and selection
-//   - Voice settings customization (stability, similarity, style)
-//   - Character usage tracking and cost calculation
+// Some vendors also implement [ForcedAlignmentProvider] (currently only ElevenLabs).
+// Type-assert the constructor's return value to detect support:
 //
-// Example usage:
-//
-//	client, err := tts.NewAudioGeneration(model.ProviderElevenLabs,
-//		tts.WithAPIKey("your-api-key"),
-//		tts.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
-//		tts.WithElevenLabsOptions(
-//			tts.WithElevenLabsVoiceID("EXAVITQu4vr4xnSDxMaL"),
-//		),
-//	)
-//	if err != nil {
-//		log.Fatal(err)
+//	client := elevenlabs.NewGeneration(...)
+//	if fap, ok := client.(tts.ForcedAlignmentProvider); ok {
+//		fap.GenerateForcedAlignment(ctx, audio, transcript)
 //	}
 //
-//	response, err := client.GenerateAudio(ctx, "Hello, how are you today?")
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//
-//	os.WriteFile("output.mp3", response.AudioData, 0644)
+// The [WithTracing] wrapper preserves [ForcedAlignmentProvider] when the inner
+// client implements it, so the type assertion above succeeds even though the
+// returned value is wrapped for tracing.
 package tts
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
@@ -49,7 +34,7 @@ type Usage struct {
 	Characters int64
 }
 
-// AlignmentData contains character-level timing information for generated tts.
+// AlignmentData contains character-level timing information for generated audio.
 type AlignmentData struct {
 	Characters                 []string
 	CharacterStartTimesSeconds []float64
@@ -82,7 +67,7 @@ type ForcedAlignmentData struct {
 type Response struct {
 	// AudioData contains the audio file data as bytes.
 	AudioData []byte
-	// ContentType specifies the MIME type of the audio data (e.g., "audio/mpeg", "audio/pcm").
+	// ContentType specifies the MIME type of the audio data.
 	ContentType string
 	// Usage tracks resource consumption for this request.
 	Usage Usage
@@ -104,39 +89,30 @@ type Chunk struct {
 	Done bool
 	// Alignment contains character-level timing information for this chunk (if alignment is enabled).
 	Alignment *AlignmentData
-	// NormalizedAlignment contains normalized character-level timing information for this chunk (if alignment is enabled).
+	// NormalizedAlignment contains normalized character-level timing information for this chunk.
 	NormalizedAlignment *AlignmentData
 }
 
 // Voice represents an available voice for audio generation.
 type Voice struct {
-	// VoiceID is the unique identifier for the voice.
-	VoiceID string
-	// Name is the human-readable name of the voice.
-	Name string
-	// Category categorizes the voice (e.g., "premade", "cloned", "professional").
-	Category string
-	// Description provides additional information about the voice.
+	VoiceID     string
+	Name        string
+	Category    string
 	Description string
-	// PreviewURL is an optional URL to preview the voice.
-	PreviewURL string
-	// Labels contains optional metadata tags for the voice.
-	Labels map[string]string
+	PreviewURL  string
+	Labels      map[string]string
 }
 
-// Generation defines the interface for generating audio from text using TTS providers.
-// It provides methods for synchronous audio generation, streaming, and voice management.
+// Generation defines the interface for generating audio from text.
 type Generation interface {
 	// GenerateAudio creates audio from text and returns the complete audio data.
-	// The optional GenerationOption parameters can customize the generation (voice, format, settings, etc.).
 	GenerateAudio(
 		ctx context.Context,
 		text string,
 		options ...GenerationOption,
 	) (*Response, error)
 
-	// StreamAudio creates audio from text and returns a channel of audio chunks for streaming playback.
-	// This is useful for real-time audio playback with lower latency.
+	// StreamAudio creates audio from text and returns a channel of audio chunks.
 	StreamAudio(
 		ctx context.Context,
 		text string,
@@ -150,11 +126,12 @@ type Generation interface {
 	Model() model.AudioModel
 }
 
-// ForcedAlignmentProvider defines the interface for providers that support forced alignment.
-// Forced alignment matches existing audio with a transcript to produce timing data.
+// ForcedAlignmentProvider is an optional sub-interface for providers that support
+// forced alignment (matching existing audio with a transcript to produce timing data).
+// Vendors that support it implement [GenerateForcedAlignment] on their concrete client
+// type; consumers detect support via type assertion against the [Generation] returned
+// from a vendor's NewGeneration constructor.
 type ForcedAlignmentProvider interface {
-	// GenerateForcedAlignment aligns an existing audio file with its transcript.
-	// Returns character-level and word-level timing information.
 	GenerateForcedAlignment(
 		ctx context.Context,
 		audioFile []byte,
@@ -162,159 +139,129 @@ type ForcedAlignmentProvider interface {
 	) (*ForcedAlignmentData, error)
 }
 
-type audioGenerationClientOptions struct {
-	apiKey  string
-	model   model.AudioModel
-	timeout *time.Duration
-
-	elevenLabsOptions     []ElevenLabsOption
-	openaiAudioOptions    []OpenAIAudioOption
-	googleCloudTTSOptions []GoogleCloudTTSOption
-	azureSpeechOptions    []AzureSpeechOption
-	deepgramOptions       []DeepgramOption
+// GenerationOptions contains parameters for customizing audio generation requests.
+type GenerationOptions struct {
+	OutputFormat             string
+	Stability                *float64
+	SimilarityBoost          *float64
+	Style                    *float64
+	SpeakerBoost             *bool
+	OptimizeStreamingLatency *int
+	EnableAlignment          bool
 }
 
-// GenerationClientOption configures an audio generation client when passed to NewAudioGeneration.
-type GenerationClientOption func(*audioGenerationClientOptions)
+// GenerationOption configures GenerationOptions.
+type GenerationOption func(*GenerationOptions)
 
-// GenerationClient defines the provider-specific implementation for audio generation.
-type GenerationClient interface {
-	generate(
-		ctx context.Context,
-		text string,
-		options ...GenerationOption,
-	) (*Response, error)
-	stream(
-		ctx context.Context,
-		text string,
-		options ...GenerationOption,
-	) (<-chan Chunk, error)
-	listVoices(ctx context.Context) ([]Voice, error)
+// WithOutputFormat sets the audio format for the generated audio.
+func WithOutputFormat(format string) GenerationOption {
+	return func(o *GenerationOptions) { o.OutputFormat = format }
 }
 
-type baseAudioGeneration[C GenerationClient] struct {
-	options audioGenerationClientOptions
-	client  C
+// WithStability sets the voice stability (0.0 to 1.0).
+func WithStability(stability float64) GenerationOption {
+	return func(o *GenerationOptions) { o.Stability = &stability }
 }
 
-// NewAudioGeneration creates a new audio generation client for the specified provider.
-// Supported providers include ElevenLabs. Use WithModel() to specify the audio generation model
-// and WithAPIKey() for authentication.
-func NewAudioGeneration(
-	provider model.Provider,
-	opts ...GenerationClientOption,
-) (Generation, error) {
-	clientOptions := audioGenerationClientOptions{}
-	for _, o := range opts {
-		o(&clientOptions)
+// WithSimilarityBoost sets how much the voice should match the original (0.0 to 1.0).
+func WithSimilarityBoost(boost float64) GenerationOption {
+	return func(o *GenerationOptions) { o.SimilarityBoost = &boost }
+}
+
+// WithStyle sets the style exaggeration (0.0 to 1.0).
+func WithStyle(style float64) GenerationOption {
+	return func(o *GenerationOptions) { o.Style = &style }
+}
+
+// WithSpeakerBoost enables or disables speaker boost for enhanced similarity.
+func WithSpeakerBoost(enabled bool) GenerationOption {
+	return func(o *GenerationOptions) { o.SpeakerBoost = &enabled }
+}
+
+// WithOptimizeStreamingLatency sets the streaming latency optimization level (0-4).
+func WithOptimizeStreamingLatency(level int) GenerationOption {
+	return func(o *GenerationOptions) { o.OptimizeStreamingLatency = &level }
+}
+
+// WithAlignmentEnabled enables character-level timing data in the response.
+func WithAlignmentEnabled(enabled bool) GenerationOption {
+	return func(o *GenerationOptions) { o.EnableAlignment = enabled }
+}
+
+// WithTracing wraps a Generation client so every call records OpenTelemetry spans
+// and metrics. If the inner client also implements [ForcedAlignmentProvider], the
+// returned wrapper does too — type assertion on the wrapper succeeds and the call
+// is traced and forwarded to the inner client.
+func WithTracing(inner Generation) Generation {
+	base := &tracingGeneration{inner: inner}
+	if fap, ok := inner.(ForcedAlignmentProvider); ok {
+		return &tracingGenerationWithForcedAlignment{
+			tracingGeneration: base,
+			fap:               fap,
+		}
 	}
-
-	switch provider {
-	case model.ProviderElevenLabs:
-		return &baseAudioGeneration[ElevenLabsClient]{
-			options: clientOptions,
-			client:  newElevenLabsClient(clientOptions),
-		}, nil
-	case model.ProviderOpenAI:
-		return &baseAudioGeneration[OpenAIClient]{
-			options: clientOptions,
-			client:  newOpenAIClient(clientOptions),
-		}, nil
-	case model.ProviderGoogleCloud:
-		return &baseAudioGeneration[GoogleCloudClient]{
-			options: clientOptions,
-			client:  newGoogleCloudClient(clientOptions),
-		}, nil
-	case model.ProviderAzureSpeech:
-		return &baseAudioGeneration[AzureClient]{
-			options: clientOptions,
-			client:  newAzureClient(clientOptions),
-		}, nil
-	case model.ProviderDeepgram:
-		return &baseAudioGeneration[DeepgramClient]{
-			options: clientOptions,
-			client:  newDeepgramClient(clientOptions),
-		}, nil
-	}
-
-	return nil, fmt.Errorf(
-		"audio generation provider not supported: %s",
-		provider,
-	)
+	return base
 }
 
-func (a *baseAudioGeneration[C]) GenerateAudio(
+type tracingGeneration struct {
+	inner Generation
+}
+
+func (t *tracingGeneration) Model() model.AudioModel {
+	return t.inner.Model()
+}
+
+func (t *tracingGeneration) ListVoices(ctx context.Context) ([]Voice, error) {
+	return t.inner.ListVoices(ctx)
+}
+
+func (t *tracingGeneration) GenerateAudio(
 	ctx context.Context,
 	text string,
 	options ...GenerationOption,
 ) (*Response, error) {
+	m := t.inner.Model()
 	start := time.Now()
-	ctx, span := tracing.StartAudioSpan(
-		ctx,
-		a.options.model.APIModel,
-		string(a.options.model.Provider),
-	)
+	ctx, span := tracing.StartAudioSpan(ctx, m.APIModel, string(m.Provider))
 	defer span.End()
 	span.SetAttributes(tracing.AttrInputCount.Int(len(text)))
 
-	resp, err := a.client.generate(ctx, text, options...)
+	resp, err := t.inner.GenerateAudio(ctx, text, options...)
 	if err != nil {
 		tracing.SetError(span, err)
 		tracing.RecordMetrics(
-			ctx,
-			"generate_audio",
-			a.options.model.APIModel,
-			string(a.options.model.Provider),
-			time.Since(start),
-			0,
-			0,
-			err,
+			ctx, "generate_audio", m.APIModel, string(m.Provider),
+			time.Since(start), 0, 0, err,
 		)
 		return nil, err
 	}
 
-	tracing.SetResponseAttrs(
-		span,
+	tracing.SetResponseAttrs(span,
 		tracing.AttrUsageCharacters.Int64(int64(resp.Usage.Characters)),
 	)
 	tracing.RecordMetrics(
-		ctx,
-		"generate_audio",
-		a.options.model.APIModel,
-		string(a.options.model.Provider),
-		time.Since(start),
-		0,
-		0,
-		nil,
+		ctx, "generate_audio", m.APIModel, string(m.Provider),
+		time.Since(start), 0, 0, nil,
 	)
 	return resp, nil
 }
 
-func (a *baseAudioGeneration[C]) StreamAudio(
+func (t *tracingGeneration) StreamAudio(
 	ctx context.Context,
 	text string,
 	options ...GenerationOption,
 ) (<-chan Chunk, error) {
+	m := t.inner.Model()
 	start := time.Now()
-	ctx, span := tracing.StartAudioSpan(
-		ctx,
-		a.options.model.APIModel,
-		string(a.options.model.Provider),
-	)
+	ctx, span := tracing.StartAudioSpan(ctx, m.APIModel, string(m.Provider))
 	span.SetAttributes(tracing.AttrInputCount.Int(len(text)))
 
-	innerCh, err := a.client.stream(ctx, text, options...)
+	innerCh, err := t.inner.StreamAudio(ctx, text, options...)
 	if err != nil {
 		tracing.SetError(span, err)
 		tracing.RecordMetrics(
-			ctx,
-			"generate_audio",
-			a.options.model.APIModel,
-			string(a.options.model.Provider),
-			time.Since(start),
-			0,
-			0,
-			err,
+			ctx, "generate_audio", m.APIModel, string(m.Provider),
+			time.Since(start), 0, 0, err,
 		)
 		span.End()
 		return nil, err
@@ -331,169 +278,45 @@ func (a *baseAudioGeneration[C]) StreamAudio(
 			outCh <- chunk
 		}
 		tracing.RecordMetrics(
-			ctx,
-			"generate_audio",
-			a.options.model.APIModel,
-			string(a.options.model.Provider),
-			time.Since(start),
-			0,
-			0,
-			nil,
+			ctx, "generate_audio", m.APIModel, string(m.Provider),
+			time.Since(start), 0, 0, nil,
 		)
 	}()
 	return outCh, nil
 }
 
-func (a *baseAudioGeneration[C]) ListVoices(
+// tracingGenerationWithForcedAlignment is the tracing wrapper used when the inner
+// Generation client also implements ForcedAlignmentProvider. The type-assertion
+// `c.(tts.ForcedAlignmentProvider)` against the wrapper returned from NewGeneration
+// succeeds for vendors that support forced alignment (currently only ElevenLabs).
+type tracingGenerationWithForcedAlignment struct {
+	*tracingGeneration
+	fap ForcedAlignmentProvider
+}
+
+func (t *tracingGenerationWithForcedAlignment) GenerateForcedAlignment(
 	ctx context.Context,
-) ([]Voice, error) {
-	return a.client.listVoices(ctx)
-}
+	audioFile []byte,
+	transcript string,
+) (*ForcedAlignmentData, error) {
+	m := t.inner.Model()
+	start := time.Now()
+	ctx, span := tracing.StartAudioSpan(ctx, m.APIModel, string(m.Provider))
+	defer span.End()
+	span.SetAttributes(tracing.AttrInputCount.Int(len(transcript)))
 
-func (a *baseAudioGeneration[C]) Model() model.AudioModel {
-	return a.options.model
-}
-
-// WithAPIKey sets the API key for authentication with the audio generation provider.
-func WithAPIKey(apiKey string) GenerationClientOption {
-	return func(options *audioGenerationClientOptions) {
-		options.apiKey = apiKey
+	resp, err := t.fap.GenerateForcedAlignment(ctx, audioFile, transcript)
+	if err != nil {
+		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx, "forced_alignment", m.APIModel, string(m.Provider),
+			time.Since(start), 0, 0, err,
+		)
+		return nil, err
 	}
-}
-
-// WithModel specifies which audio generation model to use for creating tts.
-func WithModel(model model.AudioModel) GenerationClientOption {
-	return func(options *audioGenerationClientOptions) {
-		options.model = model
-	}
-}
-
-// WithTimeout sets the maximum duration to wait for audio generation requests to complete.
-func WithTimeout(timeout time.Duration) GenerationClientOption {
-	return func(options *audioGenerationClientOptions) {
-		options.timeout = &timeout
-	}
-}
-
-// WithElevenLabsOptions applies ElevenLabs-specific configuration options.
-func WithElevenLabsOptions(
-	elevenLabsOptions ...ElevenLabsOption,
-) GenerationClientOption {
-	return func(options *audioGenerationClientOptions) {
-		options.elevenLabsOptions = elevenLabsOptions
-	}
-}
-
-// WithOpenAIAudioOptions applies OpenAI-specific TTS configuration options.
-func WithOpenAIAudioOptions(
-	openaiOptions ...OpenAIAudioOption,
-) GenerationClientOption {
-	return func(options *audioGenerationClientOptions) {
-		options.openaiAudioOptions = openaiOptions
-	}
-}
-
-// WithGoogleCloudTTSOptions applies Google Cloud TTS-specific configuration options.
-func WithGoogleCloudTTSOptions(
-	gcOptions ...GoogleCloudTTSOption,
-) GenerationClientOption {
-	return func(options *audioGenerationClientOptions) {
-		options.googleCloudTTSOptions = gcOptions
-	}
-}
-
-// WithAzureSpeechOptions applies Azure Speech Services-specific configuration options.
-func WithAzureSpeechOptions(
-	azOptions ...AzureSpeechOption,
-) GenerationClientOption {
-	return func(options *audioGenerationClientOptions) {
-		options.azureSpeechOptions = azOptions
-	}
-}
-
-// WithDeepgramOptions applies Deepgram-specific TTS configuration options.
-func WithDeepgramOptions(
-	dgOptions ...DeepgramOption,
-) GenerationClientOption {
-	return func(options *audioGenerationClientOptions) {
-		options.deepgramOptions = dgOptions
-	}
-}
-
-// GenerationOptions contains parameters for customizing audio generation requests.
-type GenerationOptions struct {
-	// OutputFormat specifies the audio format (e.g., "mp3_44100_128", "pcm_16000").
-	OutputFormat string
-	// Stability controls voice consistency (0.0 to 1.0).
-	Stability *float64
-	// SimilarityBoost controls how much the voice matches the original (0.0 to 1.0).
-	SimilarityBoost *float64
-	// Style controls the style exaggeration (0.0 to 1.0).
-	Style *float64
-	// SpeakerBoost enhances speaker similarity when enabled.
-	SpeakerBoost *bool
-	// OptimizeStreamingLatency optimizes for lower latency (0-4).
-	OptimizeStreamingLatency *int
-	// EnableAlignment enables character-level timing data in the response.
-	EnableAlignment bool
-}
-
-// GenerationOption is a function that configures GenerationOptions.
-type GenerationOption func(*GenerationOptions)
-
-// WithOutputFormat sets the audio format for the generated tts.
-// Common formats: "mp3_44100_128", "mp3_44100_192", "pcm_16000", "pcm_22050", "pcm_24000", "pcm_44100".
-func WithOutputFormat(format string) GenerationOption {
-	return func(options *GenerationOptions) {
-		options.OutputFormat = format
-	}
-}
-
-// WithStability sets the voice stability (0.0 to 1.0).
-// Lower values make the voice more variable and expressive, higher values make it more consistent.
-func WithStability(stability float64) GenerationOption {
-	return func(options *GenerationOptions) {
-		options.Stability = &stability
-	}
-}
-
-// WithSimilarityBoost sets how much the voice should match the original voice (0.0 to 1.0).
-// Higher values increase similarity but may reduce stability.
-func WithSimilarityBoost(boost float64) GenerationOption {
-	return func(options *GenerationOptions) {
-		options.SimilarityBoost = &boost
-	}
-}
-
-// WithStyle sets the style exaggeration (0.0 to 1.0).
-// Higher values make the voice more expressive and exaggerated.
-func WithStyle(style float64) GenerationOption {
-	return func(options *GenerationOptions) {
-		options.Style = &style
-	}
-}
-
-// WithSpeakerBoost enables or disables speaker boost for enhanced similarity.
-func WithSpeakerBoost(enabled bool) GenerationOption {
-	return func(options *GenerationOptions) {
-		options.SpeakerBoost = &enabled
-	}
-}
-
-// WithOptimizeStreamingLatency sets the streaming latency optimization level (0-4).
-// Higher values reduce latency but may decrease quality. 0 = no optimization, 4 = maximum optimization.
-func WithOptimizeStreamingLatency(level int) GenerationOption {
-	return func(options *GenerationOptions) {
-		options.OptimizeStreamingLatency = &level
-	}
-}
-
-// WithAlignmentEnabled enables or disables character-level timing data in the response.
-// When enabled, the audio generation will use the /with-timestamps endpoint and populate
-// the Alignment and NormalizedAlignment fields in the Response.
-// This is useful for subtitles, word highlighting, lip sync, and other timing-dependent features.
-func WithAlignmentEnabled(enabled bool) GenerationOption {
-	return func(options *GenerationOptions) {
-		options.EnableAlignment = enabled
-	}
+	tracing.RecordMetrics(
+		ctx, "forced_alignment", m.APIModel, string(m.Provider),
+		time.Since(start), 0, 0, nil,
+	)
+	return resp, nil
 }
