@@ -12,12 +12,21 @@ import (
 )
 
 type elevenLabsOptions struct {
-	diarize              *bool
-	numSpeakers          *int
-	timestampGranularity string
-	tagAudioEvents       *bool
-	streamVADSilenceMs   *int
-	streamLanguageCode   string
+	diarize                     *bool
+	numSpeakers                 *int
+	timestampGranularity        string
+	tagAudioEvents              *bool
+	streamVADSilenceMs          *int
+	streamLanguageCode          string
+	streamKeyterms              []string
+	streamNoVerbatim            *bool
+	streamIncludeTimestamps     *bool
+	streamIncludeLanguageDetect *bool
+	streamVADThreshold          *float64
+	streamMinSpeechDurationMs   *int
+	streamMinSilenceDurationMs  *int
+	streamTimestampsGranularity string
+	streamDisableLogging        *bool
 }
 
 // ElevenLabsOption configures ElevenLabs Scribe-specific transcription behavior.
@@ -315,5 +324,77 @@ func WithElevenLabsStreamLanguageCode(
 ) ElevenLabsOption {
 	return func(options *elevenLabsOptions) {
 		options.streamLanguageCode = code
+	}
+}
+
+// WithElevenLabsStreamKeyterms boosts recognition of specific words or
+// phrases during a streaming session.
+func WithElevenLabsStreamKeyterms(terms ...string) ElevenLabsOption {
+	return func(options *elevenLabsOptions) {
+		options.streamKeyterms = terms
+	}
+}
+
+// WithElevenLabsStreamNoVerbatim strips filler words ("um", "uh", …) from
+// streaming transcripts.
+func WithElevenLabsStreamNoVerbatim(enabled bool) ElevenLabsOption {
+	return func(options *elevenLabsOptions) {
+		options.streamNoVerbatim = &enabled
+	}
+}
+
+// WithElevenLabsStreamIncludeTimestamps emits word-level timing data on
+// streaming transcripts.
+func WithElevenLabsStreamIncludeTimestamps(enabled bool) ElevenLabsOption {
+	return func(options *elevenLabsOptions) {
+		options.streamIncludeTimestamps = &enabled
+	}
+}
+
+// WithElevenLabsStreamIncludeLanguageDetection enables automatic language
+// detection on streaming sessions.
+func WithElevenLabsStreamIncludeLanguageDetection(enabled bool) ElevenLabsOption {
+	return func(options *elevenLabsOptions) {
+		options.streamIncludeLanguageDetect = &enabled
+	}
+}
+
+// WithElevenLabsStreamVADThreshold sets VAD sensitivity (0.0–1.0) for
+// streaming sessions.
+func WithElevenLabsStreamVADThreshold(threshold float64) ElevenLabsOption {
+	return func(options *elevenLabsOptions) {
+		options.streamVADThreshold = &threshold
+	}
+}
+
+// WithElevenLabsStreamMinSpeechDurationMs sets the minimum duration of
+// speech (ms) before VAD considers it valid.
+func WithElevenLabsStreamMinSpeechDurationMs(ms int) ElevenLabsOption {
+	return func(options *elevenLabsOptions) {
+		options.streamMinSpeechDurationMs = &ms
+	}
+}
+
+// WithElevenLabsStreamMinSilenceDurationMs sets the minimum duration of
+// silence (ms) before VAD declares end of speech.
+func WithElevenLabsStreamMinSilenceDurationMs(ms int) ElevenLabsOption {
+	return func(options *elevenLabsOptions) {
+		options.streamMinSilenceDurationMs = &ms
+	}
+}
+
+// WithElevenLabsStreamTimestampsGranularity sets timestamp resolution for
+// streaming. Valid values: "none", "word", "character".
+func WithElevenLabsStreamTimestampsGranularity(g string) ElevenLabsOption {
+	return func(options *elevenLabsOptions) {
+		options.streamTimestampsGranularity = g
+	}
+}
+
+// WithElevenLabsStreamDisableLogging opts the streaming session out of
+// ElevenLabs' server-side logging.
+func WithElevenLabsStreamDisableLogging(enabled bool) ElevenLabsOption {
+	return func(options *elevenLabsOptions) {
+		options.streamDisableLogging = &enabled
 	}
 }

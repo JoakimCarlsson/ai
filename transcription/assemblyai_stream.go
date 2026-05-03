@@ -46,12 +46,38 @@ func (a *assemblyAIClient) streamTranscribe(
 	if speechModel == "" {
 		speechModel = "universal-streaming-english"
 	}
+	formatTurns := true
+	if a.options.streamFormatTurns != nil {
+		formatTurns = *a.options.streamFormatTurns
+	}
 	q := url.Values{}
 	q.Set("token", a.providerOptions.apiKey)
 	q.Set("sample_rate", strconv.Itoa(sampleRate))
 	q.Set("encoding", "pcm_s16le")
-	q.Set("format_turns", "true")
+	q.Set("format_turns", strconv.FormatBool(formatTurns))
 	q.Set("speech_model", speechModel)
+	q.Set("min_end_of_turn_silence_when_confident", strconv.Itoa(endOfTurn))
+	if a.options.streamEndOfTurnConfidenceThreshold != nil {
+		q.Set("end_of_turn_confidence_threshold",
+			strconv.FormatFloat(*a.options.streamEndOfTurnConfidenceThreshold, 'f', -1, 64))
+	}
+	if a.options.streamMaxTurnSilence != nil {
+		q.Set("max_turn_silence", strconv.Itoa(*a.options.streamMaxTurnSilence))
+	}
+	if a.options.streamPunctuationFilter != nil {
+		q.Set("punctuation_filter", strconv.FormatBool(*a.options.streamPunctuationFilter))
+	}
+	if a.options.streamWordFinalizationMaxWaitMs != nil {
+		q.Set("word_finalization_max_wait_time",
+			strconv.Itoa(*a.options.streamWordFinalizationMaxWaitMs))
+	}
+	if a.options.streamExtraSessionInformation != nil {
+		q.Set("enable_extra_session_information",
+			strconv.FormatBool(*a.options.streamExtraSessionInformation))
+	}
+	for _, kt := range a.options.streamKeyterms {
+		q.Add("keyterms_prompt", kt)
+	}
 
 	u := url.URL{
 		Scheme:   "wss",

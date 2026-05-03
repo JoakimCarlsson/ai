@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
@@ -47,6 +48,35 @@ func (e *elevenLabsClient) streamTranscribe(
 	q.Set("audio_format", fmt.Sprintf("pcm_%d", sampleRate))
 	if lang != "" {
 		q.Set("language_code", lang)
+	}
+	for _, kt := range e.options.streamKeyterms {
+		q.Add("keyterms", kt)
+	}
+	if e.options.streamNoVerbatim != nil {
+		q.Set("no_verbatim", strconv.FormatBool(*e.options.streamNoVerbatim))
+	}
+	if e.options.streamIncludeTimestamps != nil {
+		q.Set("include_timestamps", strconv.FormatBool(*e.options.streamIncludeTimestamps))
+	}
+	if e.options.streamIncludeLanguageDetect != nil {
+		q.Set("include_language_detection",
+			strconv.FormatBool(*e.options.streamIncludeLanguageDetect))
+	}
+	if e.options.streamVADThreshold != nil {
+		q.Set("vad_threshold",
+			strconv.FormatFloat(*e.options.streamVADThreshold, 'f', -1, 64))
+	}
+	if e.options.streamMinSpeechDurationMs != nil {
+		q.Set("min_speech_duration_ms", strconv.Itoa(*e.options.streamMinSpeechDurationMs))
+	}
+	if e.options.streamMinSilenceDurationMs != nil {
+		q.Set("min_silence_duration_ms", strconv.Itoa(*e.options.streamMinSilenceDurationMs))
+	}
+	if e.options.streamTimestampsGranularity != "" {
+		q.Set("timestamps_granularity", e.options.streamTimestampsGranularity)
+	}
+	if e.options.streamDisableLogging != nil {
+		q.Set("disable_logging", strconv.FormatBool(*e.options.streamDisableLogging))
 	}
 
 	u := url.URL{

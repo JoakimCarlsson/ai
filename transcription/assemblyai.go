@@ -11,11 +11,18 @@ import (
 )
 
 type assemblyAIOptions struct {
-	pollInterval             time.Duration
-	maxPollDuration          time.Duration
-	speakerLabels            bool
-	streamEndOfTurnSilenceMs *int
-	streamSpeechModel        string
+	pollInterval                       time.Duration
+	maxPollDuration                    time.Duration
+	speakerLabels                      bool
+	streamEndOfTurnSilenceMs           *int
+	streamSpeechModel                  string
+	streamFormatTurns                  *bool
+	streamEndOfTurnConfidenceThreshold *float64
+	streamMaxTurnSilence               *int
+	streamKeyterms                     []string
+	streamPunctuationFilter            *bool
+	streamWordFinalizationMaxWaitMs    *int
+	streamExtraSessionInformation      *bool
 }
 
 // AssemblyAIOption configures AssemblyAI-specific transcription behavior.
@@ -424,5 +431,63 @@ func WithAssemblyAIStreamSpeechModel(
 ) AssemblyAIOption {
 	return func(options *assemblyAIOptions) {
 		options.streamSpeechModel = name
+	}
+}
+
+// WithAssemblyAIStreamFormatTurns toggles automatic punctuation/casing on
+// streaming turn transcripts. Defaults to true.
+func WithAssemblyAIStreamFormatTurns(enabled bool) AssemblyAIOption {
+	return func(options *assemblyAIOptions) {
+		options.streamFormatTurns = &enabled
+	}
+}
+
+// WithAssemblyAIStreamEndOfTurnConfidenceThreshold sets the confidence
+// threshold (0.0–1.0) for end-of-turn detection in streaming sessions.
+func WithAssemblyAIStreamEndOfTurnConfidenceThreshold(
+	threshold float64,
+) AssemblyAIOption {
+	return func(options *assemblyAIOptions) {
+		options.streamEndOfTurnConfidenceThreshold = &threshold
+	}
+}
+
+// WithAssemblyAIStreamMaxTurnSilenceMs caps the longest silence (ms) within
+// a turn before AssemblyAI forces end-of-turn.
+func WithAssemblyAIStreamMaxTurnSilenceMs(ms int) AssemblyAIOption {
+	return func(options *assemblyAIOptions) {
+		options.streamMaxTurnSilence = &ms
+	}
+}
+
+// WithAssemblyAIStreamKeyterms boosts recognition of specific words or
+// phrases during a v3 streaming session.
+func WithAssemblyAIStreamKeyterms(terms ...string) AssemblyAIOption {
+	return func(options *assemblyAIOptions) {
+		options.streamKeyterms = terms
+	}
+}
+
+// WithAssemblyAIStreamPunctuationFilter toggles AssemblyAI's punctuation
+// filter on streaming transcripts.
+func WithAssemblyAIStreamPunctuationFilter(enabled bool) AssemblyAIOption {
+	return func(options *assemblyAIOptions) {
+		options.streamPunctuationFilter = &enabled
+	}
+}
+
+// WithAssemblyAIStreamWordFinalizationMaxWaitMs caps how long AssemblyAI
+// waits before finalising the last word of a turn.
+func WithAssemblyAIStreamWordFinalizationMaxWaitMs(ms int) AssemblyAIOption {
+	return func(options *assemblyAIOptions) {
+		options.streamWordFinalizationMaxWaitMs = &ms
+	}
+}
+
+// WithAssemblyAIStreamExtraSessionInformation enables additional session
+// metadata events.
+func WithAssemblyAIStreamExtraSessionInformation(enabled bool) AssemblyAIOption {
+	return func(options *assemblyAIOptions) {
+		options.streamExtraSessionInformation = &enabled
 	}
 }
