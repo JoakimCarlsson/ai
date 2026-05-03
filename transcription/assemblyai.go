@@ -517,6 +517,9 @@ func (a *assemblyAIClient) streamTranscribe(
 
 	speechModel := a.options.streamSpeechModel
 	if speechModel == "" {
+		speechModel = a.providerOptions.model.APIModel
+	}
+	if speechModel == "" {
 		speechModel = "universal-streaming-english"
 	}
 	formatTurns := true

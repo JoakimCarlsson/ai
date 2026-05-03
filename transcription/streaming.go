@@ -34,19 +34,3 @@ type streamingSpeechToTextClient interface {
 		options ...Option,
 	) (<-chan StreamResult, error)
 }
-
-// WithStreamSampleRate declares the PCM sample rate (Hz) of the audio fed
-// into the streaming session. Defaults to 16000 when supported.
-func WithStreamSampleRate(hz int) Option {
-	return func(options *Options) {
-		options.SampleRate = hz
-	}
-}
-
-// WithStreamChannels declares the channel count of the audio fed into the
-// streaming session. Defaults to 1 when supported.
-func WithStreamChannels(n int) Option {
-	return func(options *Options) {
-		options.Channels = n
-	}
-}

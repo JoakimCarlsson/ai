@@ -33,6 +33,8 @@ func run() error {
 		model.ProviderAssemblyAI,
 		transcription.WithAPIKey(os.Getenv("ASSEMBLYAI_API_KEY")),
 		transcription.WithModel(model.AssemblyAITranscriptionModels[model.AssemblyAIBest]),
+		transcription.WithStreamSampleRate(sampleRate),
+		transcription.WithStreamChannels(channels),
 		transcription.WithAssemblyAIOptions(
 			transcription.WithAssemblyAIEndOfTurnSilenceMs(700),
 		),
@@ -53,10 +55,7 @@ func run() error {
 	defer cancel()
 
 	audio := make(chan []byte, 64)
-	results, err := client.StreamTranscribe(ctx, audio,
-		transcription.WithStreamSampleRate(sampleRate),
-		transcription.WithStreamChannels(channels),
-	)
+	results, err := client.StreamTranscribe(ctx, audio)
 	if err != nil {
 		return err
 	}

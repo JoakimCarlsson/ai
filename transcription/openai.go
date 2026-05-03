@@ -87,8 +87,12 @@ func (o *openaiClient) transcribe(
 		},
 	}
 
+	lang := o.options.language
 	if opts.Language != "" {
-		params.Language = openai.String(opts.Language)
+		lang = opts.Language
+	}
+	if lang != "" {
+		params.Language = openai.String(lang)
 	}
 
 	if opts.Prompt != "" {

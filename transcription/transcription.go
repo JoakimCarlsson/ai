@@ -122,6 +122,9 @@ type transcriptionClientOptions struct {
 	model   model.TranscriptionModel
 	timeout *time.Duration
 
+	streamSampleRate int
+	streamChannels   int
+
 	openaiOptions         []OpenAIOption
 	deepgramOptions       []DeepgramOption
 	googleCloudSTTOptions []GoogleCloudSTTOption
@@ -330,7 +333,12 @@ func (s *baseSpeechToText[C]) StreamTranscribe(
 		"stream_transcribe",
 	)
 
-	innerCh, err := s.streaming.streamTranscribe(ctx, audio, options...)
+	defaults := s.streamDefaults()
+	innerCh, err := s.streaming.streamTranscribe(
+		ctx,
+		audio,
+		append(defaults, options...)...,
+	)
 	if err != nil {
 		tracing.SetError(span, err)
 		tracing.RecordMetrics(
@@ -380,6 +388,19 @@ func resolveStreaming[C SpeechToTextClient](c C) streamingSpeechToTextClient {
 	return nil
 }
 
+func (s *baseSpeechToText[C]) streamDefaults() []Option {
+	var defaults []Option
+	if s.options.streamSampleRate != 0 {
+		rate := s.options.streamSampleRate
+		defaults = append(defaults, func(o *Options) { o.SampleRate = rate })
+	}
+	if s.options.streamChannels != 0 {
+		ch := s.options.streamChannels
+		defaults = append(defaults, func(o *Options) { o.Channels = ch })
+	}
+	return defaults
+}
+
 // WithAPIKey sets the API key for authentication with the speech-to-text provider.
 func WithAPIKey(apiKey string) ClientOption {
 	return func(options *transcriptionClientOptions) {
@@ -398,6 +419,24 @@ func WithModel(model model.TranscriptionModel) ClientOption {
 func WithTimeout(timeout time.Duration) ClientOption {
 	return func(options *transcriptionClientOptions) {
 		options.timeout = &timeout
+	}
+}
+
+// WithStreamSampleRate declares the PCM sample rate (Hz) of the audio fed
+// into streaming sessions. Set at client construction time. Default is
+// 16000 when supported by the provider.
+func WithStreamSampleRate(hz int) ClientOption {
+	return func(options *transcriptionClientOptions) {
+		options.streamSampleRate = hz
+	}
+}
+
+// WithStreamChannels declares the channel count of the audio fed into
+// streaming sessions. Set at client construction time. Default is 1 when
+// supported by the provider.
+func WithStreamChannels(n int) ClientOption {
+	return func(options *transcriptionClientOptions) {
+		options.streamChannels = n
 	}
 }
 
@@ -524,12 +563,22 @@ func WithFilename(filename string) Option {
 type OpenAIOption func(*openaiOptions)
 
 type openaiOptions struct {
-	baseURL string
+	baseURL  string
+	language string
 }
 
 // WithOpenAIBaseURL sets a custom base URL for the OpenAI API.
 func WithOpenAIBaseURL(baseURL string) OpenAIOption {
 	return func(o *openaiOptions) {
 		o.baseURL = baseURL
+	}
+}
+
+// WithOpenAISTTLanguage sets the default language (ISO-639-1, e.g. "en",
+// "sv") for transcription. Set at client construction time. Per-call
+// WithLanguage overrides this when supplied.
+func WithOpenAISTTLanguage(language string) OpenAIOption {
+	return func(o *openaiOptions) {
+		o.language = language
 	}
 }
