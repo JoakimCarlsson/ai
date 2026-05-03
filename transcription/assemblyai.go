@@ -11,9 +11,10 @@ import (
 )
 
 type assemblyAIOptions struct {
-	pollInterval    time.Duration
-	maxPollDuration time.Duration
-	speakerLabels   bool
+	pollInterval             time.Duration
+	maxPollDuration          time.Duration
+	speakerLabels            bool
+	streamEndOfTurnSilenceMs *int
 }
 
 // AssemblyAIOption configures AssemblyAI-specific transcription behavior.
@@ -399,5 +400,16 @@ func WithAssemblyAISpeakerLabels(
 ) AssemblyAIOption {
 	return func(options *assemblyAIOptions) {
 		options.speakerLabels = enabled
+	}
+}
+
+// WithAssemblyAIEndOfTurnSilenceMs sets the silence threshold (ms) before
+// AssemblyAI emits an end-of-turn Turn event on a v3 streaming session.
+// Streaming-only.
+func WithAssemblyAIEndOfTurnSilenceMs(
+	ms int,
+) AssemblyAIOption {
+	return func(options *assemblyAIOptions) {
+		options.streamEndOfTurnSilenceMs = &ms
 	}
 }

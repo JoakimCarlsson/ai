@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
-	"strconv"
 	"sync"
 	"time"
 
@@ -15,9 +16,8 @@ import (
 )
 
 const (
-	elevenLabsStreamDefaultVADSilenceMs = 700
-	elevenLabsStreamReadDeadline        = 30 * time.Second
-	elevenLabsStreamHandshakeTimeout    = 10 * time.Second
+	elevenLabsStreamReadDeadline     = 30 * time.Second
+	elevenLabsStreamHandshakeTimeout = 10 * time.Second
 )
 
 // streamTranscribe opens an ElevenLabs Scribe v2 Realtime WebSocket. Audio
@@ -38,14 +38,13 @@ func (e *elevenLabsClient) streamTranscribe(
 	if sampleRate == 0 {
 		sampleRate = 16000
 	}
-	vadSilence := elevenLabsStreamDefaultVADSilenceMs
-	if opts.EndpointingMs != nil {
-		vadSilence = *opts.EndpointingMs
+	lang := e.options.streamLanguageCode
+	if lang == "" {
+		lang = opts.Language
 	}
-	lang := opts.Language
 
 	q := url.Values{}
-	q.Set("sample_rate", strconv.Itoa(sampleRate))
+	q.Set("audio_format", fmt.Sprintf("pcm_%d", sampleRate))
 	if lang != "" {
 		q.Set("language_code", lang)
 	}
@@ -78,15 +77,6 @@ func (e *elevenLabsClient) streamTranscribe(
 		return conn.WriteMessage(messageType, data)
 	}
 
-	cfg := fmt.Sprintf(
-		`{"type":"session.update","vad":{"min_silence_ms":%d}}`,
-		vadSilence,
-	)
-	if err := send(websocket.TextMessage, []byte(cfg)); err != nil {
-		_ = conn.Close()
-		return nil, err
-	}
-
 	_ = conn.SetReadDeadline(time.Now().Add(elevenLabsStreamReadDeadline))
 	conn.SetPongHandler(func(string) error {
 		return conn.SetReadDeadline(time.Now().Add(elevenLabsStreamReadDeadline))
@@ -107,7 +97,7 @@ func runElevenLabsReader(
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
-			if !isCleanWSClose(err) {
+			if !isCleanWSClose(err) && !errors.Is(err, net.ErrClosed) {
 				out <- StreamResult{Error: err}
 			}
 			return
@@ -132,30 +122,22 @@ func runElevenLabsWriter(
 	defer close(out)
 	defer func() { _ = conn.Close() }()
 
-	closeSession := func() {
-		_ = send(websocket.TextMessage, []byte(`{"type":"session.close"}`))
-	}
-
-	audioOpen := true
 	for {
 		select {
 		case <-done:
 			return
 		case <-ctx.Done():
-			closeSession()
+			_ = conn.Close()
 			<-done
 			return
 		case frame, ok := <-audio:
 			if !ok {
-				if audioOpen {
-					closeSession()
-					audioOpen = false
-				}
-				audio = nil
-				continue
+				_ = conn.Close()
+				<-done
+				return
 			}
 			payload := fmt.Sprintf(
-				`{"type":"input_audio_chunk","audio":"%s"}`,
+				`{"message_type":"input_audio_chunk","audio_base_64":"%s"}`,
 				base64.StdEncoding.EncodeToString(frame),
 			)
 			if err := send(websocket.TextMessage, []byte(payload)); err != nil {
@@ -169,11 +151,11 @@ func runElevenLabsWriter(
 }
 
 type elevenLabsStreamResp struct {
-	Type       string  `json:"type"`
-	Text       string  `json:"text"`
-	Transcript string  `json:"transcript"`
-	Confidence float64 `json:"confidence"`
-	Words      []struct {
+	MessageType string  `json:"message_type"`
+	Text        string  `json:"text"`
+	Transcript  string  `json:"transcript"`
+	Confidence  float64 `json:"confidence"`
+	Words       []struct {
 		Text       string  `json:"text"`
 		Start      float64 `json:"start"`
 		End        float64 `json:"end"`
@@ -187,10 +169,10 @@ func parseElevenLabsStream(raw []byte) (StreamResult, bool) {
 		return StreamResult{}, false
 	}
 	isFinal := false
-	switch resp.Type {
+	switch resp.MessageType {
 	case "partial_transcript":
 		isFinal = false
-	case "committed_transcript":
+	case "committed_transcript", "committed_transcript_with_timestamps":
 		isFinal = true
 	default:
 		return StreamResult{}, false
@@ -213,12 +195,4 @@ func parseElevenLabsStream(raw []byte) (StreamResult, bool) {
 		WordCount:  len(resp.Words),
 		Words:      words,
 	}, true
-}
-
-// WithElevenLabsStreamVADSilenceMs sets the minimum silence (ms) ElevenLabs'
-// VAD waits before emitting committed_transcript.
-func WithElevenLabsStreamVADSilenceMs(ms int) Option {
-	return func(options *Options) {
-		options.EndpointingMs = &ms
-	}
 }

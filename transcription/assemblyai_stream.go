@@ -35,8 +35,8 @@ func (a *assemblyAIClient) streamTranscribe(
 		sampleRate = 16000
 	}
 	endOfTurn := assemblyAIStreamDefaultEndOfTurnSilenceMs
-	if opts.EndpointingMs != nil {
-		endOfTurn = *opts.EndpointingMs
+	if a.options.streamEndOfTurnSilenceMs != nil {
+		endOfTurn = *a.options.streamEndOfTurnSilenceMs
 	}
 
 	q := url.Values{}
@@ -202,12 +202,4 @@ func parseAssemblyAIStream(raw []byte) (StreamResult, bool) {
 		WordCount:  len(resp.Words),
 		Words:      words,
 	}, true
-}
-
-// WithAssemblyAIEndOfTurnSilenceMs sets the silence threshold (ms) before
-// AssemblyAI emits an end-of-turn Turn event.
-func WithAssemblyAIEndOfTurnSilenceMs(ms int) Option {
-	return func(options *Options) {
-		options.EndpointingMs = &ms
-	}
 }

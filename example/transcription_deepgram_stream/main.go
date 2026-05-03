@@ -33,6 +33,9 @@ func run() error {
 		model.ProviderDeepgram,
 		transcription.WithAPIKey(os.Getenv("DEEPGRAM_API_KEY")),
 		transcription.WithModel(model.DeepgramTranscriptionModels[model.DeepgramNova3]),
+		transcription.WithDeepgramOptions(
+			transcription.WithDeepgramStreamEndpointingMs(300),
+		),
 	)
 	if err != nil {
 		return err
@@ -53,8 +56,6 @@ func run() error {
 	results, err := client.StreamTranscribe(ctx, audio,
 		transcription.WithStreamSampleRate(sampleRate),
 		transcription.WithStreamChannels(channels),
-		transcription.WithStreamInterimResults(true),
-		transcription.WithStreamEndpointing(300),
 		transcription.WithLanguage("en-US"),
 	)
 	if err != nil {

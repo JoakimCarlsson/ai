@@ -33,6 +33,10 @@ func run() error {
 		model.ProviderElevenLabs,
 		transcription.WithAPIKey(os.Getenv("ELEVENLABS_API_KEY")),
 		transcription.WithModel(model.ElevenLabsTranscriptionModels[model.ElevenLabsScribeV2]),
+		transcription.WithElevenLabsSTTOptions(
+			transcription.WithElevenLabsStreamVADSilenceMs(700),
+			transcription.WithElevenLabsStreamLanguageCode("eng"),
+		),
 	)
 	if err != nil {
 		return err
@@ -53,8 +57,6 @@ func run() error {
 	results, err := client.StreamTranscribe(ctx, audio,
 		transcription.WithStreamSampleRate(sampleRate),
 		transcription.WithStreamChannels(channels),
-		transcription.WithElevenLabsStreamVADSilenceMs(700),
-		transcription.WithLanguage("eng"),
 	)
 	if err != nil {
 		return err

@@ -34,12 +34,8 @@ func (d *deepgramClient) streamTranscribe(
 	}
 
 	endpointing := deepgramStreamDefaultEndpointingMs
-	if opts.EndpointingMs != nil {
-		endpointing = *opts.EndpointingMs
-	}
-	interim := true
-	if opts.InterimResults != nil {
-		interim = *opts.InterimResults
+	if d.options.streamEndpointingMs != nil {
+		endpointing = *d.options.streamEndpointingMs
 	}
 	sampleRate := opts.SampleRate
 	if sampleRate == 0 {
@@ -58,7 +54,7 @@ func (d *deepgramClient) streamTranscribe(
 	q.Set("encoding", "linear16")
 	q.Set("sample_rate", strconv.Itoa(sampleRate))
 	q.Set("channels", strconv.Itoa(channels))
-	q.Set("interim_results", strconv.FormatBool(interim))
+	q.Set("interim_results", "true")
 	q.Set("endpointing", strconv.Itoa(endpointing))
 	q.Set("model", d.providerOptions.model.APIModel)
 	if lang != "" {
@@ -241,12 +237,4 @@ func parseDeepgramStream(raw []byte) (StreamResult, bool) {
 		WordCount:  len(alt.Words),
 		Words:      words,
 	}, true
-}
-
-// WithDeepgramStreamEndpointingMs sets the silence window (ms) Deepgram
-// waits before emitting is_final on a streaming session.
-func WithDeepgramStreamEndpointingMs(ms int) Option {
-	return func(options *Options) {
-		options.EndpointingMs = &ms
-	}
 }

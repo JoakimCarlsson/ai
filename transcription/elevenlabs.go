@@ -16,6 +16,8 @@ type elevenLabsOptions struct {
 	numSpeakers          *int
 	timestampGranularity string
 	tagAudioEvents       *bool
+	streamVADSilenceMs   *int
+	streamLanguageCode   string
 }
 
 // ElevenLabsOption configures ElevenLabs Scribe-specific transcription behavior.
@@ -292,5 +294,26 @@ func WithElevenLabsTagAudioEvents(
 ) ElevenLabsOption {
 	return func(options *elevenLabsOptions) {
 		options.tagAudioEvents = &enabled
+	}
+}
+
+// WithElevenLabsStreamVADSilenceMs sets the silence window (ms) ElevenLabs'
+// VAD waits before emitting committed_transcript on a streaming session.
+// Streaming-only; ignored on batch Transcribe calls.
+func WithElevenLabsStreamVADSilenceMs(
+	ms int,
+) ElevenLabsOption {
+	return func(options *elevenLabsOptions) {
+		options.streamVADSilenceMs = &ms
+	}
+}
+
+// WithElevenLabsStreamLanguageCode sets the language hint for streaming
+// sessions. Streaming-only; ignored on batch Transcribe calls.
+func WithElevenLabsStreamLanguageCode(
+	code string,
+) ElevenLabsOption {
+	return func(options *elevenLabsOptions) {
+		options.streamLanguageCode = code
 	}
 }

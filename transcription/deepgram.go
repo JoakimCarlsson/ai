@@ -12,10 +12,11 @@ import (
 )
 
 type deepgramOptions struct {
-	punctuate   *bool
-	diarize     *bool
-	smartFormat *bool
-	language    string
+	punctuate           *bool
+	diarize             *bool
+	smartFormat         *bool
+	language            string
+	streamEndpointingMs *int
 }
 
 // DeepgramOption configures Deepgram-specific transcription behavior.
@@ -241,5 +242,15 @@ func WithDeepgramLanguage(
 ) DeepgramOption {
 	return func(options *deepgramOptions) {
 		options.language = language
+	}
+}
+
+// WithDeepgramStreamEndpointingMs sets the silence window (ms) Deepgram waits
+// before emitting is_final on a streaming session. Streaming-only.
+func WithDeepgramStreamEndpointingMs(
+	ms int,
+) DeepgramOption {
+	return func(options *deepgramOptions) {
+		options.streamEndpointingMs = &ms
 	}
 }

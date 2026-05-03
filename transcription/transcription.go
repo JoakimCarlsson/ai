@@ -456,12 +456,6 @@ type Options struct {
 	KnownSpeakerNames      []string
 	KnownSpeakerReferences []string
 	Filename               string
-	// EndpointingMs is the silence window after which streaming providers
-	// should mark a transcript final. Set via WithStreamEndpointing.
-	EndpointingMs *int
-	// InterimResults toggles emission of non-final transcripts during
-	// streaming. Set via WithStreamInterimResults.
-	InterimResults *bool
 	// SampleRate is the PCM sample rate (Hz) of audio fed into a streaming
 	// session. Set via WithStreamSampleRate. Defaults to 16000.
 	SampleRate int

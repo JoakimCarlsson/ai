@@ -35,23 +35,6 @@ type streamingSpeechToTextClient interface {
 	) (<-chan StreamResult, error)
 }
 
-// WithStreamEndpointing sets the silence window (ms) after which a streaming
-// provider should mark a transcript final. Provider-agnostic; each provider
-// maps it to its native parameter.
-func WithStreamEndpointing(ms int) Option {
-	return func(options *Options) {
-		options.EndpointingMs = &ms
-	}
-}
-
-// WithStreamInterimResults toggles emission of interim transcripts. Defaults
-// to true on providers that support streaming.
-func WithStreamInterimResults(enabled bool) Option {
-	return func(options *Options) {
-		options.InterimResults = &enabled
-	}
-}
-
 // WithStreamSampleRate declares the PCM sample rate (Hz) of the audio fed
 // into the streaming session. Defaults to 16000 when supported.
 func WithStreamSampleRate(hz int) Option {
