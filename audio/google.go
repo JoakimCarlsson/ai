@@ -15,6 +15,7 @@ type googleCloudTTSOptions struct {
 	languageCode string
 	ssmlGender   string
 	voiceName    string
+	outputFormat string
 }
 
 // GoogleCloudTTSOption configures Google Cloud TTS behavior.
@@ -99,6 +100,9 @@ func (g *googleCloudClient) generate(
 	}
 
 	encoding := "MP3"
+	if g.options.outputFormat != "" {
+		encoding = g.options.outputFormat
+	}
 	if opts.OutputFormat != "" {
 		encoding = opts.OutputFormat
 	}
@@ -329,5 +333,18 @@ func WithGoogleCloudVoiceName(
 ) GoogleCloudTTSOption {
 	return func(options *googleCloudTTSOptions) {
 		options.voiceName = name
+	}
+}
+
+// WithGoogleCloudOutputFormat sets the audio encoding (e.g. "MP3", "LINEAR16",
+// "OGG_OPUS", "MULAW", "ALAW") used by every GenerateAudio / StreamAudio call
+// on this client. Set at construction time. Default is "MP3". Note: "LINEAR16"
+// is wrapped in a RIFF/WAV container — consumers expecting raw PCM must strip
+// the 44-byte header.
+func WithGoogleCloudOutputFormat(
+	format string,
+) GoogleCloudTTSOption {
+	return func(options *googleCloudTTSOptions) {
+		options.outputFormat = format
 	}
 }

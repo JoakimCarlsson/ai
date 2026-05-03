@@ -11,9 +11,10 @@ import (
 )
 
 type openaiAudioOptions struct {
-	baseURL string
-	speed   *float64
-	voice   string
+	baseURL      string
+	speed        *float64
+	voice        string
+	outputFormat string
 }
 
 // OpenAIAudioOption configures OpenAI-specific TTS behavior.
@@ -79,9 +80,13 @@ func (o *openaiClient) generate(
 		Voice: openai.AudioSpeechNewParamsVoice(voice),
 	}
 
+	outputFormat := o.options.outputFormat
 	if opts.OutputFormat != "" {
+		outputFormat = opts.OutputFormat
+	}
+	if outputFormat != "" {
 		params.ResponseFormat = openai.AudioSpeechNewParamsResponseFormat(
-			opts.OutputFormat,
+			outputFormat,
 		)
 	}
 	if o.options.speed != nil {
@@ -177,5 +182,15 @@ func WithOpenAISpeed(speed float64) OpenAIAudioOption {
 func WithOpenAIVoice(name string) OpenAIAudioOption {
 	return func(options *openaiAudioOptions) {
 		options.voice = name
+	}
+}
+
+// WithOpenAIOutputFormat sets the audio response format (e.g. "mp3", "opus",
+// "aac", "flac", "wav", "pcm") used by every GenerateAudio / StreamAudio call
+// on this client. Set at construction time. If unset, OpenAI's API default
+// (MP3) applies. Note: "pcm" returns 24kHz signed 16-bit little-endian raw PCM.
+func WithOpenAIOutputFormat(format string) OpenAIAudioOption {
+	return func(options *openaiAudioOptions) {
+		options.outputFormat = format
 	}
 }

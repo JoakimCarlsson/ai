@@ -14,17 +14,19 @@ import (
 )
 
 const (
-	defaultElevenLabsBaseURL = "https://api.elevenlabs.io/v1"
-	defaultVoiceID           = "EXAVITQu4vr4xnSDxMaL" // Rachel voice
+	defaultElevenLabsBaseURL      = "https://api.elevenlabs.io/v1"
+	defaultVoiceID                = "EXAVITQu4vr4xnSDxMaL" // Rachel voice
+	defaultElevenLabsOutputFormat = "mp3_44100_128"
 )
 
 // ElevenLabsClient implements the GenerationClient interface for ElevenLabs API.
 type ElevenLabsClient struct {
-	apiKey     string
-	baseURL    string
-	httpClient *http.Client
-	model      string
-	voiceID    string
+	apiKey       string
+	baseURL      string
+	httpClient   *http.Client
+	model        string
+	voiceID      string
+	outputFormat string
 }
 
 func newElevenLabsClient(
@@ -32,6 +34,7 @@ func newElevenLabsClient(
 ) ElevenLabsClient {
 	baseURL := defaultElevenLabsBaseURL
 	clientVoiceID := defaultVoiceID
+	clientOutputFormat := defaultElevenLabsOutputFormat
 	for _, opt := range options.elevenLabsOptions {
 		opts := &elevenLabsOptions{}
 		opt(opts)
@@ -40,6 +43,9 @@ func newElevenLabsClient(
 		}
 		if opts.voiceID != "" {
 			clientVoiceID = opts.voiceID
+		}
+		if opts.outputFormat != "" {
+			clientOutputFormat = opts.outputFormat
 		}
 	}
 
@@ -59,8 +65,9 @@ func newElevenLabsClient(
 		httpClient: &http.Client{
 			Timeout: timeout,
 		},
-		model:   modelID,
-		voiceID: clientVoiceID,
+		model:        modelID,
+		voiceID:      clientVoiceID,
+		outputFormat: clientOutputFormat,
 	}
 }
 
@@ -156,7 +163,7 @@ func (c ElevenLabsClient) generateStandard(
 ) (*Response, error) {
 	voiceID := c.voiceID
 
-	outputFormat := "mp3_44100_128"
+	outputFormat := c.outputFormat
 	if opts.OutputFormat != "" {
 		outputFormat = opts.OutputFormat
 	}
@@ -260,7 +267,7 @@ func (c ElevenLabsClient) generateWithTimestamps(
 ) (*Response, error) {
 	voiceID := c.voiceID
 
-	outputFormat := "mp3_44100_128"
+	outputFormat := c.outputFormat
 	if opts.OutputFormat != "" {
 		outputFormat = opts.OutputFormat
 	}
@@ -413,7 +420,7 @@ func (c ElevenLabsClient) streamStandard(
 ) (<-chan Chunk, error) {
 	voiceID := c.voiceID
 
-	outputFormat := "mp3_44100_128"
+	outputFormat := c.outputFormat
 	if opts.OutputFormat != "" {
 		outputFormat = opts.OutputFormat
 	}
@@ -540,7 +547,7 @@ func (c ElevenLabsClient) streamWithTimestamps(
 ) (<-chan Chunk, error) {
 	voiceID := c.voiceID
 
-	outputFormat := "mp3_44100_128"
+	outputFormat := c.outputFormat
 	if opts.OutputFormat != "" {
 		outputFormat = opts.OutputFormat
 	}

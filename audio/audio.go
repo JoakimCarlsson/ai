@@ -171,6 +171,7 @@ type audioGenerationClientOptions struct {
 	openaiAudioOptions    []OpenAIAudioOption
 	googleCloudTTSOptions []GoogleCloudTTSOption
 	azureSpeechOptions    []AzureSpeechOption
+	deepgramOptions       []DeepgramOption
 }
 
 // GenerationClientOption configures an audio generation client when passed to NewAudioGeneration.
@@ -228,6 +229,11 @@ func NewAudioGeneration(
 		return &baseAudioGeneration[AzureClient]{
 			options: clientOptions,
 			client:  newAzureClient(clientOptions),
+		}, nil
+	case model.ProviderDeepgram:
+		return &baseAudioGeneration[DeepgramClient]{
+			options: clientOptions,
+			client:  newDeepgramClient(clientOptions),
 		}, nil
 	}
 
@@ -402,6 +408,15 @@ func WithAzureSpeechOptions(
 ) GenerationClientOption {
 	return func(options *audioGenerationClientOptions) {
 		options.azureSpeechOptions = azOptions
+	}
+}
+
+// WithDeepgramOptions applies Deepgram-specific TTS configuration options.
+func WithDeepgramOptions(
+	dgOptions ...DeepgramOption,
+) GenerationClientOption {
+	return func(options *audioGenerationClientOptions) {
+		options.deepgramOptions = dgOptions
 	}
 }
 
