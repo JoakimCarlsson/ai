@@ -1,49 +1,31 @@
 // Package rerankers provides a unified interface for document reranking using various AI providers.
 //
 // Document reranking improves search relevance by reordering a list of documents based on
-// their semantic similarity to a query. This package abstracts the differences between
-// reranking providers, offering a consistent API for improving search results.
-//
-// Key features include:
-//   - Document reranking based on semantic similarity
-//   - Relevance score calculation for each document
-//   - Configurable result count limits (topK)
-//   - Optional document content return
-//   - Token usage tracking and cost calculation
-//   - Provider-specific optimizations
+// their semantic similarity to a query. This package defines the [Reranker] interface and
+// the data types that flow through it. Concrete vendor implementations live in subpackages
+// (rerankers/voyage, rerankers/cohere); each subpackage exports its own NewReranker
+// constructor that returns a tracing-wrapped client implementing the interface.
 //
 // Example usage:
 //
-//	reranker, err := rerankers.NewReranker(model.ProviderVoyage,
-//		rerankers.WithAPIKey("your-api-key"),
-//		rerankers.WithModel(model.VoyageRerankerModels[model.Rerank25Lite]),
-//		rerankers.WithTopK(5),
-//		rerankers.WithReturnDocuments(true),
+//	import (
+//		"github.com/joakimcarlsson/ai/rerankers"
+//		"github.com/joakimcarlsson/ai/rerankers/voyage"
 //	)
-//	if err != nil {
-//		log.Fatal(err)
-//	}
 //
-//	query := "What is machine learning?"
-//	documents := []string{
-//		"Machine learning is a subset of artificial intelligence.",
-//		"The weather today is sunny.",
-//		"Deep learning uses neural networks.",
-//	}
+//	reranker := voyage.NewReranker(
+//		voyage.WithAPIKey("your-api-key"),
+//		voyage.WithModel(model.VoyageRerankerModels[model.Rerank25Lite]),
+//		voyage.WithTopK(5),
+//		voyage.WithReturnDocuments(true),
+//	)
 //
-//	response, err := reranker.Rerank(ctx, query, documents)
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//
-//	for i, result := range response.Results {
-//		fmt.Printf("Rank %d (Score: %.4f): %s\n", i+1, result.RelevanceScore, result.Document)
-//	}
+//	response, err := reranker.Rerank(ctx, "What is machine learning?",
+//		[]string{"...", "..."})
 package rerankers
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
@@ -88,98 +70,52 @@ type Reranker interface {
 	Model() model.RerankerModel
 }
 
-type rerankerClientOptions struct {
-	apiKey     string
-	model      model.RerankerModel
-	topK       *int
-	returnDocs bool
-	truncation *bool
-	timeout    *time.Duration
-
-	voyageOptions []VoyageOption
-	cohereOptions []CohereOption
+// WithTracing wraps a Reranker so every call records OpenTelemetry spans and metrics.
+// Vendor sub-packages return their concrete client wrapped in this so consumers
+// always get tracing without thinking about it.
+func WithTracing(inner Reranker) Reranker {
+	return &tracingReranker{inner: inner}
 }
 
-// RerankerClientOption configures a reranker client.
-type RerankerClientOption func(*rerankerClientOptions)
-
-// RerankerClient is the internal interface implemented by provider-specific reranker clients.
-type RerankerClient interface {
-	rerank(
-		ctx context.Context,
-		query string,
-		documents []string,
-	) (*RerankerResponse, error)
+type tracingReranker struct {
+	inner Reranker
 }
 
-type baseReranker[C RerankerClient] struct {
-	options rerankerClientOptions
-	client  C
+func (t *tracingReranker) Model() model.RerankerModel {
+	return t.inner.Model()
 }
 
-// NewReranker creates a new reranker client for the specified provider.
-// Currently only Voyage AI is supported as a reranker provider.
-// Use WithModel() to specify the reranker model and WithAPIKey() for authentication.
-func NewReranker(
-	provider model.Provider,
-	opts ...RerankerClientOption,
-) (Reranker, error) {
-	clientOptions := rerankerClientOptions{
-		returnDocs: false,
-	}
-	for _, o := range opts {
-		o(&clientOptions)
-	}
-
-	switch provider {
-	case model.ProviderVoyage:
-		return &baseReranker[VoyageClient]{
-			options: clientOptions,
-			client:  newVoyageClient(clientOptions),
-		}, nil
-	case model.ProviderCohere:
-		return &baseReranker[CohereClient]{
-			options: clientOptions,
-			client:  newCohereClient(clientOptions),
-		}, nil
-	}
-
-	return nil, fmt.Errorf(
-		"reranker provider not supported: %s",
-		provider,
-	)
-}
-
-func (r *baseReranker[C]) Rerank(
+func (t *tracingReranker) Rerank(
 	ctx context.Context,
 	query string,
 	documents []string,
 ) (*RerankerResponse, error) {
+	m := t.inner.Model()
 	if len(documents) == 0 {
 		return &RerankerResponse{
 			Results: []RerankerResult{},
 			Usage:   RerankerUsage{TotalTokens: 0},
-			Model:   r.options.model.APIModel,
+			Model:   m.APIModel,
 		}, nil
 	}
 
 	start := time.Now()
 	ctx, span := tracing.StartRerankSpan(
 		ctx,
-		r.options.model.APIModel,
-		string(r.options.model.Provider),
+		m.APIModel,
+		string(m.Provider),
 	)
 	defer span.End()
 	span.SetAttributes(tracing.AttrDocumentCount.Int(len(documents)))
 
-	resp, err := r.client.rerank(ctx, query, documents)
+	resp, err := t.inner.Rerank(ctx, query, documents)
 	if err != nil {
 		tracing.SetError(span, err)
 		tracing.RecordMetrics(
 			ctx,
 			"rerank",
-			r.options.model.APIModel,
-			string(r.options.model.Provider),
+			m.APIModel,
+			string(m.Provider),
 			time.Since(start),
 			0,
 			0,
@@ -195,74 +131,12 @@ func (r *baseReranker[C]) Rerank(
 	tracing.RecordMetrics(
 		ctx,
 		"rerank",
-		r.options.model.APIModel,
-		string(r.options.model.Provider),
+		m.APIModel,
+		string(m.Provider),
 		time.Since(start),
 		int64(resp.Usage.TotalTokens),
 		0,
 		nil,
 	)
 	return resp, nil
-}
-
-func (r *baseReranker[C]) Model() model.RerankerModel {
-	return r.options.model
-}
-
-// WithAPIKey sets the API key for authentication with the reranker provider.
-func WithAPIKey(apiKey string) RerankerClientOption {
-	return func(options *rerankerClientOptions) {
-		options.apiKey = apiKey
-	}
-}
-
-// WithModel specifies which reranker model to use for document reranking.
-func WithModel(model model.RerankerModel) RerankerClientOption {
-	return func(options *rerankerClientOptions) {
-		options.model = model
-	}
-}
-
-// WithTopK limits the number of top-ranked documents to return.
-// If not set, all documents are returned ranked by relevance.
-func WithTopK(topK int) RerankerClientOption {
-	return func(options *rerankerClientOptions) {
-		options.topK = &topK
-	}
-}
-
-// WithReturnDocuments controls whether document text is included in results.
-// If false, only indices and scores are returned, reducing response size.
-func WithReturnDocuments(returnDocs bool) RerankerClientOption {
-	return func(options *rerankerClientOptions) {
-		options.returnDocs = returnDocs
-	}
-}
-
-// WithTruncation enables automatic truncation of documents exceeding token limits.
-func WithTruncation(truncation bool) RerankerClientOption {
-	return func(options *rerankerClientOptions) {
-		options.truncation = &truncation
-	}
-}
-
-// WithTimeout sets the maximum duration to wait for reranking requests to complete.
-func WithTimeout(timeout time.Duration) RerankerClientOption {
-	return func(options *rerankerClientOptions) {
-		options.timeout = &timeout
-	}
-}
-
-// WithVoyageOptions applies Voyage AI-specific configuration options.
-func WithVoyageOptions(voyageOptions ...VoyageOption) RerankerClientOption {
-	return func(options *rerankerClientOptions) {
-		options.voyageOptions = voyageOptions
-	}
-}
-
-// WithCohereOptions applies Cohere-specific configuration options.
-func WithCohereOptions(cohereOptions ...CohereOption) RerankerClientOption {
-	return func(options *rerankerClientOptions) {
-		options.cohereOptions = cohereOptions
-	}
 }
