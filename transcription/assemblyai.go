@@ -436,18 +436,6 @@ func WithAssemblyAIEndOfTurnSilenceMs(
 	}
 }
 
-// WithAssemblyAIStreamSpeechModel sets the v3 streaming speech model.
-// Valid values: "universal-streaming-english", "universal-streaming-multilingual",
-// "whisper-rt", "alpha-english", "u3-rt-pro", "u3-rt-agent".
-// Defaults to "universal-streaming-english".
-func WithAssemblyAIStreamSpeechModel(
-	name string,
-) AssemblyAIOption {
-	return func(options *assemblyAIOptions) {
-		options.streamSpeechModel = name
-	}
-}
-
 // WithAssemblyAIStreamFormatTurns toggles automatic punctuation/casing on
 // streaming turn transcripts. Defaults to true.
 func WithAssemblyAIStreamFormatTurns(enabled bool) AssemblyAIOption {
