@@ -181,3 +181,79 @@ response, err := client.Transcribe(ctx, audioData,
 | `WithElevenLabsTagAudioEvents(bool)` | Detect audio events (laughter, music, etc.) |
 
 **Models:** `ElevenLabsScribeV1`, `ElevenLabsScribeV2`
+
+## Streaming Transcription
+
+`SpeechToText.StreamTranscribe` consumes a channel of PCM frames and emits a channel of `StreamResult` events as they arrive — interim transcripts as `IsFinal=false`, settled transcripts as `IsFinal=true`. Errors are sent as a final `StreamResult{Error: ...}` value before the channel closes.
+
+Check `client.SupportsStreaming()` before calling `StreamTranscribe`. Providers that don't support streaming (currently OpenAI Whisper, Google Cloud) return `transcription.ErrStreamingNotSupported`.
+
+```go
+client, err := transcription.NewSpeechToText(
+    model.ProviderDeepgram,
+    transcription.WithAPIKey(os.Getenv("DEEPGRAM_API_KEY")),
+    transcription.WithModel(model.DeepgramTranscriptionModels[model.DeepgramNova3]),
+)
+if err != nil {
+    log.Fatal(err)
+}
+if !client.SupportsStreaming() {
+    log.Fatal("provider does not support streaming")
+}
+
+audio := make(chan []byte, 64)
+results, err := client.StreamTranscribe(ctx, audio,
+    transcription.WithStreamSampleRate(16000),
+    transcription.WithStreamChannels(1),
+    transcription.WithStreamInterimResults(true),
+    transcription.WithStreamEndpointing(300),
+    transcription.WithLanguage("en-US"),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Feed PCM16-LE frames into `audio`; close when done.
+go func() {
+    defer close(audio)
+    for frame := range mic.Frames() {
+        audio <- frame
+    }
+}()
+
+for r := range results {
+    if r.Error != nil {
+        log.Printf("stream error: %v", r.Error)
+        return
+    }
+    fmt.Printf("[final=%v conf=%.2f] %s\n", r.IsFinal, r.Confidence, r.Text)
+}
+```
+
+### Streaming Options
+
+| Option | Description |
+|--------|-------------|
+| `WithStreamSampleRate(hz int)` | PCM sample rate of the audio fed in (default 16000) |
+| `WithStreamChannels(n int)` | Channel count (default 1) |
+| `WithStreamInterimResults(bool)` | Emit non-final transcripts (default true) |
+| `WithStreamEndpointing(ms int)` | Silence window before final emission |
+| `WithDeepgramStreamEndpointingMs(ms int)` | Deepgram-specific endpointing |
+| `WithAssemblyAIEndOfTurnSilenceMs(ms int)` | AssemblyAI v3 end-of-turn silence threshold |
+| `WithElevenLabsStreamVADSilenceMs(ms int)` | ElevenLabs Scribe v2 VAD silence threshold |
+
+### Provider Streaming Support
+
+| Provider | Streaming | Protocol | Endpoint |
+|---|---|---|---|
+| Deepgram | ✓ | WebSocket | `wss://api.deepgram.com/v1/listen` |
+| AssemblyAI | ✓ | WebSocket (v3 Universal Streaming) | `wss://streaming.assemblyai.com/v3/ws` |
+| ElevenLabs Scribe v2 | ✓ | WebSocket (base64 JSON audio) | `wss://api.elevenlabs.io/v1/speech-to-text/realtime` |
+| OpenAI Whisper | — | (no streaming product) | returns `ErrStreamingNotSupported` |
+| Google Cloud STT v2 | — | (gRPC, not yet implemented) | returns `ErrStreamingNotSupported` |
+
+See the runnable examples:
+
+- `example/transcription_deepgram_stream/`
+- `example/transcription_assemblyai_stream/`
+- `example/transcription_elevenlabs_stream/`

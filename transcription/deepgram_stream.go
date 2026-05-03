@@ -1,0 +1,252 @@
+package transcription
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/url"
+	"strconv"
+	"sync"
+	"time"
+
+	"github.com/gorilla/websocket"
+)
+
+const (
+	deepgramStreamDefaultEndpointingMs = 300
+	deepgramStreamKeepAlive            = 5 * time.Second
+	deepgramStreamReadDeadline         = 30 * time.Second
+	deepgramStreamHandshakeTimeout     = 10 * time.Second
+)
+
+// streamTranscribe opens a Deepgram live transcription WebSocket. Reader
+// parses Results frames into StreamResult; writer forwards audio frames as
+// binary messages and runs a KeepAlive ticker. Either ctx cancellation or
+// audio channel close triggers a clean shutdown via CloseStream.
+func (d *deepgramClient) streamTranscribe(
+	ctx context.Context,
+	audio <-chan []byte,
+	options ...Option,
+) (<-chan StreamResult, error) {
+	opts := Options{}
+	for _, o := range options {
+		o(&opts)
+	}
+
+	endpointing := deepgramStreamDefaultEndpointingMs
+	if opts.EndpointingMs != nil {
+		endpointing = *opts.EndpointingMs
+	}
+	interim := true
+	if opts.InterimResults != nil {
+		interim = *opts.InterimResults
+	}
+	sampleRate := opts.SampleRate
+	if sampleRate == 0 {
+		sampleRate = 16000
+	}
+	channels := opts.Channels
+	if channels == 0 {
+		channels = 1
+	}
+	lang := d.options.language
+	if opts.Language != "" {
+		lang = opts.Language
+	}
+
+	q := url.Values{}
+	q.Set("encoding", "linear16")
+	q.Set("sample_rate", strconv.Itoa(sampleRate))
+	q.Set("channels", strconv.Itoa(channels))
+	q.Set("interim_results", strconv.FormatBool(interim))
+	q.Set("endpointing", strconv.Itoa(endpointing))
+	q.Set("model", d.providerOptions.model.APIModel)
+	if lang != "" {
+		q.Set("language", lang)
+	}
+	if d.options.punctuate != nil && *d.options.punctuate {
+		q.Set("punctuate", "true")
+	}
+	if d.options.smartFormat != nil && *d.options.smartFormat {
+		q.Set("smart_format", "true")
+	}
+	if d.options.diarize != nil && *d.options.diarize {
+		q.Set("diarize", "true")
+	}
+
+	u := url.URL{
+		Scheme:   "wss",
+		Host:     "api.deepgram.com",
+		Path:     "/v1/listen",
+		RawQuery: q.Encode(),
+	}
+	hdr := http.Header{}
+	hdr.Set("Authorization", "Token "+d.providerOptions.apiKey)
+
+	dialer := websocket.Dialer{HandshakeTimeout: deepgramStreamHandshakeTimeout}
+	conn, resp, err := dialer.DialContext(ctx, u.String(), hdr)
+	if resp != nil {
+		_ = resp.Body.Close()
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	out := make(chan StreamResult)
+	done := make(chan struct{})
+
+	var writeMu sync.Mutex
+	send := func(messageType int, data []byte) error {
+		writeMu.Lock()
+		defer writeMu.Unlock()
+		return conn.WriteMessage(messageType, data)
+	}
+
+	_ = conn.SetReadDeadline(time.Now().Add(deepgramStreamReadDeadline))
+	conn.SetPongHandler(func(string) error {
+		return conn.SetReadDeadline(time.Now().Add(deepgramStreamReadDeadline))
+	})
+
+	go runDeepgramReader(conn, out, done)
+	go runDeepgramWriter(ctx, conn, audio, out, done, send)
+
+	return out, nil
+}
+
+func runDeepgramReader(
+	conn *websocket.Conn,
+	out chan<- StreamResult,
+	done chan<- struct{},
+) {
+	defer close(done)
+	for {
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			if !isCleanWSClose(err) {
+				out <- StreamResult{Error: err}
+			}
+			return
+		}
+		_ = conn.SetReadDeadline(time.Now().Add(deepgramStreamReadDeadline))
+		pr, ok := parseDeepgramStream(msg)
+		if !ok {
+			continue
+		}
+		out <- pr
+	}
+}
+
+func runDeepgramWriter(
+	ctx context.Context,
+	conn *websocket.Conn,
+	audio <-chan []byte,
+	out chan<- StreamResult,
+	done <-chan struct{},
+	send func(int, []byte) error,
+) {
+	defer close(out)
+	defer func() { _ = conn.Close() }()
+
+	keepalive := time.NewTicker(deepgramStreamKeepAlive)
+	defer keepalive.Stop()
+
+	closeStream := func() {
+		_ = send(websocket.TextMessage, []byte(`{"type":"CloseStream"}`))
+	}
+
+	audioOpen := true
+	for {
+		select {
+		case <-done:
+			return
+		case <-ctx.Done():
+			closeStream()
+			<-done
+			return
+		case <-keepalive.C:
+			if err := send(websocket.TextMessage, []byte(`{"type":"KeepAlive"}`)); err != nil {
+				out <- StreamResult{Error: err}
+				_ = conn.Close()
+				<-done
+				return
+			}
+		case frame, ok := <-audio:
+			if !ok {
+				if audioOpen {
+					closeStream()
+					audioOpen = false
+				}
+				audio = nil
+				continue
+			}
+			if err := send(websocket.BinaryMessage, frame); err != nil {
+				out <- StreamResult{Error: err}
+				_ = conn.Close()
+				<-done
+				return
+			}
+		}
+	}
+}
+
+func isCleanWSClose(err error) bool {
+	return websocket.IsCloseError(
+		err,
+		websocket.CloseNormalClosure,
+		websocket.CloseGoingAway,
+		websocket.CloseNoStatusReceived,
+	)
+}
+
+type deepgramStreamResp struct {
+	Type        string `json:"type"`
+	IsFinal     bool   `json:"is_final"`
+	SpeechFinal bool   `json:"speech_final"`
+	Channel     struct {
+		Alternatives []struct {
+			Transcript string  `json:"transcript"`
+			Confidence float64 `json:"confidence"`
+			Words      []struct {
+				Word  string  `json:"word"`
+				Start float64 `json:"start"`
+				End   float64 `json:"end"`
+			} `json:"words"`
+		} `json:"alternatives"`
+	} `json:"channel"`
+}
+
+func parseDeepgramStream(raw []byte) (StreamResult, bool) {
+	var resp deepgramStreamResp
+	if err := json.Unmarshal(raw, &resp); err != nil {
+		return StreamResult{}, false
+	}
+	if resp.Type != "" && resp.Type != "Results" {
+		return StreamResult{}, false
+	}
+	if len(resp.Channel.Alternatives) == 0 {
+		return StreamResult{}, false
+	}
+	alt := resp.Channel.Alternatives[0]
+	if alt.Transcript == "" {
+		return StreamResult{}, false
+	}
+	words := make([]Word, len(alt.Words))
+	for i, w := range alt.Words {
+		words[i] = Word{Word: w.Word, Start: w.Start, End: w.End}
+	}
+	return StreamResult{
+		Text:       alt.Transcript,
+		Confidence: alt.Confidence,
+		IsFinal:    resp.IsFinal || resp.SpeechFinal,
+		WordCount:  len(alt.Words),
+		Words:      words,
+	}, true
+}
+
+// WithDeepgramStreamEndpointingMs sets the silence window (ms) Deepgram
+// waits before emitting is_final on a streaming session.
+func WithDeepgramStreamEndpointingMs(ms int) Option {
+	return func(options *Options) {
+		options.EndpointingMs = &ms
+	}
+}

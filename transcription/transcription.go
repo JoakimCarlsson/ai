@@ -101,6 +101,18 @@ type SpeechToText interface {
 		options ...Option,
 	) (*Response, error)
 
+	// StreamTranscribe opens a streaming transcription session. Returns
+	// ErrStreamingNotSupported when the underlying provider does not support
+	// streaming — check ahead with SupportsStreaming.
+	StreamTranscribe(
+		ctx context.Context,
+		audio <-chan []byte,
+		options ...Option,
+	) (<-chan StreamResult, error)
+
+	// SupportsStreaming reports whether this client can serve StreamTranscribe.
+	SupportsStreaming() bool
+
 	// Model returns the transcription model configuration being used.
 	Model() model.TranscriptionModel
 }
@@ -135,8 +147,9 @@ type SpeechToTextClient interface {
 }
 
 type baseSpeechToText[C SpeechToTextClient] struct {
-	options transcriptionClientOptions
-	client  C
+	options   transcriptionClientOptions
+	client    C
+	streaming streamingSpeechToTextClient
 }
 
 // NewSpeechToText creates a new speech-to-text client for the specified provider.
@@ -151,29 +164,39 @@ func NewSpeechToText(
 
 	switch provider {
 	case model.ProviderOpenAI:
+		c := newOpenAIClient(clientOptions)
 		return &baseSpeechToText[OpenAIClient]{
-			options: clientOptions,
-			client:  newOpenAIClient(clientOptions),
+			options:   clientOptions,
+			client:    c,
+			streaming: resolveStreaming(c),
 		}, nil
 	case model.ProviderDeepgram:
+		c := newDeepgramClient(clientOptions)
 		return &baseSpeechToText[DeepgramClient]{
-			options: clientOptions,
-			client:  newDeepgramClient(clientOptions),
+			options:   clientOptions,
+			client:    c,
+			streaming: resolveStreaming(c),
 		}, nil
 	case model.ProviderGoogleCloud:
+		c := newGoogleCloudClient(clientOptions)
 		return &baseSpeechToText[GoogleCloudClient]{
-			options: clientOptions,
-			client:  newGoogleCloudClient(clientOptions),
+			options:   clientOptions,
+			client:    c,
+			streaming: resolveStreaming(c),
 		}, nil
 	case model.ProviderAssemblyAI:
+		c := newAssemblyAIClient(clientOptions)
 		return &baseSpeechToText[AssemblyAIClient]{
-			options: clientOptions,
-			client:  newAssemblyAIClient(clientOptions),
+			options:   clientOptions,
+			client:    c,
+			streaming: resolveStreaming(c),
 		}, nil
 	case model.ProviderElevenLabs:
+		c := newElevenLabsClient(clientOptions)
 		return &baseSpeechToText[ElevenLabsClient]{
-			options: clientOptions,
-			client:  newElevenLabsClient(clientOptions),
+			options:   clientOptions,
+			client:    c,
+			streaming: resolveStreaming(c),
 		}, nil
 	}
 
@@ -285,6 +308,78 @@ func (s *baseSpeechToText[C]) Model() model.TranscriptionModel {
 	return s.options.model
 }
 
+// SupportsStreaming reports whether this client can serve StreamTranscribe.
+func (s *baseSpeechToText[C]) SupportsStreaming() bool {
+	return s.streaming != nil
+}
+
+// StreamTranscribe opens a streaming session against the provider.
+func (s *baseSpeechToText[C]) StreamTranscribe(
+	ctx context.Context,
+	audio <-chan []byte,
+	options ...Option,
+) (<-chan StreamResult, error) {
+	if s.streaming == nil {
+		return nil, ErrStreamingNotSupported
+	}
+	start := time.Now()
+	ctx, span := tracing.StartTranscribeSpan(
+		ctx,
+		s.options.model.APIModel,
+		string(s.options.model.Provider),
+		"stream_transcribe",
+	)
+
+	innerCh, err := s.streaming.streamTranscribe(ctx, audio, options...)
+	if err != nil {
+		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx,
+			"stream_transcribe",
+			s.options.model.APIModel,
+			string(s.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
+		span.End()
+		return nil, err
+	}
+
+	outCh := make(chan StreamResult)
+	go func() {
+		defer close(outCh)
+		defer span.End()
+		for r := range innerCh {
+			if r.Error != nil {
+				tracing.SetError(span, r.Error)
+			}
+			outCh <- r
+		}
+		tracing.RecordMetrics(
+			ctx,
+			"stream_transcribe",
+			s.options.model.APIModel,
+			string(s.options.model.Provider),
+			time.Since(start),
+			0,
+			0,
+			nil,
+		)
+	}()
+	return outCh, nil
+}
+
+// resolveStreaming returns the streaming sub-interface implementation if the
+// concrete client supports it, otherwise nil. Cached at construction.
+func resolveStreaming[C SpeechToTextClient](c C) streamingSpeechToTextClient {
+	if s, ok := any(c).(streamingSpeechToTextClient); ok {
+		return s
+	}
+	return nil
+}
+
 // WithAPIKey sets the API key for authentication with the speech-to-text provider.
 func WithAPIKey(apiKey string) ClientOption {
 	return func(options *transcriptionClientOptions) {
@@ -361,6 +456,18 @@ type Options struct {
 	KnownSpeakerNames      []string
 	KnownSpeakerReferences []string
 	Filename               string
+	// EndpointingMs is the silence window after which streaming providers
+	// should mark a transcript final. Set via WithStreamEndpointing.
+	EndpointingMs *int
+	// InterimResults toggles emission of non-final transcripts during
+	// streaming. Set via WithStreamInterimResults.
+	InterimResults *bool
+	// SampleRate is the PCM sample rate (Hz) of audio fed into a streaming
+	// session. Set via WithStreamSampleRate. Defaults to 16000.
+	SampleRate int
+	// Channels is the channel count of audio fed into a streaming session.
+	// Set via WithStreamChannels. Defaults to 1.
+	Channels int
 }
 
 // Option customizes a single Transcribe or Translate call.
