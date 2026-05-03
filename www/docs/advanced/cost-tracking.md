@@ -39,7 +39,7 @@ fmt.Printf("Cost per 1M chars: $%.2f\n", model.CostPer1MChars)
 fmt.Printf("Max characters per request: %d\n", model.MaxCharacters)
 fmt.Printf("Supports streaming: %v\n", model.SupportsStreaming)
 
-response, err := client.GenerateAudio(ctx, text, audio.WithVoiceID("voice-id"))
+response, err := client.GenerateAudio(ctx, text)
 cost := float64(response.Usage.Characters) * model.CostPer1MChars / 1_000_000
 fmt.Printf("Cost: $%.4f\n", cost)
 ```

@@ -22,6 +22,9 @@ func main() {
 		model.ProviderElevenLabs,
 		audio.WithAPIKey(apiKey),
 		audio.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
+		audio.WithElevenLabsOptions(
+			audio.WithElevenLabsVoiceID("EXAVITQu4vr4xnSDxMaL"),
+		),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -29,7 +32,6 @@ func main() {
 
 	text := "Hello, world! This is a test of alignment data."
 	response, err := client.GenerateAudio(ctx, text,
-		audio.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),
 		audio.WithAlignmentEnabled(true),
 	)
 	if err != nil {

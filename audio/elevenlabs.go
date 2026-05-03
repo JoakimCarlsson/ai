@@ -24,17 +24,22 @@ type ElevenLabsClient struct {
 	baseURL    string
 	httpClient *http.Client
 	model      string
+	voiceID    string
 }
 
 func newElevenLabsClient(
 	options audioGenerationClientOptions,
 ) ElevenLabsClient {
 	baseURL := defaultElevenLabsBaseURL
+	clientVoiceID := defaultVoiceID
 	for _, opt := range options.elevenLabsOptions {
 		opts := &elevenLabsOptions{}
 		opt(opts)
 		if opts.baseURL != "" {
 			baseURL = opts.baseURL
+		}
+		if opts.voiceID != "" {
+			clientVoiceID = opts.voiceID
 		}
 	}
 
@@ -54,7 +59,8 @@ func newElevenLabsClient(
 		httpClient: &http.Client{
 			Timeout: timeout,
 		},
-		model: modelID,
+		model:   modelID,
+		voiceID: clientVoiceID,
 	}
 }
 
@@ -148,10 +154,7 @@ func (c ElevenLabsClient) generateStandard(
 	text string,
 	opts *GenerationOptions,
 ) (*Response, error) {
-	voiceID := defaultVoiceID
-	if opts.VoiceID != "" {
-		voiceID = opts.VoiceID
-	}
+	voiceID := c.voiceID
 
 	outputFormat := "mp3_44100_128"
 	if opts.OutputFormat != "" {
@@ -255,10 +258,7 @@ func (c ElevenLabsClient) generateWithTimestamps(
 	text string,
 	opts *GenerationOptions,
 ) (*Response, error) {
-	voiceID := defaultVoiceID
-	if opts.VoiceID != "" {
-		voiceID = opts.VoiceID
-	}
+	voiceID := c.voiceID
 
 	outputFormat := "mp3_44100_128"
 	if opts.OutputFormat != "" {
@@ -411,10 +411,7 @@ func (c ElevenLabsClient) streamStandard(
 	text string,
 	opts *GenerationOptions,
 ) (<-chan Chunk, error) {
-	voiceID := defaultVoiceID
-	if opts.VoiceID != "" {
-		voiceID = opts.VoiceID
-	}
+	voiceID := c.voiceID
 
 	outputFormat := "mp3_44100_128"
 	if opts.OutputFormat != "" {
@@ -541,10 +538,7 @@ func (c ElevenLabsClient) streamWithTimestamps(
 	text string,
 	opts *GenerationOptions,
 ) (<-chan Chunk, error) {
-	voiceID := defaultVoiceID
-	if opts.VoiceID != "" {
-		voiceID = opts.VoiceID
-	}
+	voiceID := c.voiceID
 
 	outputFormat := "mp3_44100_128"
 	if opts.OutputFormat != "" {

@@ -109,9 +109,6 @@ func (g *googleCloudClient) generate(
 	if g.options.voiceName != "" {
 		voice.Name = g.options.voiceName
 	}
-	if opts.VoiceID != "" {
-		voice.Name = opts.VoiceID
-	}
 	if g.options.ssmlGender != "" {
 		voice.SSMLGender = g.options.ssmlGender
 	}

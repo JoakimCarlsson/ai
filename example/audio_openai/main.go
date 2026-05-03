@@ -18,6 +18,9 @@ func main() {
 		audio.WithModel(
 			model.OpenAIAudioModels[model.OpenAITTS1],
 		),
+		audio.WithOpenAIAudioOptions(
+			audio.WithOpenAIVoice("nova"),
+		),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -26,7 +29,6 @@ func main() {
 	response, err := client.GenerateAudio(
 		context.Background(),
 		"Hello! This is a test of the OpenAI text-to-speech API.",
-		audio.WithVoiceID("nova"),
 		audio.WithOutputFormat("mp3"),
 	)
 	if err != nil {
