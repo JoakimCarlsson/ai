@@ -3,7 +3,9 @@ package transcription
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net"
 	"net/url"
 	"strconv"
 	"sync"
@@ -16,6 +18,7 @@ const (
 	assemblyAIStreamDefaultEndOfTurnSilenceMs = 700
 	assemblyAIStreamReadDeadline              = 30 * time.Second
 	assemblyAIStreamHandshakeTimeout          = 10 * time.Second
+	assemblyAIStreamMinChunkMs                = 100
 )
 
 // streamTranscribe opens an AssemblyAI v3 Universal-Streaming WebSocket.
@@ -39,11 +42,16 @@ func (a *assemblyAIClient) streamTranscribe(
 		endOfTurn = *a.options.streamEndOfTurnSilenceMs
 	}
 
+	speechModel := a.options.streamSpeechModel
+	if speechModel == "" {
+		speechModel = "universal-streaming-english"
+	}
 	q := url.Values{}
 	q.Set("token", a.providerOptions.apiKey)
 	q.Set("sample_rate", strconv.Itoa(sampleRate))
 	q.Set("encoding", "pcm_s16le")
 	q.Set("format_turns", "true")
+	q.Set("speech_model", speechModel)
 
 	u := url.URL{
 		Scheme:   "wss",
@@ -85,8 +93,10 @@ func (a *assemblyAIClient) streamTranscribe(
 		return conn.SetReadDeadline(time.Now().Add(assemblyAIStreamReadDeadline))
 	})
 
+	minChunkBytes := sampleRate * 2 * assemblyAIStreamMinChunkMs / 1000
+
 	go runAssemblyAIReader(conn, out, done)
-	go runAssemblyAIWriter(ctx, conn, audio, out, done, send)
+	go runAssemblyAIWriter(ctx, conn, audio, out, done, send, minChunkBytes)
 
 	return out, nil
 }
@@ -100,7 +110,7 @@ func runAssemblyAIReader(
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
-			if !isCleanWSClose(err) {
+			if !isCleanWSClose(err) && !errors.Is(err, net.ErrClosed) {
 				out <- StreamResult{Error: err}
 			}
 			return
@@ -121,37 +131,41 @@ func runAssemblyAIWriter(
 	out chan<- StreamResult,
 	done <-chan struct{},
 	send func(int, []byte) error,
+	minChunkBytes int,
 ) {
 	defer close(out)
 	defer func() { _ = conn.Close() }()
 
-	terminate := func() {
-		_ = send(websocket.TextMessage, []byte(`{"type":"Terminate"}`))
+	buf := make([]byte, 0, minChunkBytes*2)
+	flush := func() error {
+		if len(buf) == 0 {
+			return nil
+		}
+		err := send(websocket.BinaryMessage, buf)
+		buf = buf[:0]
+		return err
 	}
 
-	audioOpen := true
 	for {
 		select {
 		case <-done:
 			return
 		case <-ctx.Done():
-			terminate()
-			<-done
+			_ = flush()
 			return
 		case frame, ok := <-audio:
 			if !ok {
-				if audioOpen {
-					terminate()
-					audioOpen = false
-				}
-				audio = nil
-				continue
-			}
-			if err := send(websocket.BinaryMessage, frame); err != nil {
-				out <- StreamResult{Error: err}
-				_ = conn.Close()
-				<-done
+				_ = flush()
 				return
+			}
+			buf = append(buf, frame...)
+			if len(buf) >= minChunkBytes {
+				if err := flush(); err != nil {
+					out <- StreamResult{Error: err}
+					_ = conn.Close()
+					<-done
+					return
+				}
 			}
 		}
 	}

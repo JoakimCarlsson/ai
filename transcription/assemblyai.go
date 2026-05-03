@@ -15,6 +15,7 @@ type assemblyAIOptions struct {
 	maxPollDuration          time.Duration
 	speakerLabels            bool
 	streamEndOfTurnSilenceMs *int
+	streamSpeechModel        string
 }
 
 // AssemblyAIOption configures AssemblyAI-specific transcription behavior.
@@ -411,5 +412,17 @@ func WithAssemblyAIEndOfTurnSilenceMs(
 ) AssemblyAIOption {
 	return func(options *assemblyAIOptions) {
 		options.streamEndOfTurnSilenceMs = &ms
+	}
+}
+
+// WithAssemblyAIStreamSpeechModel sets the v3 streaming speech model.
+// Valid values: "universal-streaming-english", "universal-streaming-multilingual",
+// "whisper-rt", "alpha-english", "u3-rt-pro", "u3-rt-agent".
+// Defaults to "universal-streaming-english".
+func WithAssemblyAIStreamSpeechModel(
+	name string,
+) AssemblyAIOption {
+	return func(options *assemblyAIOptions) {
+		options.streamSpeechModel = name
 	}
 }
