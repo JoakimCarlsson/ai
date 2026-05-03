@@ -1,25 +1,22 @@
 // Package image provides a unified interface for generating images from text prompts
 // using various AI providers.
 //
-// This package abstracts the differences between image generation providers like OpenAI, xAI, and Gemini,
-// offering a consistent API for creating images from natural language descriptions.
-//
-// Key features include:
-//   - Text-to-image generation from prompts
-//   - Support for multiple output formats (URL, base64)
-//   - Configurable image quality and size (provider-dependent)
-//   - Helper functions for downloading and decoding images
-//   - Cost tracking per generated image
+// This package defines the [ImageGeneration] interface and the data types that flow
+// through it. Concrete vendor implementations live in subpackages (image/openai,
+// image/gemini); each subpackage exports its own NewGeneration constructor that
+// returns a tracing-wrapped client implementing the interface.
 //
 // Example usage:
 //
-//	client, err := image.NewImageGeneration(model.ProviderXAI,
-//		image.WithAPIKey("your-api-key"),
-//		image.WithModel(model.XAIImageGenerationModels[model.XAIGrok2Image]),
+//	import (
+//		"github.com/joakimcarlsson/ai/image"
+//		imageopenai "github.com/joakimcarlsson/ai/image/openai"
 //	)
-//	if err != nil {
-//		log.Fatal(err)
-//	}
+//
+//	client := imageopenai.NewGeneration(
+//		imageopenai.WithAPIKey("your-api-key"),
+//		imageopenai.WithModel(model.OpenAIImageModels[model.DallE3]),
+//	)
 //
 //	response, err := client.GenerateImage(ctx, "A serene mountain landscape at sunset",
 //		image.WithResponseFormat("b64_json"),
@@ -34,8 +31,11 @@ package image
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
@@ -124,209 +124,6 @@ type ImageGeneration interface {
 	Model() model.ImageGenerationModel
 }
 
-type imageGenerationClientOptions struct {
-	apiKey  string
-	model   model.ImageGenerationModel
-	timeout *time.Duration
-
-	openaiOptions []OpenAIOption
-	geminiOptions []GeminiOption
-}
-
-// ImageGenerationClientOption configures an image generation client.
-type ImageGenerationClientOption func(*imageGenerationClientOptions)
-
-// ImageGenerationClient is the internal interface implemented by provider-specific clients.
-type ImageGenerationClient interface {
-	generate(
-		ctx context.Context,
-		prompt string,
-		options ...GenerationOption,
-	) (*ImageGenerationResponse, error)
-}
-
-// StreamingImageGenerationClient is an optional interface for clients that support streaming.
-type StreamingImageGenerationClient interface {
-	generateStreaming(
-		ctx context.Context,
-		prompt string,
-		callback StreamCallback,
-		options ...GenerationOption,
-	) error
-}
-
-type baseImageGeneration[C ImageGenerationClient] struct {
-	options imageGenerationClientOptions
-	client  C
-}
-
-// NewImageGeneration creates a new image generation client for the specified provider.
-// Supported providers include OpenAI, xAI, and Gemini. Use WithModel() to specify the image generation model
-// and WithAPIKey() for authentication.
-func NewImageGeneration(
-	provider model.Provider,
-	opts ...ImageGenerationClientOption,
-) (ImageGeneration, error) {
-	clientOptions := imageGenerationClientOptions{}
-	for _, o := range opts {
-		o(&clientOptions)
-	}
-
-	switch provider {
-	case model.ProviderOpenAI:
-		return &baseImageGeneration[OpenAIClient]{
-			options: clientOptions,
-			client:  newOpenAIClient(clientOptions),
-		}, nil
-	case model.ProviderXAI:
-		clientOptions.openaiOptions = append(clientOptions.openaiOptions,
-			WithOpenAIBaseURL("https://api.x.ai/v1"),
-		)
-		return &baseImageGeneration[OpenAIClient]{
-			options: clientOptions,
-			client:  newOpenAIClient(clientOptions),
-		}, nil
-	case model.ProviderGemini:
-		return &baseImageGeneration[GeminiClient]{
-			options: clientOptions,
-			client:  newGeminiClient(clientOptions),
-		}, nil
-	}
-
-	return nil, fmt.Errorf(
-		"image generation provider not supported: %s",
-		provider,
-	)
-}
-
-func (i *baseImageGeneration[C]) GenerateImage(
-	ctx context.Context,
-	prompt string,
-	options ...GenerationOption,
-) (*ImageGenerationResponse, error) {
-	start := time.Now()
-	ctx, span := tracing.StartImageSpan(
-		ctx,
-		i.options.model.APIModel,
-		string(i.options.model.Provider),
-	)
-	defer span.End()
-
-	resp, err := i.client.generate(ctx, prompt, options...)
-	if err != nil {
-		tracing.SetError(span, err)
-		tracing.RecordMetrics(
-			ctx,
-			"generate_image",
-			i.options.model.APIModel,
-			string(i.options.model.Provider),
-			time.Since(start),
-			0,
-			0,
-			err,
-		)
-		return nil, err
-	}
-
-	tracing.SetResponseAttrs(span,
-		tracing.AttrUsageInputTokens.Int64(int64(resp.Usage.PromptTokens)),
-		tracing.AttrResultCount.Int(len(resp.Images)),
-	)
-	tracing.RecordMetrics(
-		ctx,
-		"generate_image",
-		i.options.model.APIModel,
-		string(i.options.model.Provider),
-		time.Since(start),
-		int64(resp.Usage.PromptTokens),
-		0,
-		nil,
-	)
-	return resp, nil
-}
-
-func (i *baseImageGeneration[C]) GenerateImageStreaming(
-	ctx context.Context,
-	prompt string,
-	callback StreamCallback,
-	options ...GenerationOption,
-) error {
-	start := time.Now()
-	ctx, span := tracing.StartImageSpan(
-		ctx,
-		i.options.model.APIModel,
-		string(i.options.model.Provider),
-	)
-	defer span.End()
-
-	if streamingClient, ok := any(i.client).(StreamingImageGenerationClient); ok {
-		err := streamingClient.generateStreaming(
-			ctx,
-			prompt,
-			callback,
-			options...)
-		tracing.RecordMetrics(
-			ctx,
-			"generate_image",
-			i.options.model.APIModel,
-			string(i.options.model.Provider),
-			time.Since(start),
-			0,
-			0,
-			err,
-		)
-		if err != nil {
-			tracing.SetError(span, err)
-		}
-		return err
-	}
-	return ErrStreamingNotSupported
-}
-
-func (i *baseImageGeneration[C]) Model() model.ImageGenerationModel {
-	return i.options.model
-}
-
-// WithAPIKey sets the API key for authentication with the image generation provider.
-func WithAPIKey(apiKey string) ImageGenerationClientOption {
-	return func(options *imageGenerationClientOptions) {
-		options.apiKey = apiKey
-	}
-}
-
-// WithModel specifies which image generation model to use for creating images.
-func WithModel(model model.ImageGenerationModel) ImageGenerationClientOption {
-	return func(options *imageGenerationClientOptions) {
-		options.model = model
-	}
-}
-
-// WithTimeout sets the maximum duration to wait for image generation requests to complete.
-func WithTimeout(timeout time.Duration) ImageGenerationClientOption {
-	return func(options *imageGenerationClientOptions) {
-		options.timeout = &timeout
-	}
-}
-
-// WithOpenAIOptions applies OpenAI-specific configuration options.
-// Also used for xAI since it uses OpenAI-compatible API.
-func WithOpenAIOptions(
-	openaiOptions ...OpenAIOption,
-) ImageGenerationClientOption {
-	return func(options *imageGenerationClientOptions) {
-		options.openaiOptions = openaiOptions
-	}
-}
-
-// WithGeminiOptions applies Gemini-specific configuration options.
-func WithGeminiOptions(
-	geminiOptions ...GeminiOption,
-) ImageGenerationClientOption {
-	return func(options *imageGenerationClientOptions) {
-		options.geminiOptions = geminiOptions
-	}
-}
-
 // GenerationOptions contains parameters for customizing image generation requests.
 type GenerationOptions struct {
 	// Size specifies the dimensions of the generated image (e.g., "1024x1024").
@@ -373,4 +170,132 @@ func WithN(n int) GenerationOption {
 	return func(options *GenerationOptions) {
 		options.N = n
 	}
+}
+
+// WithTracing wraps an ImageGeneration client so every call records OpenTelemetry
+// spans and metrics. Vendor sub-packages return their concrete client wrapped in
+// this so consumers always get tracing without thinking about it.
+func WithTracing(inner ImageGeneration) ImageGeneration {
+	return &tracingClient{inner: inner}
+}
+
+type tracingClient struct {
+	inner ImageGeneration
+}
+
+func (t *tracingClient) Model() model.ImageGenerationModel {
+	return t.inner.Model()
+}
+
+func (t *tracingClient) GenerateImage(
+	ctx context.Context,
+	prompt string,
+	options ...GenerationOption,
+) (*ImageGenerationResponse, error) {
+	m := t.inner.Model()
+	start := time.Now()
+	ctx, span := tracing.StartImageSpan(
+		ctx,
+		m.APIModel,
+		string(m.Provider),
+	)
+	defer span.End()
+
+	resp, err := t.inner.GenerateImage(ctx, prompt, options...)
+	if err != nil {
+		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx,
+			"generate_image",
+			m.APIModel,
+			string(m.Provider),
+			time.Since(start),
+			0,
+			0,
+			err,
+		)
+		return nil, err
+	}
+
+	tracing.SetResponseAttrs(span,
+		tracing.AttrUsageInputTokens.Int64(int64(resp.Usage.PromptTokens)),
+		tracing.AttrResultCount.Int(len(resp.Images)),
+	)
+	tracing.RecordMetrics(
+		ctx,
+		"generate_image",
+		m.APIModel,
+		string(m.Provider),
+		time.Since(start),
+		int64(resp.Usage.PromptTokens),
+		0,
+		nil,
+	)
+	return resp, nil
+}
+
+func (t *tracingClient) GenerateImageStreaming(
+	ctx context.Context,
+	prompt string,
+	callback StreamCallback,
+	options ...GenerationOption,
+) error {
+	m := t.inner.Model()
+	start := time.Now()
+	ctx, span := tracing.StartImageSpan(
+		ctx,
+		m.APIModel,
+		string(m.Provider),
+	)
+	defer span.End()
+
+	err := t.inner.GenerateImageStreaming(ctx, prompt, callback, options...)
+	tracing.RecordMetrics(
+		ctx,
+		"generate_image",
+		m.APIModel,
+		string(m.Provider),
+		time.Since(start),
+		0,
+		0,
+		err,
+	)
+	if err != nil {
+		tracing.SetError(span, err)
+	}
+	return err
+}
+
+// DownloadImage downloads an image from a URL and returns its binary data.
+// This is a helper function for processing image generation responses that return URLs.
+func DownloadImage(url string) ([]byte, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download image: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(
+			"failed to download image: status code %d",
+			resp.StatusCode,
+		)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read image data: %w", err)
+	}
+
+	return data, nil
+}
+
+// DecodeBase64Image decodes a base64-encoded image string into binary data.
+// This is a helper function for processing image generation responses with base64 format.
+func DecodeBase64Image(b64 string) ([]byte, error) {
+	data, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode base64 image: %w", err)
+	}
+	return data, nil
 }
