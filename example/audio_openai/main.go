@@ -7,19 +7,19 @@ import (
 	"log"
 	"os"
 
-	"github.com/joakimcarlsson/ai/audio"
+	"github.com/joakimcarlsson/ai/tts"
 	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
-	client, err := audio.NewAudioGeneration(
+	client, err := tts.NewAudioGeneration(
 		model.ProviderOpenAI,
-		audio.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-		audio.WithModel(
+		tts.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+		tts.WithModel(
 			model.OpenAIAudioModels[model.OpenAITTS1],
 		),
-		audio.WithOpenAIAudioOptions(
-			audio.WithOpenAIVoice("nova"),
+		tts.WithOpenAIAudioOptions(
+			tts.WithOpenAIVoice("nova"),
 		),
 	)
 	if err != nil {
@@ -29,7 +29,7 @@ func main() {
 	response, err := client.GenerateAudio(
 		context.Background(),
 		"Hello! This is a test of the OpenAI text-to-speech API.",
-		audio.WithOutputFormat("mp3"),
+		tts.WithOutputFormat("mp3"),
 	)
 	if err != nil {
 		log.Fatal(err)

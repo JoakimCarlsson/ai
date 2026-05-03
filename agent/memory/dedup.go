@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/joakimcarlsson/ai/message"
-	llm "github.com/joakimcarlsson/ai/providers"
+	llm "github.com/joakimcarlsson/ai/llm"
 )
 
 // DedupEvent represents the type of deduplication action to take.

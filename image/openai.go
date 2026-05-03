@@ -1,4 +1,4 @@
-package image_generation
+package image
 
 import (
 	"context"
@@ -218,7 +218,7 @@ func (o OpenAIClient) generateStreaming(
 		event := stream.Current()
 
 		switch event.Type {
-		case "image_generation.partial_image":
+		case "image.partial_image":
 			if err := callback(ImageStreamEvent{
 				Type:              EventPartialImage,
 				ImageBase64:       event.B64JSON,
@@ -229,7 +229,7 @@ func (o OpenAIClient) generateStreaming(
 				return fmt.Errorf("callback error on partial image: %w", err)
 			}
 
-		case "image_generation.completed":
+		case "image.completed":
 			if err := callback(ImageStreamEvent{
 				Type:        EventCompleted,
 				ImageBase64: event.B64JSON,

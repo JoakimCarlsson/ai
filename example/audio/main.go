@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/joakimcarlsson/ai/audio"
+	"github.com/joakimcarlsson/ai/tts"
 	"github.com/joakimcarlsson/ai/model"
 )
 
@@ -18,14 +18,14 @@ func main() {
 		log.Fatal("ELEVENLABS_API_KEY environment variable is required")
 	}
 
-	client, err := audio.NewAudioGeneration(
+	client, err := tts.NewAudioGeneration(
 		model.ProviderElevenLabs,
-		audio.WithAPIKey(apiKey),
-		audio.WithModel(
+		tts.WithAPIKey(apiKey),
+		tts.WithModel(
 			model.ElevenLabsAudioModels[model.ElevenTurboV2_5],
 		),
-		audio.WithElevenLabsOptions(
-			audio.WithElevenLabsVoiceID("EXAVITQu4vr4xnSDxMaL"),
+		tts.WithElevenLabsOptions(
+			tts.WithElevenLabsVoiceID("EXAVITQu4vr4xnSDxMaL"),
 		),
 	)
 	if err != nil {
@@ -38,7 +38,7 @@ func main() {
 	listVoicesExample(client)
 }
 
-func basicExample(client audio.Generation) {
+func basicExample(client tts.Generation) {
 	text := "Hello! This is a demonstration of the ElevenLabs text-to-speech API integration."
 
 	response, err := client.GenerateAudio(context.Background(), text)
@@ -52,16 +52,16 @@ func basicExample(client audio.Generation) {
 	}
 }
 
-func customVoiceExample(client audio.Generation) {
+func customVoiceExample(client tts.Generation) {
 	text := "This audio uses custom voice settings for enhanced expressiveness and stability."
 
 	response, err := client.GenerateAudio(
 		context.Background(),
 		text,
-		audio.WithStability(0.75),
-		audio.WithSimilarityBoost(0.85),
-		audio.WithStyle(0.5),
-		audio.WithSpeakerBoost(true),
+		tts.WithStability(0.75),
+		tts.WithSimilarityBoost(0.85),
+		tts.WithStyle(0.5),
+		tts.WithSpeakerBoost(true),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -73,13 +73,13 @@ func customVoiceExample(client audio.Generation) {
 	}
 }
 
-func streamingExample(client audio.Generation) {
+func streamingExample(client tts.Generation) {
 	text := "This is a streaming audio example. The audio is generated and sent in chunks for real-time playback."
 
 	chunkChan, err := client.StreamAudio(
 		context.Background(),
 		text,
-		audio.WithOptimizeStreamingLatency(3),
+		tts.WithOptimizeStreamingLatency(3),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -92,7 +92,7 @@ func streamingExample(client audio.Generation) {
 	}
 }
 
-func playStreamingAudio(chunkChan <-chan audio.Chunk) {
+func playStreamingAudio(chunkChan <-chan tts.Chunk) {
 	cmd := exec.Command("ffplay", "-nodisp", "-autoexit", "-")
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -127,7 +127,7 @@ func playStreamingAudio(chunkChan <-chan audio.Chunk) {
 	cmd.Wait()
 }
 
-func saveStreamingAudio(chunkChan <-chan audio.Chunk) {
+func saveStreamingAudio(chunkChan <-chan tts.Chunk) {
 	file, err := os.Create("output_stream.mp3")
 	if err != nil {
 		log.Fatal(err)
@@ -156,7 +156,7 @@ func saveStreamingAudio(chunkChan <-chan audio.Chunk) {
 	}
 }
 
-func listVoicesExample(client audio.Generation) {
+func listVoicesExample(client tts.Generation) {
 	voices, err := client.ListVoices(context.Background())
 	if err != nil {
 		log.Fatal(err)

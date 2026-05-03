@@ -1,6 +1,6 @@
 // Example transcription_deepgram_stream demonstrates streaming speech-to-text
 // against Deepgram's WebSocket endpoint. It reads a raw PCM16-LE mono 16 kHz
-// file (audio.pcm), splits it into 20 ms frames, and prints interim and final
+// file (tts.pcm), splits it into 20 ms frames, and prints interim and final
 // transcripts as they arrive.
 package main
 
@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
-	"github.com/joakimcarlsson/ai/transcription"
+	"github.com/joakimcarlsson/ai/stt"
 )
 
 const (
@@ -29,15 +29,15 @@ func main() {
 }
 
 func run() error {
-	client, err := transcription.NewSpeechToText(
+	client, err := stt.NewSpeechToText(
 		model.ProviderDeepgram,
-		transcription.WithAPIKey(os.Getenv("DEEPGRAM_API_KEY")),
-		transcription.WithModel(model.DeepgramTranscriptionModels[model.DeepgramNova3]),
-		transcription.WithStreamSampleRate(sampleRate),
-		transcription.WithStreamChannels(channels),
-		transcription.WithDeepgramOptions(
-			transcription.WithDeepgramLanguage("en-US"),
-			transcription.WithDeepgramStreamEndpointingMs(300),
+		stt.WithAPIKey(os.Getenv("DEEPGRAM_API_KEY")),
+		stt.WithModel(model.DeepgramTranscriptionModels[model.DeepgramNova3]),
+		stt.WithStreamSampleRate(sampleRate),
+		stt.WithStreamChannels(channels),
+		stt.WithDeepgramOptions(
+			stt.WithDeepgramLanguage("en-US"),
+			stt.WithDeepgramStreamEndpointingMs(300),
 		),
 	)
 	if err != nil {
@@ -47,7 +47,7 @@ func run() error {
 		return errors.New("deepgram client does not support streaming")
 	}
 
-	pcm, err := os.ReadFile("audio.pcm")
+	pcm, err := os.ReadFile("tts.pcm")
 	if err != nil {
 		return err
 	}

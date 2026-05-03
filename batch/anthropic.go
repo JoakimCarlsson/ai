@@ -8,7 +8,7 @@ import (
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/joakimcarlsson/ai/message"
-	llm "github.com/joakimcarlsson/ai/providers"
+	llm "github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/tool"
 )
 

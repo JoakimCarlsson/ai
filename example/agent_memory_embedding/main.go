@@ -12,7 +12,7 @@ import (
 	"github.com/joakimcarlsson/ai/agent/session"
 	"github.com/joakimcarlsson/ai/embeddings"
 	"github.com/joakimcarlsson/ai/model"
-	llm "github.com/joakimcarlsson/ai/providers"
+	llm "github.com/joakimcarlsson/ai/llm"
 )
 
 func main() {

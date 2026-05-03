@@ -1,4 +1,4 @@
-package transcription
+package stt
 
 import (
 	"bytes"
@@ -164,7 +164,7 @@ func (e *elevenLabsClient) transcribe(
 		)
 	}
 
-	filename := "audio.mp3"
+	filename := "tts.mp3"
 	if opts.Filename != "" {
 		filename = opts.Filename
 	}

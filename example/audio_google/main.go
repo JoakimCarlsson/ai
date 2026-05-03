@@ -7,22 +7,22 @@ import (
 	"log"
 	"os"
 
-	"github.com/joakimcarlsson/ai/audio"
+	"github.com/joakimcarlsson/ai/tts"
 	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
-	client, err := audio.NewAudioGeneration(
+	client, err := tts.NewAudioGeneration(
 		model.ProviderGoogleCloud,
-		audio.WithAPIKey(
+		tts.WithAPIKey(
 			os.Getenv("GOOGLE_CLOUD_API_KEY"),
 		),
-		audio.WithModel(
+		tts.WithModel(
 			model.GoogleCloudAudioModels[model.GoogleCloudTTSWavenet],
 		),
-		audio.WithGoogleCloudTTSOptions(
-			audio.WithGoogleCloudLanguageCode("en-US"),
-			audio.WithGoogleCloudVoiceName(
+		tts.WithGoogleCloudTTSOptions(
+			tts.WithGoogleCloudLanguageCode("en-US"),
+			tts.WithGoogleCloudVoiceName(
 				"en-US-Wavenet-D",
 			),
 		),

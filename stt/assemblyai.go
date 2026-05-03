@@ -1,4 +1,4 @@
-package transcription
+package stt
 
 import (
 	"bytes"
@@ -407,7 +407,7 @@ func WithAssemblyAIPollInterval(
 	}
 }
 
-// WithAssemblyAIMaxPollDuration sets the maximum duration to wait for transcription.
+// WithAssemblyAIMaxPollDuration sets the maximum duration to wait for stt.
 func WithAssemblyAIMaxPollDuration(
 	d time.Duration,
 ) AssemblyAIOption {

@@ -1,4 +1,4 @@
-package transcription
+package stt
 
 import (
 	"bytes"
@@ -73,7 +73,7 @@ func (o *openaiClient) transcribe(
 	options ...Option,
 ) (*Response, error) {
 	opts := Options{
-		Filename: "audio.mp3",
+		Filename: "tts.mp3",
 	}
 	for _, opt := range options {
 		opt(&opts)
@@ -127,7 +127,7 @@ func (o *openaiClient) translate(
 	options ...Option,
 ) (*Response, error) {
 	opts := Options{
-		Filename: "audio.mp3",
+		Filename: "tts.mp3",
 	}
 	for _, opt := range options {
 		opt(&opts)

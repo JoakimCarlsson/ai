@@ -13,7 +13,7 @@ import (
 	"github.com/joakimcarlsson/ai/agent/session"
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/model"
-	llm "github.com/joakimcarlsson/ai/providers"
+	llm "github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/tokens"
 	"github.com/joakimcarlsson/ai/tokens/summarize"
 	"github.com/joakimcarlsson/ai/types"

@@ -6,15 +6,15 @@ import (
 	"log"
 	"os"
 
-	"github.com/joakimcarlsson/ai/image_generation"
+	"github.com/joakimcarlsson/ai/image"
 	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
-	client, err := image_generation.NewImageGeneration(
+	client, err := image.NewImageGeneration(
 		model.ProviderXAI,
-		image_generation.WithAPIKey(""),
-		image_generation.WithModel(
+		image.WithAPIKey(""),
+		image.WithModel(
 			model.XAIImageGenerationModels[model.XAIGrok2Image],
 		),
 	)
@@ -25,13 +25,13 @@ func main() {
 	response, err := client.GenerateImage(
 		context.Background(),
 		"A serene mountain landscape at sunset with vibrant colors",
-		image_generation.WithResponseFormat("b64_json"),
+		image.WithResponseFormat("b64_json"),
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	imageData, err := image_generation.DecodeBase64Image(
+	imageData, err := image.DecodeBase64Image(
 		response.Images[0].ImageBase64,
 	)
 	if err != nil {

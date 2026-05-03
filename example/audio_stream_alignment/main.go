@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/joakimcarlsson/ai/audio"
+	"github.com/joakimcarlsson/ai/tts"
 	"github.com/joakimcarlsson/ai/model"
 )
 
@@ -20,12 +20,12 @@ func main() {
 
 	ctx := context.Background()
 
-	client, err := audio.NewAudioGeneration(
+	client, err := tts.NewAudioGeneration(
 		model.ProviderElevenLabs,
-		audio.WithAPIKey(apiKey),
-		audio.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
-		audio.WithElevenLabsOptions(
-			audio.WithElevenLabsVoiceID("EXAVITQu4vr4xnSDxMaL"),
+		tts.WithAPIKey(apiKey),
+		tts.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
+		tts.WithElevenLabsOptions(
+			tts.WithElevenLabsVoiceID("EXAVITQu4vr4xnSDxMaL"),
 		),
 	)
 	if err != nil {
@@ -35,7 +35,7 @@ func main() {
 	text := "Hello, world! This is a test of streaming with alignment data."
 
 	chunkChan, err := client.StreamAudio(ctx, text,
-		audio.WithAlignmentEnabled(true),
+		tts.WithAlignmentEnabled(true),
 	)
 	if err != nil {
 		log.Fatal(err)

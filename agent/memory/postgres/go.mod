@@ -8,4 +8,4 @@ require (
 	github.com/lib/pq v1.12.3
 )
 
-replace github.com/joakimcarlsson/ai => ../..
+replace github.com/joakimcarlsson/ai => ../../..

@@ -1,4 +1,4 @@
-package audio
+package tts
 
 import (
 	"bytes"
@@ -739,7 +739,7 @@ func (c ElevenLabsClient) GenerateForcedAlignment(
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	fileWriter, err := writer.CreateFormFile("file", "audio.mp3")
+	fileWriter, err := writer.CreateFormFile("file", "tts.mp3")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create form file: %w", err)
 	}

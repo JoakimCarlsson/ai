@@ -12,7 +12,7 @@ import (
 
 	"github.com/joakimcarlsson/ai/agent"
 	"github.com/joakimcarlsson/ai/model"
-	llm "github.com/joakimcarlsson/ai/providers"
+	llm "github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/tracing"
 )

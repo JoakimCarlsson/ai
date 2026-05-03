@@ -1,4 +1,4 @@
-// Package audio provides a unified interface for generating audio from text using
+// Package tts provides a unified interface for generating audio from text using
 // various AI providers.
 //
 // This package abstracts the differences between audio generation providers like ElevenLabs
@@ -15,11 +15,11 @@
 //
 // Example usage:
 //
-//	client, err := audio.NewAudioGeneration(model.ProviderElevenLabs,
-//		audio.WithAPIKey("your-api-key"),
-//		audio.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
-//		audio.WithElevenLabsOptions(
-//			audio.WithElevenLabsVoiceID("EXAVITQu4vr4xnSDxMaL"),
+//	client, err := tts.NewAudioGeneration(model.ProviderElevenLabs,
+//		tts.WithAPIKey("your-api-key"),
+//		tts.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
+//		tts.WithElevenLabsOptions(
+//			tts.WithElevenLabsVoiceID("EXAVITQu4vr4xnSDxMaL"),
 //		),
 //	)
 //	if err != nil {
@@ -32,7 +32,7 @@
 //	}
 //
 //	os.WriteFile("output.mp3", response.AudioData, 0644)
-package audio
+package tts
 
 import (
 	"context"
@@ -49,7 +49,7 @@ type Usage struct {
 	Characters int64
 }
 
-// AlignmentData contains character-level timing information for generated audio.
+// AlignmentData contains character-level timing information for generated tts.
 type AlignmentData struct {
 	Characters                 []string
 	CharacterStartTimesSeconds []float64
@@ -361,7 +361,7 @@ func WithAPIKey(apiKey string) GenerationClientOption {
 	}
 }
 
-// WithModel specifies which audio generation model to use for creating audio.
+// WithModel specifies which audio generation model to use for creating tts.
 func WithModel(model model.AudioModel) GenerationClientOption {
 	return func(options *audioGenerationClientOptions) {
 		options.model = model
@@ -441,7 +441,7 @@ type GenerationOptions struct {
 // GenerationOption is a function that configures GenerationOptions.
 type GenerationOption func(*GenerationOptions)
 
-// WithOutputFormat sets the audio format for the generated audio.
+// WithOutputFormat sets the audio format for the generated tts.
 // Common formats: "mp3_44100_128", "mp3_44100_192", "pcm_16000", "pcm_22050", "pcm_24000", "pcm_44100".
 func WithOutputFormat(format string) GenerationOption {
 	return func(options *GenerationOptions) {

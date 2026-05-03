@@ -1,4 +1,4 @@
-package transcription
+package stt
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 )
 
 // ErrStreamingNotSupported is returned by StreamTranscribe when the underlying
-// provider only supports request/response transcription. Detect ahead of time
+// provider only supports request/response stt. Detect ahead of time
 // via SupportsStreaming.
 var ErrStreamingNotSupported = errors.New(
 	"transcription: streaming not supported by this provider",

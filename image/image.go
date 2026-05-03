@@ -1,4 +1,4 @@
-// Package image_generation provides a unified interface for generating images from text prompts
+// Package image provides a unified interface for generating images from text prompts
 // using various AI providers.
 //
 // This package abstracts the differences between image generation providers like OpenAI, xAI, and Gemini,
@@ -13,24 +13,24 @@
 //
 // Example usage:
 //
-//	client, err := image_generation.NewImageGeneration(model.ProviderXAI,
-//		image_generation.WithAPIKey("your-api-key"),
-//		image_generation.WithModel(model.XAIImageGenerationModels[model.XAIGrok2Image]),
+//	client, err := image.NewImageGeneration(model.ProviderXAI,
+//		image.WithAPIKey("your-api-key"),
+//		image.WithModel(model.XAIImageGenerationModels[model.XAIGrok2Image]),
 //	)
 //	if err != nil {
 //		log.Fatal(err)
 //	}
 //
 //	response, err := client.GenerateImage(ctx, "A serene mountain landscape at sunset",
-//		image_generation.WithResponseFormat("b64_json"),
+//		image.WithResponseFormat("b64_json"),
 //	)
 //	if err != nil {
 //		log.Fatal(err)
 //	}
 //
-//	imageData, _ := image_generation.DecodeBase64Image(response.Images[0].ImageBase64)
+//	imageData, _ := image.DecodeBase64Image(response.Images[0].ImageBase64)
 //	os.WriteFile("image.png", imageData, 0644)
-package image_generation
+package image
 
 import (
 	"context"

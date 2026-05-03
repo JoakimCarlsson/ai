@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/joakimcarlsson/ai/message"
-	llm "github.com/joakimcarlsson/ai/providers"
+	llm "github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/tokens"
 )
 

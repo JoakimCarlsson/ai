@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/joakimcarlsson/ai/model"
-	"github.com/joakimcarlsson/ai/transcription"
+	"github.com/joakimcarlsson/ai/stt"
 )
 
 func main() {
@@ -19,10 +19,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	client, err := transcription.NewSpeechToText(
+	client, err := stt.NewSpeechToText(
 		model.ProviderOpenAI,
-		transcription.WithAPIKey(apiKey),
-		transcription.WithModel(
+		stt.WithAPIKey(apiKey),
+		stt.WithModel(
 			model.OpenAITranscriptionModels[model.Whisper1],
 		),
 	)

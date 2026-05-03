@@ -8,28 +8,28 @@ import (
 	"os"
 
 	"github.com/joakimcarlsson/ai/model"
-	"github.com/joakimcarlsson/ai/transcription"
+	"github.com/joakimcarlsson/ai/stt"
 )
 
 func main() {
-	client, err := transcription.NewSpeechToText(
+	client, err := stt.NewSpeechToText(
 		model.ProviderDeepgram,
-		transcription.WithAPIKey(
+		stt.WithAPIKey(
 			os.Getenv("DEEPGRAM_API_KEY"),
 		),
-		transcription.WithModel(
+		stt.WithModel(
 			model.DeepgramTranscriptionModels[model.DeepgramNova3],
 		),
-		transcription.WithDeepgramOptions(
-			transcription.WithDeepgramPunctuate(true),
-			transcription.WithDeepgramSmartFormat(true),
+		stt.WithDeepgramOptions(
+			stt.WithDeepgramPunctuate(true),
+			stt.WithDeepgramSmartFormat(true),
 		),
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	audioData, err := os.ReadFile("audio.mp3")
+	audioData, err := os.ReadFile("tts.mp3")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func main() {
 	response, err := client.Transcribe(
 		context.Background(),
 		audioData,
-		transcription.WithLanguage("en"),
+		stt.WithLanguage("en"),
 	)
 	if err != nil {
 		log.Fatal(err)

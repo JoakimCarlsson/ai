@@ -15,7 +15,7 @@ import (
 	"github.com/joakimcarlsson/ai/integrations/pgvector"
 	"github.com/joakimcarlsson/ai/integrations/postgres"
 	"github.com/joakimcarlsson/ai/model"
-	llm "github.com/joakimcarlsson/ai/providers"
+	llm "github.com/joakimcarlsson/ai/llm"
 )
 
 var idCounter uint64

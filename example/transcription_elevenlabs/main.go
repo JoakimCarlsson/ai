@@ -8,27 +8,27 @@ import (
 	"os"
 
 	"github.com/joakimcarlsson/ai/model"
-	"github.com/joakimcarlsson/ai/transcription"
+	"github.com/joakimcarlsson/ai/stt"
 )
 
 func main() {
-	client, err := transcription.NewSpeechToText(
+	client, err := stt.NewSpeechToText(
 		model.ProviderElevenLabs,
-		transcription.WithAPIKey(
+		stt.WithAPIKey(
 			os.Getenv("ELEVENLABS_API_KEY"),
 		),
-		transcription.WithModel(
+		stt.WithModel(
 			model.ElevenLabsTranscriptionModels[model.ElevenLabsScribeV2],
 		),
-		transcription.WithElevenLabsSTTOptions(
-			transcription.WithElevenLabsDiarize(true),
+		stt.WithElevenLabsSTTOptions(
+			stt.WithElevenLabsDiarize(true),
 		),
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	audioData, err := os.ReadFile("audio.mp3")
+	audioData, err := os.ReadFile("tts.mp3")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,7 +36,7 @@ func main() {
 	response, err := client.Transcribe(
 		context.Background(),
 		audioData,
-		transcription.WithLanguage("eng"),
+		stt.WithLanguage("eng"),
 	)
 	if err != nil {
 		log.Fatal(err)

@@ -1,6 +1,6 @@
 // Example transcription_assemblyai_stream demonstrates streaming speech-to-text
 // against AssemblyAI's v3 Universal Streaming WebSocket. It reads a raw
-// PCM16-LE mono 16 kHz file (audio.pcm), splits it into 20 ms frames, and
+// PCM16-LE mono 16 kHz file (tts.pcm), splits it into 20 ms frames, and
 // prints transcripts as they arrive (with end_of_turn marking finals).
 package main
 
@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
-	"github.com/joakimcarlsson/ai/transcription"
+	"github.com/joakimcarlsson/ai/stt"
 )
 
 const (
@@ -29,14 +29,14 @@ func main() {
 }
 
 func run() error {
-	client, err := transcription.NewSpeechToText(
+	client, err := stt.NewSpeechToText(
 		model.ProviderAssemblyAI,
-		transcription.WithAPIKey(os.Getenv("ASSEMBLYAI_API_KEY")),
-		transcription.WithModel(model.AssemblyAITranscriptionModels[model.AssemblyAIBest]),
-		transcription.WithStreamSampleRate(sampleRate),
-		transcription.WithStreamChannels(channels),
-		transcription.WithAssemblyAIOptions(
-			transcription.WithAssemblyAIEndOfTurnSilenceMs(700),
+		stt.WithAPIKey(os.Getenv("ASSEMBLYAI_API_KEY")),
+		stt.WithModel(model.AssemblyAITranscriptionModels[model.AssemblyAIBest]),
+		stt.WithStreamSampleRate(sampleRate),
+		stt.WithStreamChannels(channels),
+		stt.WithAssemblyAIOptions(
+			stt.WithAssemblyAIEndOfTurnSilenceMs(700),
 		),
 	)
 	if err != nil {
@@ -46,7 +46,7 @@ func run() error {
 		return errors.New("assemblyAI client does not support streaming")
 	}
 
-	pcm, err := os.ReadFile("audio.pcm")
+	pcm, err := os.ReadFile("tts.pcm")
 	if err != nil {
 		return err
 	}

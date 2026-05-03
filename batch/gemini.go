@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/joakimcarlsson/ai/embeddings"
 	"github.com/joakimcarlsson/ai/message"
-	llm "github.com/joakimcarlsson/ai/providers"
+	llm "github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/tool"
 	"google.golang.org/genai"
 )

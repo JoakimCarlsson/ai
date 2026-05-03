@@ -1,4 +1,4 @@
-// Package transcription provides a unified interface for speech-to-text conversion using various AI providers.
+// Package stt provides a unified interface for speech-to-text conversion using various AI providers.
 //
 // This package abstracts away the differences between speech-to-text providers like OpenAI Whisper,
 // providing a consistent API for transcribing audio files and translating them to English.
@@ -13,25 +13,25 @@
 //
 // Example usage:
 //
-//	client, err := transcription.NewSpeechToText(
+//	client, err := stt.NewSpeechToText(
 //		model.ProviderOpenAI,
-//		transcription.WithAPIKey("your-api-key"),
-//		transcription.WithModel(model.OpenAITranscriptionModels[model.Whisper1]),
+//		stt.WithAPIKey("your-api-key"),
+//		stt.WithModel(model.OpenAITranscriptionModels[model.Whisper1]),
 //	)
 //	if err != nil {
 //		log.Fatal(err)
 //	}
 //
-//	audioData, _ := os.ReadFile("audio.mp3")
+//	audioData, _ := os.ReadFile("tts.mp3")
 //	response, err := client.Transcribe(ctx, audioData,
-//		transcription.WithLanguage("en"),
+//		stt.WithLanguage("en"),
 //	)
 //	if err != nil {
 //		log.Fatal(err)
 //	}
 //
 //	fmt.Println(response.Text)
-package transcription
+package stt
 
 import (
 	"context"
@@ -86,7 +86,7 @@ type Response struct {
 
 // SpeechToText provides methods for converting audio to text using various AI providers.
 type SpeechToText interface {
-	// Transcribe converts audio to text in the same language as the audio.
+	// Transcribe converts audio to text in the same language as the tts.
 
 	Transcribe(
 		ctx context.Context,
@@ -552,7 +552,7 @@ func WithKnownSpeakers(
 	}
 }
 
-// WithFilename specifies the audio filename for format detection (e.g., "audio.mp3").
+// WithFilename specifies the audio filename for format detection (e.g., "tts.mp3").
 func WithFilename(filename string) Option {
 	return func(options *Options) {
 		options.Filename = filename
@@ -575,7 +575,7 @@ func WithOpenAIBaseURL(baseURL string) OpenAIOption {
 }
 
 // WithOpenAISTTLanguage sets the default language (ISO-639-1, e.g. "en",
-// "sv") for transcription. Set at client construction time. Per-call
+// "sv") for stt. Set at client construction time. Per-call
 // WithLanguage overrides this when supplied.
 func WithOpenAISTTLanguage(language string) OpenAIOption {
 	return func(o *openaiOptions) {

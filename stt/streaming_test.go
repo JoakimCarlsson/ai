@@ -1,4 +1,4 @@
-package transcription
+package stt
 
 import (
 	"context"

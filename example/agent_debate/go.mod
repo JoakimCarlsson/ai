@@ -88,6 +88,6 @@ require (
 
 replace github.com/joakimcarlsson/ai => ../..
 
-replace github.com/joakimcarlsson/ai/integrations/postgres => ../../integrations/postgres
+replace github.com/joakimcarlsson/ai/integrations/postgres => ../../agent/memory/postgres
 
-replace github.com/joakimcarlsson/ai/integrations/pgvector => ../../integrations/pgvector
+replace github.com/joakimcarlsson/ai/integrations/pgvector => ../../agent/memory/pgvector

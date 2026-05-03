@@ -8,28 +8,28 @@ import (
 	"os"
 
 	"github.com/joakimcarlsson/ai/model"
-	"github.com/joakimcarlsson/ai/transcription"
+	"github.com/joakimcarlsson/ai/stt"
 )
 
 func main() {
-	client, err := transcription.NewSpeechToText(
+	client, err := stt.NewSpeechToText(
 		model.ProviderGoogleCloud,
-		transcription.WithAPIKey(
+		stt.WithAPIKey(
 			os.Getenv("GOOGLE_CLOUD_API_KEY"),
 		),
-		transcription.WithModel(
+		stt.WithModel(
 			model.GoogleCloudTranscriptionModels[model.GoogleCloudSTTDefault],
 		),
-		transcription.WithGoogleCloudSTTOptions(
-			transcription.WithGoogleCloudEncoding("LINEAR16"),
-			transcription.WithGoogleCloudSampleRate(16000),
+		stt.WithGoogleCloudSTTOptions(
+			stt.WithGoogleCloudEncoding("LINEAR16"),
+			stt.WithGoogleCloudSampleRate(16000),
 		),
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	audioData, err := os.ReadFile("audio.wav")
+	audioData, err := os.ReadFile("tts.wav")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func main() {
 	response, err := client.Transcribe(
 		context.Background(),
 		audioData,
-		transcription.WithLanguage("en-US"),
+		stt.WithLanguage("en-US"),
 	)
 	if err != nil {
 		log.Fatal(err)

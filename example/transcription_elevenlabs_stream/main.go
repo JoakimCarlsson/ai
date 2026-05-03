@@ -1,6 +1,6 @@
 // Example transcription_elevenlabs_stream demonstrates streaming speech-to-text
 // against ElevenLabs Scribe v2 Realtime. It reads a raw PCM16-LE mono 16 kHz
-// file (audio.pcm), splits it into 20 ms frames, and prints partial and
+// file (tts.pcm), splits it into 20 ms frames, and prints partial and
 // committed transcripts as they arrive.
 package main
 
@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
-	"github.com/joakimcarlsson/ai/transcription"
+	"github.com/joakimcarlsson/ai/stt"
 )
 
 const (
@@ -29,15 +29,15 @@ func main() {
 }
 
 func run() error {
-	client, err := transcription.NewSpeechToText(
+	client, err := stt.NewSpeechToText(
 		model.ProviderElevenLabs,
-		transcription.WithAPIKey(os.Getenv("ELEVENLABS_API_KEY")),
-		transcription.WithModel(model.ElevenLabsTranscriptionModels[model.ElevenLabsScribeV2]),
-		transcription.WithStreamSampleRate(sampleRate),
-		transcription.WithStreamChannels(channels),
-		transcription.WithElevenLabsSTTOptions(
-			transcription.WithElevenLabsStreamVADSilenceMs(700),
-			transcription.WithElevenLabsStreamLanguageCode("eng"),
+		stt.WithAPIKey(os.Getenv("ELEVENLABS_API_KEY")),
+		stt.WithModel(model.ElevenLabsTranscriptionModels[model.ElevenLabsScribeV2]),
+		stt.WithStreamSampleRate(sampleRate),
+		stt.WithStreamChannels(channels),
+		stt.WithElevenLabsSTTOptions(
+			stt.WithElevenLabsStreamVADSilenceMs(700),
+			stt.WithElevenLabsStreamLanguageCode("eng"),
 		),
 	)
 	if err != nil {
@@ -47,7 +47,7 @@ func run() error {
 		return errors.New("elevenLabs client does not support streaming")
 	}
 
-	pcm, err := os.ReadFile("audio.pcm")
+	pcm, err := os.ReadFile("tts.pcm")
 	if err != nil {
 		return err
 	}

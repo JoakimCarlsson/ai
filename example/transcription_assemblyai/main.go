@@ -8,27 +8,27 @@ import (
 	"os"
 
 	"github.com/joakimcarlsson/ai/model"
-	"github.com/joakimcarlsson/ai/transcription"
+	"github.com/joakimcarlsson/ai/stt"
 )
 
 func main() {
-	client, err := transcription.NewSpeechToText(
+	client, err := stt.NewSpeechToText(
 		model.ProviderAssemblyAI,
-		transcription.WithAPIKey(
+		stt.WithAPIKey(
 			os.Getenv("ASSEMBLYAI_API_KEY"),
 		),
-		transcription.WithModel(
+		stt.WithModel(
 			model.AssemblyAITranscriptionModels[model.AssemblyAIBest],
 		),
-		transcription.WithAssemblyAIOptions(
-			transcription.WithAssemblyAISpeakerLabels(true),
+		stt.WithAssemblyAIOptions(
+			stt.WithAssemblyAISpeakerLabels(true),
 		),
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	audioData, err := os.ReadFile("audio.mp3")
+	audioData, err := os.ReadFile("tts.mp3")
 	if err != nil {
 		log.Fatal(err)
 	}

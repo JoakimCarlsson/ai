@@ -7,22 +7,22 @@ import (
 	"log"
 	"os"
 
-	"github.com/joakimcarlsson/ai/audio"
+	"github.com/joakimcarlsson/ai/tts"
 	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
-	client, err := audio.NewAudioGeneration(
+	client, err := tts.NewAudioGeneration(
 		model.ProviderAzureSpeech,
-		audio.WithAPIKey(
+		tts.WithAPIKey(
 			os.Getenv("AZURE_SPEECH_KEY"),
 		),
-		audio.WithModel(
+		tts.WithModel(
 			model.AzureSpeechAudioModels[model.AzureSpeechNeural],
 		),
-		audio.WithAzureSpeechOptions(
-			audio.WithAzureRegion("eastus"),
-			audio.WithAzureVoiceName(
+		tts.WithAzureSpeechOptions(
+			tts.WithAzureRegion("eastus"),
+			tts.WithAzureVoiceName(
 				"en-US-JennyNeural",
 			),
 		),

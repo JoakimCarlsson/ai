@@ -1,4 +1,4 @@
-package transcription
+package stt
 
 import (
 	"bytes"
@@ -257,7 +257,7 @@ func WithDeepgramSmartFormat(
 	}
 }
 
-// WithDeepgramLanguage sets the default language for transcription.
+// WithDeepgramLanguage sets the default language for stt.
 func WithDeepgramLanguage(
 	language string,
 ) DeepgramOption {

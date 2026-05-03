@@ -1,4 +1,4 @@
-package audio
+package tts
 
 // ElevenLabsOption is a function that configures ElevenLabs-specific options.
 type ElevenLabsOption func(*elevenLabsOptions)

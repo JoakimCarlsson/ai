@@ -1,4 +1,4 @@
-package audio
+package tts
 
 // DeepgramOption is a function that configures Deepgram-specific TTS options.
 type DeepgramOption func(*deepgramOptions)
