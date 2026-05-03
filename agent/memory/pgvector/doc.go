@@ -20,9 +20,9 @@
 //
 //	import "github.com/joakimcarlsson/ai/integrations/pgvector"
 //
-//	embedder, _ := embeddings.NewEmbedding(model.ProviderOpenAI,
-//	    embeddings.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-//	    embeddings.WithModel(model.OpenAIEmbeddingModels[model.TextEmbedding3Small]),
+//	embedder := openai.NewEmbedding(
+//	    openai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+//	    openai.WithModel(model.OpenAIEmbeddingModels[model.TextEmbedding3Small]),
 //	)
 //
 //	store, err := pgvector.MemoryStore(ctx, "postgres://user:pass@localhost/db?sslmode=disable", embedder)

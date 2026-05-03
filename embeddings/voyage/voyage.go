@@ -1,4 +1,6 @@
-package embeddings
+// Package voyage provides a Voyage AI implementation of the [embeddings.Embedding] interface,
+// supporting standard, multimodal, and contextualized embeddings.
+package voyage
 
 import (
 	"bytes"
@@ -8,7 +10,12 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/joakimcarlsson/ai/embeddings"
+	"github.com/joakimcarlsson/ai/model"
 )
+
+const defaultBaseURL = "https://api.voyageai.com/v1"
 
 // EmbeddingVector holds a Voyage API embedding in one of several numeric or base64 encodings.
 type EmbeddingVector struct {
@@ -147,17 +154,19 @@ func (ev *EmbeddingVector) Len() int {
 	}
 }
 
-// GetDataType returns the detected embedding encoding label (e.g. "float32", "base64").
-func (ev *EmbeddingVector) GetDataType() string {
-	return ev.DataType
-}
+// GetDataType returns the detected embedding encoding label.
+func (ev *EmbeddingVector) GetDataType() string { return ev.DataType }
 
 // IsBase64 reports whether the embedding was parsed as a base64 string payload.
-func (ev *EmbeddingVector) IsBase64() bool {
-	return ev.DataType == "base64"
-}
+func (ev *EmbeddingVector) IsBase64() bool { return ev.DataType == "base64" }
 
-type voyageOptions struct {
+// Options configures the Voyage embeddings client.
+type Options struct {
+	apiKey          string
+	model           model.EmbeddingModel
+	timeout         *time.Duration
+	batchSize       int
+	dimensions      *int
 	inputType       string
 	truncation      *bool
 	outputDimension *int
@@ -165,20 +174,80 @@ type voyageOptions struct {
 	encodingFormat  string
 }
 
-// VoyageOption configures Voyage AI-specific embedding client options.
-type VoyageOption func(*voyageOptions)
+// Option configures Options.
+type Option func(*Options)
 
-type voyageClient struct {
-	providerOptions embeddingClientOptions
-	options         voyageOptions
-	httpClient      *http.Client
-	baseURL         string
+// WithAPIKey sets the API key used to authenticate with Voyage.
+func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+
+// WithModel selects the embedding model.
+func WithModel(m model.EmbeddingModel) Option { return func(o *Options) { o.model = m } }
+
+// WithTimeout sets the maximum duration to wait for a single request.
+func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+
+// WithBatchSize sets the number of texts to process in each batch request.
+func WithBatchSize(batchSize int) Option { return func(o *Options) { o.batchSize = batchSize } }
+
+// WithDimensions specifies the output dimensionality for embedding vectors.
+// Equivalent to [WithOutputDimensions]; Voyage accepts either.
+func WithDimensions(dimensions int) Option { return func(o *Options) { o.dimensions = &dimensions } }
+
+// WithInputType specifies the type of input for optimized embedding generation.
+// Common values: "query" for search queries, "document" for documents to be searched.
+func WithInputType(inputType string) Option { return func(o *Options) { o.inputType = inputType } }
+
+// WithTruncation enables automatic truncation of inputs exceeding the model's token limit.
+func WithTruncation(truncation bool) Option { return func(o *Options) { o.truncation = &truncation } }
+
+// WithEncodingFormat specifies the format for encoded embeddings.
+func WithEncodingFormat(format string) Option {
+	return func(o *Options) { o.encodingFormat = format }
 }
 
-// VoyageClient is the Voyage AI implementation of EmbeddingClient.
-type VoyageClient EmbeddingClient
+// WithOutputDimensions sets the dimensionality of the output embedding vectors.
+func WithOutputDimensions(dimensions int) Option {
+	return func(o *Options) { o.outputDimension = &dimensions }
+}
 
-type voyageEmbeddingRequest struct {
+// WithOutputDtype specifies the data type for embedding outputs.
+// Common values: "float" (default), "int8", "uint8", "binary", "ubinary".
+func WithOutputDtype(dtype string) Option { return func(o *Options) { o.outputDtype = dtype } }
+
+// Client implements [embeddings.Embedding] against the Voyage AI API.
+type Client struct {
+	options    Options
+	httpClient *http.Client
+	baseURL    string
+}
+
+// NewEmbedding constructs a Voyage embeddings client. The returned [embeddings.Embedding]
+// is wrapped with [embeddings.WithTracing], so callers always get tracing spans and metrics.
+func NewEmbedding(opts ...Option) embeddings.Embedding {
+	options := Options{
+		batchSize:   100,
+		outputDtype: "float",
+	}
+	for _, o := range opts {
+		o(&options)
+	}
+
+	timeout := 30 * time.Second
+	if options.timeout != nil {
+		timeout = *options.timeout
+	}
+
+	return embeddings.WithTracing(&Client{
+		options:    options,
+		httpClient: &http.Client{Timeout: timeout},
+		baseURL:    defaultBaseURL,
+	})
+}
+
+// Model returns the configured embedding model.
+func (c *Client) Model() model.EmbeddingModel { return c.options.model }
+
+type embedRequest struct {
 	Input           []string `json:"input"`
 	Model           string   `json:"model"`
 	InputType       string   `json:"input_type,omitempty"`
@@ -188,7 +257,7 @@ type voyageEmbeddingRequest struct {
 	EncodingFormat  string   `json:"encoding_format,omitempty"`
 }
 
-type voyageEmbeddingResponse struct {
+type embedResponse struct {
 	Object string `json:"object"`
 	Data   []struct {
 		Object    string          `json:"object"`
@@ -203,21 +272,21 @@ type voyageEmbeddingResponse struct {
 	} `json:"usage"`
 }
 
-type voyageMultimodalRequest struct {
-	Inputs         []MultimodalInput `json:"inputs"`
-	Model          string            `json:"model"`
-	InputType      string            `json:"input_type,omitempty"`
-	Truncation     *bool             `json:"truncation,omitempty"`
-	OutputEncoding string            `json:"output_encoding,omitempty"`
+type multimodalRequest struct {
+	Inputs         []embeddings.MultimodalInput `json:"inputs"`
+	Model          string                       `json:"model"`
+	InputType      string                       `json:"input_type,omitempty"`
+	Truncation     *bool                        `json:"truncation,omitempty"`
+	OutputEncoding string                       `json:"output_encoding,omitempty"`
 }
 
-type voyageContextualizedRequest struct {
+type contextualizedRequest struct {
 	Inputs    [][]string `json:"inputs"`
 	Model     string     `json:"model"`
 	InputType string     `json:"input_type,omitempty"`
 }
 
-type voyageContextualizedResponse struct {
+type contextualizedResponse struct {
 	Object string `json:"object"`
 	Data   []struct {
 		Object string `json:"object"`
@@ -234,45 +303,21 @@ type voyageContextualizedResponse struct {
 	} `json:"usage"`
 }
 
-func newVoyageClient(opts embeddingClientOptions) VoyageClient {
-	voyageOpts := voyageOptions{
-		inputType:      "",
-		outputDtype:    "float",
-		encodingFormat: "",
-	}
-	for _, o := range opts.voyageOptions {
-		o(&voyageOpts)
-	}
-
-	timeout := 30 * time.Second
-	if opts.timeout != nil {
-		timeout = *opts.timeout
-	}
-
-	return &voyageClient{
-		providerOptions: opts,
-		options:         voyageOpts,
-		httpClient: &http.Client{
-			Timeout: timeout,
-		},
-		baseURL: "https://api.voyageai.com/v1",
-	}
-}
-
-func (v *voyageClient) embed(
+// GenerateEmbeddings creates vector embeddings from text strings.
+func (c *Client) GenerateEmbeddings(
 	ctx context.Context,
 	texts []string,
 	inputType ...string,
-) (*EmbeddingResponse, error) {
+) (*embeddings.EmbeddingResponse, error) {
 	if len(texts) == 0 {
-		return &EmbeddingResponse{
+		return &embeddings.EmbeddingResponse{
 			Embeddings: [][]float32{},
-			Usage:      EmbeddingUsage{TotalTokens: 0},
-			Model:      v.providerOptions.model.APIModel,
+			Usage:      embeddings.EmbeddingUsage{TotalTokens: 0},
+			Model:      c.options.model.APIModel,
 		}, nil
 	}
 
-	batchSize := v.providerOptions.batchSize
+	batchSize := c.options.batchSize
 	if batchSize <= 0 {
 		batchSize = 100
 	}
@@ -286,8 +331,7 @@ func (v *voyageClient) embed(
 			end = len(texts)
 		}
 
-		batch := texts[i:end]
-		response, err := v.embedBatch(ctx, batch, inputType...)
+		response, err := c.embedBatch(ctx, texts[i:end], inputType...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to embed batch: %w", err)
 		}
@@ -296,41 +340,41 @@ func (v *voyageClient) embed(
 		totalTokens += response.Usage.TotalTokens
 	}
 
-	return &EmbeddingResponse{
+	return &embeddings.EmbeddingResponse{
 		Embeddings: allEmbeddings,
-		Usage:      EmbeddingUsage{TotalTokens: totalTokens},
-		Model:      v.providerOptions.model.APIModel,
+		Usage:      embeddings.EmbeddingUsage{TotalTokens: totalTokens},
+		Model:      c.options.model.APIModel,
 	}, nil
 }
 
-func (v *voyageClient) embedBatch(
+func (c *Client) embedBatch(
 	ctx context.Context,
 	texts []string,
 	inputType ...string,
-) (*EmbeddingResponse, error) {
-	reqBody := voyageEmbeddingRequest{
+) (*embeddings.EmbeddingResponse, error) {
+	reqBody := embedRequest{
 		Input: texts,
-		Model: v.providerOptions.model.APIModel,
+		Model: c.options.model.APIModel,
 	}
 
 	if len(inputType) > 0 && inputType[0] != "" {
 		reqBody.InputType = inputType[0]
-	} else if v.options.inputType != "" {
-		reqBody.InputType = v.options.inputType
+	} else if c.options.inputType != "" {
+		reqBody.InputType = c.options.inputType
 	}
-	if v.options.truncation != nil {
-		reqBody.Truncation = v.options.truncation
+	if c.options.truncation != nil {
+		reqBody.Truncation = c.options.truncation
 	}
-	if v.providerOptions.dimensions != nil {
-		reqBody.OutputDimension = v.providerOptions.dimensions
-	} else if v.options.outputDimension != nil {
-		reqBody.OutputDimension = v.options.outputDimension
+	if c.options.dimensions != nil {
+		reqBody.OutputDimension = c.options.dimensions
+	} else if c.options.outputDimension != nil {
+		reqBody.OutputDimension = c.options.outputDimension
 	}
-	if v.options.outputDtype != "float" {
-		reqBody.OutputDtype = v.options.outputDtype
+	if c.options.outputDtype != "float" {
+		reqBody.OutputDtype = c.options.outputDtype
 	}
-	if v.options.encodingFormat != "" {
-		reqBody.EncodingFormat = v.options.encodingFormat
+	if c.options.encodingFormat != "" {
+		reqBody.EncodingFormat = c.options.encodingFormat
 	}
 
 	jsonBody, err := json.Marshal(reqBody)
@@ -339,19 +383,15 @@ func (v *voyageClient) embedBatch(
 	}
 
 	req, err := http.NewRequestWithContext(
-		ctx,
-		"POST",
-		v.baseURL+"/embeddings",
-		bytes.NewBuffer(jsonBody),
+		ctx, "POST", c.baseURL+"/embeddings", bytes.NewBuffer(jsonBody),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+v.providerOptions.apiKey)
+	req.Header.Set("Authorization", "Bearer "+c.options.apiKey)
 
-	resp, err := v.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
@@ -363,34 +403,29 @@ func (v *voyageClient) embedBatch(
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(
-			"API request failed with status %d: %s",
-			resp.StatusCode,
-			string(body),
-		)
+		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
-	var voyageResp voyageEmbeddingResponse
+	var voyageResp embedResponse
 	if err := json.Unmarshal(body, &voyageResp); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
-	embeddings := make([][]float32, len(voyageResp.Data))
+	out := make([][]float32, len(voyageResp.Data))
 	for i, data := range voyageResp.Data {
 		embedding := data.Embedding.ToFloat32()
 		if embedding == nil {
 			return nil, fmt.Errorf(
 				"failed to convert embedding at index %d: unsupported data type %s",
-				i,
-				data.Embedding.DataType,
+				i, data.Embedding.DataType,
 			)
 		}
-		embeddings[i] = embedding
+		out[i] = embedding
 	}
 
-	return &EmbeddingResponse{
-		Embeddings: embeddings,
-		Usage: EmbeddingUsage{
+	return &embeddings.EmbeddingResponse{
+		Embeddings: out,
+		Usage: embeddings.EmbeddingUsage{
 			TotalTokens: voyageResp.Usage.TotalTokens,
 			TextTokens:  voyageResp.Usage.TextTokens,
 			ImagePixels: voyageResp.Usage.ImagePixels,
@@ -399,36 +434,37 @@ func (v *voyageClient) embedBatch(
 	}, nil
 }
 
-func (v *voyageClient) embedMultimodal(
+// GenerateMultimodalEmbeddings creates embeddings from mixed text and image content.
+func (c *Client) GenerateMultimodalEmbeddings(
 	ctx context.Context,
-	inputs []MultimodalInput,
+	inputs []embeddings.MultimodalInput,
 	inputType ...string,
-) (*EmbeddingResponse, error) {
+) (*embeddings.EmbeddingResponse, error) {
 	if len(inputs) == 0 {
-		return &EmbeddingResponse{
+		return &embeddings.EmbeddingResponse{
 			Embeddings: [][]float32{},
-			Usage:      EmbeddingUsage{TotalTokens: 0},
-			Model:      v.providerOptions.model.APIModel,
+			Usage:      embeddings.EmbeddingUsage{TotalTokens: 0},
+			Model:      c.options.model.APIModel,
 		}, nil
 	}
 
-	reqBody := voyageMultimodalRequest{
+	reqBody := multimodalRequest{
 		Inputs: inputs,
-		Model:  v.providerOptions.model.APIModel,
+		Model:  c.options.model.APIModel,
 	}
 
 	if len(inputType) > 0 && inputType[0] != "" {
 		reqBody.InputType = inputType[0]
-	} else if v.options.inputType != "" {
-		reqBody.InputType = v.options.inputType
+	} else if c.options.inputType != "" {
+		reqBody.InputType = c.options.inputType
 	}
 
-	if v.options.truncation != nil {
-		reqBody.Truncation = v.options.truncation
+	if c.options.truncation != nil {
+		reqBody.Truncation = c.options.truncation
 	}
 
-	if v.options.encodingFormat != "" {
-		reqBody.OutputEncoding = v.options.encodingFormat
+	if c.options.encodingFormat != "" {
+		reqBody.OutputEncoding = c.options.encodingFormat
 	}
 
 	jsonBody, err := json.Marshal(reqBody)
@@ -437,19 +473,15 @@ func (v *voyageClient) embedMultimodal(
 	}
 
 	req, err := http.NewRequestWithContext(
-		ctx,
-		"POST",
-		v.baseURL+"/multimodalembeddings",
-		bytes.NewBuffer(jsonBody),
+		ctx, "POST", c.baseURL+"/multimodalembeddings", bytes.NewBuffer(jsonBody),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create multimodal request: %w", err)
 	}
-
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+v.providerOptions.apiKey)
+	req.Header.Set("Authorization", "Bearer "+c.options.apiKey)
 
-	resp, err := v.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make multimodal request: %w", err)
 	}
@@ -457,44 +489,33 @@ func (v *voyageClient) embedMultimodal(
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"failed to read multimodal response body: %w",
-			err,
-		)
+		return nil, fmt.Errorf("failed to read multimodal response body: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(
-			"multimodal API request failed with status %d: %s",
-			resp.StatusCode,
-			string(body),
-		)
+		return nil, fmt.Errorf("multimodal API request failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
-	var voyageResp voyageEmbeddingResponse
+	var voyageResp embedResponse
 	if err := json.Unmarshal(body, &voyageResp); err != nil {
-		return nil, fmt.Errorf(
-			"failed to unmarshal multimodal response: %w",
-			err,
-		)
+		return nil, fmt.Errorf("failed to unmarshal multimodal response: %w", err)
 	}
 
-	embeddings := make([][]float32, len(voyageResp.Data))
+	out := make([][]float32, len(voyageResp.Data))
 	for i, data := range voyageResp.Data {
 		embedding := data.Embedding.ToFloat32()
 		if embedding == nil {
 			return nil, fmt.Errorf(
 				"failed to convert multimodal embedding at index %d: unsupported data type %s",
-				i,
-				data.Embedding.DataType,
+				i, data.Embedding.DataType,
 			)
 		}
-		embeddings[i] = embedding
+		out[i] = embedding
 	}
 
-	return &EmbeddingResponse{
-		Embeddings: embeddings,
-		Usage: EmbeddingUsage{
+	return &embeddings.EmbeddingResponse{
+		Embeddings: out,
+		Usage: embeddings.EmbeddingUsage{
 			TotalTokens: voyageResp.Usage.TotalTokens,
 			TextTokens:  voyageResp.Usage.TextTokens,
 			ImagePixels: voyageResp.Usage.ImagePixels,
@@ -503,55 +524,46 @@ func (v *voyageClient) embedMultimodal(
 	}, nil
 }
 
-func (v *voyageClient) embedContextualized(
+// GenerateContextualizedEmbeddings creates embeddings where each chunk is aware of its document context.
+func (c *Client) GenerateContextualizedEmbeddings(
 	ctx context.Context,
 	documentChunks [][]string,
 	inputType ...string,
-) (*ContextualizedEmbeddingResponse, error) {
+) (*embeddings.ContextualizedEmbeddingResponse, error) {
 	if len(documentChunks) == 0 {
-		return &ContextualizedEmbeddingResponse{
+		return &embeddings.ContextualizedEmbeddingResponse{
 			DocumentEmbeddings: [][][]float32{},
-			Usage:              EmbeddingUsage{TotalTokens: 0},
-			Model:              v.providerOptions.model.APIModel,
+			Usage:              embeddings.EmbeddingUsage{TotalTokens: 0},
+			Model:              c.options.model.APIModel,
 		}, nil
 	}
 
-	reqBody := voyageContextualizedRequest{
+	reqBody := contextualizedRequest{
 		Inputs: documentChunks,
-		Model:  v.providerOptions.model.APIModel,
+		Model:  c.options.model.APIModel,
 	}
 
 	if len(inputType) > 0 && inputType[0] != "" {
 		reqBody.InputType = inputType[0]
-	} else if v.options.inputType != "" {
-		reqBody.InputType = v.options.inputType
+	} else if c.options.inputType != "" {
+		reqBody.InputType = c.options.inputType
 	}
 
 	jsonBody, err := json.Marshal(reqBody)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"failed to marshal contextualized request: %w",
-			err,
-		)
+		return nil, fmt.Errorf("failed to marshal contextualized request: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(
-		ctx,
-		"POST",
-		v.baseURL+"/contextualizedembeddings",
-		bytes.NewBuffer(jsonBody),
+		ctx, "POST", c.baseURL+"/contextualizedembeddings", bytes.NewBuffer(jsonBody),
 	)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"failed to create contextualized request: %w",
-			err,
-		)
+		return nil, fmt.Errorf("failed to create contextualized request: %w", err)
 	}
-
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+v.providerOptions.apiKey)
+	req.Header.Set("Authorization", "Bearer "+c.options.apiKey)
 
-	resp, err := v.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make contextualized request: %w", err)
 	}
@@ -559,26 +571,16 @@ func (v *voyageClient) embedContextualized(
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"failed to read contextualized response body: %w",
-			err,
-		)
+		return nil, fmt.Errorf("failed to read contextualized response body: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(
-			"contextualized API request failed with status %d: %s",
-			resp.StatusCode,
-			string(body),
-		)
+		return nil, fmt.Errorf("contextualized API request failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
-	var voyageResp voyageContextualizedResponse
+	var voyageResp contextualizedResponse
 	if err := json.Unmarshal(body, &voyageResp); err != nil {
-		return nil, fmt.Errorf(
-			"failed to unmarshal contextualized response: %w",
-			err,
-		)
+		return nil, fmt.Errorf("failed to unmarshal contextualized response: %w", err)
 	}
 
 	documentEmbeddings := make([][][]float32, len(voyageResp.Data))
@@ -590,50 +592,9 @@ func (v *voyageClient) embedContextualized(
 		documentEmbeddings[docIndex] = chunkEmbeddings
 	}
 
-	return &ContextualizedEmbeddingResponse{
+	return &embeddings.ContextualizedEmbeddingResponse{
 		DocumentEmbeddings: documentEmbeddings,
-		Usage: EmbeddingUsage{
-			TotalTokens: voyageResp.Usage.TotalTokens,
-		},
-		Model: voyageResp.Model,
+		Usage:              embeddings.EmbeddingUsage{TotalTokens: voyageResp.Usage.TotalTokens},
+		Model:              voyageResp.Model,
 	}, nil
-}
-
-// WithInputType specifies the type of input for optimized embedding generation.
-// Common values: "query" for search queries, "document" for documents to be searched.
-func WithInputType(inputType string) VoyageOption {
-	return func(options *voyageOptions) {
-		options.inputType = inputType
-	}
-}
-
-// WithTruncation enables automatic truncation of inputs exceeding the model's token limit.
-func WithTruncation(truncation bool) VoyageOption {
-	return func(options *voyageOptions) {
-		options.truncation = &truncation
-	}
-}
-
-// WithEncodingFormat specifies the format for encoded embeddings.
-// Supported values depend on the model configuration.
-func WithEncodingFormat(format string) VoyageOption {
-	return func(options *voyageOptions) {
-		options.encodingFormat = format
-	}
-}
-
-// WithOutputDimensions sets the dimensionality of the output embedding vectors.
-// Only applicable to models that support variable output dimensions.
-func WithOutputDimensions(dimensions int) VoyageOption {
-	return func(options *voyageOptions) {
-		options.outputDimension = &dimensions
-	}
-}
-
-// WithOutputDtype specifies the data type for embedding outputs.
-// Common values: "float" (default), "int8", "uint8", "binary", "ubinary".
-func WithOutputDtype(dtype string) VoyageOption {
-	return func(options *voyageOptions) {
-		options.outputDtype = dtype
-	}
 }

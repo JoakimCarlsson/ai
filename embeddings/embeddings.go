@@ -1,41 +1,29 @@
 // Package embeddings provides a unified interface for generating text and multimodal embeddings
 // from various AI providers.
 //
-// This package abstracts the differences between embedding providers like Voyage AI and OpenAI,
-// offering a consistent API for generating vector embeddings from text, images, and mixed content.
-// It supports standard embeddings, multimodal embeddings, and contextualized embeddings for
-// improved document understanding.
-//
-// Key features include:
-//   - Text embedding generation from strings
-//   - Multimodal embedding generation from text and images
-//   - Contextualized embeddings for better document chunk understanding
-//   - Automatic batching for efficient processing
-//   - Token usage tracking and cost calculation
-//   - Provider-specific optimizations and features
+// This package defines the [Embedding] interface and the data types that flow through it.
+// Concrete vendor implementations live in subpackages (embeddings/openai, embeddings/voyage,
+// embeddings/cohere, embeddings/gemini, embeddings/bedrock, embeddings/mistral); each subpackage
+// exports its own NewEmbedding constructor that returns a tracing-wrapped client implementing
+// the interface.
 //
 // Example usage:
 //
-//	embedder, err := embeddings.NewEmbedding(model.ProviderVoyage,
-//		embeddings.WithAPIKey("your-api-key"),
-//		embeddings.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
+//	import (
+//		"github.com/joakimcarlsson/ai/embeddings"
+//		"github.com/joakimcarlsson/ai/embeddings/voyage"
 //	)
-//	if err != nil {
-//		log.Fatal(err)
-//	}
 //
-//	texts := []string{"Hello world", "How are you?"}
-//	response, err := embedder.GenerateEmbeddings(ctx, texts)
-//	if err != nil {
-//		log.Fatal(err)
-//	}
+//	embedder := voyage.NewEmbedding(
+//		voyage.WithAPIKey("your-api-key"),
+//		voyage.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
+//	)
 //
-//	fmt.Printf("Generated %d embeddings\n", len(response.Embeddings))
+//	response, err := embedder.GenerateEmbeddings(ctx, []string{"Hello world"})
 package embeddings
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
@@ -93,7 +81,6 @@ type ContextualizedEmbeddingResponse struct {
 }
 
 // Embedding defines the interface for generating vector embeddings from text and multimodal content.
-// It provides methods for standard text embeddings, multimodal embeddings, and contextualized embeddings.
 type Embedding interface {
 	// GenerateEmbeddings creates vector embeddings from a list of text strings.
 	// The optional inputType parameter can specify the intended use ("query", "document", etc.).
@@ -104,7 +91,6 @@ type Embedding interface {
 	) (*EmbeddingResponse, error)
 
 	// GenerateMultimodalEmbeddings creates embeddings from mixed text and image content.
-	// Each input can contain multiple content pieces of different types.
 	GenerateMultimodalEmbeddings(
 		ctx context.Context,
 		inputs []MultimodalInput,
@@ -112,7 +98,6 @@ type Embedding interface {
 	) (*EmbeddingResponse, error)
 
 	// GenerateContextualizedEmbeddings creates embeddings where each chunk is aware of its document context.
-	// Input is organized as documents (outer slice) containing chunks (inner slices).
 	GenerateContextualizedEmbeddings(
 		ctx context.Context,
 		documentChunks [][]string,
@@ -123,342 +108,140 @@ type Embedding interface {
 	Model() model.EmbeddingModel
 }
 
-type embeddingClientOptions struct {
-	apiKey     string
-	model      model.EmbeddingModel
-	batchSize  int
-	timeout    *time.Duration
-	dimensions *int
-
-	voyageOptions  []VoyageOption
-	openaiOptions  []OpenAIOption
-	cohereOptions  []CohereOption
-	geminiOptions  []GeminiOption
-	bedrockOptions []BedrockOption
-	mistralOptions []MistralOption
+// WithTracing wraps an Embedding client so every call records OpenTelemetry spans and
+// metrics. Vendor sub-packages return their concrete client wrapped in this so consumers
+// always get tracing without thinking about it.
+func WithTracing(inner Embedding) Embedding {
+	return &tracingEmbedding{inner: inner}
 }
 
-// EmbeddingClientOption configures embedding client construction when passed to NewEmbedding.
-type EmbeddingClientOption func(*embeddingClientOptions)
-
-// EmbeddingClient is the internal interface implemented by provider-specific embedding backends.
-type EmbeddingClient interface {
-	embed(
-		ctx context.Context,
-		texts []string,
-		inputType ...string,
-	) (*EmbeddingResponse, error)
-	embedMultimodal(
-		ctx context.Context,
-		inputs []MultimodalInput,
-		inputType ...string,
-	) (*EmbeddingResponse, error)
-	embedContextualized(
-		ctx context.Context,
-		documentChunks [][]string,
-		inputType ...string,
-	) (*ContextualizedEmbeddingResponse, error)
+type tracingEmbedding struct {
+	inner Embedding
 }
 
-type baseEmbedding[C EmbeddingClient] struct {
-	options embeddingClientOptions
-	client  C
+func (t *tracingEmbedding) Model() model.EmbeddingModel {
+	return t.inner.Model()
 }
 
-// NewEmbedding creates a new embedding client for the specified provider.
-// Supported providers include Voyage AI and OpenAI.
-// Use WithModel() to specify the embedding model and WithAPIKey() for authentication.
-func NewEmbedding(
-	provider model.Provider,
-	opts ...EmbeddingClientOption,
-) (Embedding, error) {
-	clientOptions := embeddingClientOptions{
-		batchSize: 100,
-	}
-	for _, o := range opts {
-		o(&clientOptions)
-	}
-
-	switch provider {
-	case model.ProviderVoyage:
-		return &baseEmbedding[VoyageClient]{
-			options: clientOptions,
-			client:  newVoyageClient(clientOptions),
-		}, nil
-	case model.ProviderOpenAI:
-		return &baseEmbedding[OpenAIClient]{
-			options: clientOptions,
-			client:  newOpenAIClient(clientOptions),
-		}, nil
-	case model.ProviderCohere:
-		return &baseEmbedding[CohereClient]{
-			options: clientOptions,
-			client:  newCohereClient(clientOptions),
-		}, nil
-	case model.ProviderGemini:
-		return &baseEmbedding[GeminiClient]{
-			options: clientOptions,
-			client:  newGeminiClient(clientOptions),
-		}, nil
-	case model.ProviderBedrock:
-		return &baseEmbedding[BedrockClient]{
-			options: clientOptions,
-			client:  newBedrockClient(clientOptions),
-		}, nil
-	case model.ProviderMistral:
-		return &baseEmbedding[MistralClient]{
-			options: clientOptions,
-			client:  newMistralClient(clientOptions),
-		}, nil
-	}
-
-	return nil, fmt.Errorf("embedding provider not supported: %s", provider)
-}
-
-func (e *baseEmbedding[C]) GenerateEmbeddings(
+func (t *tracingEmbedding) GenerateEmbeddings(
 	ctx context.Context,
 	texts []string,
 	inputType ...string,
 ) (*EmbeddingResponse, error) {
+	m := t.inner.Model()
 	if len(texts) == 0 {
 		return &EmbeddingResponse{
 			Embeddings: [][]float32{},
 			Usage:      EmbeddingUsage{TotalTokens: 0},
-			Model:      e.options.model.APIModel,
+			Model:      m.APIModel,
 		}, nil
 	}
 
 	start := time.Now()
 	ctx, span := tracing.StartEmbeddingSpan(
-		ctx,
-		e.options.model.APIModel,
-		string(e.options.model.Provider),
+		ctx, m.APIModel, string(m.Provider),
 	)
 	defer span.End()
 	span.SetAttributes(tracing.AttrInputCount.Int(len(texts)))
 
-	resp, err := e.client.embed(ctx, texts, inputType...)
+	resp, err := t.inner.GenerateEmbeddings(ctx, texts, inputType...)
 	if err != nil {
 		tracing.SetError(span, err)
 		tracing.RecordMetrics(
-			ctx,
-			"generate_embeddings",
-			e.options.model.APIModel,
-			string(e.options.model.Provider),
-			time.Since(start),
-			0,
-			0,
-			err,
+			ctx, "generate_embeddings", m.APIModel, string(m.Provider),
+			time.Since(start), 0, 0, err,
 		)
 		return nil, err
 	}
 
-	tracing.SetResponseAttrs(
-		span,
+	tracing.SetResponseAttrs(span,
 		tracing.AttrUsageTotalTokens.Int64(int64(resp.Usage.TotalTokens)),
 	)
 	tracing.RecordMetrics(
-		ctx,
-		"generate_embeddings",
-		e.options.model.APIModel,
-		string(e.options.model.Provider),
-		time.Since(start),
-		int64(resp.Usage.TotalTokens),
-		0,
-		nil,
+		ctx, "generate_embeddings", m.APIModel, string(m.Provider),
+		time.Since(start), int64(resp.Usage.TotalTokens), 0, nil,
 	)
 	return resp, nil
 }
 
-func (e *baseEmbedding[C]) GenerateMultimodalEmbeddings(
+func (t *tracingEmbedding) GenerateMultimodalEmbeddings(
 	ctx context.Context,
 	inputs []MultimodalInput,
 	inputType ...string,
 ) (*EmbeddingResponse, error) {
+	m := t.inner.Model()
 	if len(inputs) == 0 {
 		return &EmbeddingResponse{
 			Embeddings: [][]float32{},
 			Usage:      EmbeddingUsage{TotalTokens: 0},
-			Model:      e.options.model.APIModel,
+			Model:      m.APIModel,
 		}, nil
 	}
 
 	start := time.Now()
 	ctx, span := tracing.StartEmbeddingSpan(
-		ctx,
-		e.options.model.APIModel,
-		string(e.options.model.Provider),
+		ctx, m.APIModel, string(m.Provider),
 	)
 	defer span.End()
 	span.SetAttributes(tracing.AttrInputCount.Int(len(inputs)))
 
-	resp, err := e.client.embedMultimodal(ctx, inputs, inputType...)
+	resp, err := t.inner.GenerateMultimodalEmbeddings(ctx, inputs, inputType...)
 	if err != nil {
 		tracing.SetError(span, err)
 		tracing.RecordMetrics(
-			ctx,
-			"generate_embeddings",
-			e.options.model.APIModel,
-			string(e.options.model.Provider),
-			time.Since(start),
-			0,
-			0,
-			err,
+			ctx, "generate_embeddings", m.APIModel, string(m.Provider),
+			time.Since(start), 0, 0, err,
 		)
 		return nil, err
 	}
 
-	tracing.SetResponseAttrs(
-		span,
+	tracing.SetResponseAttrs(span,
 		tracing.AttrUsageTotalTokens.Int64(int64(resp.Usage.TotalTokens)),
 	)
 	tracing.RecordMetrics(
-		ctx,
-		"generate_embeddings",
-		e.options.model.APIModel,
-		string(e.options.model.Provider),
-		time.Since(start),
-		int64(resp.Usage.TotalTokens),
-		0,
-		nil,
+		ctx, "generate_embeddings", m.APIModel, string(m.Provider),
+		time.Since(start), int64(resp.Usage.TotalTokens), 0, nil,
 	)
 	return resp, nil
 }
 
-func (e *baseEmbedding[C]) GenerateContextualizedEmbeddings(
+func (t *tracingEmbedding) GenerateContextualizedEmbeddings(
 	ctx context.Context,
 	documentChunks [][]string,
 	inputType ...string,
 ) (*ContextualizedEmbeddingResponse, error) {
+	m := t.inner.Model()
 	if len(documentChunks) == 0 {
 		return &ContextualizedEmbeddingResponse{
 			DocumentEmbeddings: [][][]float32{},
 			Usage:              EmbeddingUsage{TotalTokens: 0},
-			Model:              e.options.model.APIModel,
+			Model:              m.APIModel,
 		}, nil
 	}
 
 	start := time.Now()
 	ctx, span := tracing.StartEmbeddingSpan(
-		ctx,
-		e.options.model.APIModel,
-		string(e.options.model.Provider),
+		ctx, m.APIModel, string(m.Provider),
 	)
 	defer span.End()
 	span.SetAttributes(tracing.AttrDocumentCount.Int(len(documentChunks)))
 
-	resp, err := e.client.embedContextualized(ctx, documentChunks, inputType...)
+	resp, err := t.inner.GenerateContextualizedEmbeddings(ctx, documentChunks, inputType...)
 	if err != nil {
 		tracing.SetError(span, err)
 		tracing.RecordMetrics(
-			ctx,
-			"generate_embeddings",
-			e.options.model.APIModel,
-			string(e.options.model.Provider),
-			time.Since(start),
-			0,
-			0,
-			err,
+			ctx, "generate_embeddings", m.APIModel, string(m.Provider),
+			time.Since(start), 0, 0, err,
 		)
 		return nil, err
 	}
 
-	tracing.SetResponseAttrs(
-		span,
+	tracing.SetResponseAttrs(span,
 		tracing.AttrUsageTotalTokens.Int64(int64(resp.Usage.TotalTokens)),
 	)
 	tracing.RecordMetrics(
-		ctx,
-		"generate_embeddings",
-		e.options.model.APIModel,
-		string(e.options.model.Provider),
-		time.Since(start),
-		int64(resp.Usage.TotalTokens),
-		0,
-		nil,
+		ctx, "generate_embeddings", m.APIModel, string(m.Provider),
+		time.Since(start), int64(resp.Usage.TotalTokens), 0, nil,
 	)
 	return resp, nil
-}
-
-func (e *baseEmbedding[C]) Model() model.EmbeddingModel {
-	return e.options.model
-}
-
-// WithAPIKey sets the API key for authentication with the embedding provider.
-func WithAPIKey(apiKey string) EmbeddingClientOption {
-	return func(options *embeddingClientOptions) {
-		options.apiKey = apiKey
-	}
-}
-
-// WithModel specifies which embedding model to use for generating embeddings.
-func WithModel(model model.EmbeddingModel) EmbeddingClientOption {
-	return func(options *embeddingClientOptions) {
-		options.model = model
-	}
-}
-
-// WithBatchSize sets the number of texts to process in each batch request.
-// Larger batch sizes improve throughput but may increase latency.
-func WithBatchSize(batchSize int) EmbeddingClientOption {
-	return func(options *embeddingClientOptions) {
-		options.batchSize = batchSize
-	}
-}
-
-// WithTimeout sets the maximum duration to wait for embedding requests to complete.
-func WithTimeout(timeout time.Duration) EmbeddingClientOption {
-	return func(options *embeddingClientOptions) {
-		options.timeout = &timeout
-	}
-}
-
-// WithDimensions specifies the output dimensionality for embedding vectors.
-// Only supported by models that allow variable dimensions (e.g., OpenAI, Voyage).
-func WithDimensions(dimensions int) EmbeddingClientOption {
-	return func(options *embeddingClientOptions) {
-		options.dimensions = &dimensions
-	}
-}
-
-// WithVoyageOptions applies Voyage AI-specific configuration options.
-func WithVoyageOptions(voyageOptions ...VoyageOption) EmbeddingClientOption {
-	return func(options *embeddingClientOptions) {
-		options.voyageOptions = voyageOptions
-	}
-}
-
-// WithOpenAIOptions applies OpenAI-specific configuration options.
-func WithOpenAIOptions(openaiOptions ...OpenAIOption) EmbeddingClientOption {
-	return func(options *embeddingClientOptions) {
-		options.openaiOptions = openaiOptions
-	}
-}
-
-// WithCohereOptions applies Cohere-specific configuration options.
-func WithCohereOptions(cohereOptions ...CohereOption) EmbeddingClientOption {
-	return func(options *embeddingClientOptions) {
-		options.cohereOptions = cohereOptions
-	}
-}
-
-// WithGeminiOptions applies Gemini-specific configuration options.
-func WithGeminiOptions(geminiOptions ...GeminiOption) EmbeddingClientOption {
-	return func(options *embeddingClientOptions) {
-		options.geminiOptions = geminiOptions
-	}
-}
-
-// WithBedrockOptions applies AWS Bedrock-specific configuration options.
-func WithBedrockOptions(bedrockOptions ...BedrockOption) EmbeddingClientOption {
-	return func(options *embeddingClientOptions) {
-		options.bedrockOptions = bedrockOptions
-	}
-}
-
-// WithMistralOptions applies Mistral-specific configuration options.
-func WithMistralOptions(mistralOptions ...MistralOption) EmbeddingClientOption {
-	return func(options *embeddingClientOptions) {
-		options.mistralOptions = mistralOptions
-	}
 }
