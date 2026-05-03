@@ -1,4 +1,4 @@
-package llm
+package anthropic
 
 import (
 	"context"
@@ -8,36 +8,43 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/anthropics/anthropic-sdk-go"
+	anthropicsdk "github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
+	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/types"
 )
 
-func TestSupportsStructuredOutput(t *testing.T) {
-	supported := &anthropicClient{
-		llmOptions: llmClientOptions{
-			model: model.AnthropicModels[model.Claude45Sonnet],
+func newTestClient(t *testing.T, baseURL string, m model.Model) *Client {
+	t.Helper()
+	return &Client{
+		options: Options{
+			model:     m,
+			maxTokens: 1024,
 		},
+		client: anthropicsdk.NewClient(
+			option.WithBaseURL(baseURL),
+			option.WithAPIKey("test-key"),
+		),
 	}
-	if !supported.supportsStructuredOutput() {
+}
+
+func TestSupportsStructuredOutput(t *testing.T) {
+	supported := &Client{options: Options{model: model.AnthropicModels[model.Claude45Sonnet]}}
+	if !supported.SupportsStructuredOutput() {
 		t.Error("expected Claude45Sonnet to support structured output")
 	}
 
-	unsupported := &anthropicClient{
-		llmOptions: llmClientOptions{
-			model: model.AnthropicModels[model.Claude35Sonnet],
-		},
-	}
-	if unsupported.supportsStructuredOutput() {
+	unsupported := &Client{options: Options{model: model.AnthropicModels[model.Claude35Sonnet]}}
+	if unsupported.SupportsStructuredOutput() {
 		t.Error("expected Claude35Sonnet to NOT support structured output")
 	}
 }
 
 func TestBuildOutputConfig(t *testing.T) {
-	client := &anthropicClient{}
+	client := &Client{}
 	outputSchema := schema.NewStructuredOutputInfo(
 		"test_schema", "A test schema",
 		map[string]any{
@@ -63,7 +70,7 @@ func TestBuildOutputConfig(t *testing.T) {
 }
 
 func TestBuildOutputConfigNoRequired(t *testing.T) {
-	client := &anthropicClient{}
+	client := &Client{}
 	outputSchema := schema.NewStructuredOutputInfo(
 		"test", "test",
 		map[string]any{"name": map[string]any{"type": "string"}},
@@ -107,16 +114,7 @@ func TestSendWithStructuredOutput(t *testing.T) {
 	)
 	defer server.Close()
 
-	client := &anthropicClient{
-		llmOptions: llmClientOptions{
-			model:     model.AnthropicModels[model.Claude45Sonnet],
-			maxTokens: 1024,
-		},
-		client: anthropic.NewClient(
-			option.WithBaseURL(server.URL),
-			option.WithAPIKey("test-key"),
-		),
-	}
+	client := newTestClient(t, server.URL, model.AnthropicModels[model.Claude45Sonnet])
 
 	outputSchema := schema.NewStructuredOutputInfo(
 		"person", "A person",
@@ -127,7 +125,7 @@ func TestSendWithStructuredOutput(t *testing.T) {
 		[]string{"name", "age"},
 	)
 
-	resp, err := client.sendWithStructuredOutput(
+	resp, err := client.SendMessagesWithStructuredOutput(
 		context.Background(),
 		[]message.Message{message.NewUserMessage("Return a person")},
 		nil,
@@ -172,16 +170,7 @@ func TestStreamWithStructuredOutput(t *testing.T) {
 	)
 	defer server.Close()
 
-	client := &anthropicClient{
-		llmOptions: llmClientOptions{
-			model:     model.AnthropicModels[model.Claude45Sonnet],
-			maxTokens: 1024,
-		},
-		client: anthropic.NewClient(
-			option.WithBaseURL(server.URL),
-			option.WithAPIKey("test-key"),
-		),
-	}
+	client := newTestClient(t, server.URL, model.AnthropicModels[model.Claude45Sonnet])
 
 	outputSchema := schema.NewStructuredOutputInfo(
 		"person", "A person",
@@ -192,7 +181,7 @@ func TestStreamWithStructuredOutput(t *testing.T) {
 		[]string{"name", "age"},
 	)
 
-	eventChan := client.streamWithStructuredOutput(
+	eventChan := client.StreamResponseWithStructuredOutput(
 		context.Background(),
 		[]message.Message{message.NewUserMessage("Return a person")},
 		nil,
@@ -200,7 +189,7 @@ func TestStreamWithStructuredOutput(t *testing.T) {
 	)
 
 	var gotContentDelta bool
-	var finalResponse *Response
+	var finalResponse *llm.Response
 
 	for event := range eventChan {
 		switch event.Type {

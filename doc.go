@@ -10,13 +10,12 @@
 //	import (
 //		"github.com/joakimcarlsson/ai/message"
 //		"github.com/joakimcarlsson/ai/model"
-//		llm "github.com/joakimcarlsson/ai/llm"
+//		llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 //	)
 //
-//	client, err := llm.NewLLM(
-//		model.ProviderOpenAI,
-//		llm.WithAPIKey("your-api-key"),
-//		llm.WithModel(model.OpenAIModels[model.GPT4o]),
+//	client := llmopenai.NewLLM(
+//		llmopenai.WithAPIKey("your-api-key"),
+//		llmopenai.WithModel(model.OpenAIModels[model.GPT4o]),
 //	)
 //
 //	messages := []message.Message{

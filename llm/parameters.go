@@ -1,118 +1,110 @@
 package llm
 
-import "time"
-
-type parameterBuilder struct {
-	temperature   *float64
-	topP          *float64
-	topK          *float64
-	maxTokens     int64
-	stopSequences []string
-	timeout       *time.Duration
+// ParameterBuilder helps vendor implementations apply optional sampling parameters
+// to provider-specific request types. Construct it once per request via
+// [NewParameterBuilder] with raw values; the Apply* methods only call setters
+// when the corresponding pointer is non-nil.
+type ParameterBuilder struct {
+	Temperature *float64
+	TopP        *float64
+	TopK        *int64
 }
 
-func newParameterBuilder(opts llmClientOptions) *parameterBuilder {
-	var topK *float64
-	if opts.topK != nil {
-		f := float64(*opts.topK)
-		topK = &f
-	}
-	return &parameterBuilder{
-		temperature:   opts.temperature,
-		topP:          opts.topP,
-		topK:          topK,
-		maxTokens:     opts.maxTokens,
-		stopSequences: opts.stopSequences,
-		timeout:       opts.timeout,
+// NewParameterBuilder constructs a ParameterBuilder from raw optional values.
+// Vendor packages typically pass their Options' temperature/topP/topK fields.
+func NewParameterBuilder(temperature, topP *float64, topK *int64) *ParameterBuilder {
+	return &ParameterBuilder{
+		Temperature: temperature,
+		TopP:        topP,
+		TopK:        topK,
 	}
 }
 
-func (p *parameterBuilder) applyFloat32Temperature(setter func(*float32)) {
-	if p.temperature != nil {
-		temp := float32(*p.temperature)
+// ApplyFloat32Temperature calls setter with a float32 view of Temperature when non-nil.
+func (p *ParameterBuilder) ApplyFloat32Temperature(setter func(*float32)) {
+	if p.Temperature != nil {
+		temp := float32(*p.Temperature)
 		setter(&temp)
 	}
 }
 
-func (p *parameterBuilder) applyFloat32TopP(setter func(*float32)) {
-	if p.topP != nil {
-		topP := float32(*p.topP)
+// ApplyFloat32TopP calls setter with a float32 view of TopP when non-nil.
+func (p *ParameterBuilder) ApplyFloat32TopP(setter func(*float32)) {
+	if p.TopP != nil {
+		topP := float32(*p.TopP)
 		setter(&topP)
 	}
 }
 
-func (p *parameterBuilder) applyFloat32TopK(setter func(*float32)) {
-	if p.topK != nil {
-		topK := float32(*p.topK)
+// ApplyFloat32TopK calls setter with a float32 view of TopK when non-nil.
+func (p *ParameterBuilder) ApplyFloat32TopK(setter func(*float32)) {
+	if p.TopK != nil {
+		topK := float32(*p.TopK)
 		setter(&topK)
 	}
 }
 
-func (p *parameterBuilder) applyInt32Seed(seed *int64, setter func(*int32)) {
+// ApplyInt32Seed calls setter with an int32 view of seed when non-nil.
+func (p *ParameterBuilder) ApplyInt32Seed(seed *int64, setter func(*int32)) {
 	if seed != nil {
 		s := int32(*seed)
 		setter(&s)
 	}
 }
 
-func (p *parameterBuilder) applyFloat32FrequencyPenalty(
-	penalty *float64,
-	setter func(*float32),
-) {
+// ApplyFloat32FrequencyPenalty calls setter with a float32 view of penalty when non-nil.
+func (p *ParameterBuilder) ApplyFloat32FrequencyPenalty(penalty *float64, setter func(*float32)) {
 	if penalty != nil {
 		fp := float32(*penalty)
 		setter(&fp)
 	}
 }
 
-func (p *parameterBuilder) applyFloat32PresencePenalty(
-	penalty *float64,
-	setter func(*float32),
-) {
+// ApplyFloat32PresencePenalty calls setter with a float32 view of penalty when non-nil.
+func (p *ParameterBuilder) ApplyFloat32PresencePenalty(penalty *float64, setter func(*float32)) {
 	if penalty != nil {
 		pp := float32(*penalty)
 		setter(&pp)
 	}
 }
 
-func (p *parameterBuilder) applyFloat64Temperature(setter func(*float64)) {
-	if p.temperature != nil {
-		setter(p.temperature)
+// ApplyFloat64Temperature calls setter with the raw float64 Temperature when non-nil.
+func (p *ParameterBuilder) ApplyFloat64Temperature(setter func(*float64)) {
+	if p.Temperature != nil {
+		setter(p.Temperature)
 	}
 }
 
-func (p *parameterBuilder) applyFloat64TopP(setter func(*float64)) {
-	if p.topP != nil {
-		setter(p.topP)
+// ApplyFloat64TopP calls setter with the raw float64 TopP when non-nil.
+func (p *ParameterBuilder) ApplyFloat64TopP(setter func(*float64)) {
+	if p.TopP != nil {
+		setter(p.TopP)
 	}
 }
 
-func (p *parameterBuilder) applyInt64TopK(setter func(*int64)) {
-	if p.topK != nil {
-		topK := int64(*p.topK)
-		setter(&topK)
+// ApplyInt64TopK calls setter with the int64 TopK when non-nil.
+func (p *ParameterBuilder) ApplyInt64TopK(setter func(*int64)) {
+	if p.TopK != nil {
+		setter(p.TopK)
 	}
 }
 
-func (p *parameterBuilder) applyInt64Seed(seed *int64, setter func(*int64)) {
+// ApplyInt64Seed calls setter with the raw int64 seed when non-nil.
+func (p *ParameterBuilder) ApplyInt64Seed(seed *int64, setter func(*int64)) {
 	if seed != nil {
 		setter(seed)
 	}
 }
 
-func (p *parameterBuilder) applyFloat64FrequencyPenalty(
-	penalty *float64,
-	setter func(*float64),
-) {
+// ApplyFloat64FrequencyPenalty calls setter with the raw float64 penalty when non-nil.
+func (p *ParameterBuilder) ApplyFloat64FrequencyPenalty(penalty *float64, setter func(*float64)) {
 	if penalty != nil {
 		setter(penalty)
 	}
 }
 
-func (p *parameterBuilder) applyFloat64PresencePenalty(
-	penalty *float64,
-	setter func(*float64),
-) {
+// ApplyFloat64PresencePenalty calls setter with the raw float64 penalty when non-nil.
+func (p *ParameterBuilder) ApplyFloat64PresencePenalty(penalty *float64, setter func(*float64)) {
 	if penalty != nil {
 		setter(penalty)
 	}

@@ -6,12 +6,9 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"strings"
 	"time"
 
-	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/joakimcarlsson/ai/types"
-	"github.com/openai/openai-go"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -25,87 +22,45 @@ type RetryConfig struct {
 	CheckRetryAfter  bool
 }
 
-// RetryableError is an error with HTTP status and optional Retry-After for retries.
+// RetryableError marks an error as retryable and exposes the HTTP status code
+// plus optional Retry-After header. Vendor packages wrap their SDK errors in a
+// type that satisfies this interface; [ShouldRetry] dispatches via [errors.As]
+// so the modality core does not depend on any vendor SDK.
 type RetryableError interface {
 	error
 	GetStatusCode() int
 	GetRetryAfter() string
 }
 
-// OpenAIRetryableError wraps an OpenAI API error for retry decisions.
-type OpenAIRetryableError struct {
-	err *openai.Error
-}
-
-func (e OpenAIRetryableError) Error() string {
-	return e.err.Error()
-}
-
-// GetStatusCode returns the HTTP status code from the OpenAI error.
-func (e OpenAIRetryableError) GetStatusCode() int {
-	return e.err.StatusCode
-}
-
-// GetRetryAfter returns the Retry-After header value if the response had one.
-func (e OpenAIRetryableError) GetRetryAfter() string {
-	if e.err.Response != nil {
-		retryAfterValues := e.err.Response.Header.Values("Retry-After")
-		if len(retryAfterValues) > 0 {
-			return retryAfterValues[0]
-		}
-	}
-	return ""
-}
-
-// AnthropicRetryableError wraps an Anthropic API error for retry decisions.
-type AnthropicRetryableError struct {
-	err *anthropic.Error
-}
-
-func (e AnthropicRetryableError) Error() string {
-	return e.err.Error()
-}
-
-// GetStatusCode returns the HTTP status code from the Anthropic error.
-func (e AnthropicRetryableError) GetStatusCode() int {
-	return e.err.StatusCode
-}
-
-// GetRetryAfter returns the Retry-After header value if the response had one.
-func (e AnthropicRetryableError) GetRetryAfter() string {
-	if e.err.Response != nil {
-		retryAfterValues := e.err.Response.Header.Values("Retry-After")
-		if len(retryAfterValues) > 0 {
-			return retryAfterValues[0]
-		}
-	}
-	return ""
-}
-
 // GenericRetryableError marks an error retryable with a fixed HTTP status code.
 type GenericRetryableError struct {
-	err        error
-	statusCode int
+	Err        error
+	StatusCode int
 }
 
+// Error implements the error interface.
 func (e GenericRetryableError) Error() string {
-	return e.err.Error()
+	if e.Err == nil {
+		return ""
+	}
+	return e.Err.Error()
 }
+
+// Unwrap exposes the wrapped error for errors.Is / errors.As.
+func (e GenericRetryableError) Unwrap() error { return e.Err }
 
 // GetStatusCode returns the status code associated with this retryable error.
-func (e GenericRetryableError) GetStatusCode() int {
-	return e.statusCode
-}
+func (e GenericRetryableError) GetStatusCode() int { return e.StatusCode }
 
 // GetRetryAfter returns empty; generic errors do not carry Retry-After.
-func (e GenericRetryableError) GetRetryAfter() string {
-	return ""
-}
+func (e GenericRetryableError) GetRetryAfter() string { return "" }
 
-// DefaultRetryConfig provides standard retry settings for most LLM providers
+// DefaultRetryConfig provides standard retry settings for most LLM providers.
+// Vendor packages typically derive their own RetryConfig from this and tweak
+// the RetryStatusCodes list.
 func DefaultRetryConfig() RetryConfig {
 	return RetryConfig{
-		MaxRetries:       maxRetries,
+		MaxRetries:       MaxRetries,
 		BaseBackoffMs:    2000,
 		JitterPercent:    0.2,
 		RetryStatusCodes: []int{429, 500, 502, 503, 504},
@@ -113,40 +68,11 @@ func DefaultRetryConfig() RetryConfig {
 	}
 }
 
-// OpenAIRetryConfig provides retry settings optimized for OpenAI API behavior
-func OpenAIRetryConfig() RetryConfig {
-	config := DefaultRetryConfig()
-	config.RetryStatusCodes = []int{429, 500}
-	return config
-}
-
-// AnthropicRetryConfig provides retry settings optimized for Anthropic API behavior
-func AnthropicRetryConfig() RetryConfig {
-	config := DefaultRetryConfig()
-	config.RetryStatusCodes = []int{429, 529}
-	return config
-}
-
-// GeminiRetryConfig provides retry settings optimized for Gemini API behavior
-func GeminiRetryConfig() RetryConfig {
-	config := DefaultRetryConfig()
-	config.CheckRetryAfter = false
-	return config
-}
-
-// MistralRetryConfig provides retry settings optimized for Mistral API behavior
-func MistralRetryConfig() RetryConfig {
-	config := DefaultRetryConfig()
-	config.RetryStatusCodes = []int{429, 500, 502, 503}
-	return config
-}
-
-// ShouldRetry determines if an operation should be retried based on the error and configuration
-func ShouldRetry(
-	attempts int,
-	err error,
-	config RetryConfig,
-) (bool, int64, error) {
+// ShouldRetry determines if an operation should be retried based on the error
+// and configuration. The error is matched against [RetryableError] via
+// [errors.As], so vendor packages wrap their SDK errors in a type that
+// satisfies the interface.
+func ShouldRetry(attempts int, err error, config RetryConfig) (bool, int64, error) {
 	if attempts > config.MaxRetries {
 		return false, 0, fmt.Errorf(
 			"maximum retry attempts reached: %d retries",
@@ -158,22 +84,19 @@ func ShouldRetry(
 		return false, 0, err
 	}
 
-	retryableErr := convertToRetryableError(err)
-	if retryableErr == nil {
+	var retryable RetryableError
+	if !errors.As(err, &retryable) {
 		return false, 0, err
 	}
 
-	if !isRetryableStatusCode(
-		retryableErr.GetStatusCode(),
-		config.RetryStatusCodes,
-	) {
+	if !isRetryableStatusCode(retryable.GetStatusCode(), config.RetryStatusCodes) {
 		return false, 0, err
 	}
 
 	retryMs := calculateBackoff(attempts, config)
 
 	if config.CheckRetryAfter {
-		if retryAfter := retryableErr.GetRetryAfter(); retryAfter != "" {
+		if retryAfter := retryable.GetRetryAfter(); retryAfter != "" {
 			if parsedRetryMs, err := parseRetryAfter(retryAfter); err == nil {
 				retryMs = parsedRetryMs
 			}
@@ -181,27 +104,6 @@ func ShouldRetry(
 	}
 
 	return true, int64(retryMs), nil
-}
-
-func convertToRetryableError(err error) RetryableError {
-	var openaiErr *openai.Error
-	if errors.As(err, &openaiErr) {
-		return OpenAIRetryableError{err: openaiErr}
-	}
-
-	var anthropicErr *anthropic.Error
-	if errors.As(err, &anthropicErr) {
-		return AnthropicRetryableError{err: anthropicErr}
-	}
-
-	if isGeminiRateLimitError(err) {
-		return GenericRetryableError{
-			err:        err,
-			statusCode: 429,
-		}
-	}
-
-	return nil
 }
 
 func isRetryableStatusCode(statusCode int, retryableCodes []int) bool {
@@ -227,23 +129,7 @@ func parseRetryAfter(retryAfter string) (int, error) {
 	return 0, fmt.Errorf("failed to parse retry-after header: %s", retryAfter)
 }
 
-func isGeminiRateLimitError(err error) bool {
-	errMsg := strings.ToLower(err.Error())
-	rateLimitKeywords := []string{
-		"rate limit",
-		"quota exceeded",
-		"too many requests",
-	}
-
-	for _, keyword := range rateLimitKeywords {
-		if strings.Contains(errMsg, keyword) {
-			return true
-		}
-	}
-	return false
-}
-
-// ExecuteWithRetry runs an operation with automatic retry logic for transient failures
+// ExecuteWithRetry runs an operation with automatic retry logic for transient failures.
 func ExecuteWithRetry[T any](
 	ctx context.Context,
 	config RetryConfig,
@@ -260,11 +146,7 @@ func ExecuteWithRetry[T any](
 			return result, nil
 		}
 
-		shouldRetry, retryAfterMs, retryErr := ShouldRetry(
-			attempts,
-			err,
-			config,
-		)
+		shouldRetry, retryAfterMs, retryErr := ShouldRetry(attempts, err, config)
 		if retryErr != nil {
 			return result, retryErr
 		}
@@ -295,7 +177,7 @@ func ExecuteWithRetry[T any](
 	}
 }
 
-// ExecuteStreamWithRetry runs a streaming operation with automatic retry logic for transient failures
+// ExecuteStreamWithRetry runs a streaming operation with automatic retry logic for transient failures.
 func ExecuteStreamWithRetry(
 	ctx context.Context,
 	config RetryConfig,
@@ -311,11 +193,7 @@ func ExecuteStreamWithRetry(
 			return
 		}
 
-		shouldRetry, retryAfterMs, retryErr := ShouldRetry(
-			attempts,
-			err,
-			config,
-		)
+		shouldRetry, retryAfterMs, retryErr := ShouldRetry(attempts, err, config)
 		if retryErr != nil {
 			eventChan <- Event{Type: types.EventError, Error: retryErr}
 			return

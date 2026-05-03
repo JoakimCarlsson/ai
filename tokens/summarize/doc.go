@@ -17,8 +17,8 @@
 //
 // Basic usage (keeps last 5 messages verbatim):
 //
-//	summaryLLM, _ := llm.NewLLM(model.ProviderOpenAI,
-//	    llm.WithModel(model.OpenAIModels[model.GPT4oMini]),
+//	summaryLLM := llmopenai.NewLLM(
+//	    llmopenai.WithModel(model.OpenAIModels[model.GPT4oMini]),
 //	)
 //	agent.WithContextStrategy(summarize.Strategy(summaryLLM), 4096)
 //
