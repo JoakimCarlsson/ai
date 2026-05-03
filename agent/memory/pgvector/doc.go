@@ -14,11 +14,11 @@
 //
 // This is a separate Go module to avoid adding database dependencies to the core library:
 //
-//	go get github.com/joakimcarlsson/ai/integrations/pgvector
+//	go get github.com/joakimcarlsson/ai/agent/memory/pgvector
 //
 // # Basic Usage
 //
-//	import "github.com/joakimcarlsson/ai/integrations/pgvector"
+//	import "github.com/joakimcarlsson/ai/agent/memory/pgvector"
 //
 //	embedder := openai.NewEmbedding(
 //	    openai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),

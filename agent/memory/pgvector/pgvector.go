@@ -5,7 +5,7 @@
 //
 // Example usage:
 //
-//	import "github.com/joakimcarlsson/ai/integrations/pgvector"
+//	import "github.com/joakimcarlsson/ai/agent/memory/pgvector"
 //
 //	memoryStore, err := pgvector.MemoryStore(ctx, "postgres://user:pass@localhost/db", embedder)
 //	if err != nil {

@@ -17,7 +17,7 @@
 //   - [NewStore]: In-memory storage with vector search
 //   - [FileStore]: File-based storage with vector search
 //
-// For production use, see the integrations/pgvector package for PostgreSQL with pgvector.
+// For production use, see the agent/memory/pgvector package for PostgreSQL with pgvector.
 //
 // # Usage with Agent
 //

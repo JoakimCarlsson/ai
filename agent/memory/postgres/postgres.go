@@ -5,7 +5,7 @@
 //
 // Example usage:
 //
-//	import "github.com/joakimcarlsson/ai/integrations/postgres"
+//	import "github.com/joakimcarlsson/ai/agent/memory/postgres"
 //
 //	sessionStore, err := postgres.SessionStore(ctx, "postgres://user:pass@localhost/db")
 //	if err != nil {
