@@ -1,7 +1,7 @@
 // Package image provides a unified interface for generating images from text prompts
 // using various AI providers.
 //
-// This package defines the [ImageGeneration] interface and the data types that flow
+// This package defines the [Generation] interface and the data types that flow
 // through it. Concrete vendor implementations live in subpackages (image/openai,
 // image/gemini); each subpackage exports its own NewGeneration constructor that
 // returns a tracing-wrapped client implementing the interface.
@@ -42,14 +42,14 @@ import (
 	"github.com/joakimcarlsson/ai/tracing"
 )
 
-// ImageGenerationUsage tracks the resource consumption for image generation operations.
-type ImageGenerationUsage struct {
+// GenerationUsage tracks the resource consumption for image generation operations.
+type GenerationUsage struct {
 	// PromptTokens is the number of tokens in the input prompt.
 	PromptTokens int64
 }
 
-// ImageGenerationResult represents a single generated image with its metadata.
-type ImageGenerationResult struct {
+// GenerationResult represents a single generated image with its metadata.
+type GenerationResult struct {
 	// ImageURL contains the URL to the generated image if ResponseFormat was "url".
 	ImageURL string
 	// ImageBase64 contains the base64-encoded image data if ResponseFormat was "b64_json".
@@ -58,30 +58,30 @@ type ImageGenerationResult struct {
 	RevisedPrompt string
 }
 
-// ImageGenerationResponse contains the generated images and metadata from an image generation request.
-type ImageGenerationResponse struct {
+// GenerationResponse contains the generated images and metadata from an image generation request.
+type GenerationResponse struct {
 	// Images contains the generated image results.
-	Images []ImageGenerationResult
+	Images []GenerationResult
 	// Usage tracks resource consumption for this request.
-	Usage ImageGenerationUsage
+	Usage GenerationUsage
 	// Model identifies which image generation model was used.
 	Model string
 }
 
-// ImageStreamEventType identifies the type of streaming event during image generation.
-type ImageStreamEventType string
+// StreamEventType identifies the type of streaming event during image generation.
+type StreamEventType string
 
 const (
 	// EventPartialImage is emitted when a partial image is available during streaming.
-	EventPartialImage ImageStreamEventType = "partial_image"
+	EventPartialImage StreamEventType = "partial_image"
 	// EventCompleted is emitted when image generation is complete and the final image is available.
-	EventCompleted ImageStreamEventType = "completed"
+	EventCompleted StreamEventType = "completed"
 )
 
-// ImageStreamEvent represents a streaming event during image generation.
-type ImageStreamEvent struct {
+// StreamEvent represents a streaming event during image generation.
+type StreamEvent struct {
 	// Type identifies the kind of streaming event.
-	Type ImageStreamEventType `json:"type"`
+	Type StreamEventType `json:"type"`
 	// ImageBase64 contains the base64-encoded image data.
 	ImageBase64 string `json:"image_base64"`
 	// PartialImageIndex is the 0-based index of the partial image (only for partial_image events).
@@ -93,22 +93,47 @@ type ImageStreamEvent struct {
 }
 
 // StreamCallback is called for each streaming event during image generation.
-type StreamCallback func(ImageStreamEvent) error
+type StreamCallback func(StreamEvent) error
+
+// ImageGenerationUsage is deprecated. Use [GenerationUsage].
+//
+//revive:disable-next-line:exported
+type ImageGenerationUsage = GenerationUsage
+
+// ImageGenerationResult is deprecated. Use [GenerationResult].
+//
+//revive:disable-next-line:exported
+type ImageGenerationResult = GenerationResult
+
+// ImageGenerationResponse is deprecated. Use [GenerationResponse].
+//
+//revive:disable-next-line:exported
+type ImageGenerationResponse = GenerationResponse
+
+// ImageStreamEventType is deprecated. Use [StreamEventType].
+//
+//revive:disable-next-line:exported
+type ImageStreamEventType = StreamEventType
+
+// ImageStreamEvent is deprecated. Use [StreamEvent].
+//
+//revive:disable-next-line:exported
+type ImageStreamEvent = StreamEvent
 
 // ErrStreamingNotSupported is returned when streaming is requested but the model doesn't support it.
 var ErrStreamingNotSupported = errors.New(
 	"streaming not supported by this model",
 )
 
-// ImageGeneration defines the interface for generating images from text prompts.
-type ImageGeneration interface {
+// Generation defines the interface for generating images from text prompts.
+type Generation interface {
 	// GenerateImage creates one or more images from a text prompt.
 	// The optional GenerationOption parameters can customize the generation (size, quality, format, etc.).
 	GenerateImage(
 		ctx context.Context,
 		prompt string,
 		options ...GenerationOption,
-	) (*ImageGenerationResponse, error)
+	) (*GenerationResponse, error)
 
 	// GenerateImageStreaming streams partial images during generation.
 	// The callback is invoked for each partial image and the final completed image.
@@ -123,6 +148,11 @@ type ImageGeneration interface {
 	// Model returns the image generation model configuration being used.
 	Model() model.ImageGenerationModel
 }
+
+// ImageGeneration is deprecated. Use [Generation].
+//
+//revive:disable-next-line:exported
+type ImageGeneration = Generation
 
 // GenerationOptions contains parameters for customizing image generation requests.
 type GenerationOptions struct {
@@ -179,12 +209,12 @@ type TracingAttrs struct{}
 
 // WithTracing wraps an ImageGeneration client so every call records OpenTelemetry
 // spans and metrics. The attrs are recorded as construction-time span attributes.
-func WithTracing(inner ImageGeneration, attrs TracingAttrs) ImageGeneration {
+func WithTracing(inner Generation, attrs TracingAttrs) Generation {
 	return &tracingClient{inner: inner, attrs: attrs}
 }
 
 type tracingClient struct {
-	inner ImageGeneration
+	inner Generation
 	attrs TracingAttrs
 }
 
@@ -200,7 +230,7 @@ func (t *tracingClient) GenerateImage(
 	ctx context.Context,
 	prompt string,
 	options ...GenerationOption,
-) (*ImageGenerationResponse, error) {
+) (*GenerationResponse, error) {
 	m := t.inner.Model()
 	start := time.Now()
 	ctx, span := tracing.StartImageSpan(
