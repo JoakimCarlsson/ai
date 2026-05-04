@@ -276,7 +276,8 @@ func TestSpanStarters_WithExtraAttrs(t *testing.T) {
 		if span == nil {
 			t.Fatalf("%s: expected %s span", tc.name, tc.prefix)
 		}
-		if spanAttr(span, tc.attrName) == "" && spanAttrInt(span, tc.attrName) == 0 {
+		if spanAttr(span, tc.attrName) == "" &&
+			spanAttrInt(span, tc.attrName) == 0 {
 			t.Errorf("%s: expected %s attribute", tc.name, tc.attrName)
 		}
 	}

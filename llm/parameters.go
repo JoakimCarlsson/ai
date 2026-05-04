@@ -12,7 +12,10 @@ type ParameterBuilder struct {
 
 // NewParameterBuilder constructs a ParameterBuilder from raw optional values.
 // Vendor packages typically pass their Options' temperature/topP/topK fields.
-func NewParameterBuilder(temperature, topP *float64, topK *int64) *ParameterBuilder {
+func NewParameterBuilder(
+	temperature, topP *float64,
+	topK *int64,
+) *ParameterBuilder {
 	return &ParameterBuilder{
 		Temperature: temperature,
 		TopP:        topP,
@@ -53,7 +56,10 @@ func (p *ParameterBuilder) ApplyInt32Seed(seed *int64, setter func(*int32)) {
 }
 
 // ApplyFloat32FrequencyPenalty calls setter with a float32 view of penalty when non-nil.
-func (p *ParameterBuilder) ApplyFloat32FrequencyPenalty(penalty *float64, setter func(*float32)) {
+func (p *ParameterBuilder) ApplyFloat32FrequencyPenalty(
+	penalty *float64,
+	setter func(*float32),
+) {
 	if penalty != nil {
 		fp := float32(*penalty)
 		setter(&fp)
@@ -61,7 +67,10 @@ func (p *ParameterBuilder) ApplyFloat32FrequencyPenalty(penalty *float64, setter
 }
 
 // ApplyFloat32PresencePenalty calls setter with a float32 view of penalty when non-nil.
-func (p *ParameterBuilder) ApplyFloat32PresencePenalty(penalty *float64, setter func(*float32)) {
+func (p *ParameterBuilder) ApplyFloat32PresencePenalty(
+	penalty *float64,
+	setter func(*float32),
+) {
 	if penalty != nil {
 		pp := float32(*penalty)
 		setter(&pp)
@@ -97,14 +106,20 @@ func (p *ParameterBuilder) ApplyInt64Seed(seed *int64, setter func(*int64)) {
 }
 
 // ApplyFloat64FrequencyPenalty calls setter with the raw float64 penalty when non-nil.
-func (p *ParameterBuilder) ApplyFloat64FrequencyPenalty(penalty *float64, setter func(*float64)) {
+func (p *ParameterBuilder) ApplyFloat64FrequencyPenalty(
+	penalty *float64,
+	setter func(*float64),
+) {
 	if penalty != nil {
 		setter(penalty)
 	}
 }
 
 // ApplyFloat64PresencePenalty calls setter with the raw float64 penalty when non-nil.
-func (p *ParameterBuilder) ApplyFloat64PresencePenalty(penalty *float64, setter func(*float64)) {
+func (p *ParameterBuilder) ApplyFloat64PresencePenalty(
+	penalty *float64,
+	setter func(*float64),
+) {
 	if penalty != nil {
 		setter(penalty)
 	}

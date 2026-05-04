@@ -32,13 +32,21 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel sets the LLM model.
 func WithModel(m model.Model) Option { return func(o *Options) { o.model = m } }
 
 // WithMaxTokens sets the maximum number of tokens to generate per request.
-func WithMaxTokens(maxTokens int64) Option { return func(o *Options) { o.maxTokens = maxTokens } }
+func WithMaxTokens(
+	maxTokens int64,
+) Option {
+	return func(o *Options) { o.maxTokens = maxTokens }
+}
 
 // WithProgressCallback sets a callback invoked with progress updates.
 func WithProgressCallback(fn batch.ProgressCallback) Option {
@@ -46,10 +54,18 @@ func WithProgressCallback(fn batch.ProgressCallback) Option {
 }
 
 // WithPollInterval sets the polling interval for the native batch API.
-func WithPollInterval(d time.Duration) Option { return func(o *Options) { o.pollInterval = d } }
+func WithPollInterval(
+	d time.Duration,
+) Option {
+	return func(o *Options) { o.pollInterval = d }
+}
 
 // WithTimeout sets the maximum duration for batch requests.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // Processor implements [batch.Processor] against the Anthropic Message Batches API.
 type Processor struct {
@@ -104,7 +120,10 @@ func (p *Processor) Process(
 		results[i] = batch.Result{ID: r.ID, Index: i}
 	}
 
-	batchRequests := make([]anthropicsdk.MessageBatchNewParamsRequest, len(requests))
+	batchRequests := make(
+		[]anthropicsdk.MessageBatchNewParamsRequest,
+		len(requests),
+	)
 	for i, req := range requests {
 		msgs, system := convertMessagesToAnthropic(req.Messages)
 		tools := convertToolsToAnthropic(req.Tools)
@@ -137,11 +156,17 @@ func (p *Processor) Process(
 		})
 	}
 
-	job, err := p.client.Messages.Batches.New(ctx, anthropicsdk.MessageBatchNewParams{
-		Requests: batchRequests,
-	})
+	job, err := p.client.Messages.Batches.New(
+		ctx,
+		anthropicsdk.MessageBatchNewParams{
+			Requests: batchRequests,
+		},
+	)
 	if err != nil {
-		return nil, fmt.Errorf("batch: failed to create anthropic batch: %w", err)
+		return nil, fmt.Errorf(
+			"batch: failed to create anthropic batch: %w",
+			err,
+		)
 	}
 
 	job, err = p.pollUntilDone(ctx, job.ID, len(requests))
@@ -150,7 +175,10 @@ func (p *Processor) Process(
 	}
 
 	if err := p.retrieveResults(ctx, job.ID, results, idxMap); err != nil {
-		return nil, fmt.Errorf("batch: failed to retrieve anthropic results: %w", err)
+		return nil, fmt.Errorf(
+			"batch: failed to retrieve anthropic results: %w",
+			err,
+		)
 	}
 
 	completed, failed := 0, 0
@@ -231,7 +259,9 @@ func (p *Processor) retrieveResults(
 		switch entry.Result.Type {
 		case "succeeded":
 			succeeded := entry.Result.AsSucceeded()
-			results[idx].ChatResponse = convertAnthropicMessage(succeeded.Message)
+			results[idx].ChatResponse = convertAnthropicMessage(
+				succeeded.Message,
+			)
 		case "errored":
 			errored := entry.Result.AsErrored()
 			results[idx].Err = fmt.Errorf("%s", errored.Error.Error.Message)
@@ -300,11 +330,17 @@ func convertMessagesToAnthropic(
 			systemMsgs = append(systemMsgs, msg.Content().String())
 		case message.User:
 			content := anthropicsdk.NewTextBlock(msg.Content().String())
-			anthropicMsgs = append(anthropicMsgs, anthropicsdk.NewUserMessage(content))
+			anthropicMsgs = append(
+				anthropicMsgs,
+				anthropicsdk.NewUserMessage(content),
+			)
 		case message.Assistant:
 			if msg.Content().String() != "" {
 				content := anthropicsdk.NewTextBlock(msg.Content().String())
-				anthropicMsgs = append(anthropicMsgs, anthropicsdk.NewAssistantMessage(content))
+				anthropicMsgs = append(
+					anthropicMsgs,
+					anthropicsdk.NewAssistantMessage(content),
+				)
 			}
 		case message.Tool:
 			var results []anthropicsdk.ContentBlockParamUnion
@@ -313,14 +349,19 @@ func convertMessagesToAnthropic(
 					tr.ToolCallID, tr.Content, tr.IsError,
 				))
 			}
-			anthropicMsgs = append(anthropicMsgs, anthropicsdk.NewUserMessage(results...))
+			anthropicMsgs = append(
+				anthropicMsgs,
+				anthropicsdk.NewUserMessage(results...),
+			)
 		}
 	}
 
 	return anthropicMsgs, systemMsgs
 }
 
-func convertToolsToAnthropic(tools []tool.BaseTool) []anthropicsdk.ToolUnionParam {
+func convertToolsToAnthropic(
+	tools []tool.BaseTool,
+) []anthropicsdk.ToolUnionParam {
 	if len(tools) == 0 {
 		return nil
 	}

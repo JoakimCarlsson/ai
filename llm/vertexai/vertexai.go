@@ -35,10 +35,18 @@ type Option func(*Options)
 func WithModel(m model.Model) Option { return func(o *Options) { o.model = m } }
 
 // WithMaxTokens sets the max generation tokens.
-func WithMaxTokens(maxTokens int64) Option { return func(o *Options) { o.maxTokens = maxTokens } }
+func WithMaxTokens(
+	maxTokens int64,
+) Option {
+	return func(o *Options) { o.maxTokens = maxTokens }
+}
 
 // WithTemperature controls randomness.
-func WithTemperature(t float64) Option { return func(o *Options) { o.temperature = &t } }
+func WithTemperature(
+	t float64,
+) Option {
+	return func(o *Options) { o.temperature = &t }
+}
 
 // WithTopP sets nucleus sampling probability mass.
 func WithTopP(p float64) Option { return func(o *Options) { o.topP = &p } }
@@ -47,10 +55,18 @@ func WithTopP(p float64) Option { return func(o *Options) { o.topP = &p } }
 func WithTopK(k int64) Option { return func(o *Options) { o.topK = &k } }
 
 // WithStopSequences sets text sequences that halt generation.
-func WithStopSequences(seqs ...string) Option { return func(o *Options) { o.stopSequences = seqs } }
+func WithStopSequences(
+	seqs ...string,
+) Option {
+	return func(o *Options) { o.stopSequences = seqs }
+}
 
 // WithTimeout sets the maximum duration to wait for API responses.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithThinkingLevel sets the thinking level for Gemini models that support reasoning.
 func WithThinkingLevel(level llmgemini.ThinkingLevel) Option {
@@ -58,10 +74,18 @@ func WithThinkingLevel(level llmgemini.ThinkingLevel) Option {
 }
 
 // WithProject sets the GCP project ID. Defaults to $VERTEXAI_PROJECT.
-func WithProject(project string) Option { return func(o *Options) { o.project = project } }
+func WithProject(
+	project string,
+) Option {
+	return func(o *Options) { o.project = project }
+}
 
 // WithLocation sets the GCP location. Defaults to $VERTEXAI_LOCATION.
-func WithLocation(location string) Option { return func(o *Options) { o.location = location } }
+func WithLocation(
+	location string,
+) Option {
+	return func(o *Options) { o.location = location }
+}
 
 // Client implements [llm.LLM] against Vertex AI by embedding [llm/gemini].Client
 // constructed with a Vertex-AI-backed [genai.Client].

@@ -193,7 +193,9 @@ func (c *Client) Transcribe(
 
 	reqBody := request{
 		Config: cfg,
-		Audio:  requestAudio{Content: base64.StdEncoding.EncodeToString(audioFile)},
+		Audio: requestAudio{
+			Content: base64.StdEncoding.EncodeToString(audioFile),
+		},
 	}
 
 	jsonBody, err := json.Marshal(reqBody)
@@ -201,8 +203,17 @@ func (c *Client) Transcribe(
 		return nil, fmt.Errorf("failed to marshal STT request: %w", err)
 	}
 
-	reqURL := fmt.Sprintf("%s/speech:recognize?key=%s", c.baseURL, c.options.apiKey)
-	req, err := http.NewRequestWithContext(ctx, "POST", reqURL, bytes.NewBuffer(jsonBody))
+	reqURL := fmt.Sprintf(
+		"%s/speech:recognize?key=%s",
+		c.baseURL,
+		c.options.apiKey,
+	)
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		reqURL,
+		bytes.NewBuffer(jsonBody),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create STT request: %w", err)
 	}
@@ -220,7 +231,11 @@ func (c *Client) Transcribe(
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("STT API failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"STT API failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var gcResp response

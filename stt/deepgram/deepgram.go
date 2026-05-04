@@ -54,25 +54,53 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key used to authenticate with Deepgram.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the transcription model.
-func WithModel(m model.TranscriptionModel) Option { return func(o *Options) { o.model = m } }
+func WithModel(
+	m model.TranscriptionModel,
+) Option {
+	return func(o *Options) { o.model = m }
+}
 
 // WithTimeout sets the maximum duration for batch transcription requests.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithLanguage sets the default language; per-call [stt.WithLanguage] overrides.
-func WithLanguage(language string) Option { return func(o *Options) { o.language = language } }
+func WithLanguage(
+	language string,
+) Option {
+	return func(o *Options) { o.language = language }
+}
 
 // WithPunctuate enables automatic punctuation.
-func WithPunctuate(enabled bool) Option { return func(o *Options) { o.punctuate = &enabled } }
+func WithPunctuate(
+	enabled bool,
+) Option {
+	return func(o *Options) { o.punctuate = &enabled }
+}
 
 // WithDiarize enables speaker diarization.
-func WithDiarize(enabled bool) Option { return func(o *Options) { o.diarize = &enabled } }
+func WithDiarize(
+	enabled bool,
+) Option {
+	return func(o *Options) { o.diarize = &enabled }
+}
 
 // WithSmartFormat enables smart formatting.
-func WithSmartFormat(enabled bool) Option { return func(o *Options) { o.smartFormat = &enabled } }
+func WithSmartFormat(
+	enabled bool,
+) Option {
+	return func(o *Options) { o.smartFormat = &enabled }
+}
 
 // WithStreamEndpointingMs sets the silence window (ms) Deepgram waits before emitting
 // is_final on a streaming session.
@@ -81,7 +109,11 @@ func WithStreamEndpointingMs(ms int) Option {
 }
 
 // WithNumerals converts spoken numbers to numeric format ("nine hundred" → "900").
-func WithNumerals(enabled bool) Option { return func(o *Options) { o.numerals = &enabled } }
+func WithNumerals(
+	enabled bool,
+) Option {
+	return func(o *Options) { o.numerals = &enabled }
+}
 
 // WithProfanityFilter removes profanity from the transcript.
 func WithProfanityFilter(enabled bool) Option {
@@ -89,10 +121,18 @@ func WithProfanityFilter(enabled bool) Option {
 }
 
 // WithDictation auto-formats spoken punctuation commands ("period" → ".", "new line" → "\n").
-func WithDictation(enabled bool) Option { return func(o *Options) { o.dictation = &enabled } }
+func WithDictation(
+	enabled bool,
+) Option {
+	return func(o *Options) { o.dictation = &enabled }
+}
 
 // WithVADEvents enables SpeechStarted / UtteranceEnd events on streaming sessions.
-func WithVADEvents(enabled bool) Option { return func(o *Options) { o.vadEvents = &enabled } }
+func WithVADEvents(
+	enabled bool,
+) Option {
+	return func(o *Options) { o.vadEvents = &enabled }
+}
 
 // WithStreamInterimResults toggles emission of interim transcripts. Defaults to true.
 func WithStreamInterimResults(enabled bool) Option {
@@ -100,20 +140,40 @@ func WithStreamInterimResults(enabled bool) Option {
 }
 
 // WithKeyterms boosts recognition of specific words or phrases (Nova-3+).
-func WithKeyterms(terms ...string) Option { return func(o *Options) { o.keyterms = terms } }
+func WithKeyterms(
+	terms ...string,
+) Option {
+	return func(o *Options) { o.keyterms = terms }
+}
 
 // WithKeywords boosts or suppresses recognition of specific words. Format
 // "keyword" or "keyword:intensifier" (e.g. "claude:2"). For models older than Nova-3.
-func WithKeywords(words ...string) Option { return func(o *Options) { o.keywords = words } }
+func WithKeywords(
+	words ...string,
+) Option {
+	return func(o *Options) { o.keywords = words }
+}
 
 // WithRedact redacts sensitive content categories from transcripts.
-func WithRedact(categories ...string) Option { return func(o *Options) { o.redact = categories } }
+func WithRedact(
+	categories ...string,
+) Option {
+	return func(o *Options) { o.redact = categories }
+}
 
 // WithSearch runs acoustic pattern matching for the given terms.
-func WithSearch(terms ...string) Option { return func(o *Options) { o.search = terms } }
+func WithSearch(
+	terms ...string,
+) Option {
+	return func(o *Options) { o.search = terms }
+}
 
 // WithReplace substitutes terms in the transcript. Each entry is "find:replace".
-func WithReplace(pairs ...string) Option { return func(o *Options) { o.replace = pairs } }
+func WithReplace(
+	pairs ...string,
+) Option {
+	return func(o *Options) { o.replace = pairs }
+}
 
 // Client implements [stt.SpeechToText] against the Deepgram API.
 type Client struct {
@@ -207,9 +267,17 @@ func (c *Client) Transcribe(
 	}
 
 	reqURL := c.baseURL + "/listen?" + params.Encode()
-	req, err := http.NewRequestWithContext(ctx, "POST", reqURL, bytes.NewReader(audioFile))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		reqURL,
+		bytes.NewReader(audioFile),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create transcription request: %w", err)
+		return nil, fmt.Errorf(
+			"failed to create transcription request: %w",
+			err,
+		)
 	}
 	req.Header.Set("Content-Type", "audio/mpeg")
 	req.Header.Set("Authorization", "Token "+c.options.apiKey)
@@ -226,12 +294,19 @@ func (c *Client) Transcribe(
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("transcription API failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"transcription API failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var dgResp batchResponse
 	if err := json.Unmarshal(body, &dgResp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal transcription response: %w", err)
+		return nil, fmt.Errorf(
+			"failed to unmarshal transcription response: %w",
+			err,
+		)
 	}
 
 	return c.mapBatchResponse(&dgResp), nil
@@ -389,7 +464,11 @@ func (c *Client) StreamTranscribe(
 	return out, nil
 }
 
-func runReader(conn *websocket.Conn, out chan<- stt.StreamResult, done chan<- struct{}) {
+func runReader(
+	conn *websocket.Conn,
+	out chan<- stt.StreamResult,
+	done chan<- struct{},
+) {
 	defer close(done)
 	for {
 		_, msg, err := conn.ReadMessage()

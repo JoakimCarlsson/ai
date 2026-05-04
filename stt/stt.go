@@ -239,7 +239,10 @@ func (t *tracingClient) SupportsStreaming() bool {
 func (t *tracingClient) spanAttrs() []tracing.Attr {
 	var attrs []tracing.Attr
 	if t.attrs.Language != "" {
-		attrs = append(attrs, tracing.AttrRequestLanguage.String(t.attrs.Language))
+		attrs = append(
+			attrs,
+			tracing.AttrRequestLanguage.String(t.attrs.Language),
+		)
 	}
 	return attrs
 }

@@ -8,8 +8,8 @@ import (
 	"go.opentelemetry.io/otel/codes"
 
 	"github.com/joakimcarlsson/ai/agent"
-	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/llm"
+	"github.com/joakimcarlsson/ai/message"
 )
 
 func TestOnToolError_Recovery(t *testing.T) {

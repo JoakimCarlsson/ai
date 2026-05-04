@@ -37,7 +37,11 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel sets the LLM model.
 func WithModel(m model.Model) Option { return func(o *Options) { o.model = m } }
@@ -48,7 +52,11 @@ func WithEmbeddingModel(m model.EmbeddingModel) Option {
 }
 
 // WithMaxTokens sets the maximum number of tokens to generate per request.
-func WithMaxTokens(maxTokens int64) Option { return func(o *Options) { o.maxTokens = maxTokens } }
+func WithMaxTokens(
+	maxTokens int64,
+) Option {
+	return func(o *Options) { o.maxTokens = maxTokens }
+}
 
 // WithProgressCallback sets a callback invoked with progress updates.
 func WithProgressCallback(fn batch.ProgressCallback) Option {
@@ -56,13 +64,25 @@ func WithProgressCallback(fn batch.ProgressCallback) Option {
 }
 
 // WithPollInterval sets the polling interval for the native batch API.
-func WithPollInterval(d time.Duration) Option { return func(o *Options) { o.pollInterval = d } }
+func WithPollInterval(
+	d time.Duration,
+) Option {
+	return func(o *Options) { o.pollInterval = d }
+}
 
 // WithTimeout sets the maximum duration for batch requests.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithBackend sets the Gemini backend (GeminiAPI or VertexAI).
-func WithBackend(backend genai.Backend) Option { return func(o *Options) { o.backend = backend } }
+func WithBackend(
+	backend genai.Backend,
+) Option {
+	return func(o *Options) { o.backend = backend }
+}
 
 // Processor implements [batch.Processor] against the Gemini batch API.
 type Processor struct {
@@ -135,7 +155,10 @@ func (p *Processor) Process(
 
 	if len(embedRequests) > 0 {
 		if err := p.processEmbeddingBatch(ctx, embedRequests, results, embedIdxMap); err != nil {
-			return nil, fmt.Errorf("batch: gemini embedding batch failed: %w", err)
+			return nil, fmt.Errorf(
+				"batch: gemini embedding batch failed: %w",
+				err,
+			)
 		}
 	}
 
@@ -217,7 +240,9 @@ func (p *Processor) processChatBatch(
 			}
 
 			if resp.Response != nil {
-				results[globalIdx].ChatResponse = convertGeminiResponse(resp.Response)
+				results[globalIdx].ChatResponse = convertGeminiResponse(
+					resp.Response,
+				)
 			}
 		}
 	}
@@ -288,7 +313,10 @@ func (p *Processor) processEmbeddingBatch(
 			}
 
 			if resp.Response != nil && resp.Response.Embedding != nil {
-				reqEmbeddings[reqIdx] = append(reqEmbeddings[reqIdx], resp.Response.Embedding.Values)
+				reqEmbeddings[reqIdx] = append(
+					reqEmbeddings[reqIdx],
+					resp.Response.Embedding.Values,
+				)
 				reqTokens[reqIdx] += resp.Response.TokenCount
 			}
 		}
@@ -300,7 +328,9 @@ func (p *Processor) processEmbeddingBatch(
 			}
 			results[globalIdx].EmbedResponse = &embeddings.EmbeddingResponse{
 				Embeddings: embs,
-				Usage:      embeddings.EmbeddingUsage{TotalTokens: reqTokens[reqIdx]},
+				Usage: embeddings.EmbeddingUsage{
+					TotalTokens: reqTokens[reqIdx],
+				},
 			}
 		}
 	}
@@ -402,7 +432,9 @@ func (p *Processor) ProcessAsync(
 	return ch, nil
 }
 
-func convertMessagesToGemini(msgs []message.Message) ([]*genai.Content, []string) {
+func convertMessagesToGemini(
+	msgs []message.Message,
+) ([]*genai.Content, []string) {
 	var contents []*genai.Content
 	var system []string
 
@@ -430,7 +462,10 @@ func convertMessagesToGemini(msgs []message.Message) ([]*genai.Content, []string
 					},
 				})
 			}
-			contents = append(contents, &genai.Content{Role: "model", Parts: parts})
+			contents = append(
+				contents,
+				&genai.Content{Role: "model", Parts: parts},
+			)
 		case message.Tool:
 			for _, tr := range msg.ToolResults() {
 				var respData map[string]any
@@ -471,7 +506,10 @@ func convertToolsToGemini(tools []tool.BaseTool) []*genai.Tool {
 	return []*genai.Tool{{FunctionDeclarations: declarations}}
 }
 
-func convertToGenaiSchema(properties map[string]any, required []string) *genai.Schema {
+func convertToGenaiSchema(
+	properties map[string]any,
+	required []string,
+) *genai.Schema {
 	s := &genai.Schema{
 		Type:       genai.TypeObject,
 		Properties: make(map[string]*genai.Schema),

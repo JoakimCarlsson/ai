@@ -72,7 +72,11 @@ func DefaultRetryConfig() RetryConfig {
 // and configuration. The error is matched against [RetryableError] via
 // [errors.As], so vendor packages wrap their SDK errors in a type that
 // satisfies the interface.
-func ShouldRetry(attempts int, err error, config RetryConfig) (bool, int64, error) {
+func ShouldRetry(
+	attempts int,
+	err error,
+	config RetryConfig,
+) (bool, int64, error) {
 	if attempts > config.MaxRetries {
 		return false, 0, fmt.Errorf(
 			"maximum retry attempts reached: %d retries",
@@ -89,7 +93,10 @@ func ShouldRetry(attempts int, err error, config RetryConfig) (bool, int64, erro
 		return false, 0, err
 	}
 
-	if !isRetryableStatusCode(retryable.GetStatusCode(), config.RetryStatusCodes) {
+	if !isRetryableStatusCode(
+		retryable.GetStatusCode(),
+		config.RetryStatusCodes,
+	) {
 		return false, 0, err
 	}
 
@@ -146,7 +153,11 @@ func ExecuteWithRetry[T any](
 			return result, nil
 		}
 
-		shouldRetry, retryAfterMs, retryErr := ShouldRetry(attempts, err, config)
+		shouldRetry, retryAfterMs, retryErr := ShouldRetry(
+			attempts,
+			err,
+			config,
+		)
 		if retryErr != nil {
 			return result, retryErr
 		}
@@ -193,7 +204,11 @@ func ExecuteStreamWithRetry(
 			return
 		}
 
-		shouldRetry, retryAfterMs, retryErr := ShouldRetry(attempts, err, config)
+		shouldRetry, retryAfterMs, retryErr := ShouldRetry(
+			attempts,
+			err,
+			config,
+		)
 		if retryErr != nil {
 			eventChan <- Event{Type: types.EventError, Error: retryErr}
 			return

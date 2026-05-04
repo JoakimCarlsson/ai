@@ -158,7 +158,9 @@ func (c *Client) Transcribe(
 	}
 
 	if opts.ResponseFormat != "" {
-		params.ResponseFormat = openaisdk.AudioResponseFormat(opts.ResponseFormat)
+		params.ResponseFormat = openaisdk.AudioResponseFormat(
+			opts.ResponseFormat,
+		)
 	} else {
 		params.ResponseFormat = openaisdk.AudioResponseFormat("verbose_json")
 	}
@@ -258,7 +260,9 @@ type verboseTranscription struct {
 	} `json:"words"`
 }
 
-func (c *Client) convertResponse(response *openaisdk.Transcription) *stt.Response {
+func (c *Client) convertResponse(
+	response *openaisdk.Transcription,
+) *stt.Response {
 	result := &stt.Response{
 		Text:  response.Text,
 		Model: c.options.model.APIModel,

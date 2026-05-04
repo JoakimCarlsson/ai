@@ -27,19 +27,39 @@ type Options struct {
 type Option func(*Options)
 
 // WithModel selects the embedding model.
-func WithModel(m model.EmbeddingModel) Option { return func(o *Options) { o.model = m } }
+func WithModel(
+	m model.EmbeddingModel,
+) Option {
+	return func(o *Options) { o.model = m }
+}
 
 // WithBatchSize sets the number of texts to process in each batch request (Cohere models only).
-func WithBatchSize(batchSize int) Option { return func(o *Options) { o.batchSize = batchSize } }
+func WithBatchSize(
+	batchSize int,
+) Option {
+	return func(o *Options) { o.batchSize = batchSize }
+}
 
 // WithDimensions specifies the output dimensionality for Titan embedding vectors.
-func WithDimensions(dimensions int) Option { return func(o *Options) { o.dimensions = &dimensions } }
+func WithDimensions(
+	dimensions int,
+) Option {
+	return func(o *Options) { o.dimensions = &dimensions }
+}
 
 // WithRegion sets the AWS region for the Bedrock endpoint.
-func WithRegion(region string) Option { return func(o *Options) { o.region = region } }
+func WithRegion(
+	region string,
+) Option {
+	return func(o *Options) { o.region = region }
+}
 
 // WithProfile sets the AWS shared config profile to use for credentials.
-func WithProfile(profile string) Option { return func(o *Options) { o.profile = profile } }
+func WithProfile(
+	profile string,
+) Option {
+	return func(o *Options) { o.profile = profile }
+}
 
 // Client implements [embeddings.Embedding] against AWS Bedrock.
 type Client struct {
@@ -57,9 +77,14 @@ func NewEmbedding(opts ...Option) embeddings.Embedding {
 		o(&options)
 	}
 
-	cfgOpts := []func(*config.LoadOptions) error{config.WithRegion(options.region)}
+	cfgOpts := []func(*config.LoadOptions) error{
+		config.WithRegion(options.region),
+	}
 	if options.profile != "" {
-		cfgOpts = append(cfgOpts, config.WithSharedConfigProfile(options.profile))
+		cfgOpts = append(
+			cfgOpts,
+			config.WithSharedConfigProfile(options.profile),
+		)
 	}
 
 	cfg, _ := config.LoadDefaultConfig(context.Background(), cfgOpts...)
@@ -134,7 +159,10 @@ func (c *Client) embedTitan(
 
 		jsonBody, err := json.Marshal(reqBody)
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal Titan embed request: %w", err)
+			return nil, fmt.Errorf(
+				"failed to marshal Titan embed request: %w",
+				err,
+			)
 		}
 
 		modelID := c.options.model.APIModel
@@ -147,12 +175,18 @@ func (c *Client) embedTitan(
 			Accept:      &acc,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to invoke Titan embed model: %w", err)
+			return nil, fmt.Errorf(
+				"failed to invoke Titan embed model: %w",
+				err,
+			)
 		}
 
 		var titanResp titanResponse
 		if err := json.Unmarshal(resp.Body, &titanResp); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal Titan response: %w", err)
+			return nil, fmt.Errorf(
+				"failed to unmarshal Titan response: %w",
+				err,
+			)
 		}
 
 		allEmbeddings = append(allEmbeddings, titanResp.Embedding)
@@ -191,7 +225,10 @@ func (c *Client) embedCohere(
 
 		jsonBody, err := json.Marshal(reqBody)
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal Cohere embed request: %w", err)
+			return nil, fmt.Errorf(
+				"failed to marshal Cohere embed request: %w",
+				err,
+			)
 		}
 
 		modelID := c.options.model.APIModel
@@ -204,12 +241,18 @@ func (c *Client) embedCohere(
 			Accept:      &acc,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to invoke Cohere embed model: %w", err)
+			return nil, fmt.Errorf(
+				"failed to invoke Cohere embed model: %w",
+				err,
+			)
 		}
 
 		var cohereResp cohereResponse
 		if err := json.Unmarshal(resp.Body, &cohereResp); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal Cohere response: %w", err)
+			return nil, fmt.Errorf(
+				"failed to unmarshal Cohere response: %w",
+				err,
+			)
 		}
 
 		allEmbeddings = append(allEmbeddings, cohereResp.Embeddings...)

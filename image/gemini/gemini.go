@@ -127,10 +127,16 @@ func (c *Client) GenerateImage(
 		return nil, fmt.Errorf("failed to generate image: %w", err)
 	}
 
-	results := make([]image.ImageGenerationResult, 0, len(response.GeneratedImages))
+	results := make(
+		[]image.ImageGenerationResult,
+		0,
+		len(response.GeneratedImages),
+	)
 	for _, img := range response.GeneratedImages {
 		results = append(results, image.ImageGenerationResult{
-			ImageBase64: base64.StdEncoding.EncodeToString(img.Image.ImageBytes),
+			ImageBase64: base64.StdEncoding.EncodeToString(
+				img.Image.ImageBytes,
+			),
 		})
 	}
 

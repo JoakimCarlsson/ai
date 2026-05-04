@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/agent/team"
-	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/llm"
+	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
 )

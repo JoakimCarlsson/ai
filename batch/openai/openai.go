@@ -39,7 +39,11 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel sets the LLM model for chat completion batch requests.
 func WithModel(m model.Model) Option { return func(o *Options) { o.model = m } }
@@ -50,7 +54,11 @@ func WithEmbeddingModel(m model.EmbeddingModel) Option {
 }
 
 // WithMaxTokens sets the maximum number of tokens to generate per request.
-func WithMaxTokens(maxTokens int64) Option { return func(o *Options) { o.maxTokens = maxTokens } }
+func WithMaxTokens(
+	maxTokens int64,
+) Option {
+	return func(o *Options) { o.maxTokens = maxTokens }
+}
 
 // WithProgressCallback sets a callback invoked with progress updates.
 func WithProgressCallback(fn batch.ProgressCallback) Option {
@@ -58,13 +66,25 @@ func WithProgressCallback(fn batch.ProgressCallback) Option {
 }
 
 // WithPollInterval sets the polling interval for the native batch API.
-func WithPollInterval(d time.Duration) Option { return func(o *Options) { o.pollInterval = d } }
+func WithPollInterval(
+	d time.Duration,
+) Option {
+	return func(o *Options) { o.pollInterval = d }
+}
 
 // WithTimeout sets the maximum duration for batch requests.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithBaseURL sets a custom API endpoint for OpenAI-compatible services.
-func WithBaseURL(baseURL string) Option { return func(o *Options) { o.baseURL = baseURL } }
+func WithBaseURL(
+	baseURL string,
+) Option {
+	return func(o *Options) { o.baseURL = baseURL }
+}
 
 // WithExtraHeaders adds custom HTTP headers to batch API requests.
 func WithExtraHeaders(headers map[string]string) Option {
@@ -160,7 +180,10 @@ func (p *Processor) Process(
 			openaisdk.BatchNewParamsEndpointV1Embeddings,
 			results, idxMap,
 		); err != nil {
-			return nil, fmt.Errorf("batch: openai embedding batch failed: %w", err)
+			return nil, fmt.Errorf(
+				"batch: openai embedding batch failed: %w",
+				err,
+			)
 		}
 	}
 
@@ -263,7 +286,11 @@ func (p *Processor) buildJSONL(
 		}
 
 		if err != nil {
-			return nil, fmt.Errorf("failed to build request body for %s: %w", req.ID, err)
+			return nil, fmt.Errorf(
+				"failed to build request body for %s: %w",
+				req.ID,
+				err,
+			)
 		}
 
 		line := requestLine{
@@ -280,7 +307,10 @@ func (p *Processor) buildJSONL(
 	return buf.Bytes(), nil
 }
 
-func buildChatBody(req batch.Request, apiModel string) (json.RawMessage, error) {
+func buildChatBody(
+	req batch.Request,
+	apiModel string,
+) (json.RawMessage, error) {
 	msgs := convertMessagesToOpenAI(req.Messages)
 	tools := convertToolsToOpenAI(req.Tools)
 
@@ -295,7 +325,10 @@ func buildChatBody(req batch.Request, apiModel string) (json.RawMessage, error) 
 	return json.Marshal(params)
 }
 
-func buildEmbeddingBody(req batch.Request, apiModel string) (json.RawMessage, error) {
+func buildEmbeddingBody(
+	req batch.Request,
+	apiModel string,
+) (json.RawMessage, error) {
 	return json.Marshal(map[string]any{
 		"model": apiModel,
 		"input": req.Texts,
@@ -374,12 +407,19 @@ func (p *Processor) parseOutputFile(
 		}
 
 		if line.Error != nil {
-			results[idx].Err = fmt.Errorf("%s: %s", line.Error.Code, line.Error.Message)
+			results[idx].Err = fmt.Errorf(
+				"%s: %s",
+				line.Error.Code,
+				line.Error.Message,
+			)
 			continue
 		}
 
 		if line.Response.StatusCode != 200 {
-			results[idx].Err = fmt.Errorf("request failed with status %d", line.Response.StatusCode)
+			results[idx].Err = fmt.Errorf(
+				"request failed with status %d",
+				line.Response.StatusCode,
+			)
 			continue
 		}
 
@@ -387,7 +427,9 @@ func (p *Processor) parseOutputFile(
 		case openaisdk.BatchNewParamsEndpointV1ChatCompletions:
 			results[idx].ChatResponse = parseChatCompletion(line.Response.Body)
 		case openaisdk.BatchNewParamsEndpointV1Embeddings:
-			results[idx].EmbedResponse = parseEmbeddingResponse(line.Response.Body)
+			results[idx].EmbedResponse = parseEmbeddingResponse(
+				line.Response.Body,
+			)
 		}
 	}
 
@@ -420,7 +462,11 @@ func (p *Processor) parseErrorFile(
 		}
 
 		if results[idx].Err == nil && line.Error != nil {
-			results[idx].Err = fmt.Errorf("%s: %s", line.Error.Code, line.Error.Message)
+			results[idx].Err = fmt.Errorf(
+				"%s: %s",
+				line.Error.Code,
+				line.Error.Message,
+			)
 		}
 	}
 }
@@ -605,7 +651,9 @@ func parseChatCompletion(body json.RawMessage) *llm.Response {
 	}
 }
 
-func parseEmbeddingResponse(body json.RawMessage) *embeddings.EmbeddingResponse {
+func parseEmbeddingResponse(
+	body json.RawMessage,
+) *embeddings.EmbeddingResponse {
 	var resp struct {
 		Data []struct {
 			Embedding []float32 `json:"embedding"`
@@ -627,7 +675,9 @@ func parseEmbeddingResponse(body json.RawMessage) *embeddings.EmbeddingResponse 
 
 	return &embeddings.EmbeddingResponse{
 		Embeddings: embs,
-		Usage:      embeddings.EmbeddingUsage{TotalTokens: resp.Usage.TotalTokens},
-		Model:      resp.Model,
+		Usage: embeddings.EmbeddingUsage{
+			TotalTokens: resp.Usage.TotalTokens,
+		},
+		Model: resp.Model,
 	}
 }

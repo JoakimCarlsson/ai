@@ -195,7 +195,9 @@ func (c *Client) Rerank(
 
 	return &rerankers.RerankerResponse{
 		Results: results,
-		Usage:   rerankers.RerankerUsage{TotalTokens: voyageResp.Usage.TotalTokens},
-		Model:   voyageResp.Model,
+		Usage: rerankers.RerankerUsage{
+			TotalTokens: voyageResp.Usage.TotalTokens,
+		},
+		Model: voyageResp.Model,
 	}, nil
 }

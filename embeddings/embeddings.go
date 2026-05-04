@@ -133,7 +133,10 @@ func (t *tracingEmbedding) Model() model.EmbeddingModel {
 func (t *tracingEmbedding) spanAttrs() []tracing.Attr {
 	var attrs []tracing.Attr
 	if t.attrs.Dimensions != nil {
-		attrs = append(attrs, tracing.AttrRequestDimensions.Int(*t.attrs.Dimensions))
+		attrs = append(
+			attrs,
+			tracing.AttrRequestDimensions.Int(*t.attrs.Dimensions),
+		)
 	}
 	return attrs
 }
@@ -241,7 +244,10 @@ func (t *tracingEmbedding) GenerateContextualizedEmbeddings(
 	defer span.End()
 	span.SetAttributes(tracing.AttrDocumentCount.Int(len(documentChunks)))
 
-	resp, err := t.inner.GenerateContextualizedEmbeddings(ctx, documentChunks, inputType...)
+	resp, err := t.inner.GenerateContextualizedEmbeddings(
+		ctx,
+		documentChunks,
+		inputType...)
 	if err != nil {
 		tracing.SetError(span, err)
 		tracing.RecordMetrics(

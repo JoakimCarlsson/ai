@@ -56,19 +56,39 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key used to authenticate with ElevenLabs.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the transcription model.
-func WithModel(m model.TranscriptionModel) Option { return func(o *Options) { o.model = m } }
+func WithModel(
+	m model.TranscriptionModel,
+) Option {
+	return func(o *Options) { o.model = m }
+}
 
 // WithTimeout sets the maximum duration for batch transcription requests.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithDiarize enables speaker diarization.
-func WithDiarize(enabled bool) Option { return func(o *Options) { o.diarize = &enabled } }
+func WithDiarize(
+	enabled bool,
+) Option {
+	return func(o *Options) { o.diarize = &enabled }
+}
 
 // WithNumSpeakers sets the expected number of speakers (0-32).
-func WithNumSpeakers(n int) Option { return func(o *Options) { o.numSpeakers = &n } }
+func WithNumSpeakers(
+	n int,
+) Option {
+	return func(o *Options) { o.numSpeakers = &n }
+}
 
 // WithTimestampGranularity sets timestamp level ("none", "word", "character") for batch.
 func WithTimestampGranularity(g string) Option {
@@ -76,11 +96,19 @@ func WithTimestampGranularity(g string) Option {
 }
 
 // WithTagAudioEvents enables audio event detection (laughter, music, etc.).
-func WithTagAudioEvents(enabled bool) Option { return func(o *Options) { o.tagAudioEvents = &enabled } }
+func WithTagAudioEvents(
+	enabled bool,
+) Option {
+	return func(o *Options) { o.tagAudioEvents = &enabled }
+}
 
 // WithStreamVADSilenceMs sets the silence window (ms) ElevenLabs' VAD waits before emitting
 // committed_transcript on a streaming session.
-func WithStreamVADSilenceMs(ms int) Option { return func(o *Options) { o.streamVADSilenceMs = &ms } }
+func WithStreamVADSilenceMs(
+	ms int,
+) Option {
+	return func(o *Options) { o.streamVADSilenceMs = &ms }
+}
 
 // WithStreamLanguageCode sets the language hint for streaming sessions.
 func WithStreamLanguageCode(code string) Option {
@@ -201,7 +229,10 @@ func (c *Client) Transcribe(
 	}
 	if opts.Language != "" {
 		if err := writer.WriteField("language_code", opts.Language); err != nil {
-			return nil, fmt.Errorf("failed to write language_code field: %w", err)
+			return nil, fmt.Errorf(
+				"failed to write language_code field: %w",
+				err,
+			)
 		}
 	}
 	if c.options.diarize != nil && *c.options.diarize {
@@ -211,7 +242,10 @@ func (c *Client) Transcribe(
 	}
 	if c.options.numSpeakers != nil {
 		if err := writer.WriteField("num_speakers", fmt.Sprintf("%d", *c.options.numSpeakers)); err != nil {
-			return nil, fmt.Errorf("failed to write num_speakers field: %w", err)
+			return nil, fmt.Errorf(
+				"failed to write num_speakers field: %w",
+				err,
+			)
 		}
 	}
 
@@ -240,7 +274,12 @@ func (c *Client) Transcribe(
 		return nil, fmt.Errorf("failed to close multipart writer: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/speech-to-text", &buf)
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		c.baseURL+"/speech-to-text",
+		&buf,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create STT request: %w", err)
 	}
@@ -259,7 +298,11 @@ func (c *Client) Transcribe(
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("STT API failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"STT API failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var elResp batchResponse
@@ -291,7 +334,10 @@ func (c *Client) mapBatchResponse(elResp *batchResponse) *stt.Response {
 		if w.Type != "word" {
 			continue
 		}
-		words = append(words, stt.Word{Word: w.Text, Start: w.Start, End: w.End})
+		words = append(
+			words,
+			stt.Word{Word: w.Text, Start: w.Start, End: w.End},
+		)
 	}
 	result.Words = words
 
@@ -332,7 +378,10 @@ func (c *Client) StreamTranscribe(
 		q.Set("no_verbatim", strconv.FormatBool(*c.options.streamNoVerbatim))
 	}
 	if c.options.streamIncludeTimestamps != nil {
-		q.Set("include_timestamps", strconv.FormatBool(*c.options.streamIncludeTimestamps))
+		q.Set(
+			"include_timestamps",
+			strconv.FormatBool(*c.options.streamIncludeTimestamps),
+		)
 	}
 	if c.options.streamIncludeLanguageDetect != nil {
 		q.Set("include_language_detection",
@@ -343,16 +392,25 @@ func (c *Client) StreamTranscribe(
 			strconv.FormatFloat(*c.options.streamVADThreshold, 'f', -1, 64))
 	}
 	if c.options.streamMinSpeechDurationMs != nil {
-		q.Set("min_speech_duration_ms", strconv.Itoa(*c.options.streamMinSpeechDurationMs))
+		q.Set(
+			"min_speech_duration_ms",
+			strconv.Itoa(*c.options.streamMinSpeechDurationMs),
+		)
 	}
 	if c.options.streamMinSilenceDurationMs != nil {
-		q.Set("min_silence_duration_ms", strconv.Itoa(*c.options.streamMinSilenceDurationMs))
+		q.Set(
+			"min_silence_duration_ms",
+			strconv.Itoa(*c.options.streamMinSilenceDurationMs),
+		)
 	}
 	if c.options.streamTimestampsGranularity != "" {
 		q.Set("timestamps_granularity", c.options.streamTimestampsGranularity)
 	}
 	if c.options.streamDisableLogging != nil {
-		q.Set("disable_logging", strconv.FormatBool(*c.options.streamDisableLogging))
+		q.Set(
+			"disable_logging",
+			strconv.FormatBool(*c.options.streamDisableLogging),
+		)
 	}
 
 	u := url.URL{
@@ -394,7 +452,11 @@ func (c *Client) StreamTranscribe(
 	return out, nil
 }
 
-func runReader(conn *websocket.Conn, out chan<- stt.StreamResult, done chan<- struct{}) {
+func runReader(
+	conn *websocket.Conn,
+	out chan<- stt.StreamResult,
+	done chan<- struct{},
+) {
 	defer close(done)
 	for {
 		_, msg, err := conn.ReadMessage()

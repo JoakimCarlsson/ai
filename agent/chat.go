@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/agent/team"
-	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/llm"
+	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/tracing"
 )
 
@@ -382,7 +382,8 @@ func (a *Agent) runLoop(
 				if len(resp.ToolCalls) > 0 && !activeAgent.autoExecute {
 					assistantMsg.AppendToolCalls(resp.ToolCalls)
 				}
-				if resp.Content != "" || len(resp.ToolCalls) > 0 && !activeAgent.autoExecute {
+				if resp.Content != "" ||
+					len(resp.ToolCalls) > 0 && !activeAgent.autoExecute {
 					if err := activeAgent.session.AddMessages(ctx, []message.Message{assistantMsg}); err != nil {
 						return nil, err
 					}

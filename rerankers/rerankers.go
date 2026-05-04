@@ -100,10 +100,16 @@ func (t *tracingReranker) spanAttrs() []tracing.Attr {
 		attrs = append(attrs, tracing.AttrRequestTopK.Int(*t.attrs.TopK))
 	}
 	if t.attrs.MaxChunksPerDoc != nil {
-		attrs = append(attrs, tracing.AttrRequestMaxChunksPerDoc.Int(*t.attrs.MaxChunksPerDoc))
+		attrs = append(
+			attrs,
+			tracing.AttrRequestMaxChunksPerDoc.Int(*t.attrs.MaxChunksPerDoc),
+		)
 	}
 	if t.attrs.ReturnDocuments != nil {
-		attrs = append(attrs, tracing.AttrRequestReturnDocuments.Bool(*t.attrs.ReturnDocuments))
+		attrs = append(
+			attrs,
+			tracing.AttrRequestReturnDocuments.Bool(*t.attrs.ReturnDocuments),
+		)
 	}
 	return attrs
 }

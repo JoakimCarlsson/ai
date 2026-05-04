@@ -31,20 +31,40 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key used to authenticate with Mistral.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the embedding model.
-func WithModel(m model.EmbeddingModel) Option { return func(o *Options) { o.model = m } }
+func WithModel(
+	m model.EmbeddingModel,
+) Option {
+	return func(o *Options) { o.model = m }
+}
 
 // WithTimeout sets the maximum duration to wait for a single request.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithBatchSize sets the number of texts to process in each batch request.
-func WithBatchSize(batchSize int) Option { return func(o *Options) { o.batchSize = batchSize } }
+func WithBatchSize(
+	batchSize int,
+) Option {
+	return func(o *Options) { o.batchSize = batchSize }
+}
 
 // WithDimensions specifies the output dimensionality for embedding vectors.
 // Equivalent to [WithOutputDimension]; Mistral accepts either.
-func WithDimensions(dimensions int) Option { return func(o *Options) { o.dimensions = &dimensions } }
+func WithDimensions(
+	dimensions int,
+) Option {
+	return func(o *Options) { o.dimensions = &dimensions }
+}
 
 // WithOutputDimension sets the output embedding dimensionality (codestral-embed only).
 func WithOutputDimension(dim int) Option {
@@ -52,7 +72,11 @@ func WithOutputDimension(dim int) Option {
 }
 
 // WithOutputDtype sets the output data type ("float", "int8", "uint8", "binary", "ubinary").
-func WithOutputDtype(dtype string) Option { return func(o *Options) { o.outputDtype = dtype } }
+func WithOutputDtype(
+	dtype string,
+) Option {
+	return func(o *Options) { o.outputDtype = dtype }
+}
 
 // Client implements [embeddings.Embedding] against the Mistral API.
 type Client struct {
@@ -192,7 +216,11 @@ func (c *Client) embedBatch(
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("embed API failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"embed API failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var mResp embedResponse
@@ -207,8 +235,10 @@ func (c *Client) embedBatch(
 
 	return &embeddings.EmbeddingResponse{
 		Embeddings: out,
-		Usage:      embeddings.EmbeddingUsage{TotalTokens: mResp.Usage.TotalTokens},
-		Model:      mResp.Model,
+		Usage: embeddings.EmbeddingUsage{
+			TotalTokens: mResp.Usage.TotalTokens,
+		},
+		Model: mResp.Model,
 	}, nil
 }
 

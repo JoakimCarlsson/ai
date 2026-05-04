@@ -201,7 +201,9 @@ func (c *Client) Rerank(
 
 	return &rerankers.RerankerResponse{
 		Results: results,
-		Usage:   rerankers.RerankerUsage{TotalTokens: cohereResp.Meta.BilledUnits.SearchUnits},
-		Model:   c.options.model.APIModel,
+		Usage: rerankers.RerankerUsage{
+			TotalTokens: cohereResp.Meta.BilledUnits.SearchUnits,
+		},
+		Model: c.options.model.APIModel,
 	}, nil
 }

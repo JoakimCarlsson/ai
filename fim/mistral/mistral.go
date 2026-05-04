@@ -225,7 +225,10 @@ func mapFinishReason(reason string) fim.FinishReason {
 }
 
 // Complete performs a non-streaming FIM completion.
-func (c *Client) Complete(ctx context.Context, req fim.Request) (*fim.Response, error) {
+func (c *Client) Complete(
+	ctx context.Context,
+	req fim.Request,
+) (*fim.Response, error) {
 	body, err := json.Marshal(c.buildRequest(req, false))
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
@@ -274,7 +277,10 @@ func (c *Client) Complete(ctx context.Context, req fim.Request) (*fim.Response, 
 }
 
 // CompleteStream performs a streaming FIM completion via Server-Sent Events.
-func (c *Client) CompleteStream(ctx context.Context, req fim.Request) <-chan fim.Event {
+func (c *Client) CompleteStream(
+	ctx context.Context,
+	req fim.Request,
+) <-chan fim.Event {
 	eventChan := make(chan fim.Event)
 
 	go func() {

@@ -178,27 +178,55 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key used to authenticate with Voyage.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the embedding model.
-func WithModel(m model.EmbeddingModel) Option { return func(o *Options) { o.model = m } }
+func WithModel(
+	m model.EmbeddingModel,
+) Option {
+	return func(o *Options) { o.model = m }
+}
 
 // WithTimeout sets the maximum duration to wait for a single request.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithBatchSize sets the number of texts to process in each batch request.
-func WithBatchSize(batchSize int) Option { return func(o *Options) { o.batchSize = batchSize } }
+func WithBatchSize(
+	batchSize int,
+) Option {
+	return func(o *Options) { o.batchSize = batchSize }
+}
 
 // WithDimensions specifies the output dimensionality for embedding vectors.
 // Equivalent to [WithOutputDimensions]; Voyage accepts either.
-func WithDimensions(dimensions int) Option { return func(o *Options) { o.dimensions = &dimensions } }
+func WithDimensions(
+	dimensions int,
+) Option {
+	return func(o *Options) { o.dimensions = &dimensions }
+}
 
 // WithInputType specifies the type of input for optimized embedding generation.
 // Common values: "query" for search queries, "document" for documents to be searched.
-func WithInputType(inputType string) Option { return func(o *Options) { o.inputType = inputType } }
+func WithInputType(
+	inputType string,
+) Option {
+	return func(o *Options) { o.inputType = inputType }
+}
 
 // WithTruncation enables automatic truncation of inputs exceeding the model's token limit.
-func WithTruncation(truncation bool) Option { return func(o *Options) { o.truncation = &truncation } }
+func WithTruncation(
+	truncation bool,
+) Option {
+	return func(o *Options) { o.truncation = &truncation }
+}
 
 // WithEncodingFormat specifies the format for encoded embeddings.
 func WithEncodingFormat(format string) Option {
@@ -212,7 +240,11 @@ func WithOutputDimensions(dimensions int) Option {
 
 // WithOutputDtype specifies the data type for embedding outputs.
 // Common values: "float" (default), "int8", "uint8", "binary", "ubinary".
-func WithOutputDtype(dtype string) Option { return func(o *Options) { o.outputDtype = dtype } }
+func WithOutputDtype(
+	dtype string,
+) Option {
+	return func(o *Options) { o.outputDtype = dtype }
+}
 
 // Client implements [embeddings.Embedding] against the Voyage AI API.
 type Client struct {
@@ -409,7 +441,11 @@ func (c *Client) embedBatch(
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"API request failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var voyageResp embedResponse
@@ -423,7 +459,8 @@ func (c *Client) embedBatch(
 		if embedding == nil {
 			return nil, fmt.Errorf(
 				"failed to convert embedding at index %d: unsupported data type %s",
-				i, data.Embedding.DataType,
+				i,
+				data.Embedding.DataType,
 			)
 		}
 		out[i] = embedding
@@ -479,7 +516,10 @@ func (c *Client) GenerateMultimodalEmbeddings(
 	}
 
 	req, err := http.NewRequestWithContext(
-		ctx, "POST", c.baseURL+"/multimodalembeddings", bytes.NewBuffer(jsonBody),
+		ctx,
+		"POST",
+		c.baseURL+"/multimodalembeddings",
+		bytes.NewBuffer(jsonBody),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create multimodal request: %w", err)
@@ -495,16 +535,26 @@ func (c *Client) GenerateMultimodalEmbeddings(
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read multimodal response body: %w", err)
+		return nil, fmt.Errorf(
+			"failed to read multimodal response body: %w",
+			err,
+		)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("multimodal API request failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"multimodal API request failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var voyageResp embedResponse
 	if err := json.Unmarshal(body, &voyageResp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal multimodal response: %w", err)
+		return nil, fmt.Errorf(
+			"failed to unmarshal multimodal response: %w",
+			err,
+		)
 	}
 
 	out := make([][]float32, len(voyageResp.Data))
@@ -513,7 +563,8 @@ func (c *Client) GenerateMultimodalEmbeddings(
 		if embedding == nil {
 			return nil, fmt.Errorf(
 				"failed to convert multimodal embedding at index %d: unsupported data type %s",
-				i, data.Embedding.DataType,
+				i,
+				data.Embedding.DataType,
 			)
 		}
 		out[i] = embedding
@@ -557,14 +608,23 @@ func (c *Client) GenerateContextualizedEmbeddings(
 
 	jsonBody, err := json.Marshal(reqBody)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal contextualized request: %w", err)
+		return nil, fmt.Errorf(
+			"failed to marshal contextualized request: %w",
+			err,
+		)
 	}
 
 	req, err := http.NewRequestWithContext(
-		ctx, "POST", c.baseURL+"/contextualizedembeddings", bytes.NewBuffer(jsonBody),
+		ctx,
+		"POST",
+		c.baseURL+"/contextualizedembeddings",
+		bytes.NewBuffer(jsonBody),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create contextualized request: %w", err)
+		return nil, fmt.Errorf(
+			"failed to create contextualized request: %w",
+			err,
+		)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.options.apiKey)
@@ -577,16 +637,26 @@ func (c *Client) GenerateContextualizedEmbeddings(
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read contextualized response body: %w", err)
+		return nil, fmt.Errorf(
+			"failed to read contextualized response body: %w",
+			err,
+		)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("contextualized API request failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"contextualized API request failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var voyageResp contextualizedResponse
 	if err := json.Unmarshal(body, &voyageResp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal contextualized response: %w", err)
+		return nil, fmt.Errorf(
+			"failed to unmarshal contextualized response: %w",
+			err,
+		)
 	}
 
 	documentEmbeddings := make([][][]float32, len(voyageResp.Data))
@@ -600,7 +670,9 @@ func (c *Client) GenerateContextualizedEmbeddings(
 
 	return &embeddings.ContextualizedEmbeddingResponse{
 		DocumentEmbeddings: documentEmbeddings,
-		Usage:              embeddings.EmbeddingUsage{TotalTokens: voyageResp.Usage.TotalTokens},
-		Model:              voyageResp.Model,
+		Usage: embeddings.EmbeddingUsage{
+			TotalTokens: voyageResp.Usage.TotalTokens,
+		},
+		Model: voyageResp.Model,
 	}, nil
 }
