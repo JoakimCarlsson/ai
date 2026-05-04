@@ -29,27 +29,55 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key used to authenticate with OpenAI.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the TTS model.
-func WithModel(m model.AudioModel) Option { return func(o *Options) { o.model = m } }
+func WithModel(
+	m model.AudioModel,
+) Option {
+	return func(o *Options) { o.model = m }
+}
 
 // WithTimeout sets the maximum duration to wait for a single request.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithBaseURL points the client at a custom OpenAI-compatible endpoint.
-func WithBaseURL(baseURL string) Option { return func(o *Options) { o.baseURL = baseURL } }
+func WithBaseURL(
+	baseURL string,
+) Option {
+	return func(o *Options) { o.baseURL = baseURL }
+}
 
 // WithSpeed sets the speed of generated audio (0.25 to 4.0).
-func WithSpeed(speed float64) Option { return func(o *Options) { o.speed = &speed } }
+func WithSpeed(
+	speed float64,
+) Option {
+	return func(o *Options) { o.speed = &speed }
+}
 
 // WithVoice sets the voice. Valid values: alloy, ash, ballad, coral, echo, fable,
 // onyx, nova, sage, shimmer, verse.
-func WithVoice(name string) Option { return func(o *Options) { o.voice = name } }
+func WithVoice(
+	name string,
+) Option {
+	return func(o *Options) { o.voice = name }
+}
 
 // WithOutputFormat sets the audio response format (e.g. "mp3", "opus", "aac",
 // "flac", "wav", "pcm"). If unset, OpenAI's API default (MP3) applies.
-func WithOutputFormat(format string) Option { return func(o *Options) { o.outputFormat = format } }
+func WithOutputFormat(
+	format string,
+) Option {
+	return func(o *Options) { o.outputFormat = format }
+}
 
 // Client implements [tts.Generation] against the OpenAI Audio Speech API.
 type Client struct {
@@ -112,7 +140,9 @@ func (c *Client) GenerateAudio(
 		outputFormat = opts.OutputFormat
 	}
 	if outputFormat != "" {
-		params.ResponseFormat = openaisdk.AudioSpeechNewParamsResponseFormat(outputFormat)
+		params.ResponseFormat = openaisdk.AudioSpeechNewParamsResponseFormat(
+			outputFormat,
+		)
 	}
 	if c.options.speed != nil {
 		params.Speed = param.NewOpt(*c.options.speed)

@@ -233,16 +233,25 @@ func (t *tracingGeneration) spanAttrs() []tracing.Attr {
 		attrs = append(attrs, tracing.AttrRequestVoice.String(t.attrs.Voice))
 	}
 	if t.attrs.OutputFormat != "" {
-		attrs = append(attrs, tracing.AttrRequestOutputFormat.String(t.attrs.OutputFormat))
+		attrs = append(
+			attrs,
+			tracing.AttrRequestOutputFormat.String(t.attrs.OutputFormat),
+		)
 	}
 	if t.attrs.Speed != nil {
 		attrs = append(attrs, tracing.AttrRequestSpeed.Float64(*t.attrs.Speed))
 	}
 	if t.attrs.Language != "" {
-		attrs = append(attrs, tracing.AttrRequestLanguage.String(t.attrs.Language))
+		attrs = append(
+			attrs,
+			tracing.AttrRequestLanguage.String(t.attrs.Language),
+		)
 	}
 	if t.attrs.SampleRate > 0 {
-		attrs = append(attrs, tracing.AttrRequestSampleRate.Int(t.attrs.SampleRate))
+		attrs = append(
+			attrs,
+			tracing.AttrRequestSampleRate.Int(t.attrs.SampleRate),
+		)
 	}
 	return attrs
 }
