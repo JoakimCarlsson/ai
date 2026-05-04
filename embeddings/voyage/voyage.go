@@ -236,11 +236,17 @@ func NewEmbedding(opts ...Option) embeddings.Embedding {
 	if options.timeout != nil {
 		timeout = *options.timeout
 	}
+	dimensions := options.dimensions
+	if options.outputDimension != nil {
+		dimensions = options.outputDimension
+	}
 
 	return embeddings.WithTracing(&Client{
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    defaultBaseURL,
+	}, embeddings.TracingAttrs{
+		Dimensions: dimensions,
 	})
 }
 

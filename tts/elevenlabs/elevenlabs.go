@@ -110,6 +110,9 @@ func NewGeneration(opts ...Option) tts.Generation {
 		modelID:      modelID,
 		voiceID:      voiceID,
 		outputFormat: outputFormat,
+	}, tts.TracingAttrs{
+		Voice:        voiceID,
+		OutputFormat: outputFormat,
 	})
 }
 

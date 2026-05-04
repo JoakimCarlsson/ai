@@ -80,7 +80,7 @@ func NewGeneration(opts ...Option) image.ImageGeneration {
 	return image.WithTracing(&Client{
 		options: options,
 		client:  client,
-	})
+	}, image.TracingAttrs{})
 }
 
 // Model returns the configured image generation model.

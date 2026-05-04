@@ -61,6 +61,8 @@ func NewEmbedding(opts ...Option) embeddings.Embedding {
 	return embeddings.WithTracing(&Client{
 		options: options,
 		client:  client,
+	}, embeddings.TracingAttrs{
+		Dimensions: options.dimensions,
 	})
 }
 

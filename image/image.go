@@ -172,19 +172,28 @@ func WithN(n int) GenerationOption {
 	}
 }
 
+// TracingAttrs are construction-time attributes vendor packages forward to the
+// [WithTracing] wrapper so they appear on every span produced for the wrapped
+// client.
+type TracingAttrs struct{}
+
 // WithTracing wraps an ImageGeneration client so every call records OpenTelemetry
-// spans and metrics. Vendor sub-packages return their concrete client wrapped in
-// this so consumers always get tracing without thinking about it.
-func WithTracing(inner ImageGeneration) ImageGeneration {
-	return &tracingClient{inner: inner}
+// spans and metrics. The attrs are recorded as construction-time span attributes.
+func WithTracing(inner ImageGeneration, attrs TracingAttrs) ImageGeneration {
+	return &tracingClient{inner: inner, attrs: attrs}
 }
 
 type tracingClient struct {
 	inner ImageGeneration
+	attrs TracingAttrs
 }
 
 func (t *tracingClient) Model() model.ImageGenerationModel {
 	return t.inner.Model()
+}
+
+func (t *tracingClient) spanAttrs() []tracing.Attr {
+	return nil
 }
 
 func (t *tracingClient) GenerateImage(
@@ -198,6 +207,7 @@ func (t *tracingClient) GenerateImage(
 		ctx,
 		m.APIModel,
 		string(m.Provider),
+		t.spanAttrs()...,
 	)
 	defer span.End()
 
@@ -246,6 +256,7 @@ func (t *tracingClient) GenerateImageStreaming(
 		ctx,
 		m.APIModel,
 		string(m.Provider),
+		t.spanAttrs()...,
 	)
 	defer span.End()
 

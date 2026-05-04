@@ -35,7 +35,22 @@ const (
 	AttrRequestTemperature = attribute.Key(
 		"gen_ai.request.temperature",
 	)
-	AttrRequestTopP          = attribute.Key("gen_ai.request.top_p")
+	AttrRequestTopP            = attribute.Key("gen_ai.request.top_p")
+	AttrRequestDimensions      = attribute.Key("gen_ai.request.dimensions")
+	AttrRequestTopK            = attribute.Key("gen_ai.request.top_k")
+	AttrRequestMaxChunksPerDoc = attribute.Key(
+		"gen_ai.request.max_chunks_per_doc",
+	)
+	AttrRequestReturnDocuments = attribute.Key(
+		"gen_ai.request.return_documents",
+	)
+	AttrRequestLanguage     = attribute.Key("gen_ai.request.language")
+	AttrRequestVoice        = attribute.Key("gen_ai.request.voice")
+	AttrRequestOutputFormat = attribute.Key(
+		"gen_ai.request.output_format",
+	)
+	AttrRequestSpeed         = attribute.Key("gen_ai.request.speed")
+	AttrRequestSampleRate    = attribute.Key("gen_ai.request.sample_rate")
 	AttrResponseFinishReason = attribute.Key(
 		"gen_ai.response.finish_reason",
 	)
@@ -98,12 +113,17 @@ func StartEmbeddingSpan(
 	ctx context.Context,
 	modelName string,
 	system string,
+	extra ...Attr,
 ) (context.Context, Span) {
-	return StartSpan(ctx,
-		fmt.Sprintf("generate_embeddings %s", modelName),
+	attrs := []Attr{
 		AttrOperationName.String("generate_embeddings"),
 		AttrSystem.String(system),
 		AttrRequestModel.String(modelName),
+	}
+	attrs = append(attrs, extra...)
+	return StartSpan(ctx,
+		fmt.Sprintf("generate_embeddings %s", modelName),
+		attrs...,
 	)
 }
 
@@ -112,12 +132,17 @@ func StartRerankSpan(
 	ctx context.Context,
 	modelName string,
 	system string,
+	extra ...Attr,
 ) (context.Context, Span) {
-	return StartSpan(ctx,
-		fmt.Sprintf("rerank %s", modelName),
+	attrs := []Attr{
 		AttrOperationName.String("rerank"),
 		AttrSystem.String(system),
 		AttrRequestModel.String(modelName),
+	}
+	attrs = append(attrs, extra...)
+	return StartSpan(ctx,
+		fmt.Sprintf("rerank %s", modelName),
+		attrs...,
 	)
 }
 
@@ -126,12 +151,17 @@ func StartAudioSpan(
 	ctx context.Context,
 	modelName string,
 	system string,
+	extra ...Attr,
 ) (context.Context, Span) {
-	return StartSpan(ctx,
-		fmt.Sprintf("generate_audio %s", modelName),
+	attrs := []Attr{
 		AttrOperationName.String("generate_audio"),
 		AttrSystem.String(system),
 		AttrRequestModel.String(modelName),
+	}
+	attrs = append(attrs, extra...)
+	return StartSpan(ctx,
+		fmt.Sprintf("generate_audio %s", modelName),
+		attrs...,
 	)
 }
 
@@ -140,12 +170,17 @@ func StartImageSpan(
 	ctx context.Context,
 	modelName string,
 	system string,
+	extra ...Attr,
 ) (context.Context, Span) {
-	return StartSpan(ctx,
-		fmt.Sprintf("generate_image %s", modelName),
+	attrs := []Attr{
 		AttrOperationName.String("generate_image"),
 		AttrSystem.String(system),
 		AttrRequestModel.String(modelName),
+	}
+	attrs = append(attrs, extra...)
+	return StartSpan(ctx,
+		fmt.Sprintf("generate_image %s", modelName),
+		attrs...,
 	)
 }
 
@@ -155,12 +190,17 @@ func StartTranscribeSpan(
 	modelName string,
 	system string,
 	operation string,
+	extra ...Attr,
 ) (context.Context, Span) {
-	return StartSpan(ctx,
-		fmt.Sprintf("%s %s", operation, modelName),
+	attrs := []Attr{
 		AttrOperationName.String(operation),
 		AttrSystem.String(system),
 		AttrRequestModel.String(modelName),
+	}
+	attrs = append(attrs, extra...)
+	return StartSpan(ctx,
+		fmt.Sprintf("%s %s", operation, modelName),
+		attrs...,
 	)
 }
 

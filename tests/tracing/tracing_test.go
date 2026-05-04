@@ -185,6 +185,103 @@ func TestStartGenerateSpan_WithExtraAttrs(t *testing.T) {
 	}
 }
 
+func TestSpanStarters_WithExtraAttrs(t *testing.T) {
+	exporter := setupTracing(t)
+	ctx := context.Background()
+
+	tests := []struct {
+		name     string
+		fn       func()
+		prefix   string
+		attrName string
+	}{
+		{
+			name: "embedding",
+			fn: func() {
+				_, s := tracing.StartEmbeddingSpan(
+					ctx, "voyage-3", "voyage",
+					tracing.AttrRequestDimensions.Int(1024),
+				)
+				s.End()
+			},
+			prefix:   "generate_embeddings",
+			attrName: "gen_ai.request.dimensions",
+		},
+		{
+			name: "rerank",
+			fn: func() {
+				_, s := tracing.StartRerankSpan(
+					ctx, "rerank-2", "voyage",
+					tracing.AttrRequestTopK.Int(5),
+				)
+				s.End()
+			},
+			prefix:   "rerank",
+			attrName: "gen_ai.request.top_k",
+		},
+		{
+			name: "audio",
+			fn: func() {
+				_, s := tracing.StartAudioSpan(
+					ctx, "eleven-turbo", "elevenlabs",
+					tracing.AttrRequestVoice.String("voice-1"),
+				)
+				s.End()
+			},
+			prefix:   "generate_audio",
+			attrName: "gen_ai.request.voice",
+		},
+		{
+			name: "image",
+			fn: func() {
+				_, s := tracing.StartImageSpan(
+					ctx, "dall-e-3", "openai",
+					tracing.AttrRequestOutputFormat.String("b64_json"),
+				)
+				s.End()
+			},
+			prefix:   "generate_image",
+			attrName: "gen_ai.request.output_format",
+		},
+		{
+			name: "transcribe",
+			fn: func() {
+				_, s := tracing.StartTranscribeSpan(
+					ctx, "whisper-1", "openai", "transcribe",
+					tracing.AttrRequestLanguage.String("en"),
+				)
+				s.End()
+			},
+			prefix:   "transcribe",
+			attrName: "gen_ai.request.language",
+		},
+		{
+			name: "fim",
+			fn: func() {
+				_, s := tracing.StartFIMSpan(
+					ctx, "codestral", "mistral",
+					tracing.AttrRequestMaxTokens.Int64(1000),
+				)
+				s.End()
+			},
+			prefix:   "fim_complete",
+			attrName: "gen_ai.request.max_tokens",
+		},
+	}
+
+	for _, tc := range tests {
+		exporter.Reset()
+		tc.fn()
+		span := findSpan(exporter.GetSpans(), tc.prefix)
+		if span == nil {
+			t.Fatalf("%s: expected %s span", tc.name, tc.prefix)
+		}
+		if spanAttr(span, tc.attrName) == "" && spanAttrInt(span, tc.attrName) == 0 {
+			t.Errorf("%s: expected %s attribute", tc.name, tc.attrName)
+		}
+	}
+}
+
 func TestSetError_WithError(t *testing.T) {
 	exporter := setupTracing(t)
 	_, span := tracing.StartSpan(

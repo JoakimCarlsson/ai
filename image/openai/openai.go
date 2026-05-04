@@ -110,7 +110,7 @@ func NewGeneration(opts ...Option) image.ImageGeneration {
 	return image.WithTracing(&Client{
 		options: options,
 		client:  openaisdk.NewClient(clientOpts...),
-	})
+	}, image.TracingAttrs{})
 }
 
 // Model returns the configured image generation model.

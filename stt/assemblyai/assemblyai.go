@@ -147,7 +147,7 @@ func NewSpeechToText(opts ...Option) stt.SpeechToText {
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    defaultBaseURL,
-	})
+	}, stt.TracingAttrs{})
 }
 
 // Model returns the configured transcription model.

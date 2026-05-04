@@ -101,6 +101,9 @@ func NewGeneration(opts ...Option) tts.Generation {
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
 		resolved:   resolved,
+	}, tts.TracingAttrs{
+		OutputFormat: options.encoding,
+		SampleRate:   options.sampleRate,
 	})
 }
 

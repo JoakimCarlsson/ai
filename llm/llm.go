@@ -196,9 +196,10 @@ func (t *tracingLLM) SupportsStructuredOutput() bool {
 	return t.inner.SupportsStructuredOutput()
 }
 
-func (t *tracingLLM) generateSpanAttrs() []tracing.Attr {
-	attrs := []tracing.Attr{
-		tracing.AttrRequestMaxTokens.Int64(t.attrs.MaxTokens),
+func (t *tracingLLM) spanAttrs() []tracing.Attr {
+	var attrs []tracing.Attr
+	if t.attrs.MaxTokens > 0 {
+		attrs = append(attrs, tracing.AttrRequestMaxTokens.Int64(t.attrs.MaxTokens))
 	}
 	if t.attrs.Temperature != nil {
 		attrs = append(attrs, tracing.AttrRequestTemperature.Float64(*t.attrs.Temperature))
@@ -298,7 +299,7 @@ func (t *tracingLLM) SendMessages(
 	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
-		ctx, m.APIModel, string(m.Provider), t.generateSpanAttrs()...,
+		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
 	)
 	defer span.End()
 
@@ -326,7 +327,7 @@ func (t *tracingLLM) SendMessagesWithStructuredOutput(
 	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
-		ctx, m.APIModel, string(m.Provider), t.generateSpanAttrs()...,
+		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
 	)
 	defer span.End()
 
@@ -353,7 +354,7 @@ func (t *tracingLLM) StreamResponse(
 	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
-		ctx, m.APIModel, string(m.Provider), t.generateSpanAttrs()...,
+		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
 	)
 
 	innerCh := t.inner.StreamResponse(ctx, messages, tools)
@@ -388,7 +389,7 @@ func (t *tracingLLM) StreamResponseWithStructuredOutput(
 	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
-		ctx, m.APIModel, string(m.Provider), t.generateSpanAttrs()...,
+		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
 	)
 
 	innerCh := t.inner.StreamResponseWithStructuredOutput(ctx, messages, tools, outputSchema)

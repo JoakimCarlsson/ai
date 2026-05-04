@@ -79,6 +79,10 @@ func NewGeneration(opts ...Option) tts.Generation {
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    defaultBaseURL,
+	}, tts.TracingAttrs{
+		Voice:        options.voiceName,
+		OutputFormat: options.outputFormat,
+		Language:     options.languageCode,
 	})
 }
 

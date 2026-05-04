@@ -90,6 +90,8 @@ func NewSpeechToText(opts ...Option) stt.SpeechToText {
 	return stt.WithTracing(&Client{
 		options: options,
 		client:  openaisdk.NewClient(clientOpts...),
+	}, stt.TracingAttrs{
+		Language: options.language,
 	})
 }
 

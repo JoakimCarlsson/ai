@@ -95,6 +95,10 @@ func NewReranker(opts ...Option) rerankers.Reranker {
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    defaultBaseURL,
+	}, rerankers.TracingAttrs{
+		TopK:            options.topK,
+		MaxChunksPerDoc: options.maxChunksPerDoc,
+		ReturnDocuments: &options.returnDocs,
 	})
 }
 

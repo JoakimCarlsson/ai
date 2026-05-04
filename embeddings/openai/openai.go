@@ -72,6 +72,8 @@ func NewEmbedding(opts ...Option) embeddings.Embedding {
 	return embeddings.WithTracing(&Client{
 		options: options,
 		client:  openaisdk.NewClient(clientOpts...),
+	}, embeddings.TracingAttrs{
+		Dimensions: options.dimensions,
 	})
 }
 

@@ -76,6 +76,10 @@ func NewGeneration(opts ...Option) tts.Generation {
 	return tts.WithTracing(&Client{
 		options: options,
 		client:  openaisdk.NewClient(clientOpts...),
+	}, tts.TracingAttrs{
+		Voice:        options.voice,
+		OutputFormat: options.outputFormat,
+		Speed:        options.speed,
 	})
 }
 

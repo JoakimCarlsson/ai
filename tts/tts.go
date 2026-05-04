@@ -188,12 +188,23 @@ func WithAlignmentEnabled(enabled bool) GenerationOption {
 	return func(o *GenerationOptions) { o.EnableAlignment = enabled }
 }
 
+// TracingAttrs are construction-time attributes vendor packages forward to the
+// [WithTracing] wrapper so they appear on every span produced for the wrapped
+// client.
+type TracingAttrs struct {
+	Voice        string
+	OutputFormat string
+	Speed        *float64
+	Language     string
+	SampleRate   int
+}
+
 // WithTracing wraps a Generation client so every call records OpenTelemetry spans
 // and metrics. If the inner client also implements [ForcedAlignmentProvider], the
 // returned wrapper does too — type assertion on the wrapper succeeds and the call
 // is traced and forwarded to the inner client.
-func WithTracing(inner Generation) Generation {
-	base := &tracingGeneration{inner: inner}
+func WithTracing(inner Generation, attrs TracingAttrs) Generation {
+	base := &tracingGeneration{inner: inner, attrs: attrs}
 	if fap, ok := inner.(ForcedAlignmentProvider); ok {
 		return &tracingGenerationWithForcedAlignment{
 			tracingGeneration: base,
@@ -205,6 +216,7 @@ func WithTracing(inner Generation) Generation {
 
 type tracingGeneration struct {
 	inner Generation
+	attrs TracingAttrs
 }
 
 func (t *tracingGeneration) Model() model.AudioModel {
@@ -215,6 +227,26 @@ func (t *tracingGeneration) ListVoices(ctx context.Context) ([]Voice, error) {
 	return t.inner.ListVoices(ctx)
 }
 
+func (t *tracingGeneration) spanAttrs() []tracing.Attr {
+	var attrs []tracing.Attr
+	if t.attrs.Voice != "" {
+		attrs = append(attrs, tracing.AttrRequestVoice.String(t.attrs.Voice))
+	}
+	if t.attrs.OutputFormat != "" {
+		attrs = append(attrs, tracing.AttrRequestOutputFormat.String(t.attrs.OutputFormat))
+	}
+	if t.attrs.Speed != nil {
+		attrs = append(attrs, tracing.AttrRequestSpeed.Float64(*t.attrs.Speed))
+	}
+	if t.attrs.Language != "" {
+		attrs = append(attrs, tracing.AttrRequestLanguage.String(t.attrs.Language))
+	}
+	if t.attrs.SampleRate > 0 {
+		attrs = append(attrs, tracing.AttrRequestSampleRate.Int(t.attrs.SampleRate))
+	}
+	return attrs
+}
+
 func (t *tracingGeneration) GenerateAudio(
 	ctx context.Context,
 	text string,
@@ -222,7 +254,9 @@ func (t *tracingGeneration) GenerateAudio(
 ) (*Response, error) {
 	m := t.inner.Model()
 	start := time.Now()
-	ctx, span := tracing.StartAudioSpan(ctx, m.APIModel, string(m.Provider))
+	ctx, span := tracing.StartAudioSpan(
+		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
+	)
 	defer span.End()
 	span.SetAttributes(tracing.AttrInputCount.Int(len(text)))
 
@@ -253,7 +287,9 @@ func (t *tracingGeneration) StreamAudio(
 ) (<-chan Chunk, error) {
 	m := t.inner.Model()
 	start := time.Now()
-	ctx, span := tracing.StartAudioSpan(ctx, m.APIModel, string(m.Provider))
+	ctx, span := tracing.StartAudioSpan(
+		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
+	)
 	span.SetAttributes(tracing.AttrInputCount.Int(len(text)))
 
 	innerCh, err := t.inner.StreamAudio(ctx, text, options...)
@@ -301,7 +337,9 @@ func (t *tracingGenerationWithForcedAlignment) GenerateForcedAlignment(
 ) (*ForcedAlignmentData, error) {
 	m := t.inner.Model()
 	start := time.Now()
-	ctx, span := tracing.StartAudioSpan(ctx, m.APIModel, string(m.Provider))
+	ctx, span := tracing.StartAudioSpan(
+		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
+	)
 	defer span.End()
 	span.SetAttributes(tracing.AttrInputCount.Int(len(transcript)))
 

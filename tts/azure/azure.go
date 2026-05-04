@@ -73,6 +73,9 @@ func NewGeneration(opts ...Option) tts.Generation {
 	return tts.WithTracing(&Client{
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
+	}, tts.TracingAttrs{
+		Voice:        options.voiceName,
+		OutputFormat: options.outputFormat,
 	})
 }
 

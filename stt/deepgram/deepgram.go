@@ -20,11 +20,11 @@ import (
 )
 
 const (
-	defaultBaseURL              = "https://api.deepgram.com/v1"
-	streamDefaultEndpointingMs  = 300
-	streamKeepAlive             = 5 * time.Second
-	streamReadDeadline          = 30 * time.Second
-	streamHandshakeTimeout      = 10 * time.Second
+	defaultBaseURL             = "https://api.deepgram.com/v1"
+	streamDefaultEndpointingMs = 300
+	streamKeepAlive            = 5 * time.Second
+	streamReadDeadline         = 30 * time.Second
+	streamHandshakeTimeout     = 10 * time.Second
 )
 
 // Options configures the Deepgram client.
@@ -140,6 +140,8 @@ func NewSpeechToText(opts ...Option) stt.SpeechToText {
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    defaultBaseURL,
+	}, stt.TracingAttrs{
+		Language: options.language,
 	})
 }
 

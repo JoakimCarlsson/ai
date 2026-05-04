@@ -210,15 +210,22 @@ func WithChannels(n int) Option {
 	}
 }
 
+// TracingAttrs are construction-time attributes vendor packages forward to the
+// [WithTracing] wrapper so they appear on every span produced for the wrapped
+// client.
+type TracingAttrs struct {
+	Language string
+}
+
 // WithTracing wraps a SpeechToText client so every call records OpenTelemetry spans
-// and metrics. Vendor sub-packages return their concrete client wrapped in this so
-// consumers always get tracing without thinking about it.
-func WithTracing(inner SpeechToText) SpeechToText {
-	return &tracingClient{inner: inner}
+// and metrics. The attrs are recorded as construction-time span attributes.
+func WithTracing(inner SpeechToText, attrs TracingAttrs) SpeechToText {
+	return &tracingClient{inner: inner, attrs: attrs}
 }
 
 type tracingClient struct {
 	inner SpeechToText
+	attrs TracingAttrs
 }
 
 func (t *tracingClient) Model() model.TranscriptionModel {
@@ -227,6 +234,14 @@ func (t *tracingClient) Model() model.TranscriptionModel {
 
 func (t *tracingClient) SupportsStreaming() bool {
 	return t.inner.SupportsStreaming()
+}
+
+func (t *tracingClient) spanAttrs() []tracing.Attr {
+	var attrs []tracing.Attr
+	if t.attrs.Language != "" {
+		attrs = append(attrs, tracing.AttrRequestLanguage.String(t.attrs.Language))
+	}
+	return attrs
 }
 
 func (t *tracingClient) Transcribe(
@@ -241,6 +256,7 @@ func (t *tracingClient) Transcribe(
 		m.APIModel,
 		string(m.Provider),
 		"transcribe",
+		t.spanAttrs()...,
 	)
 	defer span.End()
 
@@ -282,6 +298,7 @@ func (t *tracingClient) Translate(
 		m.APIModel,
 		string(m.Provider),
 		"translate",
+		t.spanAttrs()...,
 	)
 	defer span.End()
 
@@ -323,6 +340,7 @@ func (t *tracingClient) StreamTranscribe(
 		m.APIModel,
 		string(m.Provider),
 		"stream_transcribe",
+		t.spanAttrs()...,
 	)
 
 	innerCh, err := t.inner.StreamTranscribe(ctx, audio, options...)

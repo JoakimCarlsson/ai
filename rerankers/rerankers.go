@@ -70,19 +70,42 @@ type Reranker interface {
 	Model() model.RerankerModel
 }
 
+// TracingAttrs are construction-time attributes vendor packages forward to the
+// [WithTracing] wrapper so they appear on every span produced for the wrapped
+// client.
+type TracingAttrs struct {
+	TopK            *int
+	MaxChunksPerDoc *int
+	ReturnDocuments *bool
+}
+
 // WithTracing wraps a Reranker so every call records OpenTelemetry spans and metrics.
-// Vendor sub-packages return their concrete client wrapped in this so consumers
-// always get tracing without thinking about it.
-func WithTracing(inner Reranker) Reranker {
-	return &tracingReranker{inner: inner}
+// The attrs are recorded as construction-time span attributes.
+func WithTracing(inner Reranker, attrs TracingAttrs) Reranker {
+	return &tracingReranker{inner: inner, attrs: attrs}
 }
 
 type tracingReranker struct {
 	inner Reranker
+	attrs TracingAttrs
 }
 
 func (t *tracingReranker) Model() model.RerankerModel {
 	return t.inner.Model()
+}
+
+func (t *tracingReranker) spanAttrs() []tracing.Attr {
+	var attrs []tracing.Attr
+	if t.attrs.TopK != nil {
+		attrs = append(attrs, tracing.AttrRequestTopK.Int(*t.attrs.TopK))
+	}
+	if t.attrs.MaxChunksPerDoc != nil {
+		attrs = append(attrs, tracing.AttrRequestMaxChunksPerDoc.Int(*t.attrs.MaxChunksPerDoc))
+	}
+	if t.attrs.ReturnDocuments != nil {
+		attrs = append(attrs, tracing.AttrRequestReturnDocuments.Bool(*t.attrs.ReturnDocuments))
+	}
+	return attrs
 }
 
 func (t *tracingReranker) Rerank(
@@ -104,6 +127,7 @@ func (t *tracingReranker) Rerank(
 		ctx,
 		m.APIModel,
 		string(m.Provider),
+		t.spanAttrs()...,
 	)
 	defer span.End()
 	span.SetAttributes(tracing.AttrDocumentCount.Int(len(documents)))

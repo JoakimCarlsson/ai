@@ -77,6 +77,8 @@ func NewEmbedding(opts ...Option) embeddings.Embedding {
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    defaultBaseURL,
+	}, embeddings.TracingAttrs{
+		Dimensions: options.dimensions,
 	})
 }
 

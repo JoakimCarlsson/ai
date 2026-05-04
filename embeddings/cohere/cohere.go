@@ -78,7 +78,7 @@ func NewEmbedding(opts ...Option) embeddings.Embedding {
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    defaultBaseURL,
-	})
+	}, embeddings.TracingAttrs{})
 }
 
 // Model returns the configured embedding model.
