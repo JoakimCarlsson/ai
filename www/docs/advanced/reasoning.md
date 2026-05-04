@@ -1,80 +1,84 @@
 # Reasoning / Extended Thinking
 
-Models that support chain-of-thought reasoning can be configured to control reasoning depth. Some providers also expose the model's thinking process via `EventThinkingDelta` streaming events.
+Models that support chain-of-thought reasoning can be configured to control
+reasoning depth. Some providers also expose the model's thinking process via
+`EventThinkingDelta` streaming events.
 
-## Reasoning Effort
+## Reasoning effort
 
-Controls how much effort the model spends on internal reasoning before generating a response.
+Each LLM vendor module exports its own `WithReasoningEffort` (or
+`WithThinkingLevel`) helper.
 
 === "OpenAI"
 
     ```go
-    client, err := llm.NewLLM(
-        model.ProviderOpenAI,
-        llm.WithAPIKey("your-key"),
-        llm.WithModel(model.OpenAIModels[model.O4Mini]),
-        llm.WithMaxTokens(16000),
-        llm.WithOpenAIOptions(
-            llm.WithReasoningEffort(llm.OpenAIReasoningEffortHigh),
-        ),
+    import llmopenai "github.com/joakimcarlsson/ai/llm/openai"
+
+    client := llmopenai.NewLLM(
+        llmopenai.WithAPIKey("your-key"),
+        llmopenai.WithModel(model.OpenAIModels[model.O4Mini]),
+        llmopenai.WithMaxTokens(16000),
+        llmopenai.WithReasoningEffort(llmopenai.ReasoningEffortHigh),
     )
     ```
 
     | Level | Constant |
-    |-------|----------|
-    | Low | `OpenAIReasoningEffortLow` |
-    | Medium | `OpenAIReasoningEffortMedium` |
-    | High | `OpenAIReasoningEffortHigh` |
+    |---|---|
+    | Low | `llmopenai.ReasoningEffortLow` |
+    | Medium | `llmopenai.ReasoningEffortMedium` |
+    | High | `llmopenai.ReasoningEffortHigh` |
 
-    OpenAI's Chat Completions API does not expose thinking content. The model reasons internally but `EventThinkingDelta` events are not emitted.
+    OpenAI's Chat Completions API does not expose thinking content. The
+    model reasons internally but `EventThinkingDelta` events are not emitted.
 
 === "Anthropic"
 
     ```go
-    client, err := llm.NewLLM(
-        model.ProviderAnthropic,
-        llm.WithAPIKey("your-key"),
-        llm.WithModel(model.AnthropicModels[model.Claude4Sonnet]),
-        llm.WithMaxTokens(16000),
-        llm.WithAnthropicOptions(
-            llm.WithAnthropicReasoningEffort(llm.AnthropicReasoningEffortHigh),
-        ),
+    import llmanthropic "github.com/joakimcarlsson/ai/llm/anthropic"
+
+    client := llmanthropic.NewLLM(
+        llmanthropic.WithAPIKey("your-key"),
+        llmanthropic.WithModel(model.AnthropicModels[model.Claude45Sonnet]),
+        llmanthropic.WithMaxTokens(16000),
+        llmanthropic.WithReasoningEffort(llmanthropic.ReasoningEffortHigh),
     )
     ```
 
     | Level | Constant |
-    |-------|----------|
-    | Low | `AnthropicReasoningEffortLow` |
-    | Medium | `AnthropicReasoningEffortMedium` |
-    | High | `AnthropicReasoningEffortHigh` |
-    | Max | `AnthropicReasoningEffortMax` |
+    |---|---|
+    | Low | `llmanthropic.ReasoningEffortLow` |
+    | Medium | `llmanthropic.ReasoningEffortMedium` |
+    | High | `llmanthropic.ReasoningEffortHigh` |
+    | Max | `llmanthropic.ReasoningEffortMax` |
 
 === "Gemini"
 
     ```go
-    client, err := llm.NewLLM(
-        model.ProviderGemini,
-        llm.WithAPIKey("your-key"),
-        llm.WithModel(model.GeminiModels[model.Gemini3Pro]),
-        llm.WithMaxTokens(16000),
-        llm.WithGeminiOptions(
-            llm.WithGeminiThinkingLevel(llm.GeminiThinkingLevelHigh),
-        ),
+    import llmgemini "github.com/joakimcarlsson/ai/llm/gemini"
+
+    client := llmgemini.NewLLM(
+        llmgemini.WithAPIKey("your-key"),
+        llmgemini.WithModel(model.GeminiModels[model.Gemini3Pro]),
+        llmgemini.WithMaxTokens(16000),
+        llmgemini.WithThinkingLevel(llmgemini.ThinkingLevelHigh),
     )
     ```
 
     | Level | Constant |
-    |-------|----------|
-    | Minimal | `GeminiThinkingLevelMinimal` |
-    | Low | `GeminiThinkingLevelLow` |
-    | Medium | `GeminiThinkingLevelMedium` |
-    | High | `GeminiThinkingLevelHigh` |
+    |---|---|
+    | Minimal | `llmgemini.ThinkingLevelMinimal` |
+    | Low | `llmgemini.ThinkingLevelLow` |
+    | Medium | `llmgemini.ThinkingLevelMedium` |
+    | High | `llmgemini.ThinkingLevelHigh` |
 
-## Streaming Thinking Events
+## Streaming thinking events
 
-Anthropic, Gemini, and OpenAI-compatible providers (Ollama, vLLM, etc.) stream thinking content via `EventThinkingDelta`:
+Anthropic, Gemini, and OpenAI-compatible providers (Ollama, vLLM, etc.) that
+expose `reasoning` deltas stream thinking content via `EventThinkingDelta`:
 
 ```go
+import "github.com/joakimcarlsson/ai/types"
+
 for event := range client.StreamResponse(ctx, messages, nil) {
     switch event.Type {
     case types.EventThinkingDelta:
@@ -105,15 +109,22 @@ for event := range myAgent.ChatStream(ctx, "Think about this carefully...") {
 }
 ```
 
-## OpenAI-Compatible Providers
+## OpenAI-compatible providers (Ollama, vLLM)
 
-Providers like Ollama and vLLM that serve reasoning models (Qwen, DeepSeek, etc.) via an OpenAI-compatible API do stream thinking content. Use a custom model with `WithOpenAIBaseURL`:
+Reasoning models served via OpenAI-compatible APIs (Qwen, DeepSeek, etc.)
+stream thinking content over the same `reasoning` delta channel. Use
+`llm/openai` with a custom base URL and a custom model:
 
 ```go
-client, err := llm.NewLLM(
-    model.ProviderOpenAI,
-    llm.WithAPIKey("ollama"),
-    llm.WithModel(model.Model{
+import (
+    llmopenai "github.com/joakimcarlsson/ai/llm/openai"
+    "github.com/joakimcarlsson/ai/model"
+)
+
+ollama := llmopenai.NewLLM(
+    llmopenai.WithAPIKey("ollama"),
+    llmopenai.WithBaseURL("http://localhost:11434/v1"),
+    llmopenai.WithModel(model.Model{
         ID:               "qwen3:14b",
         Name:             "Qwen3 14B",
         APIModel:         "qwen3:14b",
@@ -122,9 +133,6 @@ client, err := llm.NewLLM(
         DefaultMaxTokens: 4096,
         CanReason:        true,
     }),
-    llm.WithMaxTokens(4096),
-    llm.WithOpenAIOptions(
-        llm.WithOpenAIBaseURL("http://localhost:11434/v1"),
-    ),
+    llmopenai.WithMaxTokens(4096),
 )
 ```

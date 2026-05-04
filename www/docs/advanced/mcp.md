@@ -60,7 +60,7 @@ import (
 
     "github.com/joakimcarlsson/ai/message"
     "github.com/joakimcarlsson/ai/model"
-    llm "github.com/joakimcarlsson/ai/providers"
+    llm "github.com/joakimcarlsson/ai/llm"
     "github.com/joakimcarlsson/ai/tool"
 )
 

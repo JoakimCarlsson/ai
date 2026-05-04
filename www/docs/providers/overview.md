@@ -1,60 +1,103 @@
 # Supported Providers
 
+Each modality has its own Go module. Vendor implementations are sub-modules.
+Pull only the ones you use.
+
 ## LLM Providers
 
-| Provider | Streaming | Tools | Structured Output | Attachments |
-|----------|-----------|-------|-------------------|-------------|
-| Anthropic (Claude) | ✅ | ✅ | ❌ | ✅ |
-| OpenAI (GPT) | ✅ | ✅ | ✅ | ✅ |
-| Google Gemini | ✅ | ✅ | ✅ | ✅ |
-| AWS Bedrock | ✅ | ✅ | ❌ | ✅ |
-| Azure OpenAI | ✅ | ✅ | ✅ | ✅ |
-| Google Vertex AI | ✅ | ✅ | ✅ | ✅ |
-| Groq | ✅ | ✅ | ✅ | ✅ |
-| OpenRouter | ✅ | ✅ | ✅ | ✅ |
-| xAI (Grok) | ✅ | ✅ | ✅ | ✅ |
-| Mistral | ✅ | ✅ | ✅ | ✅ |
-| DeepSeek | ✅ | ✅ | ❌ | ❌ |
-| Cohere | ✅ | ✅ | ❌ | ❌ |
-| Meta (Llama) | ✅ | ✅ | ❌ | ❌ |
-| Perplexity (Sonar) | ✅ | ✅ | ❌ | ❌ |
-| Qwen | ✅ | ✅ | ❌ | ❌ |
+Each native LLM vendor is its own sub-module under `llm/`:
 
-Mistral, DeepSeek, Cohere, Meta, Perplexity, and Qwen use OpenAI-compatible APIs. See the [LLM Providers](llm.md) page for setup details.
+| Module | Provider | Streaming | Tools | Structured Output | Attachments |
+|---|---|---|---|---|---|
+| `llm/anthropic` | Anthropic (Claude) | ✅ | ✅ | ✅ | ✅ |
+| `llm/openai` | OpenAI (GPT) | ✅ | ✅ | ✅ | ✅ |
+| `llm/gemini` | Google Gemini | ✅ | ✅ | ✅ | ✅ |
+| `llm/bedrock` | AWS Bedrock (wraps `llm/anthropic` for Claude on Bedrock) | ✅ | ✅ | ✅ | ✅ |
+| `llm/azure` | Azure OpenAI (wraps `llm/openai`) | ✅ | ✅ | ✅ | ✅ |
+| `llm/vertexai` | Google Vertex AI (wraps `llm/gemini`) | ✅ | ✅ | ✅ | ✅ |
 
-## Embedding & Reranker Providers
+OpenAI-compatible providers — Groq, OpenRouter, xAI, Mistral, DeepSeek,
+Perplexity, Qwen, Meta (via partners), and any custom OpenAI-compatible
+endpoint — use `llm/openai` with `WithBaseURL(...)`. See [BYOM](../advanced/byom.md).
 
-| Provider | Text Embeddings | Multimodal Embeddings | Contextualized Embeddings | Rerankers |
-|----------|-----------------|----------------------|---------------------------|-----------|
-| Voyage AI | ✅ | ✅ | ✅ | ✅ |
-| OpenAI | ✅ | ❌ | ❌ | ❌ |
-| Cohere | ✅ | ❌ | ❌ | ✅ |
-| Google Gemini | ✅ | ❌ | ❌ | ❌ |
-| Mistral | ✅ | ❌ | ❌ | ❌ |
-| AWS Bedrock | ✅ | ❌ | ❌ | ❌ |
+## Embedding Providers
+
+Each native embedding vendor is its own sub-module under `embeddings/`:
+
+| Module | Provider | Text | Multimodal | Contextualized |
+|---|---|---|---|---|
+| `embeddings/voyage` | Voyage AI | ✅ | ✅ | ✅ |
+| `embeddings/openai` | OpenAI | ✅ | ❌ | ❌ |
+| `embeddings/cohere` | Cohere | ✅ | ❌ | ❌ |
+| `embeddings/gemini` | Google Gemini | ✅ | ❌ | ❌ |
+| `embeddings/mistral` | Mistral | ✅ | ❌ | ❌ |
+| `embeddings/bedrock` | AWS Bedrock (Titan + Cohere) | ✅ | ❌ | ❌ |
+
+## Reranker Providers
+
+Each native reranker vendor under `rerankers/`:
+
+| Module | Provider |
+|---|---|
+| `rerankers/voyage` | Voyage AI |
+| `rerankers/cohere` | Cohere |
 
 ## Image Generation Providers
 
-| Provider | Models | Quality Options | Size Options |
-|----------|--------|-----------------|--------------|
-| OpenAI | DALL-E 2, DALL-E 3, GPT Image 1 | standard, hd, low, medium, high | 256x256 to 1792x1024 |
-| xAI (Grok) | Grok 2 Image | default | default |
-| Google Gemini | Gemini 2.5 Flash Image, Imagen 3, Imagen 4, Imagen 4 Ultra, Imagen 4 Fast | default | Aspect ratios: 1:1, 3:4, 4:3, 9:16, 16:9 |
+Under `image/`:
 
-## Audio Generation Providers (Text-to-Speech)
+| Module | Provider | Models | Streaming |
+|---|---|---|---|
+| `image/openai` | OpenAI | DALL-E 2, DALL-E 3, GPT Image 1 | ✅ (gpt-image-1) |
+| `image/gemini` | Google Gemini | Gemini 2.5 Flash Image, Imagen 3/4 | ❌ |
 
-| Provider | Models | Streaming | Voice Selection | Max Characters |
-|----------|--------|-----------|-----------------|----------------|
-| ElevenLabs | Multilingual v2, Turbo v2.5, Flash v2.5 | ✅ | ✅ | 10,000 - 40,000 |
-| Google Cloud | Standard, WaveNet, Neural2 | ❌ | ✅ | — |
-| Azure Speech | Neural | ❌ | ✅ | — |
+xAI Grok image generation: use `image/openai` with
+`WithBaseURL("https://api.x.ai/v1")`.
 
-## Speech-to-Text Providers (Transcription)
+## TTS (Text-to-Speech) Providers
 
-| Provider | Models | Streaming | Translation | Timestamps | Diarization |
-|----------|--------|-----------|-------------|------------|-------------|
-| OpenAI | Whisper-1, GPT-4o Transcribe, GPT-4o Mini Transcribe | ✅ | ✅ | ✅ | ✅ |
-| Deepgram | Nova 3, Nova 2 | ✅ | ❌ | ✅ | ✅ |
-| AssemblyAI | Best, Nano | ❌ | ❌ | ✅ | ✅ |
-| Google Cloud | Default, Long | ❌ | ❌ | ✅ | ❌ |
-| ElevenLabs | Scribe v1, Scribe v2 | ❌ | ❌ | ✅ | ✅ |
+Under `tts/`:
+
+| Module | Provider | Streaming | Forced Alignment |
+|---|---|---|---|
+| `tts/openai` | OpenAI | (buffered) | ❌ |
+| `tts/elevenlabs` | ElevenLabs | ✅ | ✅ |
+| `tts/google` | Google Cloud | (buffered) | ❌ |
+| `tts/azure` | Azure Speech | (buffered) | ❌ |
+| `tts/deepgram` | Deepgram Aura | ✅ | ❌ |
+
+## STT (Speech-to-Text) Providers
+
+Under `stt/`:
+
+| Module | Provider | Streaming | Translation | Timestamps |
+|---|---|---|---|---|
+| `stt/openai` | OpenAI Whisper / GPT-4o Transcribe | ❌ | ✅ | ✅ |
+| `stt/deepgram` | Deepgram | ✅ | ❌ | ✅ |
+| `stt/assemblyai` | AssemblyAI v3 Universal-Streaming | ✅ | ❌ | ✅ |
+| `stt/google` | Google Cloud Speech | ❌ | ❌ | ✅ |
+| `stt/elevenlabs` | ElevenLabs Scribe v2 Realtime | ✅ | ❌ | ✅ |
+
+## Fill-in-the-Middle (FIM) Providers
+
+Under `fim/`:
+
+| Module | Provider | Streaming |
+|---|---|---|
+| `fim/mistral` | Mistral Codestral | ✅ |
+| `fim/deepseek` | DeepSeek FIM | ✅ |
+
+## Modality interfaces
+
+Each modality also publishes a thin interface module so consumers can write
+generic code:
+
+- `llm` — `llm.LLM` interface, request/response types, retry helpers
+- `embeddings` — `embeddings.Embedding` interface
+- `rerankers` — `rerankers.Reranker` interface
+- `image` — `image.ImageGeneration` interface
+- `tts` — `tts.Generation` interface (+ optional `tts.ForcedAlignmentProvider`)
+- `stt` — `stt.SpeechToText` interface
+- `fim` — `fim.FIM` interface
+
+These interface modules carry no vendor SDKs.
