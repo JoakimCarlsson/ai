@@ -46,7 +46,10 @@ func newFIM() (fim.FIM, string) {
 			fimmistral.WithMaxTokens(64),
 		), provider
 	default:
-		log.Fatalf("unsupported AI_PROVIDER %q (use mistral or deepseek)", provider)
+		log.Fatalf(
+			"unsupported AI_PROVIDER %q (use mistral or deepseek)",
+			provider,
+		)
 		return nil, ""
 	}
 }

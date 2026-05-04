@@ -19,7 +19,9 @@ func main() {
 	client, provider := newLLM()
 
 	resp, err := client.SendMessages(context.Background(), []message.Message{
-		message.NewUserMessage("Explain why provider interfaces are useful in one sentence."),
+		message.NewUserMessage(
+			"Explain why provider interfaces are useful in one sentence.",
+		),
 	}, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -49,7 +51,10 @@ func newLLM() (llm.LLM, string) {
 			llmopenai.WithMaxTokens(256),
 		), provider
 	default:
-		log.Fatalf("unsupported AI_PROVIDER %q (use openai, anthropic, or gemini)", provider)
+		log.Fatalf(
+			"unsupported AI_PROVIDER %q (use openai, anthropic, or gemini)",
+			provider,
+		)
 		return nil, ""
 	}
 }

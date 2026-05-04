@@ -24,7 +24,9 @@ func main() {
 	)
 
 	events := client.StreamResponse(context.Background(), []message.Message{
-		message.NewUserMessage("Write a one-paragraph explanation of streaming responses."),
+		message.NewUserMessage(
+			"Write a one-paragraph explanation of streaming responses.",
+		),
 	}, nil)
 
 	for event := range events {

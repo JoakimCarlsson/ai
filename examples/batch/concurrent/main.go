@@ -35,14 +35,18 @@ func main() {
 			ID:   "modules",
 			Type: batch.RequestTypeChat,
 			Messages: []message.Message{
-				message.NewUserMessage("What is a Go module? Answer in one sentence."),
+				message.NewUserMessage(
+					"What is a Go module? Answer in one sentence.",
+				),
 			},
 		},
 		{
 			ID:   "packages",
 			Type: batch.RequestTypeChat,
 			Messages: []message.Message{
-				message.NewUserMessage("What is a Go package? Answer in one sentence."),
+				message.NewUserMessage(
+					"What is a Go package? Answer in one sentence.",
+				),
 			},
 		},
 	})

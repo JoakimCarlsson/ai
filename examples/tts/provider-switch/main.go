@@ -36,7 +36,9 @@ func newTTS() (tts.Generation, string) {
 	case "elevenlabs":
 		return ttselevenlabs.NewGeneration(
 			ttselevenlabs.WithAPIKey(requiredEnv("ELEVENLABS_API_KEY")),
-			ttselevenlabs.WithModel(model.ElevenLabsAudioModels[model.ElevenMultilingualV2]),
+			ttselevenlabs.WithModel(
+				model.ElevenLabsAudioModels[model.ElevenMultilingualV2],
+			),
 			ttselevenlabs.WithOutputFormat("mp3_44100_128"),
 		), provider
 	case "openai":
@@ -47,7 +49,10 @@ func newTTS() (tts.Generation, string) {
 			ttsopenai.WithOutputFormat("mp3"),
 		), provider
 	default:
-		log.Fatalf("unsupported AI_PROVIDER %q (use openai or elevenlabs)", provider)
+		log.Fatalf(
+			"unsupported AI_PROVIDER %q (use openai or elevenlabs)",
+			provider,
+		)
 		return nil, ""
 	}
 }

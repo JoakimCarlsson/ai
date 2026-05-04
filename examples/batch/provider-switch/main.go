@@ -29,7 +29,9 @@ func main() {
 			ID:   "one",
 			Type: batch.RequestTypeChat,
 			Messages: []message.Message{
-				message.NewUserMessage("Say one benefit of provider interfaces."),
+				message.NewUserMessage(
+					"Say one benefit of provider interfaces.",
+				),
 			},
 		},
 		{
@@ -49,7 +51,12 @@ func main() {
 			fmt.Printf("[%s] %s: error: %v\n", provider, result.ID, result.Err)
 			continue
 		}
-		fmt.Printf("[%s] %s: %s\n", provider, result.ID, result.ChatResponse.Content)
+		fmt.Printf(
+			"[%s] %s: %s\n",
+			provider,
+			result.ID,
+			result.ChatResponse.Content,
+		)
 	}
 }
 
@@ -74,7 +81,10 @@ func newLLM() (llm.LLM, string) {
 			llmopenai.WithMaxTokens(128),
 		), provider
 	default:
-		log.Fatalf("unsupported AI_PROVIDER %q (use openai, anthropic, or gemini)", provider)
+		log.Fatalf(
+			"unsupported AI_PROVIDER %q (use openai, anthropic, or gemini)",
+			provider,
+		)
 		return nil, ""
 	}
 }

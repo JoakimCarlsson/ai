@@ -33,23 +33,32 @@ func newEmbedding() (embeddings.Embedding, string) {
 	case "cohere":
 		return embeddingcohere.NewEmbedding(
 			embeddingcohere.WithAPIKey(requiredEnv("COHERE_API_KEY")),
-			embeddingcohere.WithModel(model.CohereEmbeddingModels[model.CohereEmbedEnV3]),
+			embeddingcohere.WithModel(
+				model.CohereEmbeddingModels[model.CohereEmbedEnV3],
+			),
 			embeddingcohere.WithInputType("search_document"),
 			embeddingcohere.WithEmbeddingTypes([]string{"float"}),
 		), provider
 	case "openai":
 		return embeddingopenai.NewEmbedding(
 			embeddingopenai.WithAPIKey(requiredEnv("OPENAI_API_KEY")),
-			embeddingopenai.WithModel(model.OpenAIEmbeddingModels[model.TextEmbedding3Small]),
+			embeddingopenai.WithModel(
+				model.OpenAIEmbeddingModels[model.TextEmbedding3Small],
+			),
 		), provider
 	case "voyage":
 		return embeddingvoyage.NewEmbedding(
 			embeddingvoyage.WithAPIKey(requiredEnv("VOYAGE_API_KEY")),
-			embeddingvoyage.WithModel(model.VoyageEmbeddingModels[model.Voyage35Lite]),
+			embeddingvoyage.WithModel(
+				model.VoyageEmbeddingModels[model.Voyage35Lite],
+			),
 			embeddingvoyage.WithInputType("document"),
 		), provider
 	default:
-		log.Fatalf("unsupported AI_PROVIDER %q (use openai, voyage, or cohere)", provider)
+		log.Fatalf(
+			"unsupported AI_PROVIDER %q (use openai, voyage, or cohere)",
+			provider,
+		)
 		return nil, ""
 	}
 }

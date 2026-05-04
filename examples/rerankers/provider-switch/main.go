@@ -41,19 +41,26 @@ func newReranker() (rerankers.Reranker, string) {
 	case "cohere":
 		return rerankercohere.NewReranker(
 			rerankercohere.WithAPIKey(requiredEnv("COHERE_API_KEY")),
-			rerankercohere.WithModel(model.CohereRerankerModels[model.CohereRerank35]),
+			rerankercohere.WithModel(
+				model.CohereRerankerModels[model.CohereRerank35],
+			),
 			rerankercohere.WithTopK(3),
 			rerankercohere.WithReturnDocuments(true),
 		), provider
 	case "voyage":
 		return rerankervoyage.NewReranker(
 			rerankervoyage.WithAPIKey(requiredEnv("VOYAGE_API_KEY")),
-			rerankervoyage.WithModel(model.VoyageRerankerModels[model.Rerank25Lite]),
+			rerankervoyage.WithModel(
+				model.VoyageRerankerModels[model.Rerank25Lite],
+			),
 			rerankervoyage.WithTopK(3),
 			rerankervoyage.WithReturnDocuments(true),
 		), provider
 	default:
-		log.Fatalf("unsupported AI_PROVIDER %q (use cohere or voyage)", provider)
+		log.Fatalf(
+			"unsupported AI_PROVIDER %q (use cohere or voyage)",
+			provider,
+		)
 		return nil, ""
 	}
 }

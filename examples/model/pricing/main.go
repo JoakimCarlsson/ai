@@ -12,9 +12,15 @@ func main() {
 	outputTokens := int64(1_200)
 	cachedInputTokens := int64(2_000)
 
-	fmt.Printf("%s chat estimate: $%.6f\n",
+	fmt.Printf(
+		"%s chat estimate: $%.6f\n",
 		chatModel.Name,
-		estimateChatCost(chatModel, inputTokens, outputTokens, cachedInputTokens),
+		estimateChatCost(
+			chatModel,
+			inputTokens,
+			outputTokens,
+			cachedInputTokens,
+		),
 	)
 
 	embeddingModel := model.VoyageEmbeddingModels[model.Voyage35Lite]

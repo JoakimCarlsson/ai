@@ -43,18 +43,25 @@ func newSTT() (stt.SpeechToText, string) {
 	case "deepgram":
 		return sttdeepgram.NewSpeechToText(
 			sttdeepgram.WithAPIKey(requiredEnv("DEEPGRAM_API_KEY")),
-			sttdeepgram.WithModel(model.DeepgramTranscriptionModels[model.DeepgramNova3]),
+			sttdeepgram.WithModel(
+				model.DeepgramTranscriptionModels[model.DeepgramNova3],
+			),
 			sttdeepgram.WithPunctuate(true),
 			sttdeepgram.WithSmartFormat(true),
 		), provider
 	case "openai":
 		return sttopenai.NewSpeechToText(
 			sttopenai.WithAPIKey(requiredEnv("OPENAI_API_KEY")),
-			sttopenai.WithModel(model.OpenAITranscriptionModels[model.GPT4oTranscribe]),
+			sttopenai.WithModel(
+				model.OpenAITranscriptionModels[model.GPT4oTranscribe],
+			),
 			sttopenai.WithLanguage("en"),
 		), provider
 	default:
-		log.Fatalf("unsupported AI_PROVIDER %q (use openai or deepgram)", provider)
+		log.Fatalf(
+			"unsupported AI_PROVIDER %q (use openai or deepgram)",
+			provider,
+		)
 		return nil, ""
 	}
 }

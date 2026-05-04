@@ -18,7 +18,9 @@ func main() {
 
 	client := embeddingvoyage.NewEmbedding(
 		embeddingvoyage.WithAPIKey(apiKey),
-		embeddingvoyage.WithModel(model.VoyageEmbeddingModels[model.Voyage35Lite]),
+		embeddingvoyage.WithModel(
+			model.VoyageEmbeddingModels[model.Voyage35Lite],
+		),
 		embeddingvoyage.WithInputType("document"),
 	)
 

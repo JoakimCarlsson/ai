@@ -28,7 +28,9 @@ func main() {
 
 	client := sttdeepgram.NewSpeechToText(
 		sttdeepgram.WithAPIKey(apiKey),
-		sttdeepgram.WithModel(model.DeepgramTranscriptionModels[model.DeepgramNova3]),
+		sttdeepgram.WithModel(
+			model.DeepgramTranscriptionModels[model.DeepgramNova3],
+		),
 		sttdeepgram.WithPunctuate(true),
 		sttdeepgram.WithSmartFormat(true),
 	)

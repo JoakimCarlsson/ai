@@ -19,7 +19,9 @@ func main() {
 
 	client := ttselevenlabs.NewGeneration(
 		ttselevenlabs.WithAPIKey(apiKey),
-		ttselevenlabs.WithModel(model.ElevenLabsAudioModels[model.ElevenMultilingualV2]),
+		ttselevenlabs.WithModel(
+			model.ElevenLabsAudioModels[model.ElevenMultilingualV2],
+		),
 		ttselevenlabs.WithOutputFormat("mp3_44100_128"),
 	)
 
@@ -38,5 +40,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("saved %s (%s, %d characters)\n", output, resp.ContentType, resp.Usage.Characters)
+	fmt.Printf(
+		"saved %s (%s, %d characters)\n",
+		output,
+		resp.ContentType,
+		resp.Usage.Characters,
+	)
 }

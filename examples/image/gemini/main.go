@@ -19,7 +19,9 @@ func main() {
 
 	client := imagegemini.NewGeneration(
 		imagegemini.WithAPIKey(apiKey),
-		imagegemini.WithModel(model.GeminiImageGenerationModels[model.Imagen4Fast]),
+		imagegemini.WithModel(
+			model.GeminiImageGenerationModels[model.Imagen4Fast],
+		),
 	)
 
 	resp, err := client.GenerateImage(

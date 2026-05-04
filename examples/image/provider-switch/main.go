@@ -46,15 +46,22 @@ func newImageClient() (image.Generation, string) {
 	case "gemini":
 		return imagegemini.NewGeneration(
 			imagegemini.WithAPIKey(requiredEnv("GEMINI_API_KEY")),
-			imagegemini.WithModel(model.GeminiImageGenerationModels[model.Imagen4Fast]),
+			imagegemini.WithModel(
+				model.GeminiImageGenerationModels[model.Imagen4Fast],
+			),
 		), provider
 	case "openai":
 		return imageopenai.NewGeneration(
 			imageopenai.WithAPIKey(requiredEnv("OPENAI_API_KEY")),
-			imageopenai.WithModel(model.OpenAIImageGenerationModels[model.GPTImage1Mini]),
+			imageopenai.WithModel(
+				model.OpenAIImageGenerationModels[model.GPTImage1Mini],
+			),
 		), provider
 	default:
-		log.Fatalf("unsupported AI_PROVIDER %q (use openai or gemini)", provider)
+		log.Fatalf(
+			"unsupported AI_PROVIDER %q (use openai or gemini)",
+			provider,
+		)
 		return nil, ""
 	}
 }

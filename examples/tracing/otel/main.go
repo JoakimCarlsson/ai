@@ -45,7 +45,9 @@ func main() {
 	)
 
 	resp, err := client.SendMessages(ctx, []message.Message{
-		message.NewUserMessage("Say hello from an OpenTelemetry traced request."),
+		message.NewUserMessage(
+			"Say hello from an OpenTelemetry traced request.",
+		),
 	}, nil)
 	if err != nil {
 		log.Fatal(err)

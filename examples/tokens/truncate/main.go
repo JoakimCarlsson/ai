@@ -21,14 +21,18 @@ func main() {
 	firstAnswer := message.NewAssistantMessage()
 	firstAnswer.AppendContent("A module is a versioned unit of Go code.")
 	secondAnswer := message.NewAssistantMessage()
-	secondAnswer.AppendContent("A package is compiled from files in one directory.")
+	secondAnswer.AppendContent(
+		"A package is compiled from files in one directory.",
+	)
 
 	messages := []message.Message{
 		message.NewUserMessage("First question about Go modules."),
 		firstAnswer,
 		message.NewUserMessage("Second question about packages."),
 		secondAnswer,
-		message.NewUserMessage("Final question that should remain after truncation."),
+		message.NewUserMessage(
+			"Final question that should remain after truncation.",
+		),
 	}
 
 	before, err := counter.CountTokens(ctx, tokens.CountOptions{

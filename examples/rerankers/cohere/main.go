@@ -18,7 +18,9 @@ func main() {
 
 	client := rerankercohere.NewReranker(
 		rerankercohere.WithAPIKey(apiKey),
-		rerankercohere.WithModel(model.CohereRerankerModels[model.CohereRerank35]),
+		rerankercohere.WithModel(
+			model.CohereRerankerModels[model.CohereRerank35],
+		),
 		rerankercohere.WithTopK(3),
 		rerankercohere.WithReturnDocuments(true),
 	)

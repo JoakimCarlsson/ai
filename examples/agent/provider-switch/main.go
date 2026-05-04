@@ -18,8 +18,11 @@ import (
 func main() {
 	llmClient, provider := newLLM()
 
-	assistant := agent.New(llmClient,
-		agent.WithSystemPrompt("You explain software architecture in concise terms."),
+	assistant := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You explain software architecture in concise terms.",
+		),
 	)
 	resp, err := assistant.Chat(
 		context.Background(),
@@ -53,7 +56,10 @@ func newLLM() (llm.LLM, string) {
 			llmopenai.WithMaxTokens(256),
 		), provider
 	default:
-		log.Fatalf("unsupported AI_PROVIDER %q (use openai, anthropic, or gemini)", provider)
+		log.Fatalf(
+			"unsupported AI_PROVIDER %q (use openai, anthropic, or gemini)",
+			provider,
+		)
 		return nil, ""
 	}
 }
