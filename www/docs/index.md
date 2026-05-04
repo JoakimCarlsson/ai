@@ -1,7 +1,8 @@
 # Go AI Client Library
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/joakimcarlsson/ai.svg)](https://pkg.go.dev/github.com/joakimcarlsson/ai)
-[![Go Report Card](https://goreportcard.com/badge/github.com/joakimcarlsson/ai)](https://goreportcard.com/report/github.com/joakimcarlsson/ai)
+[![CI](https://github.com/joakimcarlsson/ai/actions/workflows/ci.yml/badge.svg)](https://github.com/joakimcarlsson/ai/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Version](https://img.shields.io/badge/go-1.25%2B-00ADD8?logo=go)](https://go.dev/)
 
 A multi-provider Go library for interacting with AI models through unified
 interfaces. Each capability — LLMs, embeddings, TTS, STT, image generation,
