@@ -80,6 +80,7 @@ func main() {
 
 ## Next steps
 
+- [Modules](modules.md) — full list of every package, its purpose, and the vendor SDK it carries
 - [Installation & Quick Start](getting-started/installation.md) — get up and running
 - [Provider Overview](providers/overview.md) — every supported provider with capability matrix
 - [LLM module](providers/llm.md) — chat, streaming, tools, structured output

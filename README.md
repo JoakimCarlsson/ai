@@ -37,6 +37,8 @@ The library is published as ~50 independent Go modules organised by tier:
 - **Tier 4 agent runtime** — `agent`, `agent/team`, `agent/session`, `agent/memory`
 - **Tier 5 persistence** — `agent/memory/{pgvector,postgres,sqlite}`
 
+See the **[full module list](https://joakimcarlsson.github.io/ai/modules/)** for every package, its purpose, and the vendor SDK it carries.
+
 ## Installation
 
 You install only the modules you use. For an OpenAI chat client:
