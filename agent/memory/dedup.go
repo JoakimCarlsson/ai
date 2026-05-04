@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/llm"
+	"github.com/joakimcarlsson/ai/message"
 )
 
 // DedupEvent represents the type of deduplication action to take.

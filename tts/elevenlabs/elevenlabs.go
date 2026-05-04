@@ -40,19 +40,39 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key used to authenticate with ElevenLabs.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the TTS model.
-func WithModel(m model.AudioModel) Option { return func(o *Options) { o.model = m } }
+func WithModel(
+	m model.AudioModel,
+) Option {
+	return func(o *Options) { o.model = m }
+}
 
 // WithTimeout sets the maximum duration to wait for a single request. Defaults to 10 minutes.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithBaseURL sets a custom base URL for the ElevenLabs API.
-func WithBaseURL(baseURL string) Option { return func(o *Options) { o.baseURL = baseURL } }
+func WithBaseURL(
+	baseURL string,
+) Option {
+	return func(o *Options) { o.baseURL = baseURL }
+}
 
 // WithVoiceID sets the voice ID. Defaults to Rachel.
-func WithVoiceID(voiceID string) Option { return func(o *Options) { o.voiceID = voiceID } }
+func WithVoiceID(
+	voiceID string,
+) Option {
+	return func(o *Options) { o.voiceID = voiceID }
+}
 
 // WithOutputFormat sets the audio output format (e.g. "mp3_44100_128", "pcm_16000").
 func WithOutputFormat(format string) Option {
@@ -110,6 +130,9 @@ func NewGeneration(opts ...Option) tts.Generation {
 		modelID:      modelID,
 		voiceID:      voiceID,
 		outputFormat: outputFormat,
+	}, tts.TracingAttrs{
+		Voice:        voiceID,
+		OutputFormat: outputFormat,
 	})
 }
 
@@ -182,7 +205,9 @@ type forcedAlignmentResponse struct {
 	Loss       float64             `json:"loss"`
 }
 
-func (c *Client) buildVoiceSettings(opts *tts.GenerationOptions) *voiceSettings {
+func (c *Client) buildVoiceSettings(
+	opts *tts.GenerationOptions,
+) *voiceSettings {
 	if opts.Stability == nil && opts.SimilarityBoost == nil &&
 		opts.Style == nil && opts.SpeakerBoost == nil {
 		return nil
@@ -245,10 +270,19 @@ func (c *Client) generateStandard(
 	url := fmt.Sprintf("%s/text-to-speech/%s?output_format=%s",
 		c.baseURL, c.voiceID, outputFormat)
 	if opts.OptimizeStreamingLatency != nil {
-		url = fmt.Sprintf("%s&optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
+		url = fmt.Sprintf(
+			"%s&optimize_streaming_latency=%d",
+			url,
+			*opts.OptimizeStreamingLatency,
+		)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		url,
+		bytes.NewBuffer(jsonData),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -314,10 +348,19 @@ func (c *Client) generateWithTimestamps(
 	url := fmt.Sprintf("%s/text-to-speech/%s/with-timestamps?output_format=%s",
 		c.baseURL, c.voiceID, outputFormat)
 	if opts.OptimizeStreamingLatency != nil {
-		url = fmt.Sprintf("%s&optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
+		url = fmt.Sprintf(
+			"%s&optimize_streaming_latency=%d",
+			url,
+			*opts.OptimizeStreamingLatency,
+		)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		url,
+		bytes.NewBuffer(jsonData),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -340,7 +383,9 @@ func (c *Client) generateWithTimestamps(
 		return nil, fmt.Errorf("failed to decode timestamps response: %w", err)
 	}
 
-	audioData, err := base64.StdEncoding.DecodeString(timestampsResp.AudioBase64)
+	audioData, err := base64.StdEncoding.DecodeString(
+		timestampsResp.AudioBase64,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode base64 audio: %w", err)
 	}
@@ -348,12 +393,14 @@ func (c *Client) generateWithTimestamps(
 	contentType := contentTypeForFormat(outputFormat)
 
 	return &tts.Response{
-		AudioData:           audioData,
-		ContentType:         contentType,
-		Usage:               tts.Usage{Characters: int64(len(text))},
-		Model:               c.modelID,
-		Alignment:           toAlignmentData(timestampsResp.Alignment),
-		NormalizedAlignment: toAlignmentData(timestampsResp.NormalizedAlignment),
+		AudioData:   audioData,
+		ContentType: contentType,
+		Usage:       tts.Usage{Characters: int64(len(text))},
+		Model:       c.modelID,
+		Alignment:   toAlignmentData(timestampsResp.Alignment),
+		NormalizedAlignment: toAlignmentData(
+			timestampsResp.NormalizedAlignment,
+		),
 	}, nil
 }
 
@@ -402,10 +449,19 @@ func (c *Client) streamStandard(
 	url := fmt.Sprintf("%s/text-to-speech/%s/stream?output_format=%s",
 		c.baseURL, c.voiceID, outputFormat)
 	if opts.OptimizeStreamingLatency != nil {
-		url = fmt.Sprintf("%s&optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
+		url = fmt.Sprintf(
+			"%s&optimize_streaming_latency=%d",
+			url,
+			*opts.OptimizeStreamingLatency,
+		)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		url,
+		bytes.NewBuffer(jsonData),
+	)
 	if err != nil {
 		ch := make(chan tts.Chunk, 1)
 		ch <- tts.Chunk{Error: fmt.Errorf("failed to create request: %w", err)}
@@ -493,13 +549,26 @@ func (c *Client) streamWithTimestamps(
 		return ch, nil
 	}
 
-	url := fmt.Sprintf("%s/text-to-speech/%s/stream/with-timestamps?output_format=%s",
-		c.baseURL, c.voiceID, outputFormat)
+	url := fmt.Sprintf(
+		"%s/text-to-speech/%s/stream/with-timestamps?output_format=%s",
+		c.baseURL,
+		c.voiceID,
+		outputFormat,
+	)
 	if opts.OptimizeStreamingLatency != nil {
-		url = fmt.Sprintf("%s&optimize_streaming_latency=%d", url, *opts.OptimizeStreamingLatency)
+		url = fmt.Sprintf(
+			"%s&optimize_streaming_latency=%d",
+			url,
+			*opts.OptimizeStreamingLatency,
+		)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		url,
+		bytes.NewBuffer(jsonData),
+	)
 	if err != nil {
 		ch := make(chan tts.Chunk, 1)
 		ch <- tts.Chunk{Error: fmt.Errorf("failed to create request: %w", err)}
@@ -653,7 +722,10 @@ func (c *Client) GenerateForcedAlignment(
 
 	var alignmentResp forcedAlignmentResponse
 	if err := json.NewDecoder(resp.Body).Decode(&alignmentResp); err != nil {
-		return nil, fmt.Errorf("failed to decode forced alignment response: %w", err)
+		return nil, fmt.Errorf(
+			"failed to decode forced alignment response: %w",
+			err,
+		)
 	}
 
 	characters := make([]tts.CharAlignment, len(alignmentResp.Characters))
@@ -676,12 +748,19 @@ func (c *Client) GenerateForcedAlignment(
 func (c *Client) parseError(resp *http.Response) error {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("audio generation failed with status %d", resp.StatusCode)
+		return fmt.Errorf(
+			"audio generation failed with status %d",
+			resp.StatusCode,
+		)
 	}
 
 	var errResp errorResponse
 	if err := json.Unmarshal(body, &errResp); err != nil {
-		return fmt.Errorf("audio generation failed with status %d: %s", resp.StatusCode, string(body))
+		return fmt.Errorf(
+			"audio generation failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	if errResp.Detail.Message != "" {

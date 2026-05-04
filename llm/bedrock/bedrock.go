@@ -39,16 +39,28 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key (passed through to the underlying vendor client where applicable).
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the LLM model.
 func WithModel(m model.Model) Option { return func(o *Options) { o.model = m } }
 
 // WithMaxTokens sets the max generation tokens.
-func WithMaxTokens(maxTokens int64) Option { return func(o *Options) { o.maxTokens = maxTokens } }
+func WithMaxTokens(
+	maxTokens int64,
+) Option {
+	return func(o *Options) { o.maxTokens = maxTokens }
+}
 
 // WithTemperature controls randomness.
-func WithTemperature(t float64) Option { return func(o *Options) { o.temperature = &t } }
+func WithTemperature(
+	t float64,
+) Option {
+	return func(o *Options) { o.temperature = &t }
+}
 
 // WithTopP sets nucleus sampling probability mass.
 func WithTopP(p float64) Option { return func(o *Options) { o.topP = &p } }
@@ -57,10 +69,18 @@ func WithTopP(p float64) Option { return func(o *Options) { o.topP = &p } }
 func WithTopK(k int64) Option { return func(o *Options) { o.topK = &k } }
 
 // WithStopSequences sets text sequences that halt generation.
-func WithStopSequences(seqs ...string) Option { return func(o *Options) { o.stopSequences = seqs } }
+func WithStopSequences(
+	seqs ...string,
+) Option {
+	return func(o *Options) { o.stopSequences = seqs }
+}
 
 // WithTimeout sets the maximum duration to wait for API responses.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // Client implements [llm.LLM] against AWS Bedrock by delegating to a child
 // vendor client (Anthropic for Claude on Bedrock).
@@ -96,7 +116,11 @@ func NewLLM(opts ...Option) llm.LLM {
 	}
 
 	regionPrefix := region[:2]
-	options.model.APIModel = fmt.Sprintf("%s.%s", regionPrefix, options.model.APIModel)
+	options.model.APIModel = fmt.Sprintf(
+		"%s.%s",
+		regionPrefix,
+		options.model.APIModel,
+	)
 
 	c := &Client{options: options}
 	if strings.Contains(options.model.APIModel, "anthropic") {
@@ -120,7 +144,10 @@ func newAnthropicChild(options Options) llm.LLM {
 		anthOpts = append(anthOpts, llmanthropic.WithAPIKey(options.apiKey))
 	}
 	if options.temperature != nil {
-		anthOpts = append(anthOpts, llmanthropic.WithTemperature(*options.temperature))
+		anthOpts = append(
+			anthOpts,
+			llmanthropic.WithTemperature(*options.temperature),
+		)
 	}
 	if options.topP != nil {
 		anthOpts = append(anthOpts, llmanthropic.WithTopP(*options.topP))
@@ -129,7 +156,10 @@ func newAnthropicChild(options Options) llm.LLM {
 		anthOpts = append(anthOpts, llmanthropic.WithTopK(*options.topK))
 	}
 	if len(options.stopSequences) > 0 {
-		anthOpts = append(anthOpts, llmanthropic.WithStopSequences(options.stopSequences...))
+		anthOpts = append(
+			anthOpts,
+			llmanthropic.WithStopSequences(options.stopSequences...),
+		)
 	}
 	if options.timeout != nil {
 		anthOpts = append(anthOpts, llmanthropic.WithTimeout(*options.timeout))
@@ -186,9 +216,16 @@ func (c *Client) SendMessagesWithStructuredOutput(
 	outputSchema *schema.StructuredOutputInfo,
 ) (*llm.Response, error) {
 	if c.child == nil {
-		return nil, errors.New("structured output not supported by this Bedrock model")
+		return nil, errors.New(
+			"structured output not supported by this Bedrock model",
+		)
 	}
-	return c.child.SendMessagesWithStructuredOutput(ctx, messages, tools, outputSchema)
+	return c.child.SendMessagesWithStructuredOutput(
+		ctx,
+		messages,
+		tools,
+		outputSchema,
+	)
 }
 
 // StreamResponseWithStructuredOutput delegates to the child vendor client.
@@ -207,5 +244,10 @@ func (c *Client) StreamResponseWithStructuredOutput(
 		close(eventChan)
 		return eventChan
 	}
-	return c.child.StreamResponseWithStructuredOutput(ctx, messages, tools, outputSchema)
+	return c.child.StreamResponseWithStructuredOutput(
+		ctx,
+		messages,
+		tools,
+		outputSchema,
+	)
 }

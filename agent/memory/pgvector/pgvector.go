@@ -5,7 +5,7 @@
 //
 // Example usage:
 //
-//	import "github.com/joakimcarlsson/ai/integrations/pgvector"
+//	import "github.com/joakimcarlsson/ai/agent/memory/pgvector"
 //
 //	memoryStore, err := pgvector.MemoryStore(ctx, "postgres://user:pass@localhost/db", embedder)
 //	if err != nil {
@@ -18,7 +18,7 @@ package pgvector
 import (
 	"database/sql"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // Register the postgres database/sql driver.
 )
 
 // openDB opens a connection to the PostgreSQL database.

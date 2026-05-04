@@ -54,22 +54,46 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key used to authenticate with AssemblyAI.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the transcription model.
-func WithModel(m model.TranscriptionModel) Option { return func(o *Options) { o.model = m } }
+func WithModel(
+	m model.TranscriptionModel,
+) Option {
+	return func(o *Options) { o.model = m }
+}
 
 // WithTimeout sets the maximum duration for HTTP requests (upload, create, poll).
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithPollInterval sets the interval between polling attempts.
-func WithPollInterval(d time.Duration) Option { return func(o *Options) { o.pollInterval = d } }
+func WithPollInterval(
+	d time.Duration,
+) Option {
+	return func(o *Options) { o.pollInterval = d }
+}
 
 // WithMaxPollDuration sets the maximum duration to wait for transcription completion.
-func WithMaxPollDuration(d time.Duration) Option { return func(o *Options) { o.maxPollDuration = d } }
+func WithMaxPollDuration(
+	d time.Duration,
+) Option {
+	return func(o *Options) { o.maxPollDuration = d }
+}
 
 // WithSpeakerLabels enables speaker diarization.
-func WithSpeakerLabels(enabled bool) Option { return func(o *Options) { o.speakerLabels = enabled } }
+func WithSpeakerLabels(
+	enabled bool,
+) Option {
+	return func(o *Options) { o.speakerLabels = enabled }
+}
 
 // WithStreamEndOfTurnSilenceMs sets the silence threshold (ms) before AssemblyAI emits an
 // end-of-turn Turn event on a streaming session.
@@ -78,7 +102,11 @@ func WithStreamEndOfTurnSilenceMs(ms int) Option {
 }
 
 // WithStreamSpeechModel overrides the streaming speech model.
-func WithStreamSpeechModel(m string) Option { return func(o *Options) { o.streamSpeechModel = m } }
+func WithStreamSpeechModel(
+	m string,
+) Option {
+	return func(o *Options) { o.streamSpeechModel = m }
+}
 
 // WithStreamFormatTurns toggles automatic punctuation/casing on streaming turn transcripts.
 // Defaults to true.
@@ -147,7 +175,7 @@ func NewSpeechToText(opts ...Option) stt.SpeechToText {
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    defaultBaseURL,
-	})
+	}, stt.TracingAttrs{})
 }
 
 // Model returns the configured transcription model.
@@ -234,9 +262,9 @@ func (c *Client) Transcribe(
 
 // Translate is not supported by AssemblyAI.
 func (c *Client) Translate(
-	ctx context.Context,
-	audioFile []byte,
-	options ...stt.Option,
+	_ context.Context,
+	_ []byte,
+	_ ...stt.Option,
 ) (*stt.Response, error) {
 	return nil, fmt.Errorf("assemblyai does not support translation")
 }
@@ -263,7 +291,11 @@ func (c *Client) upload(ctx context.Context, audioFile []byte) (string, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("upload API failed with status %d: %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf(
+			"upload API failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var uploadResp uploadResponse
@@ -273,13 +305,21 @@ func (c *Client) upload(ctx context.Context, audioFile []byte) (string, error) {
 	return uploadResp.UploadURL, nil
 }
 
-func (c *Client) createTranscript(ctx context.Context, transcriptReq transcriptRequest) (string, error) {
+func (c *Client) createTranscript(
+	ctx context.Context,
+	transcriptReq transcriptRequest,
+) (string, error) {
 	jsonBody, err := json.Marshal(transcriptReq)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal transcript request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/transcript", bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		c.baseURL+"/transcript",
+		bytes.NewBuffer(jsonBody),
+	)
 	if err != nil {
 		return "", fmt.Errorf("failed to create transcript request: %w", err)
 	}
@@ -298,17 +338,27 @@ func (c *Client) createTranscript(ctx context.Context, transcriptReq transcriptR
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("transcript API failed with status %d: %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf(
+			"transcript API failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var tr transcriptResponse
 	if err := json.Unmarshal(body, &tr); err != nil {
-		return "", fmt.Errorf("failed to unmarshal transcript response: %w", err)
+		return "", fmt.Errorf(
+			"failed to unmarshal transcript response: %w",
+			err,
+		)
 	}
 	return tr.ID, nil
 }
 
-func (c *Client) pollTranscript(ctx context.Context, transcriptID string) (*transcriptResponse, error) {
+func (c *Client) pollTranscript(
+	ctx context.Context,
+	transcriptID string,
+) (*transcriptResponse, error) {
 	deadline := time.Now().Add(c.options.maxPollDuration)
 	pollURL := fmt.Sprintf("%s/transcript/%s", c.baseURL, transcriptID)
 
@@ -349,7 +399,10 @@ func (c *Client) pollTranscript(ctx context.Context, transcriptID string) (*tran
 		}
 	}
 
-	return nil, fmt.Errorf("transcription timed out after %s", c.options.maxPollDuration)
+	return nil, fmt.Errorf(
+		"transcription timed out after %s",
+		c.options.maxPollDuration,
+	)
 }
 
 func (c *Client) mapResponse(result *transcriptResponse) *stt.Response {
@@ -413,14 +466,24 @@ func (c *Client) StreamTranscribe(
 	q.Set("speech_model", speechModel)
 	q.Set("min_end_of_turn_silence_when_confident", strconv.Itoa(endOfTurn))
 	if c.options.streamEndOfTurnConfidenceThreshold != nil {
-		q.Set("end_of_turn_confidence_threshold",
-			strconv.FormatFloat(*c.options.streamEndOfTurnConfidenceThreshold, 'f', -1, 64))
+		q.Set(
+			"end_of_turn_confidence_threshold",
+			strconv.FormatFloat(
+				*c.options.streamEndOfTurnConfidenceThreshold,
+				'f',
+				-1,
+				64,
+			),
+		)
 	}
 	if c.options.streamMaxTurnSilence != nil {
 		q.Set("max_turn_silence", strconv.Itoa(*c.options.streamMaxTurnSilence))
 	}
 	if c.options.streamPunctuationFilter != nil {
-		q.Set("punctuation_filter", strconv.FormatBool(*c.options.streamPunctuationFilter))
+		q.Set(
+			"punctuation_filter",
+			strconv.FormatBool(*c.options.streamPunctuationFilter),
+		)
 	}
 	if c.options.streamWordFinalizationMaxWaitMs != nil {
 		q.Set("word_finalization_max_wait_time",
@@ -473,7 +536,11 @@ func (c *Client) StreamTranscribe(
 	return out, nil
 }
 
-func runReader(conn *websocket.Conn, out chan<- stt.StreamResult, done chan<- struct{}) {
+func runReader(
+	conn *websocket.Conn,
+	out chan<- stt.StreamResult,
+	done chan<- struct{},
+) {
 	defer close(done)
 	for {
 		_, msg, err := conn.ReadMessage()

@@ -146,10 +146,16 @@ func (t *tracingFIM) Model() model.Model {
 func (t *tracingFIM) spanAttrs() []tracing.Attr {
 	var attrs []tracing.Attr
 	if t.attrs.MaxTokens > 0 {
-		attrs = append(attrs, tracing.AttrRequestMaxTokens.Int64(t.attrs.MaxTokens))
+		attrs = append(
+			attrs,
+			tracing.AttrRequestMaxTokens.Int64(t.attrs.MaxTokens),
+		)
 	}
 	if t.attrs.Temperature != nil {
-		attrs = append(attrs, tracing.AttrRequestTemperature.Float64(*t.attrs.Temperature))
+		attrs = append(
+			attrs,
+			tracing.AttrRequestTemperature.Float64(*t.attrs.Temperature),
+		)
 	}
 	if t.attrs.TopP != nil {
 		attrs = append(attrs, tracing.AttrRequestTopP.Float64(*t.attrs.TopP))
@@ -157,7 +163,10 @@ func (t *tracingFIM) spanAttrs() []tracing.Attr {
 	return attrs
 }
 
-func (t *tracingFIM) Complete(ctx context.Context, req Request) (*Response, error) {
+func (t *tracingFIM) Complete(
+	ctx context.Context,
+	req Request,
+) (*Response, error) {
 	m := t.inner.Model()
 	start := time.Now()
 	ctx, span := tracing.StartFIMSpan(
@@ -202,7 +211,10 @@ func (t *tracingFIM) Complete(ctx context.Context, req Request) (*Response, erro
 	return resp, nil
 }
 
-func (t *tracingFIM) CompleteStream(ctx context.Context, req Request) <-chan Event {
+func (t *tracingFIM) CompleteStream(
+	ctx context.Context,
+	req Request,
+) <-chan Event {
 	m := t.inner.Model()
 	start := time.Now()
 	ctx, span := tracing.StartFIMSpan(
@@ -221,9 +233,15 @@ func (t *tracingFIM) CompleteStream(ctx context.Context, req Request) <-chan Eve
 			if evt.Type == EventComplete && evt.Response != nil {
 				tracing.SetResponseAttrs(
 					span,
-					tracing.AttrUsageInputTokens.Int64(evt.Response.Usage.InputTokens),
-					tracing.AttrUsageOutputTokens.Int64(evt.Response.Usage.OutputTokens),
-					tracing.AttrResponseFinishReason.String(string(evt.Response.FinishReason)),
+					tracing.AttrUsageInputTokens.Int64(
+						evt.Response.Usage.InputTokens,
+					),
+					tracing.AttrUsageOutputTokens.Int64(
+						evt.Response.Usage.OutputTokens,
+					),
+					tracing.AttrResponseFinishReason.String(
+						string(evt.Response.FinishReason),
+					),
 				)
 				tracing.RecordMetrics(
 					ctx,

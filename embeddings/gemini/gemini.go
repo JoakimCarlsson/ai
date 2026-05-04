@@ -23,19 +23,39 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key used to authenticate with Gemini.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the embedding model.
-func WithModel(m model.EmbeddingModel) Option { return func(o *Options) { o.model = m } }
+func WithModel(
+	m model.EmbeddingModel,
+) Option {
+	return func(o *Options) { o.model = m }
+}
 
 // WithBatchSize sets the number of texts to process in each batch request.
-func WithBatchSize(batchSize int) Option { return func(o *Options) { o.batchSize = batchSize } }
+func WithBatchSize(
+	batchSize int,
+) Option {
+	return func(o *Options) { o.batchSize = batchSize }
+}
 
 // WithDimensions specifies the output dimensionality for embedding vectors.
-func WithDimensions(dimensions int) Option { return func(o *Options) { o.dimensions = &dimensions } }
+func WithDimensions(
+	dimensions int,
+) Option {
+	return func(o *Options) { o.dimensions = &dimensions }
+}
 
 // WithTaskType sets the task type for embeddings (e.g., "RETRIEVAL_DOCUMENT", "RETRIEVAL_QUERY").
-func WithTaskType(taskType string) Option { return func(o *Options) { o.taskType = taskType } }
+func WithTaskType(
+	taskType string,
+) Option {
+	return func(o *Options) { o.taskType = taskType }
+}
 
 // Client implements [embeddings.Embedding] against the Google Gemini API.
 type Client struct {
@@ -61,6 +81,8 @@ func NewEmbedding(opts ...Option) embeddings.Embedding {
 	return embeddings.WithTracing(&Client{
 		options: options,
 		client:  client,
+	}, embeddings.TracingAttrs{
+		Dimensions: options.dimensions,
 	})
 }
 
@@ -152,18 +174,18 @@ func (c *Client) embedBatch(
 
 // GenerateMultimodalEmbeddings is not supported by Gemini.
 func (c *Client) GenerateMultimodalEmbeddings(
-	ctx context.Context,
-	inputs []embeddings.MultimodalInput,
-	inputType ...string,
+	_ context.Context,
+	_ []embeddings.MultimodalInput,
+	_ ...string,
 ) (*embeddings.EmbeddingResponse, error) {
 	return nil, fmt.Errorf("gemini does not support multimodal embeddings")
 }
 
 // GenerateContextualizedEmbeddings is not supported by Gemini.
 func (c *Client) GenerateContextualizedEmbeddings(
-	ctx context.Context,
-	documentChunks [][]string,
-	inputType ...string,
+	_ context.Context,
+	_ [][]string,
+	_ ...string,
 ) (*embeddings.ContextualizedEmbeddingResponse, error) {
 	return nil, fmt.Errorf("gemini does not support contextualized embeddings")
 }

@@ -1,11 +1,13 @@
 # SQLite
 
-SQLite-backed session store for lightweight persistent conversation history. Bring your own `*sql.DB` connection with any SQLite driver.
+SQLite-backed session store for lightweight persistent conversation history.
+Bring your own `*sql.DB` connection with any SQLite driver — the module
+itself has zero external SDK deps.
 
 ## Installation
 
 ```bash
-go get github.com/joakimcarlsson/ai/integrations/sqlite
+go get github.com/joakimcarlsson/ai/agent/memory/sqlite
 ```
 
 ## Setup
@@ -15,7 +17,7 @@ import (
     "database/sql"
 
     _ "modernc.org/sqlite" // or any SQLite driver
-    "github.com/joakimcarlsson/ai/integrations/sqlite"
+    sqlitemem "github.com/joakimcarlsson/ai/agent/memory/sqlite"
 )
 
 db, err := sql.Open("sqlite", "./chat.db")
@@ -23,7 +25,7 @@ if err != nil {
     log.Fatal(err)
 }
 
-sessionStore, err := sqlite.SessionStore(ctx, db)
+sessionStore, err := sqlitemem.SessionStore(ctx, db)
 if err != nil {
     log.Fatal(err)
 }
@@ -58,17 +60,17 @@ CREATE INDEX idx_messages_session ON messages(session_id, id);
 ## Options
 
 | Option | Description |
-|--------|-------------|
-| `sqlite.WithTablePrefix(prefix)` | Prefix for all table names. Useful for multi-tenant or multiple stores in one database |
+|---|---|
+| `sqlitemem.WithTablePrefix(prefix)` | Prefix for all table names. Useful for multi-tenant or multiple stores in one database |
 
 ```go
-store, err := sqlite.SessionStore(ctx, db,
-    sqlite.WithTablePrefix("chat_"),
+store, err := sqlitemem.SessionStore(ctx, db,
+    sqlitemem.WithTablePrefix("chat_"),
 )
 // Creates "chat_sessions" and "chat_messages" instead of "sessions" and "messages"
 ```
 
-## Full Example
+## Full example
 
 ```go
 package main
@@ -83,9 +85,9 @@ import (
     _ "modernc.org/sqlite"
 
     "github.com/joakimcarlsson/ai/agent"
-    "github.com/joakimcarlsson/ai/integrations/sqlite"
+    sqlitemem "github.com/joakimcarlsson/ai/agent/memory/sqlite"
+    llmopenai "github.com/joakimcarlsson/ai/llm/openai"
     "github.com/joakimcarlsson/ai/model"
-    llm "github.com/joakimcarlsson/ai/providers"
 )
 
 func main() {
@@ -97,16 +99,12 @@ func main() {
     }
     defer db.Close()
 
-    llmClient, err := llm.NewLLM(
-        model.ProviderOpenAI,
-        llm.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-        llm.WithModel(model.OpenAIModels[model.GPT4o]),
+    llmClient := llmopenai.NewLLM(
+        llmopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+        llmopenai.WithModel(model.OpenAIModels[model.GPT4o]),
     )
-    if err != nil {
-        log.Fatal(err)
-    }
 
-    sessionStore, err := sqlite.SessionStore(ctx, db)
+    sessionStore, err := sqlitemem.SessionStore(ctx, db)
     if err != nil {
         log.Fatal(err)
     }

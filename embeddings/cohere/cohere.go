@@ -31,19 +31,39 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key used to authenticate with Cohere.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the embedding model.
-func WithModel(m model.EmbeddingModel) Option { return func(o *Options) { o.model = m } }
+func WithModel(
+	m model.EmbeddingModel,
+) Option {
+	return func(o *Options) { o.model = m }
+}
 
 // WithTimeout sets the maximum duration to wait for a single request.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithBatchSize sets the number of texts to process in each batch request.
-func WithBatchSize(batchSize int) Option { return func(o *Options) { o.batchSize = batchSize } }
+func WithBatchSize(
+	batchSize int,
+) Option {
+	return func(o *Options) { o.batchSize = batchSize }
+}
 
 // WithInputType sets the input type for embeddings (e.g., "search_document", "search_query").
-func WithInputType(inputType string) Option { return func(o *Options) { o.inputType = inputType } }
+func WithInputType(
+	inputType string,
+) Option {
+	return func(o *Options) { o.inputType = inputType }
+}
 
 // WithTruncation sets the truncation strategy (e.g., "NONE", "START", "END").
 func WithTruncation(truncation string) Option {
@@ -78,7 +98,7 @@ func NewEmbedding(opts ...Option) embeddings.Embedding {
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    defaultBaseURL,
-	})
+	}, embeddings.TracingAttrs{})
 }
 
 // Model returns the configured embedding model.
@@ -194,7 +214,11 @@ func (c *Client) embedBatch(
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("embed API request failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"embed API request failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var cohereResp embedResponse
@@ -204,25 +228,27 @@ func (c *Client) embedBatch(
 
 	return &embeddings.EmbeddingResponse{
 		Embeddings: cohereResp.Embeddings.Float,
-		Usage:      embeddings.EmbeddingUsage{TotalTokens: cohereResp.Meta.BilledUnits.InputTokens},
-		Model:      c.options.model.APIModel,
+		Usage: embeddings.EmbeddingUsage{
+			TotalTokens: cohereResp.Meta.BilledUnits.InputTokens,
+		},
+		Model: c.options.model.APIModel,
 	}, nil
 }
 
 // GenerateMultimodalEmbeddings is not supported by Cohere.
 func (c *Client) GenerateMultimodalEmbeddings(
-	ctx context.Context,
-	inputs []embeddings.MultimodalInput,
-	inputType ...string,
+	_ context.Context,
+	_ []embeddings.MultimodalInput,
+	_ ...string,
 ) (*embeddings.EmbeddingResponse, error) {
 	return nil, fmt.Errorf("cohere does not support multimodal embeddings")
 }
 
 // GenerateContextualizedEmbeddings is not supported by Cohere.
 func (c *Client) GenerateContextualizedEmbeddings(
-	ctx context.Context,
-	documentChunks [][]string,
-	inputType ...string,
+	_ context.Context,
+	_ [][]string,
+	_ ...string,
 ) (*embeddings.ContextualizedEmbeddingResponse, error) {
 	return nil, fmt.Errorf("cohere does not support contextualized embeddings")
 }

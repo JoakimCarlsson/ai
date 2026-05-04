@@ -108,19 +108,37 @@ type Embedding interface {
 	Model() model.EmbeddingModel
 }
 
+// TracingAttrs are construction-time attributes vendor packages forward to the
+// [WithTracing] wrapper so they appear on every span produced for the wrapped
+// client.
+type TracingAttrs struct {
+	Dimensions *int
+}
+
 // WithTracing wraps an Embedding client so every call records OpenTelemetry spans and
-// metrics. Vendor sub-packages return their concrete client wrapped in this so consumers
-// always get tracing without thinking about it.
-func WithTracing(inner Embedding) Embedding {
-	return &tracingEmbedding{inner: inner}
+// metrics. The attrs are recorded as construction-time span attributes.
+func WithTracing(inner Embedding, attrs TracingAttrs) Embedding {
+	return &tracingEmbedding{inner: inner, attrs: attrs}
 }
 
 type tracingEmbedding struct {
 	inner Embedding
+	attrs TracingAttrs
 }
 
 func (t *tracingEmbedding) Model() model.EmbeddingModel {
 	return t.inner.Model()
+}
+
+func (t *tracingEmbedding) spanAttrs() []tracing.Attr {
+	var attrs []tracing.Attr
+	if t.attrs.Dimensions != nil {
+		attrs = append(
+			attrs,
+			tracing.AttrRequestDimensions.Int(*t.attrs.Dimensions),
+		)
+	}
+	return attrs
 }
 
 func (t *tracingEmbedding) GenerateEmbeddings(
@@ -139,7 +157,7 @@ func (t *tracingEmbedding) GenerateEmbeddings(
 
 	start := time.Now()
 	ctx, span := tracing.StartEmbeddingSpan(
-		ctx, m.APIModel, string(m.Provider),
+		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
 	)
 	defer span.End()
 	span.SetAttributes(tracing.AttrInputCount.Int(len(texts)))
@@ -180,7 +198,7 @@ func (t *tracingEmbedding) GenerateMultimodalEmbeddings(
 
 	start := time.Now()
 	ctx, span := tracing.StartEmbeddingSpan(
-		ctx, m.APIModel, string(m.Provider),
+		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
 	)
 	defer span.End()
 	span.SetAttributes(tracing.AttrInputCount.Int(len(inputs)))
@@ -221,12 +239,15 @@ func (t *tracingEmbedding) GenerateContextualizedEmbeddings(
 
 	start := time.Now()
 	ctx, span := tracing.StartEmbeddingSpan(
-		ctx, m.APIModel, string(m.Provider),
+		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
 	)
 	defer span.End()
 	span.SetAttributes(tracing.AttrDocumentCount.Int(len(documentChunks)))
 
-	resp, err := t.inner.GenerateContextualizedEmbeddings(ctx, documentChunks, inputType...)
+	resp, err := t.inner.GenerateContextualizedEmbeddings(
+		ctx,
+		documentChunks,
+		inputType...)
 	if err != nil {
 		tracing.SetError(span, err)
 		tracing.RecordMetrics(

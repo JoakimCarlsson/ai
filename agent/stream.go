@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/agent/team"
-	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/llm"
+	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/tracing"
 	"github.com/joakimcarlsson/ai/types"
 )
@@ -512,7 +512,8 @@ func (a *Agent) runLoopStream(
 				if len(toolCalls) > 0 && !activeAgent.autoExecute {
 					assistantMsg.AppendToolCalls(toolCalls)
 				}
-				if fullContent != "" || len(toolCalls) > 0 && !activeAgent.autoExecute {
+				if fullContent != "" ||
+					len(toolCalls) > 0 && !activeAgent.autoExecute {
 					_ = activeAgent.session.AddMessages(
 						ctx,
 						[]message.Message{assistantMsg},

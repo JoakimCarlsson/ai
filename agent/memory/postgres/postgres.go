@@ -5,7 +5,7 @@
 //
 // Example usage:
 //
-//	import "github.com/joakimcarlsson/ai/integrations/postgres"
+//	import "github.com/joakimcarlsson/ai/agent/memory/postgres"
 //
 //	sessionStore, err := postgres.SessionStore(ctx, "postgres://user:pass@localhost/db")
 //	if err != nil {
@@ -18,7 +18,7 @@ package postgres
 import (
 	"database/sql"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // Register the postgres database/sql driver.
 )
 
 // openDB opens a connection to the PostgreSQL database.

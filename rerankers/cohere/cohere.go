@@ -95,6 +95,10 @@ func NewReranker(opts ...Option) rerankers.Reranker {
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    defaultBaseURL,
+	}, rerankers.TracingAttrs{
+		TopK:            options.topK,
+		MaxChunksPerDoc: options.maxChunksPerDoc,
+		ReturnDocuments: &options.returnDocs,
 	})
 }
 
@@ -197,7 +201,9 @@ func (c *Client) Rerank(
 
 	return &rerankers.RerankerResponse{
 		Results: results,
-		Usage:   rerankers.RerankerUsage{TotalTokens: cohereResp.Meta.BilledUnits.SearchUnits},
-		Model:   c.options.model.APIModel,
+		Usage: rerankers.RerankerUsage{
+			TotalTokens: cohereResp.Meta.BilledUnits.SearchUnits,
+		},
+		Model: c.options.model.APIModel,
 	}, nil
 }

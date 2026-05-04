@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/joakimcarlsson/ai/message"
 	llm "github.com/joakimcarlsson/ai/llm"
+	"github.com/joakimcarlsson/ai/message"
 )
 
 const factExtractionPrompt = `You are a Personal Information Organizer, specialized in accurately storing facts, user memories, and preferences. Your primary role is to extract relevant pieces of information from conversations and organize them into distinct, manageable facts.

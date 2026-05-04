@@ -25,7 +25,11 @@ type Options struct {
 type Option func(*Options)
 
 // WithLLM sets an existing LLM client. Required for chat requests.
-func WithLLM(client llm.LLM) Option { return func(o *Options) { o.llmClient = client } }
+func WithLLM(
+	client llm.LLM,
+) Option {
+	return func(o *Options) { o.llmClient = client }
+}
 
 // WithEmbedding sets an existing embedding client. Required for embedding requests.
 func WithEmbedding(client embeddings.Embedding) Option {
@@ -33,7 +37,11 @@ func WithEmbedding(client embeddings.Embedding) Option {
 }
 
 // WithMaxConcurrency sets the maximum number of concurrent requests (0 = unbounded).
-func WithMaxConcurrency(n int) Option { return func(o *Options) { o.maxConcurrency = n } }
+func WithMaxConcurrency(
+	n int,
+) Option {
+	return func(o *Options) { o.maxConcurrency = n }
+}
 
 // WithProgressCallback sets a callback invoked with progress updates.
 func WithProgressCallback(fn batch.ProgressCallback) Option {

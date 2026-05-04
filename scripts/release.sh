@@ -1,22 +1,36 @@
 #!/usr/bin/env bash
+# Release tooling for the multi-module layout.
+#
+# After the modular refactor (Phase 1–8), the repo publishes ~50 independent Go
+# modules. Each is tagged separately with the prefix convention Go's monorepo
+# tooling expects: <relative-path>/vX.Y.Z. For example:
+#
+#   v1.0.0                       — n/a; root is no longer a module
+#   message/v1.0.0               — Tier 0 leaf
+#   llm/v1.0.0                   — Tier 1 modality interface
+#   llm/openai/v1.0.0            — Tier 2 vendor sub-module
+#   agent/memory/pgvector/v1.0.0 — Tier 5 integration
+#
+# Modules are discovered dynamically from go.mod files at runtime — no
+# hardcoded list to keep stale.
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 REPO_URL="$(git remote get-url origin | sed 's/\.git$//' | sed 's|git@github.com:|https://github.com/|')"
-VALID_MODULES=("root" "postgres" "sqlite" "pgvector")
 
 usage() {
 	cat <<-'EOF'
 		Usage: scripts/release.sh <command> [options]
 
 		Commands:
+		  modules   List every Go module in the workspace (one per line)
 		  tag       Tag a module release
-		  release   Create a dated GitHub Release
+		  release   Create a dated GitHub Release aggregating recent module tags
 		  warm      Warm the Go module proxy for a tag
 
 		Options for 'tag':
-		  -m, --module <name>     Module: root, postgres, sqlite, pgvector
-		  -v, --version <semver>  Version to tag (e.g., v0.15.0)
+		  -m, --module <path>     Module dir relative to repo root (e.g. llm/openai)
+		  -v, --version <semver>  Version to tag (e.g. v0.1.0)
 		  --push                  Push the tag to origin (default: local only)
 
 		Options for 'release':
@@ -24,54 +38,39 @@ usage() {
 		  --publish               Create the GitHub Release (default: dry-run)
 
 		Options for 'warm':
-		  -t, --tag <tag>         Git tag to warm (e.g., v0.15.0)
+		  -t, --tag <tag>         Git tag to warm (e.g. llm/openai/v0.1.0)
 	EOF
 	exit 1
 }
 
-tag_prefix() {
-	case "$1" in
-	root) echo "" ;;
-	*) echo "integrations/$1/" ;;
-	esac
+# discover_modules — print every module dir relative to repo root.
+discover_modules() {
+	cd "$REPO_ROOT"
+	# All go.mod files under the workspace; strip the trailing /go.mod.
+	# Skip vendored/cache/etc. by anchoring under tracked directories.
+	find . -name 'go.mod' -not -path './.git/*' -print0 |
+		xargs -0 -n1 dirname |
+		sed 's|^\./||' |
+		grep -v '^\.$' || true
 }
 
+# module_path — print "github.com/joakimcarlsson/ai/<dir>" for a module dir.
 module_path() {
-	case "$1" in
-	root) echo "github.com/joakimcarlsson/ai" ;;
-	*) echo "github.com/joakimcarlsson/ai/integrations/$1" ;;
-	esac
+	local dir="$1"
+	echo "github.com/joakimcarlsson/ai/${dir}"
 }
 
-tag_to_module_path() {
-	local tag="$1"
-	if [[ "$tag" =~ ^integrations/([^/]+)/v ]]; then
-		echo "github.com/joakimcarlsson/ai/integrations/${BASH_REMATCH[1]}"
-	else
-		echo "github.com/joakimcarlsson/ai"
-	fi
-}
-
-tag_to_version() {
-	local tag="$1"
-	if [[ "$tag" =~ (v[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-		echo "${BASH_REMATCH[1]}"
-	else
-		echo "$tag"
-	fi
-}
-
-latest_root_tag() {
-	git tag -l 'v[0-9]*' --sort=-version:refname | head -n1
-}
-
+# validate_module — fail unless dir is a real module under the workspace.
 validate_module() {
 	local mod="$1"
-	for valid in "${VALID_MODULES[@]}"; do
-		[[ "$mod" == "$valid" ]] && return 0
-	done
-	echo "Error: invalid module '$mod'. Valid: ${VALID_MODULES[*]}"
-	exit 1
+	local found=false
+	while IFS= read -r m; do
+		[[ "$m" == "$mod" ]] && { found=true; break; }
+	done < <(discover_modules)
+	if [[ "$found" != true ]]; then
+		echo "Error: '$mod' is not a workspace module. Run: $0 modules"
+		exit 1
+	fi
 }
 
 validate_semver() {
@@ -80,6 +79,10 @@ validate_semver() {
 		echo "Error: version '$ver' does not match semver (vX.Y.Z)"
 		exit 1
 	fi
+}
+
+cmd_modules() {
+	discover_modules | sort
 }
 
 cmd_tag() {
@@ -112,25 +115,25 @@ cmd_tag() {
 		exit 1
 	fi
 
-	local prefix full_tag
-	prefix="$(tag_prefix "$module")"
-	full_tag="${prefix}${version}"
+	# Confirm that every internal require in this module's go.mod points at
+	# either an already-tagged version or another workspace module that's
+	# being tagged in this same release. We don't enforce — only warn — since
+	# the release coordinator may be tagging a multi-module bundle.
+	local gomod="${REPO_ROOT}/${module}/go.mod"
+	local internal_reqs
+	internal_reqs=$(awk '/^require [(]/,/^[)]/' "$gomod" |
+		grep -oP 'github\.com/joakimcarlsson/ai/\S+' | sort -u || true)
+	for dep in $internal_reqs; do
+		local dep_dir="${dep#github.com/joakimcarlsson/ai/}"
+		if ! git tag -l "${dep_dir}/v*" | grep -q .; then
+			echo "Warning: $module requires $dep but no $dep_dir/v* tag exists yet."
+		fi
+	done
 
+	local full_tag="${module}/${version}"
 	if git rev-parse "$full_tag" >/dev/null 2>&1; then
 		echo "Error: tag '$full_tag' already exists"
 		exit 1
-	fi
-
-	if [[ "$module" != "root" ]]; then
-		local gomod="${REPO_ROOT}/integrations/${module}/go.mod"
-		local require_ver
-		require_ver=$(grep 'github.com/joakimcarlsson/ai ' "$gomod" | grep -oP 'v[0-9]+\.[0-9]+\.[0-9]+')
-		local latest
-		latest="$(latest_root_tag)"
-		if [[ -n "$latest" && "$require_ver" != "$latest" ]]; then
-			echo "Warning: $gomod requires root at $require_ver but latest root tag is $latest"
-			echo "         Consider updating the require version before tagging."
-		fi
 	fi
 
 	git tag "$full_tag"
@@ -166,16 +169,6 @@ cmd_release() {
 	local prev_release
 	prev_release=$(git tag -l 'release-*' --sort=-creatordate | head -n1)
 
-	local range
-	if [[ -n "$prev_release" ]]; then
-		range="${prev_release}..HEAD"
-	else
-		range="HEAD"
-	fi
-
-	local body="## Module Highlights"$'\n'
-	local found_tags=false
-
 	is_new_tag() {
 		local tag="$1"
 		if [[ -n "$prev_release" ]]; then
@@ -186,36 +179,23 @@ cmd_release() {
 		fi
 	}
 
-	local root_tags
-	root_tags=$(git tag -l 'v[0-9]*' --sort=-version:refname --merged HEAD)
-	for tag in $root_tags; do
-		if is_new_tag "$tag"; then
-			body+="* \`github.com/joakimcarlsson/ai\`: [${tag}](${REPO_URL}/tree/${tag})"$'\n'
-			local commits
-			if [[ -n "$prev_release" ]]; then
-				commits=$(git log --oneline "${prev_release}..${tag}" -- ':!integrations/' 2>/dev/null || true)
-			fi
-			if [[ -n "${commits:-}" ]]; then
-				while IFS= read -r line; do
-					body+="  * ${line#* }"$'\n'
-				done <<< "$commits"
-			fi
-			found_tags=true
-		fi
-	done
+	local body="## Module Highlights"$'\n'
+	local found_tags=false
 
-	for mod in postgres sqlite pgvector; do
+	# Iterate every workspace module and find new <module>/v* tags since
+	# the previous release.
+	while IFS= read -r mod; do
+		[[ -z "$mod" ]] && continue
 		local mod_tags
-		mod_tags=$(git tag -l "integrations/${mod}/v*" --sort=-version:refname --merged HEAD)
+		mod_tags=$(git tag -l "${mod}/v[0-9]*" --sort=-version:refname --merged HEAD)
 		for tag in $mod_tags; do
 			if is_new_tag "$tag"; then
-				local ver
-				ver="$(tag_to_version "$tag")"
-				body+="* \`github.com/joakimcarlsson/ai/integrations/${mod}\`: [${ver}](${REPO_URL}/tree/${tag})"$'\n'
+				local ver="${tag##*/}"
+				body+="* \`github.com/joakimcarlsson/ai/${mod}\`: [${ver}](${REPO_URL}/tree/${tag})"$'\n'
 				found_tags=true
 			fi
 		done
-	done
+	done < <(discover_modules | sort)
 
 	if [[ "$found_tags" == false ]]; then
 		echo "Warning: no module tags found since last release"
@@ -250,9 +230,16 @@ cmd_warm() {
 
 	[[ -z "$tag" ]] && { echo "Error: --tag is required"; usage; }
 
-	local mod_path version
-	mod_path="$(tag_to_module_path "$tag")"
-	version="$(tag_to_version "$tag")"
+	# Convert "<dir>/<version>" tag back to module path + version.
+	# Tag format is always <relative-dir>/vX.Y.Z.
+	if [[ ! "$tag" =~ ^(.+)/(v[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+		echo "Error: tag '$tag' does not match <module>/vX.Y.Z"
+		exit 1
+	fi
+	local mod_dir="${BASH_REMATCH[1]}"
+	local version="${BASH_REMATCH[2]}"
+	local mod_path
+	mod_path="$(module_path "$mod_dir")"
 
 	echo "Warming proxy for ${mod_path}@${version}..."
 	GOPROXY=proxy.golang.org go list -m "${mod_path}@${version}"
@@ -262,6 +249,7 @@ cmd_warm() {
 [[ $# -eq 0 ]] && usage
 
 case "$1" in
+modules) shift; cmd_modules "$@" ;;
 tag) shift; cmd_tag "$@" ;;
 release) shift; cmd_release "$@" ;;
 warm) shift; cmd_warm "$@" ;;

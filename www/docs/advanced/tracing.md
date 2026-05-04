@@ -268,11 +268,13 @@ export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 Tracing works without the agent framework. Any provider call creates spans and records metrics automatically:
 
 ```go
+import llmanthropic "github.com/joakimcarlsson/ai/llm/anthropic"
+
 otel.SetTracerProvider(tp)
 
-client, _ := llm.NewLLM(model.ProviderAnthropic,
-    llm.WithAPIKey(os.Getenv("ANTHROPIC_API_KEY")),
-    llm.WithModel(model.AnthropicModels[model.Claude4Sonnet]),
+client := llmanthropic.NewLLM(
+    llmanthropic.WithAPIKey(os.Getenv("ANTHROPIC_API_KEY")),
+    llmanthropic.WithModel(model.AnthropicModels[model.Claude45Sonnet]),
 )
 
 // This call produces a "generate_content claude-sonnet-4-6-20250514" span
@@ -297,8 +299,8 @@ import (
     semconv "go.opentelemetry.io/otel/semconv/v1.36.0"
 
     "github.com/joakimcarlsson/ai/agent"
+    llmopenai "github.com/joakimcarlsson/ai/llm/openai"
     "github.com/joakimcarlsson/ai/model"
-    llm "github.com/joakimcarlsson/ai/providers"
     "github.com/joakimcarlsson/ai/tool/functiontool"
     "github.com/joakimcarlsson/ai/tracing"
 )
@@ -315,9 +317,9 @@ func main() {
     )
     defer func() { _ = providers.Shutdown(ctx) }()
 
-    client, _ := llm.NewLLM(model.ProviderOpenAI,
-        llm.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-        llm.WithModel(model.OpenAIModels[model.GPT5Nano]),
+    client := llmopenai.NewLLM(
+        llmopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+        llmopenai.WithModel(model.OpenAIModels[model.GPT5Nano]),
     )
 
     timeTool := functiontool.New(

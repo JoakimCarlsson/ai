@@ -1,56 +1,73 @@
 # LLM Providers
 
-## Creating a Client
+Each native LLM vendor is published as its own Go module under `llm/`. The
+client returned from a vendor's `NewLLM(...)` satisfies the `llm.LLM`
+interface, so once you've constructed it the rest of your code is
+vendor-agnostic.
+
+## Creating a client
 
 ```go
 import (
+    llmopenai "github.com/joakimcarlsson/ai/llm/openai"
     "github.com/joakimcarlsson/ai/model"
-    llm "github.com/joakimcarlsson/ai/providers"
 )
 
-client, err := llm.NewLLM(
-    model.ProviderOpenAI,
-    llm.WithAPIKey("your-api-key"),
-    llm.WithModel(model.OpenAIModels[model.GPT4o]),
-    llm.WithMaxTokens(1000),
+client := llmopenai.NewLLM(
+    llmopenai.WithAPIKey("your-api-key"),
+    llmopenai.WithModel(model.OpenAIModels[model.GPT4o]),
+    llmopenai.WithMaxTokens(1000),
 )
 ```
 
-## Sending Messages
+For Anthropic instead:
 
 ```go
-messages := []message.Message{
-    message.NewUserMessage("Hello, how are you?"),
-}
+import llmanthropic "github.com/joakimcarlsson/ai/llm/anthropic"
 
-response, err := client.SendMessages(ctx, messages, nil)
+client := llmanthropic.NewLLM(
+    llmanthropic.WithAPIKey("..."),
+    llmanthropic.WithModel(model.AnthropicModels[model.Claude45Sonnet]),
+    llmanthropic.WithMaxTokens(1000),
+)
+```
+
+## Sending messages
+
+```go
+import "github.com/joakimcarlsson/ai/message"
+
+response, err := client.SendMessages(ctx, []message.Message{
+    message.NewUserMessage("Hello, how are you?"),
+}, nil)
 fmt.Println(response.Content)
 ```
 
 ## Streaming
 
 ```go
+import "github.com/joakimcarlsson/ai/types"
+
 stream := client.StreamResponse(ctx, messages, nil)
 
 for event := range stream {
     switch event.Type {
-    case types.EventTypeContentDelta:
+    case types.EventContentDelta:
         fmt.Print(event.Content)
-    case types.EventTypeFinal:
-        fmt.Printf("\nTokens used: %d\n", event.Response.Usage.InputTokens)
-    case types.EventTypeError:
+    case types.EventComplete:
+        fmt.Printf("\nTokens: %d in / %d out\n",
+            event.Response.Usage.InputTokens,
+            event.Response.Usage.OutputTokens)
+    case types.EventError:
         log.Fatal(event.Error)
     }
 }
 ```
 
-## Multimodal (Images)
+## Multimodal (images)
 
 ```go
-imageData, err := os.ReadFile("image.png")
-if err != nil {
-    log.Fatal(err)
-}
+imageData, _ := os.ReadFile("image.png")
 
 msg := message.NewUserMessage("What's in this image?")
 msg.AddAttachment(message.Attachment{
@@ -58,38 +75,110 @@ msg.AddAttachment(message.Attachment{
     Data:     imageData,
 })
 
-messages := []message.Message{msg}
-response, err := client.SendMessages(ctx, messages, nil)
+response, err := client.SendMessages(ctx, []message.Message{msg}, nil)
 ```
 
-## Client Options
+## Common options
+
+Every vendor exports the standard set:
 
 ```go
-client, err := llm.NewLLM(
-    model.ProviderOpenAI,
-    llm.WithAPIKey("your-key"),
-    llm.WithModel(model.OpenAIModels[model.GPT4o]),
-    llm.WithMaxTokens(2000),
-    llm.WithTemperature(0.7),
-    llm.WithTopP(0.9),
-    llm.WithTimeout(30*time.Second),
-    llm.WithStopSequences("STOP", "END"),
-)
+llmopenai.WithAPIKey("...")
+llmopenai.WithModel(model.OpenAIModels[model.GPT4o])
+llmopenai.WithMaxTokens(2000)
+llmopenai.WithTemperature(0.7)
+llmopenai.WithTopP(0.9)
+llmopenai.WithTopK(40)
+llmopenai.WithStopSequences("STOP", "END")
+llmopenai.WithTimeout(30 * time.Second)
 ```
 
-## Provider-Specific Options
+## Vendor-specific options
+
+OpenAI:
 
 ```go
-// Anthropic
-llm.WithAnthropicOptions(
-    llm.WithAnthropicBeta("beta-feature"),
-)
+llmopenai.WithBaseURL("https://custom-endpoint")
+llmopenai.WithExtraHeaders(map[string]string{"X-My-Header": "value"})
+llmopenai.WithReasoningEffort(llmopenai.ReasoningEffortHigh)
+llmopenai.WithFrequencyPenalty(0.5)
+llmopenai.WithPresencePenalty(0.5)
+llmopenai.WithSeed(42)
+llmopenai.WithParallelToolCalls(false)
+```
 
-// OpenAI
-llm.WithOpenAIOptions(
-    llm.WithOpenAIBaseURL("custom-endpoint"),
-    llm.WithOpenAIExtraHeaders(map[string]string{
-        "Custom-Header": "value",
-    }),
+Anthropic:
+
+```go
+llmanthropic.WithBedrock(true)              // route through AWS Bedrock
+llmanthropic.WithDisableCache()
+llmanthropic.WithReasoningEffort(llmanthropic.ReasoningEffortHigh)
+```
+
+Gemini:
+
+```go
+import llmgemini "github.com/joakimcarlsson/ai/llm/gemini"
+
+llmgemini.WithThinkingLevel(llmgemini.ThinkingLevelHigh)
+llmgemini.WithFrequencyPenalty(0.5)
+llmgemini.WithSeed(42)
+```
+
+## Cross-vendor wrappers
+
+`llm/azure` (Azure OpenAI), `llm/vertexai` (Gemini on Vertex), and
+`llm/bedrock` (Claude on Bedrock) are thin wrappers that delegate to their
+underlying vendor module:
+
+```go
+import llmazure "github.com/joakimcarlsson/ai/llm/azure"
+
+client := llmazure.NewLLM(
+    llmazure.WithAPIKey(os.Getenv("AZURE_OPENAI_KEY")),
+    llmazure.WithEndpoint("https://my-resource.openai.azure.com"),
+    llmazure.WithAPIVersion("2024-02-01"),
+    llmazure.WithModel(model.OpenAIModels[model.GPT4o]),
 )
 ```
+
+```go
+import llmbedrock "github.com/joakimcarlsson/ai/llm/bedrock"
+
+// Region is read from $AWS_REGION (or $AWS_DEFAULT_REGION).
+client := llmbedrock.NewLLM(
+    llmbedrock.WithModel(model.AnthropicModels[model.Claude45Sonnet]),
+    llmbedrock.WithMaxTokens(2000),
+)
+```
+
+```go
+import llmvertex "github.com/joakimcarlsson/ai/llm/vertexai"
+
+client := llmvertex.NewLLM(
+    llmvertex.WithProject(os.Getenv("VERTEXAI_PROJECT")),
+    llmvertex.WithLocation(os.Getenv("VERTEXAI_LOCATION")),
+    llmvertex.WithModel(model.GeminiModels[model.Gemini25Pro]),
+)
+```
+
+## OpenAI-compatible providers (BYOM)
+
+Groq, OpenRouter, xAI, Mistral, Ollama, LocalAI, etc. — point `llm/openai`
+at the right base URL:
+
+```go
+groq := llmopenai.NewLLM(
+    llmopenai.WithAPIKey(os.Getenv("GROQ_API_KEY")),
+    llmopenai.WithBaseURL("https://api.groq.com/openai/v1"),
+    llmopenai.WithModel(model.GroqModels[model.LLaMA3_70B]),
+)
+```
+
+For a managed registry of these, see [BYOM](../advanced/byom.md).
+
+## Tracing
+
+Every vendor's `NewLLM(...)` returns a tracing-wrapped client. Spans + metrics
+are emitted automatically via OpenTelemetry. See [Tracing](../advanced/tracing.md)
+for setup.

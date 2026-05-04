@@ -94,7 +94,7 @@ func (s *sessionStore) Create(
 }
 
 func (s *sessionStore) Load(
-	ctx context.Context,
+	_ context.Context,
 	id string,
 ) (session.Session, error) {
 	return &sqliteSession{db: s.db, id: id, prefix: s.prefix}, nil

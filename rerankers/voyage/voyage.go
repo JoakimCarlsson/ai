@@ -95,6 +95,9 @@ func NewReranker(opts ...Option) rerankers.Reranker {
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    defaultBaseURL,
+	}, rerankers.TracingAttrs{
+		TopK:            options.topK,
+		ReturnDocuments: &options.returnDocs,
 	})
 }
 
@@ -192,7 +195,9 @@ func (c *Client) Rerank(
 
 	return &rerankers.RerankerResponse{
 		Results: results,
-		Usage:   rerankers.RerankerUsage{TotalTokens: voyageResp.Usage.TotalTokens},
-		Model:   voyageResp.Model,
+		Usage: rerankers.RerankerUsage{
+			TotalTokens: voyageResp.Usage.TotalTokens,
+		},
+		Model: voyageResp.Model,
 	}, nil
 }

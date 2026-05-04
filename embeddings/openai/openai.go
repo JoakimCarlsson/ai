@@ -27,22 +27,46 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key used to authenticate with OpenAI.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the embedding model.
-func WithModel(m model.EmbeddingModel) Option { return func(o *Options) { o.model = m } }
+func WithModel(
+	m model.EmbeddingModel,
+) Option {
+	return func(o *Options) { o.model = m }
+}
 
 // WithTimeout sets the maximum duration to wait for a single request.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithBatchSize sets the number of texts to process in each batch request.
-func WithBatchSize(batchSize int) Option { return func(o *Options) { o.batchSize = batchSize } }
+func WithBatchSize(
+	batchSize int,
+) Option {
+	return func(o *Options) { o.batchSize = batchSize }
+}
 
 // WithDimensions specifies the output dimensionality for embedding vectors.
-func WithDimensions(dimensions int) Option { return func(o *Options) { o.dimensions = &dimensions } }
+func WithDimensions(
+	dimensions int,
+) Option {
+	return func(o *Options) { o.dimensions = &dimensions }
+}
 
 // WithBaseURL points the client at a custom OpenAI-compatible endpoint.
-func WithBaseURL(baseURL string) Option { return func(o *Options) { o.baseURL = baseURL } }
+func WithBaseURL(
+	baseURL string,
+) Option {
+	return func(o *Options) { o.baseURL = baseURL }
+}
 
 // WithUser sets a unique identifier for the end-user (helps OpenAI monitor/detect abuse).
 func WithUser(user string) Option { return func(o *Options) { o.user = user } }
@@ -72,6 +96,8 @@ func NewEmbedding(opts ...Option) embeddings.Embedding {
 	return embeddings.WithTracing(&Client{
 		options: options,
 		client:  openaisdk.NewClient(clientOpts...),
+	}, embeddings.TracingAttrs{
+		Dimensions: options.dimensions,
 	})
 }
 
@@ -154,25 +180,27 @@ func (c *Client) embedBatch(
 
 	return &embeddings.EmbeddingResponse{
 		Embeddings: out,
-		Usage:      embeddings.EmbeddingUsage{TotalTokens: int64(resp.Usage.TotalTokens)},
-		Model:      string(resp.Model),
+		Usage: embeddings.EmbeddingUsage{
+			TotalTokens: int64(resp.Usage.TotalTokens),
+		},
+		Model: string(resp.Model),
 	}, nil
 }
 
 // GenerateMultimodalEmbeddings is not supported by OpenAI.
 func (c *Client) GenerateMultimodalEmbeddings(
-	ctx context.Context,
-	inputs []embeddings.MultimodalInput,
-	inputType ...string,
+	_ context.Context,
+	_ []embeddings.MultimodalInput,
+	_ ...string,
 ) (*embeddings.EmbeddingResponse, error) {
 	return nil, fmt.Errorf("OpenAI does not support multimodal embeddings")
 }
 
 // GenerateContextualizedEmbeddings is not supported by OpenAI.
 func (c *Client) GenerateContextualizedEmbeddings(
-	ctx context.Context,
-	documentChunks [][]string,
-	inputType ...string,
+	_ context.Context,
+	_ [][]string,
+	_ ...string,
 ) (*embeddings.ContextualizedEmbeddingResponse, error) {
 	return nil, fmt.Errorf("OpenAI does not support contextualized embeddings")
 }

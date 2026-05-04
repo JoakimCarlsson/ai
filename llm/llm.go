@@ -75,7 +75,10 @@ type CustomProviderConfig struct {
 
 // RegisterCustomProvider stores a BYOM configuration under a synthetic provider ID
 // and returns that ID. Pair with [GetCustomProvider] when constructing the client.
-func RegisterCustomProvider(name string, config CustomProviderConfig) model.Provider {
+func RegisterCustomProvider(
+	name string,
+	config CustomProviderConfig,
+) model.Provider {
 	customProvidersMu.Lock()
 	defer customProvidersMu.Unlock()
 
@@ -196,12 +199,19 @@ func (t *tracingLLM) SupportsStructuredOutput() bool {
 	return t.inner.SupportsStructuredOutput()
 }
 
-func (t *tracingLLM) generateSpanAttrs() []tracing.Attr {
-	attrs := []tracing.Attr{
-		tracing.AttrRequestMaxTokens.Int64(t.attrs.MaxTokens),
+func (t *tracingLLM) spanAttrs() []tracing.Attr {
+	var attrs []tracing.Attr
+	if t.attrs.MaxTokens > 0 {
+		attrs = append(
+			attrs,
+			tracing.AttrRequestMaxTokens.Int64(t.attrs.MaxTokens),
+		)
 	}
 	if t.attrs.Temperature != nil {
-		attrs = append(attrs, tracing.AttrRequestTemperature.Float64(*t.attrs.Temperature))
+		attrs = append(
+			attrs,
+			tracing.AttrRequestTemperature.Float64(*t.attrs.Temperature),
+		)
 	}
 	if t.attrs.TopP != nil {
 		attrs = append(attrs, tracing.AttrRequestTopP.Float64(*t.attrs.TopP))
@@ -209,22 +219,33 @@ func (t *tracingLLM) generateSpanAttrs() []tracing.Attr {
 	return attrs
 }
 
-func (t *tracingLLM) recordResponseAttrs(span tracing.Span, resp *Response, toolCount int) {
+func (t *tracingLLM) recordResponseAttrs(
+	span tracing.Span,
+	resp *Response,
+	toolCount int,
+) {
 	attrs := []tracing.Attr{
 		tracing.AttrUsageInputTokens.Int64(resp.Usage.InputTokens),
 		tracing.AttrUsageOutputTokens.Int64(resp.Usage.OutputTokens),
 		tracing.AttrResponseFinishReason.String(string(resp.FinishReason)),
 	}
 	if resp.Usage.CacheCreationTokens > 0 {
-		attrs = append(attrs,
-			tracing.AttrUsageCacheCreation.Int64(resp.Usage.CacheCreationTokens))
+		attrs = append(
+			attrs,
+			tracing.AttrUsageCacheCreation.Int64(
+				resp.Usage.CacheCreationTokens,
+			),
+		)
 	}
 	if resp.Usage.CacheReadTokens > 0 {
 		attrs = append(attrs,
 			tracing.AttrUsageCacheRead.Int64(resp.Usage.CacheReadTokens))
 	}
 	if len(resp.ToolCalls) > 0 {
-		attrs = append(attrs, tracing.AttrToolCallCount.Int(len(resp.ToolCalls)))
+		attrs = append(
+			attrs,
+			tracing.AttrToolCallCount.Int(len(resp.ToolCalls)),
+		)
 	}
 	if toolCount > 0 {
 		attrs = append(attrs, tracing.AttrToolCount.Int(toolCount))
@@ -298,7 +319,7 @@ func (t *tracingLLM) SendMessages(
 	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
-		ctx, m.APIModel, string(m.Provider), t.generateSpanAttrs()...,
+		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
 	)
 	defer span.End()
 
@@ -326,11 +347,16 @@ func (t *tracingLLM) SendMessagesWithStructuredOutput(
 	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
-		ctx, m.APIModel, string(m.Provider), t.generateSpanAttrs()...,
+		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
 	)
 	defer span.End()
 
-	response, err := t.inner.SendMessagesWithStructuredOutput(ctx, messages, tools, outputSchema)
+	response, err := t.inner.SendMessagesWithStructuredOutput(
+		ctx,
+		messages,
+		tools,
+		outputSchema,
+	)
 	if err != nil {
 		tracing.SetError(span, err)
 		t.recordMetrics(ctx, start, nil, err)
@@ -353,7 +379,7 @@ func (t *tracingLLM) StreamResponse(
 	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
-		ctx, m.APIModel, string(m.Provider), t.generateSpanAttrs()...,
+		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
 	)
 
 	innerCh := t.inner.StreamResponse(ctx, messages, tools)
@@ -364,7 +390,11 @@ func (t *tracingLLM) StreamResponse(
 		for evt := range innerCh {
 			if evt.Type == types.EventComplete && evt.Response != nil {
 				t.recordResponseAttrs(span, evt.Response, len(tools))
-				tracing.LogChoice(ctx, evt.Response.Content, string(evt.Response.FinishReason))
+				tracing.LogChoice(
+					ctx,
+					evt.Response.Content,
+					string(evt.Response.FinishReason),
+				)
 				t.recordMetrics(ctx, start, evt.Response, nil)
 			}
 			if evt.Type == types.EventError && evt.Error != nil {
@@ -388,10 +418,15 @@ func (t *tracingLLM) StreamResponseWithStructuredOutput(
 	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
-		ctx, m.APIModel, string(m.Provider), t.generateSpanAttrs()...,
+		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
 	)
 
-	innerCh := t.inner.StreamResponseWithStructuredOutput(ctx, messages, tools, outputSchema)
+	innerCh := t.inner.StreamResponseWithStructuredOutput(
+		ctx,
+		messages,
+		tools,
+		outputSchema,
+	)
 	outCh := make(chan Event)
 	go func() {
 		defer close(outCh)
@@ -399,7 +434,11 @@ func (t *tracingLLM) StreamResponseWithStructuredOutput(
 		for evt := range innerCh {
 			if evt.Type == types.EventComplete && evt.Response != nil {
 				t.recordResponseAttrs(span, evt.Response, len(tools))
-				tracing.LogChoice(ctx, evt.Response.Content, string(evt.Response.FinishReason))
+				tracing.LogChoice(
+					ctx,
+					evt.Response.Content,
+					string(evt.Response.FinishReason),
+				)
 				t.recordMetrics(ctx, start, evt.Response, nil)
 			}
 			if evt.Type == types.EventError && evt.Error != nil {

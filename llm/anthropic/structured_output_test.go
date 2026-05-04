@@ -32,12 +32,16 @@ func newTestClient(t *testing.T, baseURL string, m model.Model) *Client {
 }
 
 func TestSupportsStructuredOutput(t *testing.T) {
-	supported := &Client{options: Options{model: model.AnthropicModels[model.Claude45Sonnet]}}
+	supported := &Client{
+		options: Options{model: model.AnthropicModels[model.Claude45Sonnet]},
+	}
 	if !supported.SupportsStructuredOutput() {
 		t.Error("expected Claude45Sonnet to support structured output")
 	}
 
-	unsupported := &Client{options: Options{model: model.AnthropicModels[model.Claude35Sonnet]}}
+	unsupported := &Client{
+		options: Options{model: model.AnthropicModels[model.Claude35Sonnet]},
+	}
 	if unsupported.SupportsStructuredOutput() {
 		t.Error("expected Claude35Sonnet to NOT support structured output")
 	}
@@ -114,7 +118,11 @@ func TestSendWithStructuredOutput(t *testing.T) {
 	)
 	defer server.Close()
 
-	client := newTestClient(t, server.URL, model.AnthropicModels[model.Claude45Sonnet])
+	client := newTestClient(
+		t,
+		server.URL,
+		model.AnthropicModels[model.Claude45Sonnet],
+	)
 
 	outputSchema := schema.NewStructuredOutputInfo(
 		"person", "A person",
@@ -170,7 +178,11 @@ func TestStreamWithStructuredOutput(t *testing.T) {
 	)
 	defer server.Close()
 
-	client := newTestClient(t, server.URL, model.AnthropicModels[model.Claude45Sonnet])
+	client := newTestClient(
+		t,
+		server.URL,
+		model.AnthropicModels[model.Claude45Sonnet],
+	)
 
 	outputSchema := schema.NewStructuredOutputInfo(
 		"person", "A person",

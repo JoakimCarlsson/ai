@@ -101,6 +101,8 @@ func NewSpeechToText(opts ...Option) stt.SpeechToText {
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    defaultBaseURL,
+	}, stt.TracingAttrs{
+		Language: options.languageCode,
 	})
 }
 
@@ -116,9 +118,9 @@ func (c *Client) SupportsStreaming() bool {
 
 // StreamTranscribe returns [stt.ErrStreamingNotSupported].
 func (c *Client) StreamTranscribe(
-	ctx context.Context,
-	audio <-chan []byte,
-	options ...stt.Option,
+	_ context.Context,
+	_ <-chan []byte,
+	_ ...stt.Option,
 ) (<-chan stt.StreamResult, error) {
 	return nil, stt.ErrStreamingNotSupported
 }
@@ -191,7 +193,9 @@ func (c *Client) Transcribe(
 
 	reqBody := request{
 		Config: cfg,
-		Audio:  requestAudio{Content: base64.StdEncoding.EncodeToString(audioFile)},
+		Audio: requestAudio{
+			Content: base64.StdEncoding.EncodeToString(audioFile),
+		},
 	}
 
 	jsonBody, err := json.Marshal(reqBody)
@@ -199,8 +203,17 @@ func (c *Client) Transcribe(
 		return nil, fmt.Errorf("failed to marshal STT request: %w", err)
 	}
 
-	reqURL := fmt.Sprintf("%s/speech:recognize?key=%s", c.baseURL, c.options.apiKey)
-	req, err := http.NewRequestWithContext(ctx, "POST", reqURL, bytes.NewBuffer(jsonBody))
+	reqURL := fmt.Sprintf(
+		"%s/speech:recognize?key=%s",
+		c.baseURL,
+		c.options.apiKey,
+	)
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		reqURL,
+		bytes.NewBuffer(jsonBody),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create STT request: %w", err)
 	}
@@ -218,7 +231,11 @@ func (c *Client) Transcribe(
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("STT API failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"STT API failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var gcResp response
@@ -231,9 +248,9 @@ func (c *Client) Transcribe(
 
 // Translate is not supported by Google Cloud STT.
 func (c *Client) Translate(
-	ctx context.Context,
-	audioFile []byte,
-	options ...stt.Option,
+	_ context.Context,
+	_ []byte,
+	_ ...stt.Option,
 ) (*stt.Response, error) {
 	return nil, fmt.Errorf("google cloud STT does not support translation")
 }

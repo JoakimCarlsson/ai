@@ -55,16 +55,28 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key used to authenticate with Anthropic.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the LLM model.
 func WithModel(m model.Model) Option { return func(o *Options) { o.model = m } }
 
 // WithMaxTokens sets the maximum number of tokens to generate.
-func WithMaxTokens(maxTokens int64) Option { return func(o *Options) { o.maxTokens = maxTokens } }
+func WithMaxTokens(
+	maxTokens int64,
+) Option {
+	return func(o *Options) { o.maxTokens = maxTokens }
+}
 
 // WithTemperature controls randomness.
-func WithTemperature(t float64) Option { return func(o *Options) { o.temperature = &t } }
+func WithTemperature(
+	t float64,
+) Option {
+	return func(o *Options) { o.temperature = &t }
+}
 
 // WithTopP sets nucleus sampling probability mass.
 func WithTopP(p float64) Option { return func(o *Options) { o.topP = &p } }
@@ -73,10 +85,18 @@ func WithTopP(p float64) Option { return func(o *Options) { o.topP = &p } }
 func WithTopK(k int64) Option { return func(o *Options) { o.topK = &k } }
 
 // WithStopSequences sets text sequences that halt generation.
-func WithStopSequences(seqs ...string) Option { return func(o *Options) { o.stopSequences = seqs } }
+func WithStopSequences(
+	seqs ...string,
+) Option {
+	return func(o *Options) { o.stopSequences = seqs }
+}
 
 // WithTimeout sets the maximum duration to wait for API responses.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithBedrock configures the client to talk to Anthropic models hosted on AWS Bedrock.
 func WithBedrock(useBedrock bool) Option {
@@ -104,8 +124,8 @@ type retryableError struct {
 	err *anthropicsdk.Error
 }
 
-func (e retryableError) Error() string  { return e.err.Error() }
-func (e retryableError) Unwrap() error  { return e.err }
+func (e retryableError) Error() string      { return e.err.Error() }
+func (e retryableError) Unwrap() error      { return e.err }
 func (e retryableError) GetStatusCode() int { return e.err.StatusCode }
 func (e retryableError) GetRetryAfter() string {
 	if e.err.Response != nil {
@@ -149,7 +169,10 @@ func NewLLM(opts ...Option) llm.LLM {
 		clientOpts = append(clientOpts, option.WithAPIKey(options.apiKey))
 	}
 	if options.useBedrock {
-		clientOpts = append(clientOpts, bedrock.WithLoadDefaultConfig(context.Background()))
+		clientOpts = append(
+			clientOpts,
+			bedrock.WithLoadDefaultConfig(context.Background()),
+		)
 	}
 
 	return llm.WithTracing(&Client{
@@ -218,7 +241,10 @@ func (c *Client) convertMessages(
 		case message.Assistant:
 			blocks := []anthropicsdk.ContentBlockParamUnion{}
 			if msg.Content().String() != "" {
-				blocks = append(blocks, anthropicsdk.NewTextBlock(msg.Content().String()))
+				blocks = append(
+					blocks,
+					anthropicsdk.NewTextBlock(msg.Content().String()),
+				)
 			}
 
 			for _, toolCall := range msg.ToolCalls() {
@@ -232,7 +258,9 @@ func (c *Client) convertMessages(
 			}
 
 			if len(blocks) == 0 {
-				slog.Warn("There is a message without content, investigate, this should not happen")
+				slog.Warn(
+					"There is a message without content, investigate, this should not happen",
+				)
 				continue
 			}
 			anthropicMessages = append(
@@ -241,7 +269,10 @@ func (c *Client) convertMessages(
 			)
 
 		case message.Tool:
-			results := make([]anthropicsdk.ContentBlockParamUnion, len(msg.ToolResults()))
+			results := make(
+				[]anthropicsdk.ContentBlockParamUnion,
+				len(msg.ToolResults()),
+			)
 			for i, toolResult := range msg.ToolResults() {
 				results[i] = anthropicsdk.NewToolResultBlock(
 					toolResult.ToolCallID,
@@ -258,7 +289,9 @@ func (c *Client) convertMessages(
 	return
 }
 
-func (c *Client) convertTools(tools []tool.BaseTool) []anthropicsdk.ToolUnionParam {
+func (c *Client) convertTools(
+	tools []tool.BaseTool,
+) []anthropicsdk.ToolUnionParam {
 	out := make([]anthropicsdk.ToolUnionParam, len(tools))
 
 	for i, t := range tools {
@@ -306,13 +339,20 @@ func (c *Client) preparedMessages(
 	var thinkingParam anthropicsdk.ThinkingConfigParamUnion
 	var outputConfig anthropicsdk.OutputConfigParam
 	temperature := anthropicsdk.Float(0)
-	pb := llm.NewParameterBuilder(c.options.temperature, c.options.topP, c.options.topK)
-	pb.ApplyFloat64Temperature(func(t *float64) { temperature = anthropicsdk.Float(*t) })
+	pb := llm.NewParameterBuilder(
+		c.options.temperature,
+		c.options.topP,
+		c.options.topK,
+	)
+	pb.ApplyFloat64Temperature(
+		func(t *float64) { temperature = anthropicsdk.Float(*t) },
+	)
 
 	if c.options.reasoningEffort != nil && c.options.model.CanReason {
 		temperature = anthropicsdk.Float(1)
 		apiModel := c.options.model.APIModel
-		if strings.Contains(apiModel, "4-6") || strings.Contains(apiModel, "4.6") {
+		if strings.Contains(apiModel, "4-6") ||
+			strings.Contains(apiModel, "4.6") {
 			thinkingParam = anthropicsdk.ThinkingConfigParamUnion{
 				OfAdaptive: &anthropicsdk.ThinkingConfigAdaptiveParam{},
 			}
@@ -350,7 +390,9 @@ func (c *Client) preparedMessages(
 		OutputConfig: outputConfig,
 	}
 
-	pb.ApplyFloat64TopP(func(p *float64) { params.TopP = anthropicsdk.Float(*p) })
+	pb.ApplyFloat64TopP(
+		func(p *float64) { params.TopP = anthropicsdk.Float(*p) },
+	)
 	pb.ApplyInt64TopK(func(k *int64) { params.TopK = anthropicsdk.Int(*k) })
 
 	if len(c.options.stopSequences) > 0 {
@@ -388,26 +430,35 @@ func (c *Client) SendMessages(
 	ctx, cancel := llm.ApplyTimeout(ctx, c.options.timeout)
 	defer cancel()
 
-	return llm.ExecuteWithRetry(ctx, RetryConfig(), func() (*llm.Response, error) {
-		anthropicResponse, err := c.client.Messages.New(ctx, preparedMessages)
-		if err != nil {
-			return nil, wrapError(err)
-		}
-
-		content := ""
-		for _, block := range anthropicResponse.Content {
-			if text, ok := block.AsAny().(anthropicsdk.TextBlock); ok {
-				content += text.Text
+	return llm.ExecuteWithRetry(
+		ctx,
+		RetryConfig(),
+		func() (*llm.Response, error) {
+			anthropicResponse, err := c.client.Messages.New(
+				ctx,
+				preparedMessages,
+			)
+			if err != nil {
+				return nil, wrapError(err)
 			}
-		}
 
-		return &llm.Response{
-			Content:      content,
-			ToolCalls:    c.toolCalls(*anthropicResponse),
-			Usage:        c.usage(*anthropicResponse),
-			FinishReason: c.finishReason(string(anthropicResponse.StopReason)),
-		}, nil
-	})
+			content := ""
+			for _, block := range anthropicResponse.Content {
+				if text, ok := block.AsAny().(anthropicsdk.TextBlock); ok {
+					content += text.Text
+				}
+			}
+
+			return &llm.Response{
+				Content:   content,
+				ToolCalls: c.toolCalls(*anthropicResponse),
+				Usage:     c.usage(*anthropicResponse),
+				FinishReason: c.finishReason(
+					string(anthropicResponse.StopReason),
+				),
+			}, nil
+		},
+	)
 }
 
 // StreamResponse sends a conversation and returns a channel of streaming events.
@@ -592,28 +643,37 @@ func (c *Client) SendMessagesWithStructuredOutput(
 	ctx, cancel := llm.ApplyTimeout(ctx, c.options.timeout)
 	defer cancel()
 
-	return llm.ExecuteWithRetry(ctx, RetryConfig(), func() (*llm.Response, error) {
-		anthropicResponse, err := c.client.Messages.New(ctx, preparedMessages)
-		if err != nil {
-			return nil, wrapError(err)
-		}
-
-		content := ""
-		for _, block := range anthropicResponse.Content {
-			if text, ok := block.AsAny().(anthropicsdk.TextBlock); ok {
-				content += text.Text
+	return llm.ExecuteWithRetry(
+		ctx,
+		RetryConfig(),
+		func() (*llm.Response, error) {
+			anthropicResponse, err := c.client.Messages.New(
+				ctx,
+				preparedMessages,
+			)
+			if err != nil {
+				return nil, wrapError(err)
 			}
-		}
 
-		return &llm.Response{
-			Content:                    content,
-			ToolCalls:                  c.toolCalls(*anthropicResponse),
-			Usage:                      c.usage(*anthropicResponse),
-			FinishReason:               c.finishReason(string(anthropicResponse.StopReason)),
-			StructuredOutput:           &content,
-			UsedNativeStructuredOutput: true,
-		}, nil
-	})
+			content := ""
+			for _, block := range anthropicResponse.Content {
+				if text, ok := block.AsAny().(anthropicsdk.TextBlock); ok {
+					content += text.Text
+				}
+			}
+
+			return &llm.Response{
+				Content:   content,
+				ToolCalls: c.toolCalls(*anthropicResponse),
+				Usage:     c.usage(*anthropicResponse),
+				FinishReason: c.finishReason(
+					string(anthropicResponse.StopReason),
+				),
+				StructuredOutput:           &content,
+				UsedNativeStructuredOutput: true,
+			}, nil
+		},
+	)
 }
 
 // StreamResponseWithStructuredOutput streams with a JSON schema constraint.

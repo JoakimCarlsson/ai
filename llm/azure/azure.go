@@ -35,16 +35,28 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key (optional — Azure also supports DefaultAzureCredential).
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the LLM model.
 func WithModel(m model.Model) Option { return func(o *Options) { o.model = m } }
 
 // WithMaxTokens sets the max generation tokens.
-func WithMaxTokens(maxTokens int64) Option { return func(o *Options) { o.maxTokens = maxTokens } }
+func WithMaxTokens(
+	maxTokens int64,
+) Option {
+	return func(o *Options) { o.maxTokens = maxTokens }
+}
 
 // WithTemperature controls randomness.
-func WithTemperature(t float64) Option { return func(o *Options) { o.temperature = &t } }
+func WithTemperature(
+	t float64,
+) Option {
+	return func(o *Options) { o.temperature = &t }
+}
 
 // WithTopP sets nucleus sampling probability mass.
 func WithTopP(p float64) Option { return func(o *Options) { o.topP = &p } }
@@ -53,13 +65,25 @@ func WithTopP(p float64) Option { return func(o *Options) { o.topP = &p } }
 func WithTopK(k int64) Option { return func(o *Options) { o.topK = &k } }
 
 // WithStopSequences sets text sequences that halt generation.
-func WithStopSequences(seqs ...string) Option { return func(o *Options) { o.stopSequences = seqs } }
+func WithStopSequences(
+	seqs ...string,
+) Option {
+	return func(o *Options) { o.stopSequences = seqs }
+}
 
 // WithTimeout sets the maximum duration to wait for API responses.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithEndpoint sets the Azure OpenAI endpoint URL.
-func WithEndpoint(endpoint string) Option { return func(o *Options) { o.endpoint = endpoint } }
+func WithEndpoint(
+	endpoint string,
+) Option {
+	return func(o *Options) { o.endpoint = endpoint }
+}
 
 // WithAPIVersion sets the Azure OpenAI API version.
 func WithAPIVersion(apiVersion string) Option {
@@ -84,7 +108,10 @@ func NewLLM(opts ...Option) llm.LLM {
 		llmopenai.WithMaxTokens(options.maxTokens),
 	}
 	if options.temperature != nil {
-		openaiOpts = append(openaiOpts, llmopenai.WithTemperature(*options.temperature))
+		openaiOpts = append(
+			openaiOpts,
+			llmopenai.WithTemperature(*options.temperature),
+		)
 	}
 	if options.topP != nil {
 		openaiOpts = append(openaiOpts, llmopenai.WithTopP(*options.topP))
@@ -93,7 +120,10 @@ func NewLLM(opts ...Option) llm.LLM {
 		openaiOpts = append(openaiOpts, llmopenai.WithTopK(*options.topK))
 	}
 	if len(options.stopSequences) > 0 {
-		openaiOpts = append(openaiOpts, llmopenai.WithStopSequences(options.stopSequences...))
+		openaiOpts = append(
+			openaiOpts,
+			llmopenai.WithStopSequences(options.stopSequences...),
+		)
 	}
 	if options.timeout != nil {
 		openaiOpts = append(openaiOpts, llmopenai.WithTimeout(*options.timeout))
@@ -102,7 +132,10 @@ func NewLLM(opts ...Option) llm.LLM {
 	// If Azure-specific endpoint+apiVersion aren't set, fall through to plain OpenAI.
 	if options.endpoint == "" || options.apiVersion == "" {
 		if options.apiKey != "" {
-			openaiOpts = append(openaiOpts, llmopenai.WithAPIKey(options.apiKey))
+			openaiOpts = append(
+				openaiOpts,
+				llmopenai.WithAPIKey(options.apiKey),
+			)
 		}
 		return llmopenai.NewLLM(openaiOpts...)
 	}

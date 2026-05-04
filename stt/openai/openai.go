@@ -90,6 +90,8 @@ func NewSpeechToText(opts ...Option) stt.SpeechToText {
 	return stt.WithTracing(&Client{
 		options: options,
 		client:  openaisdk.NewClient(clientOpts...),
+	}, stt.TracingAttrs{
+		Language: options.language,
 	})
 }
 
@@ -106,9 +108,9 @@ func (c *Client) SupportsStreaming() bool {
 
 // StreamTranscribe returns [stt.ErrStreamingNotSupported].
 func (c *Client) StreamTranscribe(
-	ctx context.Context,
-	audio <-chan []byte,
-	options ...stt.Option,
+	_ context.Context,
+	_ <-chan []byte,
+	_ ...stt.Option,
 ) (<-chan stt.StreamResult, error) {
 	return nil, stt.ErrStreamingNotSupported
 }
@@ -156,7 +158,9 @@ func (c *Client) Transcribe(
 	}
 
 	if opts.ResponseFormat != "" {
-		params.ResponseFormat = openaisdk.AudioResponseFormat(opts.ResponseFormat)
+		params.ResponseFormat = openaisdk.AudioResponseFormat(
+			opts.ResponseFormat,
+		)
 	} else {
 		params.ResponseFormat = openaisdk.AudioResponseFormat("verbose_json")
 	}
@@ -256,7 +260,9 @@ type verboseTranscription struct {
 	} `json:"words"`
 }
 
-func (c *Client) convertResponse(response *openaisdk.Transcription) *stt.Response {
+func (c *Client) convertResponse(
+	response *openaisdk.Transcription,
+) *stt.Response {
 	result := &stt.Response{
 		Text:  response.Text,
 		Model: c.options.model.APIModel,

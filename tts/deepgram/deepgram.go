@@ -38,20 +38,40 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key used to authenticate with Deepgram.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the TTS model from the model package.
-func WithModel(m model.AudioModel) Option { return func(o *Options) { o.model = m } }
+func WithModel(
+	m model.AudioModel,
+) Option {
+	return func(o *Options) { o.model = m }
+}
 
 // WithTimeout sets the maximum duration to wait for a single request.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithBaseURL sets a custom base URL for the Deepgram API.
-func WithBaseURL(baseURL string) Option { return func(o *Options) { o.baseURL = baseURL } }
+func WithBaseURL(
+	baseURL string,
+) Option {
+	return func(o *Options) { o.baseURL = baseURL }
+}
 
 // WithModelName overrides the model identifier (e.g. "aura-2-thalia-en"). Takes
 // precedence over [WithModel].
-func WithModelName(name string) Option { return func(o *Options) { o.modelName = name } }
+func WithModelName(
+	name string,
+) Option {
+	return func(o *Options) { o.modelName = name }
+}
 
 // WithEncoding sets the audio encoding (e.g. "mp3", "linear16", "mulaw", "alaw",
 // "opus", "flac", "aac"). Default is "mp3".
@@ -65,10 +85,18 @@ func WithContainer(container string) Option {
 }
 
 // WithSampleRate sets the audio sample rate in Hz.
-func WithSampleRate(rate int) Option { return func(o *Options) { o.sampleRate = rate } }
+func WithSampleRate(
+	rate int,
+) Option {
+	return func(o *Options) { o.sampleRate = rate }
+}
 
 // WithBitRate sets the audio bit rate in bps for compressed encodings.
-func WithBitRate(rate int) Option { return func(o *Options) { o.bitRate = rate } }
+func WithBitRate(
+	rate int,
+) Option {
+	return func(o *Options) { o.bitRate = rate }
+}
 
 // Client implements [tts.Generation] against the Deepgram Aura TTS API.
 type Client struct {
@@ -101,6 +129,9 @@ func NewGeneration(opts ...Option) tts.Generation {
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
 		resolved:   resolved,
+	}, tts.TracingAttrs{
+		OutputFormat: options.encoding,
+		SampleRate:   options.sampleRate,
 	})
 }
 
@@ -134,12 +165,20 @@ func (c *Client) buildURL() string {
 	return fmt.Sprintf("%s/speak?%s", c.options.baseURL, q.Encode())
 }
 
-func (c *Client) newRequest(ctx context.Context, text string) (*http.Request, error) {
+func (c *Client) newRequest(
+	ctx context.Context,
+	text string,
+) (*http.Request, error) {
 	body, err := json.Marshal(ttsRequest{Text: text})
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", c.buildURL(), bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		c.buildURL(),
+		bytes.NewBuffer(body),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -270,13 +309,21 @@ func (c *Client) ListVoices(_ context.Context) ([]tts.Voice, error) {
 func (c *Client) parseError(resp *http.Response) error {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("audio generation failed with status %d", resp.StatusCode)
+		return fmt.Errorf(
+			"audio generation failed with status %d",
+			resp.StatusCode,
+		)
 	}
 
 	var errResp errorResponse
-	if err := json.Unmarshal(body, &errResp); err == nil && errResp.ErrMsg != "" {
+	if err := json.Unmarshal(body, &errResp); err == nil &&
+		errResp.ErrMsg != "" {
 		return fmt.Errorf("audio generation failed: %s", errResp.ErrMsg)
 	}
 
-	return fmt.Errorf("audio generation failed with status %d: %s", resp.StatusCode, string(body))
+	return fmt.Errorf(
+		"audio generation failed with status %d: %s",
+		resp.StatusCode,
+		string(body),
+	)
 }

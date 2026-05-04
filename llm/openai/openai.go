@@ -58,16 +58,28 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key used to authenticate.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the LLM model.
 func WithModel(m model.Model) Option { return func(o *Options) { o.model = m } }
 
 // WithMaxTokens sets the maximum number of tokens to generate.
-func WithMaxTokens(maxTokens int64) Option { return func(o *Options) { o.maxTokens = maxTokens } }
+func WithMaxTokens(
+	maxTokens int64,
+) Option {
+	return func(o *Options) { o.maxTokens = maxTokens }
+}
 
 // WithTemperature controls randomness.
-func WithTemperature(t float64) Option { return func(o *Options) { o.temperature = &t } }
+func WithTemperature(
+	t float64,
+) Option {
+	return func(o *Options) { o.temperature = &t }
+}
 
 // WithTopP sets nucleus sampling probability mass.
 func WithTopP(p float64) Option { return func(o *Options) { o.topP = &p } }
@@ -76,13 +88,25 @@ func WithTopP(p float64) Option { return func(o *Options) { o.topP = &p } }
 func WithTopK(k int64) Option { return func(o *Options) { o.topK = &k } }
 
 // WithStopSequences sets text sequences that halt generation.
-func WithStopSequences(seqs ...string) Option { return func(o *Options) { o.stopSequences = seqs } }
+func WithStopSequences(
+	seqs ...string,
+) Option {
+	return func(o *Options) { o.stopSequences = seqs }
+}
 
 // WithTimeout sets the maximum duration to wait for API responses.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithBaseURL sets a custom API endpoint for OpenAI-compatible services.
-func WithBaseURL(baseURL string) Option { return func(o *Options) { o.baseURL = baseURL } }
+func WithBaseURL(
+	baseURL string,
+) Option {
+	return func(o *Options) { o.baseURL = baseURL }
+}
 
 // WithExtraHeaders adds custom HTTP headers to API requests.
 func WithExtraHeaders(headers map[string]string) Option {
@@ -98,10 +122,18 @@ func WithReasoningEffort(effort ReasoningEffort) Option {
 }
 
 // WithFrequencyPenalty sets the frequency penalty.
-func WithFrequencyPenalty(p float64) Option { return func(o *Options) { o.frequencyPenalty = &p } }
+func WithFrequencyPenalty(
+	p float64,
+) Option {
+	return func(o *Options) { o.frequencyPenalty = &p }
+}
 
 // WithPresencePenalty sets the presence penalty.
-func WithPresencePenalty(p float64) Option { return func(o *Options) { o.presencePenalty = &p } }
+func WithPresencePenalty(
+	p float64,
+) Option {
+	return func(o *Options) { o.presencePenalty = &p }
+}
 
 // WithSeed sets a random seed for deterministic generation.
 func WithSeed(seed int64) Option { return func(o *Options) { o.seed = &seed } }
@@ -124,8 +156,8 @@ type retryableError struct {
 	err *openaisdk.Error
 }
 
-func (e retryableError) Error() string  { return e.err.Error() }
-func (e retryableError) Unwrap() error  { return e.err }
+func (e retryableError) Error() string      { return e.err.Error() }
+func (e retryableError) Unwrap() error      { return e.err }
 func (e retryableError) GetStatusCode() int { return e.err.StatusCode }
 func (e retryableError) GetRetryAfter() string {
 	if e.err.Response != nil {
@@ -204,20 +236,35 @@ func (c *Client) convertMessages(
 	for _, msg := range messages {
 		switch msg.Role {
 		case message.System:
-			openaiMessages = append(openaiMessages, openaisdk.SystemMessage(msg.Content().String()))
+			openaiMessages = append(
+				openaiMessages,
+				openaisdk.SystemMessage(msg.Content().String()),
+			)
 		case message.User:
 			var content []openaisdk.ChatCompletionContentPartUnionParam
-			textBlock := openaisdk.ChatCompletionContentPartTextParam{Text: msg.Content().String()}
-			content = append(content, openaisdk.ChatCompletionContentPartUnionParam{OfText: &textBlock})
+			textBlock := openaisdk.ChatCompletionContentPartTextParam{
+				Text: msg.Content().String(),
+			}
+			content = append(
+				content,
+				openaisdk.ChatCompletionContentPartUnionParam{
+					OfText: &textBlock,
+				},
+			)
 
 			for _, binaryContent := range msg.BinaryContent() {
 				imageURL := openaisdk.ChatCompletionContentPartImageImageURLParam{
 					URL: binaryContent.String(model.ProviderOpenAI),
 				}
-				imageBlock := openaisdk.ChatCompletionContentPartImageParam{ImageURL: imageURL}
-				content = append(content, openaisdk.ChatCompletionContentPartUnionParam{
-					OfImageURL: &imageBlock,
-				})
+				imageBlock := openaisdk.ChatCompletionContentPartImageParam{
+					ImageURL: imageURL,
+				}
+				content = append(
+					content,
+					openaisdk.ChatCompletionContentPartUnionParam{
+						OfImageURL: &imageBlock,
+					},
+				)
 			}
 
 			for _, imageURLContent := range msg.ImageURLContent() {
@@ -227,16 +274,26 @@ func (c *Client) convertMessages(
 				if imageURLContent.Detail != "" {
 					imageURL.Detail = imageURLContent.Detail
 				}
-				imageBlock := openaisdk.ChatCompletionContentPartImageParam{ImageURL: imageURL}
-				content = append(content, openaisdk.ChatCompletionContentPartUnionParam{
-					OfImageURL: &imageBlock,
-				})
+				imageBlock := openaisdk.ChatCompletionContentPartImageParam{
+					ImageURL: imageURL,
+				}
+				content = append(
+					content,
+					openaisdk.ChatCompletionContentPartUnionParam{
+						OfImageURL: &imageBlock,
+					},
+				)
 			}
 
-			openaiMessages = append(openaiMessages, openaisdk.UserMessage(content))
+			openaiMessages = append(
+				openaiMessages,
+				openaisdk.UserMessage(content),
+			)
 
 		case message.Assistant:
-			assistantMsg := openaisdk.ChatCompletionAssistantMessageParam{Role: "assistant"}
+			assistantMsg := openaisdk.ChatCompletionAssistantMessageParam{
+				Role: "assistant",
+			}
 
 			if msg.Content().String() != "" {
 				assistantMsg.Content = openaisdk.ChatCompletionAssistantMessageParamContentUnion{
@@ -261,9 +318,12 @@ func (c *Client) convertMessages(
 				}
 			}
 
-			openaiMessages = append(openaiMessages, openaisdk.ChatCompletionMessageParamUnion{
-				OfAssistant: &assistantMsg,
-			})
+			openaiMessages = append(
+				openaiMessages,
+				openaisdk.ChatCompletionMessageParamUnion{
+					OfAssistant: &assistantMsg,
+				},
+			)
 
 		case message.Tool:
 			for _, result := range msg.ToolResults() {
@@ -330,8 +390,14 @@ func (c *Client) preparedParams(
 		params.ParallelToolCalls = openaisdk.Bool(*c.options.parallelToolCalls)
 	}
 
-	pb := llm.NewParameterBuilder(c.options.temperature, c.options.topP, c.options.topK)
-	pb.ApplyFloat64Temperature(func(t *float64) { params.Temperature = openaisdk.Float(*t) })
+	pb := llm.NewParameterBuilder(
+		c.options.temperature,
+		c.options.topP,
+		c.options.topK,
+	)
+	pb.ApplyFloat64Temperature(
+		func(t *float64) { params.Temperature = openaisdk.Float(*t) },
+	)
 	pb.ApplyFloat64TopP(func(p *float64) { params.TopP = openaisdk.Float(*p) })
 
 	if len(c.options.stopSequences) > 0 {
@@ -372,35 +438,46 @@ func (c *Client) SendMessages(
 	messages []message.Message,
 	tools []tool.BaseTool,
 ) (*llm.Response, error) {
-	params := c.preparedParams(c.convertMessages(messages), c.convertTools(tools))
+	params := c.preparedParams(
+		c.convertMessages(messages),
+		c.convertTools(tools),
+	)
 
 	ctx, cancel := llm.ApplyTimeout(ctx, c.options.timeout)
 	defer cancel()
 
-	return llm.ExecuteWithRetry(ctx, RetryConfig(), func() (*llm.Response, error) {
-		openaiResponse, err := c.client.Chat.Completions.New(ctx, params)
-		if err != nil {
-			return nil, wrapError(err)
-		}
+	return llm.ExecuteWithRetry(
+		ctx,
+		RetryConfig(),
+		func() (*llm.Response, error) {
+			openaiResponse, err := c.client.Chat.Completions.New(ctx, params)
+			if err != nil {
+				return nil, wrapError(err)
+			}
 
-		if len(openaiResponse.Choices) == 0 {
-			return nil, fmt.Errorf("no response choices returned from OpenAI")
-		}
+			if len(openaiResponse.Choices) == 0 {
+				return nil, fmt.Errorf(
+					"no response choices returned from OpenAI",
+				)
+			}
 
-		content := openaiResponse.Choices[0].Message.Content
-		toolCalls := c.toolCalls(*openaiResponse)
-		finishReason := c.finishReason(string(openaiResponse.Choices[0].FinishReason))
-		if len(toolCalls) > 0 {
-			finishReason = message.FinishReasonToolUse
-		}
+			content := openaiResponse.Choices[0].Message.Content
+			toolCalls := c.toolCalls(*openaiResponse)
+			finishReason := c.finishReason(
+				string(openaiResponse.Choices[0].FinishReason),
+			)
+			if len(toolCalls) > 0 {
+				finishReason = message.FinishReasonToolUse
+			}
 
-		return &llm.Response{
-			Content:      content,
-			ToolCalls:    toolCalls,
-			Usage:        c.usage(*openaiResponse),
-			FinishReason: finishReason,
-		}, nil
-	})
+			return &llm.Response{
+				Content:      content,
+				ToolCalls:    toolCalls,
+				Usage:        c.usage(*openaiResponse),
+				FinishReason: finishReason,
+			}, nil
+		},
+	)
 }
 
 // StreamResponse sends a conversation and returns a channel of streaming events.
@@ -409,7 +486,10 @@ func (c *Client) StreamResponse(
 	messages []message.Message,
 	tools []tool.BaseTool,
 ) <-chan llm.Event {
-	params := c.preparedParams(c.convertMessages(messages), c.convertTools(tools))
+	params := c.preparedParams(
+		c.convertMessages(messages),
+		c.convertTools(tools),
+	)
 	params.StreamOptions = openaisdk.ChatCompletionStreamOptionsParam{
 		IncludeUsage: openaisdk.Bool(true),
 	}
@@ -447,9 +527,11 @@ func (c *Client) runStream(
 
 		for _, choice := range chunk.Choices {
 			for _, key := range []string{"reasoning", "reasoning_content"} {
-				if field, ok := choice.Delta.JSON.ExtraFields[key]; ok && field.Raw() != "" {
+				if field, ok := choice.Delta.JSON.ExtraFields[key]; ok &&
+					field.Raw() != "" {
 					var rc string
-					if json.Unmarshal([]byte(field.Raw()), &rc) == nil && rc != "" {
+					if json.Unmarshal([]byte(field.Raw()), &rc) == nil &&
+						rc != "" {
 						eventChan <- llm.Event{
 							Type:     types.EventThinkingDelta,
 							Thinking: rc,
@@ -499,9 +581,12 @@ func (c *Client) runStream(
 	return wrapError(err)
 }
 
-func (c *Client) toolCalls(completion openaisdk.ChatCompletion) []message.ToolCall {
+func (c *Client) toolCalls(
+	completion openaisdk.ChatCompletion,
+) []message.ToolCall {
 	var toolCalls []message.ToolCall
-	if len(completion.Choices) > 0 && len(completion.Choices[0].Message.ToolCalls) > 0 {
+	if len(completion.Choices) > 0 &&
+		len(completion.Choices[0].Message.ToolCalls) > 0 {
 		for _, call := range completion.Choices[0].Message.ToolCalls {
 			toolCalls = append(toolCalls, message.ToolCall{
 				ID:       call.ID,
@@ -557,38 +642,49 @@ func (c *Client) SendMessagesWithStructuredOutput(
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
 ) (*llm.Response, error) {
-	params := c.preparedParams(c.convertMessages(messages), c.convertTools(tools))
+	params := c.preparedParams(
+		c.convertMessages(messages),
+		c.convertTools(tools),
+	)
 	params.ResponseFormat = c.responseFormatForSchema(outputSchema)
 
 	ctx, cancel := llm.ApplyTimeout(ctx, c.options.timeout)
 	defer cancel()
 
-	return llm.ExecuteWithRetry(ctx, RetryConfig(), func() (*llm.Response, error) {
-		openaiResponse, err := c.client.Chat.Completions.New(ctx, params)
-		if err != nil {
-			return nil, wrapError(err)
-		}
+	return llm.ExecuteWithRetry(
+		ctx,
+		RetryConfig(),
+		func() (*llm.Response, error) {
+			openaiResponse, err := c.client.Chat.Completions.New(ctx, params)
+			if err != nil {
+				return nil, wrapError(err)
+			}
 
-		if len(openaiResponse.Choices) == 0 {
-			return nil, fmt.Errorf("no response choices returned from OpenAI")
-		}
+			if len(openaiResponse.Choices) == 0 {
+				return nil, fmt.Errorf(
+					"no response choices returned from OpenAI",
+				)
+			}
 
-		content := openaiResponse.Choices[0].Message.Content
-		toolCalls := c.toolCalls(*openaiResponse)
-		finishReason := c.finishReason(string(openaiResponse.Choices[0].FinishReason))
-		if len(toolCalls) > 0 {
-			finishReason = message.FinishReasonToolUse
-		}
+			content := openaiResponse.Choices[0].Message.Content
+			toolCalls := c.toolCalls(*openaiResponse)
+			finishReason := c.finishReason(
+				string(openaiResponse.Choices[0].FinishReason),
+			)
+			if len(toolCalls) > 0 {
+				finishReason = message.FinishReasonToolUse
+			}
 
-		return &llm.Response{
-			Content:                    content,
-			ToolCalls:                  toolCalls,
-			Usage:                      c.usage(*openaiResponse),
-			FinishReason:               finishReason,
-			StructuredOutput:           &content,
-			UsedNativeStructuredOutput: true,
-		}, nil
-	})
+			return &llm.Response{
+				Content:                    content,
+				ToolCalls:                  toolCalls,
+				Usage:                      c.usage(*openaiResponse),
+				FinishReason:               finishReason,
+				StructuredOutput:           &content,
+				UsedNativeStructuredOutput: true,
+			}, nil
+		},
+	)
 }
 
 // StreamResponseWithStructuredOutput streams with a JSON schema constraint.
@@ -598,7 +694,10 @@ func (c *Client) StreamResponseWithStructuredOutput(
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
 ) <-chan llm.Event {
-	params := c.preparedParams(c.convertMessages(messages), c.convertTools(tools))
+	params := c.preparedParams(
+		c.convertMessages(messages),
+		c.convertTools(tools),
+	)
 	params.ResponseFormat = c.responseFormatForSchema(outputSchema)
 	params.StreamOptions = openaisdk.ChatCompletionStreamOptionsParam{
 		IncludeUsage: openaisdk.Bool(true),

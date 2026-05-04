@@ -1,195 +1,106 @@
 # Embeddings
 
-## Text Embeddings
+Each native embedding vendor is its own Go module under `embeddings/`.
+
+## Text embeddings
+
+OpenAI:
 
 ```go
 import (
     "github.com/joakimcarlsson/ai/embeddings"
+    embopenai "github.com/joakimcarlsson/ai/embeddings/openai"
     "github.com/joakimcarlsson/ai/model"
 )
 
-embedder, err := embeddings.NewEmbedding(model.ProviderVoyage,
-    embeddings.WithAPIKey(""),
-    embeddings.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
+embedder := embopenai.NewEmbedding(
+    embopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+    embopenai.WithModel(model.OpenAIEmbeddingModels[model.TextEmbedding3Small]),
 )
-if err != nil {
-    log.Fatal(err)
-}
 
-texts := []string{
-    "Hello, world!",
-    "This is a test document.",
-}
-
-response, err := embedder.GenerateEmbeddings(context.Background(), texts)
-if err != nil {
-    log.Fatal(err)
-}
-
-for i, embedding := range response.Embeddings {
-    fmt.Printf("Text: %s\n", texts[i])
-    fmt.Printf("Dimensions: %d\n", len(embedding))
-    fmt.Printf("First 5 values: %v\n", embedding[:5])
-}
+resp, err := embedder.GenerateEmbeddings(ctx, []string{
+    "Hello, world",
+    "How are you?",
+})
+fmt.Printf("Generated %d embeddings\n", len(resp.Embeddings))
 ```
 
-## Multimodal Embeddings
+Voyage:
 
 ```go
-embedder, err := embeddings.NewEmbedding(model.ProviderVoyage,
-    embeddings.WithAPIKey(""),
-    embeddings.WithModel(model.VoyageEmbeddingModels[model.VoyageMulti3]),
-)
+import embvoyage "github.com/joakimcarlsson/ai/embeddings/voyage"
 
-multimodalInputs := []embeddings.MultimodalInput{
+embedder := embvoyage.NewEmbedding(
+    embvoyage.WithAPIKey(os.Getenv("VOYAGE_API_KEY")),
+    embvoyage.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
+    embvoyage.WithInputType("document"),  // or "query"
+)
+```
+
+Cohere:
+
+```go
+import embcohere "github.com/joakimcarlsson/ai/embeddings/cohere"
+
+embedder := embcohere.NewEmbedding(
+    embcohere.WithAPIKey(os.Getenv("COHERE_API_KEY")),
+    embcohere.WithModel(model.CohereEmbeddingModels[model.EmbedV3]),
+    embcohere.WithInputType("search_document"),
+)
+```
+
+Gemini, Mistral, Bedrock follow the same shape — `embeddings/gemini`,
+`embeddings/mistral`, `embeddings/bedrock`.
+
+## Multimodal embeddings (Voyage)
+
+```go
+inputs := []embeddings.MultimodalInput{
     {
         Content: []embeddings.MultimodalContent{
-            {Type: "text", Text: "This is a banana."},
-            {Type: "image_url", ImageURL: "https://example.com/banana.jpg"},
+            {Type: "text", Text: "A photo of a cat"},
+            {Type: "image_url", ImageURL: "https://example.com/cat.jpg"},
         },
     },
 }
 
-response, err := embedder.GenerateMultimodalEmbeddings(context.Background(), multimodalInputs)
+resp, err := embedder.GenerateMultimodalEmbeddings(ctx, inputs)
 ```
 
-## Contextualized Embeddings
+## Contextualized embeddings (Voyage)
 
-Embed document chunks with awareness of their surrounding context. Each chunk embedding incorporates information from the full document, improving retrieval for chunks that lack standalone meaning.
+For document chunks where each chunk should be embedded with awareness of
+its surrounding context:
 
 ```go
-documentChunks := [][]string{
-    { // Document 1
-        "Introduction to quantum computing...",
-        "Qubits differ from classical bits...",
-        "Quantum entanglement enables...",
-    },
-    { // Document 2
-        "Machine learning overview...",
-        "Neural networks consist of...",
-    },
+documents := [][]string{
+    {"chunk 1 of doc 1", "chunk 2 of doc 1", "chunk 3 of doc 1"},
+    {"chunk 1 of doc 2", "chunk 2 of doc 2"},
 }
 
-response, err := embedder.GenerateContextualizedEmbeddings(context.Background(), documentChunks)
-
-// response.DocumentEmbeddings[0][1] = embedding for "Qubits differ..." with context from Document 1
+resp, err := embedder.GenerateContextualizedEmbeddings(ctx, documents)
+// resp.DocumentEmbeddings[i][j] is the embedding of doc i, chunk j
 ```
 
-## Client Options
+## Per-call input type
+
+The optional `inputType` variadic argument overrides the constructor default:
 
 ```go
-embedder, err := embeddings.NewEmbedding(
-    model.ProviderVoyage,
-    embeddings.WithAPIKey(""),
-    embeddings.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
-    embeddings.WithBatchSize(100),
-    embeddings.WithDimensions(1024),
-    embeddings.WithTimeout(30*time.Second),
-    embeddings.WithVoyageOptions(
-        embeddings.WithInputType("document"),
-        embeddings.WithOutputDimension(1024),
-        embeddings.WithOutputDtype("float"),
-    ),
+resp, err := embedder.GenerateEmbeddings(ctx, texts, "query")
+```
+
+## Bedrock (Titan + Cohere on Bedrock)
+
+```go
+import embbedrock "github.com/joakimcarlsson/ai/embeddings/bedrock"
+
+embedder := embbedrock.NewEmbedding(
+    embbedrock.WithModel(model.BedrockEmbeddingModels[model.TitanEmbedV2]),
+    embbedrock.WithRegion("us-east-1"),
+    // or embbedrock.WithProfile("my-aws-profile"),
 )
 ```
 
-## Cohere
-
-```go
-embedder, err := embeddings.NewEmbedding(model.ProviderCohere,
-    embeddings.WithAPIKey(os.Getenv("COHERE_API_KEY")),
-    embeddings.WithModel(model.CohereEmbeddingModels[model.CohereEmbedEnV3]),
-    embeddings.WithCohereOptions(
-        embeddings.WithCohereInputType("search_document"),
-    ),
-)
-
-response, err := embedder.GenerateEmbeddings(ctx, texts)
-```
-
-### Cohere Options
-
-| Option | Description |
-|--------|-------------|
-| `WithCohereInputType(string)` | Input type: `"search_document"`, `"search_query"` |
-| `WithCohereTruncation(string)` | Truncation strategy: `"NONE"`, `"START"`, `"END"` |
-| `WithCohereEmbeddingTypes([]string)` | Types: `"float"`, `"int8"`, `"uint8"`, `"binary"`, `"ubinary"` |
-
-**Models:** `CohereEmbedV4` (1024 dims, 128K tokens), `CohereEmbedMultiV3` (1024 dims), `CohereEmbedEnV3` (1024 dims)
-
-## Google Gemini
-
-```go
-embedder, err := embeddings.NewEmbedding(model.ProviderGemini,
-    embeddings.WithAPIKey(os.Getenv("GEMINI_API_KEY")),
-    embeddings.WithModel(model.GeminiEmbeddingModels[model.GeminiTextEmbedding004]),
-    embeddings.WithGeminiOptions(
-        embeddings.WithGeminiTaskType("RETRIEVAL_DOCUMENT"),
-    ),
-)
-
-response, err := embedder.GenerateEmbeddings(ctx, texts)
-```
-
-### Gemini Options
-
-| Option | Description |
-|--------|-------------|
-| `WithGeminiTaskType(string)` | Task type: `"RETRIEVAL_DOCUMENT"`, `"RETRIEVAL_QUERY"` |
-
-**Models:** `GeminiTextEmbedding004` (768 dims, supports 768/512/256)
-
-## Mistral
-
-```go
-embedder, err := embeddings.NewEmbedding(model.ProviderMistral,
-    embeddings.WithAPIKey(os.Getenv("MISTRAL_API_KEY")),
-    embeddings.WithModel(model.MistralEmbeddingModels[model.MistralEmbed]),
-)
-
-response, err := embedder.GenerateEmbeddings(ctx, texts)
-```
-
-### Mistral Options
-
-| Option | Description |
-|--------|-------------|
-| `WithMistralOutputDimension(int)` | Output dimensionality (for Codestral Embed) |
-| `WithMistralOutputDtype(string)` | Data type: `"float"`, `"int8"`, `"uint8"`, `"binary"`, `"ubinary"` |
-
-**Models:** `MistralEmbed` (1024 dims, 8K tokens), `CodestralEmbed` (1536 dims, supports 1536/1024/768/512/256, 32K tokens)
-
-## AWS Bedrock
-
-```go
-embedder, err := embeddings.NewEmbedding(model.ProviderBedrock,
-    embeddings.WithModel(model.BedrockEmbeddingModels[model.BedrockTitanEmbedV2]),
-    embeddings.WithBedrockOptions(
-        embeddings.WithBedrockRegion("us-east-1"),
-    ),
-)
-
-response, err := embedder.GenerateEmbeddings(ctx, texts)
-```
-
-### Bedrock Options
-
-| Option | Description |
-|--------|-------------|
-| `WithBedrockRegion(string)` | AWS region (default: `"us-east-1"`) |
-| `WithBedrockProfile(string)` | AWS shared config profile for credentials |
-
-**Models:** `BedrockTitanEmbedV2` (1024 dims, supports 256/384/512/1024), `BedrockCohereEmbedEn` (1024 dims), `BedrockCohereEmbedMulti` (1024 dims)
-
-Bedrock uses AWS credentials from the environment or shared config — no API key required.
-
-## Embedding Interface
-
-```go
-type Embedding interface {
-    GenerateEmbeddings(ctx, texts, inputType...) (*EmbeddingResponse, error)
-    GenerateMultimodalEmbeddings(ctx, inputs, inputType...) (*EmbeddingResponse, error)
-    GenerateContextualizedEmbeddings(ctx, documentChunks, inputType...) (*ContextualizedEmbeddingResponse, error)
-    Model() model.EmbeddingModel
-}
-```
+The vendor is detected from the model's API ID (`cohere.*` vs everything-else
+defaults to Titan).

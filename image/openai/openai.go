@@ -1,4 +1,4 @@
-// Package openai provides an OpenAI implementation of the [image.ImageGeneration]
+// Package openai provides an OpenAI implementation of the [image.Generation]
 // interface. It also supports OpenAI-compatible providers (e.g. xAI Grok image)
 // via [WithBaseURL].
 package openai
@@ -78,16 +78,16 @@ func WithStreamingOptions(opts StreamingOptions) Option {
 	}
 }
 
-// Client implements [image.ImageGeneration] against the OpenAI image generation API.
+// Client implements [image.Generation] against the OpenAI image generation API.
 type Client struct {
 	options Options
 	client  openaisdk.Client
 }
 
 // NewGeneration constructs an OpenAI image generation client. The returned
-// [image.ImageGeneration] is wrapped with [image.WithTracing], so callers always
+// [image.Generation] is wrapped with [image.WithTracing], so callers always
 // get tracing spans and metrics.
-func NewGeneration(opts ...Option) image.ImageGeneration {
+func NewGeneration(opts ...Option) image.Generation {
 	options := Options{
 		streamingOptions: StreamingOptions{
 			PartialImages: 2,
@@ -110,7 +110,7 @@ func NewGeneration(opts ...Option) image.ImageGeneration {
 	return image.WithTracing(&Client{
 		options: options,
 		client:  openaisdk.NewClient(clientOpts...),
-	})
+	}, image.TracingAttrs{})
 }
 
 // Model returns the configured image generation model.
@@ -123,7 +123,7 @@ func (c *Client) GenerateImage(
 	ctx context.Context,
 	prompt string,
 	options ...image.GenerationOption,
-) (*image.ImageGenerationResponse, error) {
+) (*image.GenerationResponse, error) {
 	genOpts := image.GenerationOptions{
 		Size:           c.options.model.DefaultSize,
 		Quality:        c.options.model.DefaultQuality,
@@ -169,9 +169,9 @@ func (c *Client) GenerateImage(
 		return nil, fmt.Errorf("failed to generate image: %w", err)
 	}
 
-	results := make([]image.ImageGenerationResult, 0, len(response.Data))
+	results := make([]image.GenerationResult, 0, len(response.Data))
 	for _, img := range response.Data {
-		result := image.ImageGenerationResult{
+		result := image.GenerationResult{
 			RevisedPrompt: img.RevisedPrompt,
 		}
 		if img.URL != "" {
@@ -183,9 +183,9 @@ func (c *Client) GenerateImage(
 		results = append(results, result)
 	}
 
-	return &image.ImageGenerationResponse{
+	return &image.GenerationResponse{
 		Images: results,
-		Usage:  image.ImageGenerationUsage{PromptTokens: 0},
+		Usage:  image.GenerationUsage{PromptTokens: 0},
 		Model:  c.options.model.APIModel,
 	}, nil
 }
@@ -243,7 +243,7 @@ func (c *Client) GenerateImageStreaming(
 
 		switch event.Type {
 		case "image.partial_image":
-			if err := callback(image.ImageStreamEvent{
+			if err := callback(image.StreamEvent{
 				Type:              image.EventPartialImage,
 				ImageBase64:       event.B64JSON,
 				PartialImageIndex: int(event.PartialImageIndex),
@@ -254,7 +254,7 @@ func (c *Client) GenerateImageStreaming(
 			}
 
 		case "image.completed":
-			if err := callback(image.ImageStreamEvent{
+			if err := callback(image.StreamEvent{
 				Type:        image.EventCompleted,
 				ImageBase64: event.B64JSON,
 				Size:        event.Size,

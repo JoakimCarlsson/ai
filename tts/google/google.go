@@ -33,22 +33,46 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key used to authenticate with Google Cloud TTS.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the TTS model.
-func WithModel(m model.AudioModel) Option { return func(o *Options) { o.model = m } }
+func WithModel(
+	m model.AudioModel,
+) Option {
+	return func(o *Options) { o.model = m }
+}
 
 // WithTimeout sets the maximum duration to wait for a single request.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithLanguageCode sets the BCP-47 language code for voice selection.
-func WithLanguageCode(code string) Option { return func(o *Options) { o.languageCode = code } }
+func WithLanguageCode(
+	code string,
+) Option {
+	return func(o *Options) { o.languageCode = code }
+}
 
 // WithSSMLGender sets the voice gender ("MALE", "FEMALE", "NEUTRAL").
-func WithSSMLGender(gender string) Option { return func(o *Options) { o.ssmlGender = gender } }
+func WithSSMLGender(
+	gender string,
+) Option {
+	return func(o *Options) { o.ssmlGender = gender }
+}
 
 // WithVoiceName sets a specific voice name (e.g., "en-US-Wavenet-D").
-func WithVoiceName(name string) Option { return func(o *Options) { o.voiceName = name } }
+func WithVoiceName(
+	name string,
+) Option {
+	return func(o *Options) { o.voiceName = name }
+}
 
 // WithOutputFormat sets the audio encoding (e.g. "MP3", "LINEAR16", "OGG_OPUS",
 // "MULAW", "ALAW"). Default is "MP3".
@@ -79,6 +103,10 @@ func NewGeneration(opts ...Option) tts.Generation {
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    defaultBaseURL,
+	}, tts.TracingAttrs{
+		Voice:        options.voiceName,
+		OutputFormat: options.outputFormat,
+		Language:     options.languageCode,
 	})
 }
 
@@ -156,8 +184,17 @@ func (c *Client) GenerateAudio(
 		return nil, fmt.Errorf("failed to marshal TTS request: %w", err)
 	}
 
-	reqURL := fmt.Sprintf("%s/text:synthesize?key=%s", c.baseURL, c.options.apiKey)
-	req, err := http.NewRequestWithContext(ctx, "POST", reqURL, bytes.NewBuffer(jsonBody))
+	reqURL := fmt.Sprintf(
+		"%s/text:synthesize?key=%s",
+		c.baseURL,
+		c.options.apiKey,
+	)
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		reqURL,
+		bytes.NewBuffer(jsonBody),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TTS request: %w", err)
 	}
@@ -175,7 +212,11 @@ func (c *Client) GenerateAudio(
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("TTS API failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"TTS API failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var gcResp synthesizeResponse
@@ -236,7 +277,11 @@ func (c *Client) ListVoices(ctx context.Context) ([]tts.Voice, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("voices API failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"voices API failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var gcResp voicesResponse

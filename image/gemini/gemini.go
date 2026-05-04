@@ -1,5 +1,5 @@
 // Package gemini provides a Google Gemini implementation of the
-// [image.ImageGeneration] interface.
+// [image.Generation] interface.
 package gemini
 
 import (
@@ -52,16 +52,16 @@ func WithBackend(backend genai.Backend) Option {
 	}
 }
 
-// Client implements [image.ImageGeneration] against the Google Gemini API.
+// Client implements [image.Generation] against the Google Gemini API.
 type Client struct {
 	options Options
 	client  *genai.Client
 }
 
 // NewGeneration constructs a Gemini image generation client. The returned
-// [image.ImageGeneration] is wrapped with [image.WithTracing], so callers always
+// [image.Generation] is wrapped with [image.WithTracing], so callers always
 // get tracing spans and metrics.
-func NewGeneration(opts ...Option) image.ImageGeneration {
+func NewGeneration(opts ...Option) image.Generation {
 	options := Options{
 		backend: genai.BackendGeminiAPI,
 	}
@@ -80,7 +80,7 @@ func NewGeneration(opts ...Option) image.ImageGeneration {
 	return image.WithTracing(&Client{
 		options: options,
 		client:  client,
-	})
+	}, image.TracingAttrs{})
 }
 
 // Model returns the configured image generation model.
@@ -93,7 +93,7 @@ func (c *Client) GenerateImage(
 	ctx context.Context,
 	prompt string,
 	options ...image.GenerationOption,
-) (*image.ImageGenerationResponse, error) {
+) (*image.GenerationResponse, error) {
 	genOpts := image.GenerationOptions{
 		Size:           c.options.model.DefaultSize,
 		Quality:        c.options.model.DefaultQuality,
@@ -127,16 +127,22 @@ func (c *Client) GenerateImage(
 		return nil, fmt.Errorf("failed to generate image: %w", err)
 	}
 
-	results := make([]image.ImageGenerationResult, 0, len(response.GeneratedImages))
+	results := make(
+		[]image.GenerationResult,
+		0,
+		len(response.GeneratedImages),
+	)
 	for _, img := range response.GeneratedImages {
-		results = append(results, image.ImageGenerationResult{
-			ImageBase64: base64.StdEncoding.EncodeToString(img.Image.ImageBytes),
+		results = append(results, image.GenerationResult{
+			ImageBase64: base64.StdEncoding.EncodeToString(
+				img.Image.ImageBytes,
+			),
 		})
 	}
 
-	return &image.ImageGenerationResponse{
+	return &image.GenerationResponse{
 		Images: results,
-		Usage:  image.ImageGenerationUsage{PromptTokens: 0},
+		Usage:  image.GenerationUsage{PromptTokens: 0},
 		Model:  c.options.model.APIModel,
 	}, nil
 }
@@ -144,10 +150,10 @@ func (c *Client) GenerateImage(
 // GenerateImageStreaming returns [image.ErrStreamingNotSupported]; the Gemini
 // API does not currently expose streaming image generation.
 func (c *Client) GenerateImageStreaming(
-	ctx context.Context,
-	prompt string,
-	callback image.StreamCallback,
-	options ...image.GenerationOption,
+	_ context.Context,
+	_ string,
+	_ image.StreamCallback,
+	_ ...image.GenerationOption,
 ) error {
 	return image.ErrStreamingNotSupported
 }

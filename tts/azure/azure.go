@@ -29,19 +29,39 @@ type Options struct {
 type Option func(*Options)
 
 // WithAPIKey sets the API key used to authenticate with Azure Speech Services.
-func WithAPIKey(apiKey string) Option { return func(o *Options) { o.apiKey = apiKey } }
+func WithAPIKey(
+	apiKey string,
+) Option {
+	return func(o *Options) { o.apiKey = apiKey }
+}
 
 // WithModel selects the TTS model.
-func WithModel(m model.AudioModel) Option { return func(o *Options) { o.model = m } }
+func WithModel(
+	m model.AudioModel,
+) Option {
+	return func(o *Options) { o.model = m }
+}
 
 // WithTimeout sets the maximum duration to wait for a single request.
-func WithTimeout(timeout time.Duration) Option { return func(o *Options) { o.timeout = &timeout } }
+func WithTimeout(
+	timeout time.Duration,
+) Option {
+	return func(o *Options) { o.timeout = &timeout }
+}
 
 // WithRegion sets the Azure region for the Speech Service endpoint.
-func WithRegion(region string) Option { return func(o *Options) { o.region = region } }
+func WithRegion(
+	region string,
+) Option {
+	return func(o *Options) { o.region = region }
+}
 
 // WithVoiceName sets the default voice name (e.g., "en-US-JennyNeural").
-func WithVoiceName(name string) Option { return func(o *Options) { o.voiceName = name } }
+func WithVoiceName(
+	name string,
+) Option {
+	return func(o *Options) { o.voiceName = name }
+}
 
 // WithOutputFormat sets the output audio format (e.g., "audio-24khz-160kbitrate-mono-mp3").
 func WithOutputFormat(format string) Option {
@@ -73,6 +93,9 @@ func NewGeneration(opts ...Option) tts.Generation {
 	return tts.WithTracing(&Client{
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
+	}, tts.TracingAttrs{
+		Voice:        options.voiceName,
+		OutputFormat: options.outputFormat,
 	})
 }
 
@@ -97,7 +120,8 @@ func (c *Client) GenerateAudio(
 
 	ssml := fmt.Sprintf(
 		`<speak version='1.0' xml:lang='en-US'><voice name='%s'>%s</voice></speak>`,
-		c.options.voiceName, text,
+		c.options.voiceName,
+		text,
 	)
 
 	ttsURL := fmt.Sprintf(
@@ -105,7 +129,12 @@ func (c *Client) GenerateAudio(
 		c.options.region,
 	)
 
-	req, err := http.NewRequestWithContext(ctx, "POST", ttsURL, bytes.NewReader([]byte(ssml)))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		ttsURL,
+		bytes.NewReader([]byte(ssml)),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TTS request: %w", err)
 	}
@@ -125,7 +154,11 @@ func (c *Client) GenerateAudio(
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("TTS API failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"TTS API failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	return &tts.Response{
@@ -181,7 +214,11 @@ func (c *Client) ListVoices(ctx context.Context) ([]tts.Voice, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("voices API failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf(
+			"voices API failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var azureVoices []struct {
