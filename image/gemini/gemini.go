@@ -150,10 +150,10 @@ func (c *Client) GenerateImage(
 // GenerateImageStreaming returns [image.ErrStreamingNotSupported]; the Gemini
 // API does not currently expose streaming image generation.
 func (c *Client) GenerateImageStreaming(
-	ctx context.Context,
-	prompt string,
-	callback image.StreamCallback,
-	options ...image.GenerationOption,
+	_ context.Context,
+	_ string,
+	_ image.StreamCallback,
+	_ ...image.GenerationOption,
 ) error {
 	return image.ErrStreamingNotSupported
 }

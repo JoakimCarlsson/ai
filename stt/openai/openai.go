@@ -108,9 +108,9 @@ func (c *Client) SupportsStreaming() bool {
 
 // StreamTranscribe returns [stt.ErrStreamingNotSupported].
 func (c *Client) StreamTranscribe(
-	ctx context.Context,
-	audio <-chan []byte,
-	options ...stt.Option,
+	_ context.Context,
+	_ <-chan []byte,
+	_ ...stt.Option,
 ) (<-chan stt.StreamResult, error) {
 	return nil, stt.ErrStreamingNotSupported
 }

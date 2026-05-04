@@ -315,9 +315,9 @@ func (c *Client) Transcribe(
 
 // Translate is not supported by ElevenLabs Scribe.
 func (c *Client) Translate(
-	ctx context.Context,
-	audioFile []byte,
-	options ...stt.Option,
+	_ context.Context,
+	_ []byte,
+	_ ...stt.Option,
 ) (*stt.Response, error) {
 	return nil, fmt.Errorf("elevenlabs scribe does not support translation")
 }

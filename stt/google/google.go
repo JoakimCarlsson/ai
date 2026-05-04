@@ -118,9 +118,9 @@ func (c *Client) SupportsStreaming() bool {
 
 // StreamTranscribe returns [stt.ErrStreamingNotSupported].
 func (c *Client) StreamTranscribe(
-	ctx context.Context,
-	audio <-chan []byte,
-	options ...stt.Option,
+	_ context.Context,
+	_ <-chan []byte,
+	_ ...stt.Option,
 ) (<-chan stt.StreamResult, error) {
 	return nil, stt.ErrStreamingNotSupported
 }
@@ -248,9 +248,9 @@ func (c *Client) Transcribe(
 
 // Translate is not supported by Google Cloud STT.
 func (c *Client) Translate(
-	ctx context.Context,
-	audioFile []byte,
-	options ...stt.Option,
+	_ context.Context,
+	_ []byte,
+	_ ...stt.Option,
 ) (*stt.Response, error) {
 	return nil, fmt.Errorf("google cloud STT does not support translation")
 }

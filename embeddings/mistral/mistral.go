@@ -244,18 +244,18 @@ func (c *Client) embedBatch(
 
 // GenerateMultimodalEmbeddings is not supported by Mistral.
 func (c *Client) GenerateMultimodalEmbeddings(
-	ctx context.Context,
-	inputs []embeddings.MultimodalInput,
-	inputType ...string,
+	_ context.Context,
+	_ []embeddings.MultimodalInput,
+	_ ...string,
 ) (*embeddings.EmbeddingResponse, error) {
 	return nil, fmt.Errorf("mistral does not support multimodal embeddings")
 }
 
 // GenerateContextualizedEmbeddings is not supported by Mistral.
 func (c *Client) GenerateContextualizedEmbeddings(
-	ctx context.Context,
-	documentChunks [][]string,
-	inputType ...string,
+	_ context.Context,
+	_ [][]string,
+	_ ...string,
 ) (*embeddings.ContextualizedEmbeddingResponse, error) {
 	return nil, fmt.Errorf("mistral does not support contextualized embeddings")
 }
