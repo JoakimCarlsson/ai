@@ -50,7 +50,7 @@ func newSTT() (stt.SpeechToText, string) {
 	case "openai":
 		return sttopenai.NewSpeechToText(
 			sttopenai.WithAPIKey(requiredEnv("OPENAI_API_KEY")),
-			sttopenai.WithModel(model.OpenAITranscriptionModels[model.GPT4oMiniTranscribe]),
+			sttopenai.WithModel(model.OpenAITranscriptionModels[model.GPT4oTranscribe]),
 			sttopenai.WithLanguage("en"),
 		), provider
 	default:

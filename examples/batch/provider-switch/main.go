@@ -58,7 +58,7 @@ func newLLM() (llm.LLM, string) {
 	case "anthropic":
 		return llmanthropic.NewLLM(
 			llmanthropic.WithAPIKey(requiredEnv("ANTHROPIC_API_KEY")),
-			llmanthropic.WithModel(model.AnthropicModels[model.Claude35Haiku]),
+			llmanthropic.WithModel(model.AnthropicModels[model.Claude45Haiku]),
 			llmanthropic.WithMaxTokens(128),
 		), provider
 	case "gemini":
@@ -70,7 +70,7 @@ func newLLM() (llm.LLM, string) {
 	case "openai":
 		return llmopenai.NewLLM(
 			llmopenai.WithAPIKey(requiredEnv("OPENAI_API_KEY")),
-			llmopenai.WithModel(model.OpenAIModels[model.GPT4oMini]),
+			llmopenai.WithModel(model.OpenAIModels[model.GPT54Nano]),
 			llmopenai.WithMaxTokens(128),
 		), provider
 	default:

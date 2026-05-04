@@ -19,7 +19,7 @@ func main() {
 
 	llmClient := llmopenai.NewLLM(
 		llmopenai.WithAPIKey(apiKey),
-		llmopenai.WithModel(model.OpenAIModels[model.GPT4oMini]),
+		llmopenai.WithModel(model.OpenAIModels[model.GPT54Nano]),
 		llmopenai.WithMaxTokens(256),
 	)
 
