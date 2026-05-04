@@ -138,10 +138,10 @@ import (
     "google.golang.org/genai"
 )
 
-// OpenAI / xAI
-client := imageopenai.NewImageGeneration(
+// OpenAI
+client := imageopenai.NewGeneration(
     imageopenai.WithAPIKey("your-key"),
-    imageopenai.WithModel(model.OpenAIImageGenerationModels[model.DALLE3]),
+    imageopenai.WithModel(model.OpenAIImageGenerationModels[model.GPTImage15]),
     imageopenai.WithTimeout(60*time.Second),
     imageopenai.WithBaseURL("custom-endpoint"),
 )

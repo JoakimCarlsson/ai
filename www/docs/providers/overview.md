@@ -67,11 +67,9 @@ Under `image/`:
 
 | Module | Provider | Models | Streaming |
 |---|---|---|---|
-| `image/openai` | OpenAI | DALL-E 2, DALL-E 3, GPT Image 1 | ✅ (gpt-image-1) |
-| `image/gemini` | Google Gemini | Gemini 2.5 Flash Image, Imagen 3/4 | ❌ |
-
-xAI Grok image generation: use `image/openai` with
-`WithBaseURL("https://api.x.ai/v1")`.
+| `image/openai` | OpenAI | DALL-E 2, DALL-E 3, GPT Image 1 / 1-mini / 1.5 / 2 | ✅ (gpt-image-*) |
+| `image/gemini` | Google Gemini | Gemini 2.5 Flash Image, Gemini 3 Pro Image, Imagen 4 / 4 Ultra / 4 Fast | ❌ |
+| `image/xai` | xAI | Grok 2 Image, Grok Imagine, Grok Imagine Pro | ❌ |
 
 ## TTS (Text-to-Speech) Providers
 

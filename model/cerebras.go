@@ -13,9 +13,9 @@ package model
 const (
 	ProviderCerebras Provider = "cerebras"
 
-	CerebrasLlama31_8B  ID = "cerebras.llama3.1-8b"
-	CerebrasGPTOss120B  ID = "cerebras.gpt-oss-120b"
-	CerebrasQwen3_235B  ID = "cerebras.qwen-3-235b-a22b-instruct-2507"
+	CerebrasLlama31_8B ID = "cerebras.llama3.1-8b"
+	CerebrasGPTOss120B ID = "cerebras.gpt-oss-120b"
+	CerebrasQwen3_235B ID = "cerebras.qwen-3-235b-a22b-instruct-2507"
 )
 
 // CerebrasModels maps Cerebras model IDs to their configurations.

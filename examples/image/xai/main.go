@@ -7,27 +7,29 @@ import (
 	"os"
 
 	"github.com/joakimcarlsson/ai/image"
-	imagegemini "github.com/joakimcarlsson/ai/image/gemini"
+	imagexai "github.com/joakimcarlsson/ai/image/xai"
 	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
-	apiKey := os.Getenv("GEMINI_API_KEY")
+	apiKey := os.Getenv("XAI_API_KEY")
 	if apiKey == "" {
-		log.Fatal("GEMINI_API_KEY is required")
+		log.Fatal("XAI_API_KEY is required")
 	}
 
-	client := imagegemini.NewGeneration(
-		imagegemini.WithAPIKey(apiKey),
-		imagegemini.WithModel(
-			model.GeminiImageGenerationModels[model.Imagen4Fast],
+	client := imagexai.NewGeneration(
+		imagexai.WithAPIKey(apiKey),
+		imagexai.WithModel(
+			model.XAIImageGenerationModels[model.XAIGrokImagineImage],
 		),
-		imagegemini.WithAspectRatio(imagegemini.AspectRatio1x1),
+		imagexai.WithAspectRatio(imagexai.AspectRatio16x9),
+		imagexai.WithResolution(imagexai.Resolution2K),
+		imagexai.WithResponseFormat(imagexai.ResponseFormatBase64),
 	)
 
 	resp, err := client.GenerateImage(
 		context.Background(),
-		"A clean flat illustration of Go modules as neatly stacked packages",
+		"A neon-lit night market with steam rising from food stalls",
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -41,7 +43,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	const output = "gemini-image.png"
+	const output = "xai-image.png"
 	if err := os.WriteFile(output, data, 0o644); err != nil {
 		log.Fatal(err)
 	}

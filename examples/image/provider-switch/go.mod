@@ -6,6 +6,7 @@ require (
 	github.com/joakimcarlsson/ai/image v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/image/gemini v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/image/openai v0.0.0-00010101000000-000000000000
+	github.com/joakimcarlsson/ai/image/xai v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/model v0.0.0-00010101000000-000000000000
 )
 
@@ -70,6 +71,7 @@ replace (
 	github.com/joakimcarlsson/ai/image => ../../../image
 	github.com/joakimcarlsson/ai/image/gemini => ../../../image/gemini
 	github.com/joakimcarlsson/ai/image/openai => ../../../image/openai
+	github.com/joakimcarlsson/ai/image/xai => ../../../image/xai
 	github.com/joakimcarlsson/ai/llm => ../../../llm
 	github.com/joakimcarlsson/ai/llm/anthropic => ../../../llm/anthropic
 	github.com/joakimcarlsson/ai/llm/gemini => ../../../llm/gemini

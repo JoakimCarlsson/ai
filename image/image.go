@@ -3,24 +3,32 @@
 //
 // This package defines the [Generation] interface and the data types that flow
 // through it. Concrete vendor implementations live in subpackages (image/openai,
-// image/gemini); each subpackage exports its own NewGeneration constructor that
-// returns a tracing-wrapped client implementing the interface.
+// image/gemini, image/xai); each subpackage exports its own NewGeneration
+// constructor that returns a tracing-wrapped client implementing the interface.
+//
+// All vendor knobs (size, aspect ratio, quality, response format, style, seed,
+// safety, ...) are configured at construction on the vendor's Options. The
+// per-call surface is just the prompt — image generation is "configure once,
+// prompt many" and vendor request bodies don't share enough common shape to
+// support a portable per-call surface.
 //
 // Example usage:
 //
 //	import (
 //		"github.com/joakimcarlsson/ai/image"
 //		imageopenai "github.com/joakimcarlsson/ai/image/openai"
+//		"github.com/joakimcarlsson/ai/model"
 //	)
 //
 //	client := imageopenai.NewGeneration(
-//		imageopenai.WithAPIKey("your-api-key"),
-//		imageopenai.WithModel(model.OpenAIImageModels[model.DallE3]),
+//		imageopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+//		imageopenai.WithModel(model.OpenAIImageGenerationModels[model.DallE3]),
+//		imageopenai.WithSize("1024x1024"),
+//		imageopenai.WithQuality("hd"),
+//		imageopenai.WithStyle("vivid"),
 //	)
 //
-//	response, err := client.GenerateImage(ctx, "A serene mountain landscape at sunset",
-//		image.WithResponseFormat("b64_json"),
-//	)
+//	response, err := client.GenerateImage(ctx, "A serene mountain landscape at sunset")
 //	if err != nil {
 //		log.Fatal(err)
 //	}
@@ -50,9 +58,9 @@ type GenerationUsage struct {
 
 // GenerationResult represents a single generated image with its metadata.
 type GenerationResult struct {
-	// ImageURL contains the URL to the generated image if ResponseFormat was "url".
+	// ImageURL contains the URL to the generated image if the vendor returned a URL.
 	ImageURL string
-	// ImageBase64 contains the base64-encoded image data if ResponseFormat was "b64_json".
+	// ImageBase64 contains the base64-encoded image data if the vendor returned bytes.
 	ImageBase64 string
 	// RevisedPrompt contains the prompt that was actually used to generate the image.
 	RevisedPrompt string
@@ -95,31 +103,6 @@ type StreamEvent struct {
 // StreamCallback is called for each streaming event during image generation.
 type StreamCallback func(StreamEvent) error
 
-// ImageGenerationUsage is deprecated. Use [GenerationUsage].
-//
-//revive:disable-next-line:exported
-type ImageGenerationUsage = GenerationUsage
-
-// ImageGenerationResult is deprecated. Use [GenerationResult].
-//
-//revive:disable-next-line:exported
-type ImageGenerationResult = GenerationResult
-
-// ImageGenerationResponse is deprecated. Use [GenerationResponse].
-//
-//revive:disable-next-line:exported
-type ImageGenerationResponse = GenerationResponse
-
-// ImageStreamEventType is deprecated. Use [StreamEventType].
-//
-//revive:disable-next-line:exported
-type ImageStreamEventType = StreamEventType
-
-// ImageStreamEvent is deprecated. Use [StreamEvent].
-//
-//revive:disable-next-line:exported
-type ImageStreamEvent = StreamEvent
-
 // ErrStreamingNotSupported is returned when streaming is requested but the model doesn't support it.
 var ErrStreamingNotSupported = errors.New(
 	"streaming not supported by this model",
@@ -127,13 +110,10 @@ var ErrStreamingNotSupported = errors.New(
 
 // Generation defines the interface for generating images from text prompts.
 type Generation interface {
-	// GenerateImage creates one or more images from a text prompt.
-	// The optional GenerationOption parameters can customize the generation (size, quality, format, etc.).
-	GenerateImage(
-		ctx context.Context,
-		prompt string,
-		options ...GenerationOption,
-	) (*GenerationResponse, error)
+	// GenerateImage creates one or more images from a text prompt. All vendor
+	// configuration (size, quality, aspect ratio, ...) is set on the underlying
+	// client at construction.
+	GenerateImage(ctx context.Context, prompt string) (*GenerationResponse, error)
 
 	// GenerateImageStreaming streams partial images during generation.
 	// The callback is invoked for each partial image and the final completed image.
@@ -142,64 +122,10 @@ type Generation interface {
 		ctx context.Context,
 		prompt string,
 		callback StreamCallback,
-		options ...GenerationOption,
 	) error
 
 	// Model returns the image generation model configuration being used.
 	Model() model.ImageGenerationModel
-}
-
-// ImageGeneration is deprecated. Use [Generation].
-//
-//revive:disable-next-line:exported
-type ImageGeneration = Generation
-
-// GenerationOptions contains parameters for customizing image generation requests.
-type GenerationOptions struct {
-	// Size specifies the dimensions of the generated image (e.g., "1024x1024").
-	// Not supported by all providers.
-	Size string
-	// Quality controls the quality level of the generated image (e.g., "standard", "hd").
-	Quality string
-	// ResponseFormat specifies the format of the response ("url" or "b64_json").
-	ResponseFormat string
-	// N is the number of images to generate from the prompt.
-	N int
-}
-
-// GenerationOption is a function that configures GenerationOptions.
-type GenerationOption func(*GenerationOptions)
-
-// WithSize sets the dimensions of the generated image.
-// Not all providers support this option. Format is typically "WIDTHxHEIGHT" (e.g., "1024x1024").
-func WithSize(size string) GenerationOption {
-	return func(options *GenerationOptions) {
-		options.Size = size
-	}
-}
-
-// WithQuality sets the quality level of the generated image.
-// Common values are "standard" and "hd" (high definition).
-func WithQuality(quality string) GenerationOption {
-	return func(options *GenerationOptions) {
-		options.Quality = quality
-	}
-}
-
-// WithResponseFormat specifies how the generated image should be returned.
-// Valid values are "url" (returns a URL to the image) or "b64_json" (returns base64-encoded image data).
-func WithResponseFormat(format string) GenerationOption {
-	return func(options *GenerationOptions) {
-		options.ResponseFormat = format
-	}
-}
-
-// WithN sets the number of images to generate from the prompt.
-// Most providers charge per image generated.
-func WithN(n int) GenerationOption {
-	return func(options *GenerationOptions) {
-		options.N = n
-	}
 }
 
 // TracingAttrs are construction-time attributes vendor packages forward to the
@@ -207,7 +133,7 @@ func WithN(n int) GenerationOption {
 // client.
 type TracingAttrs struct{}
 
-// WithTracing wraps an ImageGeneration client so every call records OpenTelemetry
+// WithTracing wraps a [Generation] client so every call records OpenTelemetry
 // spans and metrics. The attrs are recorded as construction-time span attributes.
 func WithTracing(inner Generation, attrs TracingAttrs) Generation {
 	return &tracingClient{inner: inner, attrs: attrs}
@@ -229,7 +155,6 @@ func (t *tracingClient) spanAttrs() []tracing.Attr {
 func (t *tracingClient) GenerateImage(
 	ctx context.Context,
 	prompt string,
-	options ...GenerationOption,
 ) (*GenerationResponse, error) {
 	m := t.inner.Model()
 	start := time.Now()
@@ -241,7 +166,7 @@ func (t *tracingClient) GenerateImage(
 	)
 	defer span.End()
 
-	resp, err := t.inner.GenerateImage(ctx, prompt, options...)
+	resp, err := t.inner.GenerateImage(ctx, prompt)
 	if err != nil {
 		tracing.SetError(span, err)
 		tracing.RecordMetrics(
@@ -278,7 +203,6 @@ func (t *tracingClient) GenerateImageStreaming(
 	ctx context.Context,
 	prompt string,
 	callback StreamCallback,
-	options ...GenerationOption,
 ) error {
 	m := t.inner.Model()
 	start := time.Now()
@@ -290,7 +214,7 @@ func (t *tracingClient) GenerateImageStreaming(
 	)
 	defer span.End()
 
-	err := t.inner.GenerateImageStreaming(ctx, prompt, callback, options...)
+	err := t.inner.GenerateImageStreaming(ctx, prompt, callback)
 	tracing.RecordMetrics(
 		ctx,
 		"generate_image",

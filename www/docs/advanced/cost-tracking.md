@@ -17,17 +17,10 @@ outputCost := float64(response.Usage.OutputTokens) * model.CostPer1MOut / 1_000_
 ## Image Generation Models
 
 ```go
-model := model.OpenAIImageGenerationModels[model.DALLE3]
-
-// Pricing structure: size -> quality -> cost
-standardCost := model.Pricing["1024x1024"]["standard"]  // $0.04
-hdCost := model.Pricing["1024x1024"]["hd"]              // $0.08
-
-// GPT Image 1 with multiple quality tiers
-gptImageModel := model.OpenAIImageGenerationModels[model.GPTImage1]
-lowCost := gptImageModel.Pricing["1024x1024"]["low"]       // $0.011
-mediumCost := gptImageModel.Pricing["1024x1024"]["medium"] // $0.042
-highCost := gptImageModel.Pricing["1024x1024"]["high"]     // $0.167
+gptImageModel := model.OpenAIImageGenerationModels[model.GPTImage15]
+lowCost := gptImageModel.Pricing["1024x1024"]["low"]       // $0.009
+mediumCost := gptImageModel.Pricing["1024x1024"]["medium"] // $0.034
+highCost := gptImageModel.Pricing["1024x1024"]["high"]     // $0.133
 ```
 
 ## Audio Generation Models
