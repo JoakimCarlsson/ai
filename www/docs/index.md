@@ -77,14 +77,6 @@ func main() {
 }
 ```
 
-## Why split into modules?
-
-Before the split, importing `agent/memory/pgvector` (a PostgreSQL backend)
-transitively pulled the OpenAI, Anthropic, Google, and AWS SDKs. After the
-split, each module's `go.mod` carries only the vendor SDKs it actually needs:
-`embeddings/cohere` is `net/http` only; `llm/anthropic` carries
-`anthropic-sdk-go` and nothing from other LLM vendors.
-
 ## Next steps
 
 - [Installation & Quick Start](getting-started/installation.md) — get up and running
