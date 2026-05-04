@@ -6,53 +6,96 @@ on:
   pull_request:
     branches: [main]
 
+# After Phase 8 the repo has no root go.mod. Each job iterates the workspace
+# modules (discovered via scripts/release.sh modules) and runs the job there.
+# Go workspace mode handles cross-module replaces during build.
+
+env:
+  GO_VERSION: '1.25.0'
+
 jobs:
   build:
+    name: Build all modules
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-go@v6
         with:
-          go-version-file: go.mod
+          go-version: ${{ env.GO_VERSION }}
 
-      - name: Build
-        run: go build ./...
+      - name: Bootstrap go.work
+        run: |
+          if [ ! -f go.work ]; then cp go.work.example go.work; fi
+
+      - name: Build every module
+        run: |
+          set -e
+          fails=0
+          for dir in $(scripts/release.sh modules); do
+            echo "::group::build $dir"
+            (cd "$dir" && go build ./...) || { fails=$((fails+1)); echo "::error::$dir failed"; }
+            echo "::endgroup::"
+          done
+          [ "$fails" -eq 0 ] || exit 1
 
   unit-test:
+    name: Unit tests (per module)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-go@v6
         with:
-          go-version-file: go.mod
+          go-version: ${{ env.GO_VERSION }}
 
-      - name: Unit tests
-        run: go test -short -coverprofile=coverage.out $(go list ./... | grep -v /tests/ | grep -v /example/)
+      - name: Bootstrap go.work
+        run: |
+          if [ ! -f go.work ]; then cp go.work.example go.work; fi
+
+      - name: Test every module (excluding tests/ + cmd/)
+        run: |
+          set -e
+          fails=0
+          for dir in $(scripts/release.sh modules); do
+            case "$dir" in
+              tests|tests/*|cmd/*) continue ;;
+            esac
+            echo "::group::test $dir"
+            (cd "$dir" && go test -short ./...) || { fails=$((fails+1)); echo "::error::$dir failed"; }
+            echo "::endgroup::"
+          done
+          [ "$fails" -eq 0 ] || exit 1
 
   integration-test:
+    name: Integration tests (tests/)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-go@v6
         with:
-          go-version-file: go.mod
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Bootstrap go.work
+        run: |
+          if [ ! -f go.work ]; then cp go.work.example go.work; fi
 
       - name: Cache Go build artifacts
         uses: actions/cache@v4
         with:
           path: ~/.cache/go-build
-          key: ${{ runner.os }}-go-build-${{ hashFiles('go.mod', 'go.sum') }}
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.mod', '**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-build-
 
       - name: Compile test binaries
-        run: go test -run ^$ ./tests/...
+        run: |
+          cd tests && go test -run ^$ ./...
 
       - name: Run integration tests
-        run: go test -v -timeout 300s -count=1 ./tests/...
+        run: |
+          cd tests && go test -v -timeout 300s -count=1 ./...
 
   fmt:
     name: Format
@@ -62,9 +105,13 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version-file: go.mod
+          go-version: ${{ env.GO_VERSION }}
 
-      - name: Check goimports
+      - name: Bootstrap go.work
+        run: |
+          if [ ! -f go.work ]; then cp go.work.example go.work; fi
+
+      - name: Check goimports across the workspace
         run: |
           go install golang.org/x/tools/cmd/goimports@latest
           output=$(goimports -l .)
@@ -75,17 +122,64 @@ jobs:
           fi
 
   lint:
-    name: Lint
+    name: Lint (per module)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-go@v6
         with:
-          go-version-file: go.mod
+          go-version: ${{ env.GO_VERSION }}
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v9
+      - name: Bootstrap go.work
+        run: |
+          if [ ! -f go.work ]; then cp go.work.example go.work; fi
+
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
+            | sh -s -- -b $(go env GOPATH)/bin latest
+
+      - name: Lint every module
+        run: |
+          set -e
+          fails=0
+          for dir in $(scripts/release.sh modules); do
+            echo "::group::lint $dir"
+            (cd "$dir" && golangci-lint run --timeout=5m ./...) \
+              || { fails=$((fails+1)); echo "::error::$dir failed"; }
+            echo "::endgroup::"
+          done
+          [ "$fails" -eq 0 ] || exit 1
+
+  release-tag:
+    name: Validate release tag
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/tags/main'
+    steps:
+      - uses: actions/checkout@v6
         with:
-          version: latest
-          args: --timeout=5m
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Bootstrap go.work
+        run: |
+          if [ ! -f go.work ]; then cp go.work.example go.work; fi
+
+      - name: Verify the tagged module builds and tests cleanly
+        run: |
+          # Tag format: <module-dir>/vX.Y.Z (e.g. llm/openai/v0.1.0)
+          tag="${GITHUB_REF#refs/tags/}"
+          mod_dir="${tag%/v*}"
+          if [ "$mod_dir" = "$tag" ]; then
+            echo "::warning::Tag $tag is not in <module>/vX.Y.Z form; skipping"
+            exit 0
+          fi
+          if [ ! -f "$mod_dir/go.mod" ]; then
+            echo "::error::Tag $tag points at $mod_dir but $mod_dir/go.mod is missing"
+            exit 1
+          fi
+          (cd "$mod_dir" && go build ./... && go test -short ./...)

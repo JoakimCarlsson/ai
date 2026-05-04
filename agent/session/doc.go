@@ -32,5 +32,5 @@
 // # Custom Implementations
 //
 // Implement the [Store] interface for custom backends like PostgreSQL or Redis.
-// See the integrations/postgres package for a PostgreSQL implementation.
+// See the agent/memory/postgres package for a PostgreSQL implementation.
 package session

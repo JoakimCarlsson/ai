@@ -7,7 +7,7 @@ import (
 	"github.com/joakimcarlsson/ai/agent/memory"
 	"github.com/joakimcarlsson/ai/agent/session"
 	"github.com/joakimcarlsson/ai/agent/team"
-	llm "github.com/joakimcarlsson/ai/providers"
+	llm "github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/tokens"
 	"github.com/joakimcarlsson/ai/tool"
 )

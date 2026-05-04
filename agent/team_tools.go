@@ -15,9 +15,9 @@ type spawnTeammateInput struct {
 	Name         string `json:"name"          desc:"Unique name for the teammate (used for messaging)"`
 	Template     string `json:"template"      desc:"Template name to use for the teammate's configuration. Falls back to name if empty." required:"false"`
 	Task         string `json:"task"          desc:"The task to assign to the teammate"`
-	SystemPrompt string `json:"system_prompt" desc:"System prompt for the teammate agent"              required:"false"`
-	MaxTurns     int    `json:"max_turns"     desc:"Maximum tool-execution turns. 0 uses default."     required:"false"`
-	Timeout      int    `json:"timeout"       desc:"Timeout in seconds for the teammate. 0 uses team default." required:"false"`
+	SystemPrompt string `json:"system_prompt" desc:"System prompt for the teammate agent"                                                required:"false"`
+	MaxTurns     int    `json:"max_turns"     desc:"Maximum tool-execution turns. 0 uses default."                                       required:"false"`
+	Timeout      int    `json:"timeout"       desc:"Timeout in seconds for the teammate. 0 uses team default."                           required:"false"`
 }
 
 type spawnTeammateTool struct {

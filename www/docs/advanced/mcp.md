@@ -58,9 +58,9 @@ import (
     "log"
     "os"
 
+    llmopenai "github.com/joakimcarlsson/ai/llm/openai"
     "github.com/joakimcarlsson/ai/message"
     "github.com/joakimcarlsson/ai/model"
-    llm "github.com/joakimcarlsson/ai/providers"
     "github.com/joakimcarlsson/ai/tool"
 )
 
@@ -86,14 +86,10 @@ func main() {
     }
     defer tool.CloseMCPPool()
 
-    client, err := llm.NewLLM(
-        model.ProviderOpenAI,
-        llm.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-        llm.WithModel(model.OpenAIModels[model.GPT4oMini]),
+    client := llmopenai.NewLLM(
+        llmopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+        llmopenai.WithModel(model.OpenAIModels[model.GPT4oMini]),
     )
-    if err != nil {
-        log.Fatal(err)
-    }
 
     messages := []message.Message{
         message.NewUserMessage("Explain React hooks using Context7 to fetch the latest documentation"),

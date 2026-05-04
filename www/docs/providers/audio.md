@@ -1,220 +1,134 @@
-# Audio Generation (Text-to-Speech)
+# Text-to-Speech (TTS)
 
-## Basic Usage
+The `tts` modality (formerly "audio generation"). Each native vendor lives
+under `tts/`.
+
+## Basic usage
+
+ElevenLabs:
 
 ```go
 import (
-    "github.com/joakimcarlsson/ai/audio"
     "github.com/joakimcarlsson/ai/model"
+    "github.com/joakimcarlsson/ai/tts"
+    ttselevenlabs "github.com/joakimcarlsson/ai/tts/elevenlabs"
 )
 
-client, err := audio.NewAudioGeneration(
-    model.ProviderElevenLabs,
-    audio.WithAPIKey("your-api-key"),
-    audio.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
-    audio.WithElevenLabsOptions(
-        audio.WithElevenLabsVoiceID("EXAVITQu4vr4xnSDxMaL"),
-    ),
+client := ttselevenlabs.NewGeneration(
+    ttselevenlabs.WithAPIKey(os.Getenv("ELEVENLABS_API_KEY")),
+    ttselevenlabs.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
+    ttselevenlabs.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),  // Rachel
 )
-if err != nil {
-    log.Fatal(err)
-}
 
-response, err := client.GenerateAudio(
-    context.Background(),
-    "Hello! This is a demonstration of text-to-speech.",
-)
-if err != nil {
-    log.Fatal(err)
-}
-
-os.WriteFile("output.mp3", response.AudioData, 0644)
-fmt.Printf("Characters used: %d\n", response.Usage.Characters)
+resp, err := client.GenerateAudio(ctx, "Hello, how are you today?")
+os.WriteFile("output.mp3", resp.AudioData, 0644)
 ```
 
-Voice is set when the client is constructed (like model). Each provider has its own helper: `WithElevenLabsVoiceID`, `WithOpenAIVoice`, `WithGoogleCloudVoiceName`, `WithAzureVoiceName`. There is no per-call override.
-
-## Custom Voice Settings
+OpenAI:
 
 ```go
-response, err := client.GenerateAudio(
-    context.Background(),
-    "This uses custom voice settings for enhanced expressiveness.",
-    audio.WithStability(0.75),              // 0.0-1.0, higher = more consistent
-    audio.WithSimilarityBoost(0.85),        // 0.0-1.0, higher = more similar to original
-    audio.WithStyle(0.5),                   // 0.0-1.0, higher = more expressive
-    audio.WithSpeakerBoost(true),           // Enhanced speaker similarity
+import ttsopenai "github.com/joakimcarlsson/ai/tts/openai"
+
+client := ttsopenai.NewGeneration(
+    ttsopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+    ttsopenai.WithModel(model.OpenAIAudioModels[model.TTS1HD]),
+    ttsopenai.WithVoice("nova"),
+    ttsopenai.WithOutputFormat("mp3"),
 )
 ```
 
-## Streaming Audio
+Google Cloud, Azure Speech, Deepgram Aura follow the same shape.
+
+## Streaming
+
+ElevenLabs and Deepgram stream chunked audio:
 
 ```go
-chunkChan, err := client.StreamAudio(
-    context.Background(),
-    "This is a streaming audio example.",
-    audio.WithOptimizeStreamingLatency(3), // 0-4, higher = lower latency
+chunks, err := client.StreamAudio(ctx, "Hello world",
+    tts.WithOptimizeStreamingLatency(3),
 )
-if err != nil {
-    log.Fatal(err)
-}
 
-file, _ := os.Create("output_stream.mp3")
-defer file.Close()
-
-for chunk := range chunkChan {
+for chunk := range chunks {
     if chunk.Error != nil {
         log.Fatal(chunk.Error)
     }
     if chunk.Done {
         break
     }
-    file.Write(chunk.Data)
+    output.Write(chunk.Data)
 }
 ```
 
-## List Available Voices
+The other vendors (`tts/openai`, `tts/google`, `tts/azure`) buffer the
+non-streaming response into a single chunk for API parity.
+
+## Voice listing
 
 ```go
-voices, err := client.ListVoices(context.Background())
-if err != nil {
-    log.Fatal(err)
-}
-
-for _, voice := range voices {
-    fmt.Printf("%s (%s) - %s\n", voice.Name, voice.VoiceID, voice.Category)
+voices, err := client.ListVoices(ctx)
+for _, v := range voices {
+    fmt.Printf("%s — %s (%s)\n", v.VoiceID, v.Name, v.Category)
 }
 ```
 
-## Alignment Data
-
-Enable character-level timing information for subtitles, word highlighting, or lip sync:
+## ElevenLabs voice settings
 
 ```go
-response, err := client.GenerateAudio(
-    context.Background(),
-    "Hello, world!",
-    audio.WithAlignmentEnabled(true),
+resp, err := client.GenerateAudio(ctx, "Expressive line",
+    tts.WithStability(0.75),
+    tts.WithSimilarityBoost(0.85),
+    tts.WithStyle(0.5),
+    tts.WithSpeakerBoost(true),
+)
+```
+
+## ElevenLabs alignment
+
+`tts/elevenlabs.Client` also implements `tts.ForcedAlignmentProvider`. The
+canonical alignment-enabled call:
+
+```go
+resp, err := client.GenerateAudio(ctx, "Hello world",
+    tts.WithAlignmentEnabled(true),
 )
 
-// response.Alignment contains character-level timing
-for i, char := range response.Alignment.Characters {
-    fmt.Printf("%s: %.2fs - %.2fs\n", char,
-        response.Alignment.CharacterStartTimesSeconds[i],
-        response.Alignment.CharacterEndTimesSeconds[i],
+for i, ch := range resp.Alignment.Characters {
+    fmt.Printf("%s: %.2fs - %.2fs\n",
+        ch,
+        resp.Alignment.CharacterStartTimesSeconds[i],
+        resp.Alignment.CharacterEndTimesSeconds[i],
     )
 }
 ```
 
-Alignment is also available per-chunk during streaming via `chunk.Alignment`.
-
-## Forced Alignment
-
-Match existing audio with a transcript to produce word-level timing data. The provider must implement the `ForcedAlignmentProvider` interface:
+For aligning existing audio against a transcript:
 
 ```go
-if aligner, ok := client.(audio.ForcedAlignmentProvider); ok {
-    audioData, _ := os.ReadFile("speech.mp3")
-    result, err := aligner.GenerateForcedAlignment(ctx, audioData, "Hello, world!")
+if fap, ok := client.(tts.ForcedAlignmentProvider); ok {
+    audio, _ := os.ReadFile("recording.mp3")
+    align, err := fap.GenerateForcedAlignment(ctx, audio,
+        "the spoken transcript")
 
-    for _, word := range result.Words {
-        fmt.Printf("%s: %.2fs - %.2fs\n", word.Text, word.Start, word.End)
+    for _, w := range align.Words {
+        fmt.Printf("%s: %.2fs - %.2fs (loss=%.4f)\n",
+            w.Text, w.Start, w.End, w.Loss)
     }
 }
 ```
 
-## Generation Options (per call)
+The type assertion succeeds against the wrapper returned from
+`ttselevenlabs.NewGeneration` because the wrapper preserves the optional
+sub-interface when the inner concrete client implements it.
 
-| Option | Description |
-|--------|-------------|
-| `WithOutputFormat(fmt)` | Audio format (`mp3_44100_128`, `pcm_16000`, etc.) |
-| `WithStability(f)` | Voice consistency, 0.0–1.0 |
-| `WithSimilarityBoost(f)` | Match to original voice, 0.0–1.0 |
-| `WithStyle(f)` | Style exaggeration, 0.0–1.0 |
-| `WithSpeakerBoost(bool)` | Enhanced speaker similarity |
-| `WithOptimizeStreamingLatency(n)` | Latency optimization level, 0–4 |
-| `WithAlignmentEnabled(bool)` | Enable character-level timing data |
-
-## Voice Selection (at construction)
-
-Voice is provider-specific and set when the client is built:
-
-| Provider | Helper |
-|---|---|
-| ElevenLabs | `WithElevenLabsVoiceID(id string)` |
-| OpenAI | `WithOpenAIVoice(name string)` (`alloy`, `nova`, …) |
-| Google Cloud | `WithGoogleCloudVoiceName(name string)` (`en-US-Wavenet-D`, …) |
-| Azure Speech | `WithAzureVoiceName(name string)` (`en-US-JennyNeural`, …) |
-
-## Client Options
+## Common per-call options
 
 ```go
-client, err := audio.NewAudioGeneration(
-    model.ProviderElevenLabs,
-    audio.WithAPIKey("your-key"),
-    audio.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
-    audio.WithTimeout(30*time.Second),
-    audio.WithElevenLabsOptions(
-        audio.WithElevenLabsBaseURL("custom-endpoint"),
-        audio.WithElevenLabsVoiceID("EXAVITQu4vr4xnSDxMaL"),
-    ),
-)
+tts.WithOutputFormat("mp3_44100_128")   // ElevenLabs
+tts.WithOutputFormat("LINEAR16")        // Google Cloud
+tts.WithStability(0.75)
+tts.WithSimilarityBoost(0.85)
+tts.WithStyle(0.5)
+tts.WithSpeakerBoost(true)
+tts.WithOptimizeStreamingLatency(3)
+tts.WithAlignmentEnabled(true)
 ```
-
-## Google Cloud Text-to-Speech
-
-```go
-client, err := audio.NewAudioGeneration(
-    model.ProviderGoogleCloud,
-    audio.WithAPIKey(os.Getenv("GOOGLE_CLOUD_API_KEY")),
-    audio.WithModel(model.GoogleCloudAudioModels[model.GoogleCloudTTSWavenet]),
-    audio.WithGoogleCloudTTSOptions(
-        audio.WithGoogleCloudLanguageCode("en-US"),
-        audio.WithGoogleCloudVoiceName("en-US-Wavenet-D"),
-    ),
-)
-
-response, err := client.GenerateAudio(ctx, "Hello! This is Google Cloud TTS.")
-os.WriteFile("output.mp3", response.AudioData, 0644)
-```
-
-### Google Cloud TTS Options
-
-| Option | Description |
-|--------|-------------|
-| `WithGoogleCloudLanguageCode(string)` | BCP-47 language code (default: `"en-US"`) |
-| `WithGoogleCloudSSMLGender(string)` | Voice gender: `"MALE"`, `"FEMALE"`, `"NEUTRAL"` |
-| `WithGoogleCloudVoiceName(string)` | Specific voice name (e.g., `"en-US-Wavenet-D"`) |
-
-**Models:** `GoogleCloudTTSStandard`, `GoogleCloudTTSWavenet`, `GoogleCloudTTSNeural2`
-
-**Supported formats:** LINEAR16, MP3, OGG_OPUS, MULAW, ALAW
-
-## Azure Speech Services
-
-```go
-client, err := audio.NewAudioGeneration(
-    model.ProviderAzureSpeech,
-    audio.WithAPIKey(os.Getenv("AZURE_SPEECH_KEY")),
-    audio.WithModel(model.AzureSpeechAudioModels[model.AzureSpeechNeural]),
-    audio.WithAzureSpeechOptions(
-        audio.WithAzureRegion("eastus"),
-        audio.WithAzureVoiceName("en-US-JennyNeural"),
-    ),
-)
-
-response, err := client.GenerateAudio(ctx, "Hello! This is Azure Speech.")
-os.WriteFile("output.mp3", response.AudioData, 0644)
-```
-
-### Azure Speech Options
-
-| Option | Description |
-|--------|-------------|
-| `WithAzureRegion(string)` | Azure region (default: `"eastus"`) |
-| `WithAzureVoiceName(string)` | Voice name (default: `"en-US-JennyNeural"`) |
-| `WithAzureOutputFormat(string)` | Output audio format |
-
-**Models:** `AzureSpeechNeural`
-
-**Supported formats:** `audio-16khz-128kbitrate-mono-mp3`, `audio-24khz-160kbitrate-mono-mp3` (default), `riff-16khz-16bit-mono-pcm`, `riff-24khz-16bit-mono-pcm`, `ogg-16khz-16bit-mono-opus`, `ogg-24khz-16bit-mono-opus`

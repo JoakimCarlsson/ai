@@ -1,7 +1,7 @@
 package memory
 
 import (
-	llm "github.com/joakimcarlsson/ai/providers"
+	llm "github.com/joakimcarlsson/ai/llm"
 )
 
 // Config holds memory-related configuration for an agent.
