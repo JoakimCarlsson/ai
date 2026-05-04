@@ -18,7 +18,7 @@ package pgvector
 import (
 	"database/sql"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // Register the postgres database/sql driver.
 )
 
 // openDB opens a connection to the PostgreSQL database.

@@ -85,7 +85,7 @@ func (s *sessionStore) Create(
 }
 
 func (s *sessionStore) Load(
-	ctx context.Context,
+	_ context.Context,
 	id string,
 ) (session.Session, error) {
 	return &pgSession{db: s.db, id: id, idGenerator: s.idGenerator}, nil

@@ -6,9 +6,8 @@ ifeq ($(OS),Windows_NT)
     GOLANGCI := cmd /c "set GOTOOLCHAIN=local&& golangci-lint run ./..."
 else
     GOLANGCI := GOTOOLCHAIN=local $(GOPATH_FWD)/bin/golangci-lint run ./...
+    MODULES := $(shell scripts/release.sh modules 2>/dev/null)
 endif
-
-MODULES := $(shell scripts/release.sh modules 2>/dev/null)
 
 install:
 	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
@@ -16,17 +15,25 @@ install:
 	go install github.com/segmentio/golines@latest
 
 workspace:
+ifeq ($(OS),Windows_NT)
+	@if not exist go.work copy go.work.example go.work >NUL
+else
 	@test -f go.work || cp go.work.example go.work
+endif
 
 fmt:
 	$(GOPATH_FWD)/bin/goimports -w .
 	$(GOPATH_FWD)/bin/golines -m 80 -w .
 
 lint: workspace
+ifeq ($(OS),Windows_NT)
+	@powershell -NoProfile -ExecutionPolicy Bypass -Command "$$ErrorActionPreference = 'Stop'; $$modules = (go work edit -json go.work.example | ConvertFrom-Json).Use.DiskPath; foreach ($$module in $$modules) { $$dir = $$module -replace '^\./',''; Write-Host ('==> lint ' + $$dir); Push-Location $$dir; try { go vet ./...; if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE }; $$env:GOTOOLCHAIN = 'local'; golangci-lint run ./...; if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE } } finally { Pop-Location } }"
+else
 	@for dir in $(MODULES); do \
 		echo "==> lint $$dir"; \
 		(cd "$$dir" && go vet ./... && $(GOLANGCI)) || exit 1; \
 	done
+endif
 
 build: workspace
 	@for dir in $(MODULES); do \
