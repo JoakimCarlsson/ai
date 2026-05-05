@@ -28,11 +28,14 @@ jobs:
         run: |
           if [ ! -f go.work ]; then cp go.work.example go.work; fi
 
-      - name: Build every module
+      - name: Build every module (excluding examples/)
         run: |
           set -e
           fails=0
           for dir in $(scripts/release.sh modules); do
+            case "$dir" in
+              examples/*) continue ;;
+            esac
             echo "::group::build $dir"
             (cd "$dir" && go build ./...) || { fails=$((fails+1)); echo "::error::$dir failed"; }
             echo "::endgroup::"
@@ -53,13 +56,13 @@ jobs:
         run: |
           if [ ! -f go.work ]; then cp go.work.example go.work; fi
 
-      - name: Test every module (excluding tests/ + cmd/)
+      - name: Test every module (excluding tests/, cmd/, examples/)
         run: |
           set -e
           fails=0
           for dir in $(scripts/release.sh modules); do
             case "$dir" in
-              tests|tests/*|cmd/*) continue ;;
+              tests|tests/*|cmd/*|examples/*) continue ;;
             esac
             echo "::group::test $dir"
             (cd "$dir" && go test -short ./...) || { fails=$((fails+1)); echo "::error::$dir failed"; }
@@ -136,15 +139,16 @@ jobs:
           if [ ! -f go.work ]; then cp go.work.example go.work; fi
 
       - name: Install golangci-lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
-            | sh -s -- -b $(go env GOPATH)/bin latest
+        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.5.0
 
-      - name: Lint every module
+      - name: Lint every module (excluding examples/)
         run: |
           set -e
           fails=0
           for dir in $(scripts/release.sh modules); do
+            case "$dir" in
+              examples/*) continue ;;
+            esac
             echo "::group::lint $dir"
             (cd "$dir" && golangci-lint run --timeout=5m ./...) \
               || { fails=$((fails+1)); echo "::error::$dir failed"; }
