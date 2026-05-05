@@ -4,6 +4,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/go-1.25%2B-00ADD8?logo=go)](https://go.dev/)
 
+> **Migrating from `v0.18.x`?** The library has been split into ~50 per-vendor modules. See [MIGRATION.md](MIGRATION.md) for path renames and API changes.
+
 A multi-provider Go library for AI: LLMs, embeddings, image generation, TTS,
 STT, rerankers, and fill-in-the-middle. Each capability is a modality module
 and each vendor implementation is its own sub-module — you import only the
