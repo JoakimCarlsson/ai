@@ -7,6 +7,8 @@
 // The primary focus is on event types for streaming responses, which allow
 // clients to handle different kinds of events during streaming interactions
 // with AI models.
+//
+//revive:disable-next-line:var-naming
 package types
 
 // EventType defines the type of streaming response event from AI models.
