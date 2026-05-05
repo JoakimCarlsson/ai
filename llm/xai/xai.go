@@ -24,5 +24,6 @@ type Option = llmopenai.Option
 // [llmopenai.WithBaseURL] is prepended with [DefaultBaseURL]; pass it again in
 // opts to point at a different endpoint (e.g. a corporate proxy).
 func NewLLM(opts ...Option) llm.LLM {
-	return llmopenai.NewLLM(append([]Option{llmopenai.WithBaseURL(DefaultBaseURL)}, opts...)...)
+	return llmopenai.NewLLM(
+		append([]Option{llmopenai.WithBaseURL(DefaultBaseURL)}, opts...)...)
 }

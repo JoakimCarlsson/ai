@@ -27,20 +27,20 @@ type AspectRatio string
 
 // Supported aspect-ratio values per https://docs.x.ai/docs/guides/image-generations.
 const (
-	AspectRatio1x1     AspectRatio = "1:1"
-	AspectRatio16x9    AspectRatio = "16:9"
-	AspectRatio9x16    AspectRatio = "9:16"
-	AspectRatio4x3     AspectRatio = "4:3"
-	AspectRatio3x4     AspectRatio = "3:4"
-	AspectRatio3x2     AspectRatio = "3:2"
-	AspectRatio2x3     AspectRatio = "2:3"
-	AspectRatio2x1     AspectRatio = "2:1"
-	AspectRatio1x2     AspectRatio = "1:2"
-	AspectRatio19_5x9  AspectRatio = "19.5:9"
-	AspectRatio9x19_5  AspectRatio = "9:19.5"
-	AspectRatio20x9    AspectRatio = "20:9"
-	AspectRatio9x20    AspectRatio = "9:20"
-	AspectRatioAuto    AspectRatio = "auto"
+	AspectRatio1x1    AspectRatio = "1:1"
+	AspectRatio16x9   AspectRatio = "16:9"
+	AspectRatio9x16   AspectRatio = "9:16"
+	AspectRatio4x3    AspectRatio = "4:3"
+	AspectRatio3x4    AspectRatio = "3:4"
+	AspectRatio3x2    AspectRatio = "3:2"
+	AspectRatio2x3    AspectRatio = "2:3"
+	AspectRatio2x1    AspectRatio = "2:1"
+	AspectRatio1x2    AspectRatio = "1:2"
+	AspectRatio19_5x9 AspectRatio = "19.5:9"
+	AspectRatio9x19_5 AspectRatio = "9:19.5"
+	AspectRatio20x9   AspectRatio = "20:9"
+	AspectRatio9x20   AspectRatio = "9:20"
+	AspectRatioAuto   AspectRatio = "auto"
 )
 
 // Resolution enumerates the output-resolution presets for Grok Imagine models.
@@ -183,7 +183,9 @@ func (c *Client) GenerateImage(
 	if responseFormat == "" {
 		responseFormat = ResponseFormatURL
 	}
-	params.ResponseFormat = openaisdk.ImageGenerateParamsResponseFormat(responseFormat)
+	params.ResponseFormat = openaisdk.ImageGenerateParamsResponseFormat(
+		responseFormat,
+	)
 
 	aspectRatio := c.options.aspectRatio
 	if aspectRatio == "" {

@@ -113,7 +113,10 @@ type Generation interface {
 	// GenerateImage creates one or more images from a text prompt. All vendor
 	// configuration (size, quality, aspect ratio, ...) is set on the underlying
 	// client at construction.
-	GenerateImage(ctx context.Context, prompt string) (*GenerationResponse, error)
+	GenerateImage(
+		ctx context.Context,
+		prompt string,
+	) (*GenerationResponse, error)
 
 	// GenerateImageStreaming streams partial images during generation.
 	// The callback is invoked for each partial image and the final completed image.

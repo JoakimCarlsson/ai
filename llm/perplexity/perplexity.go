@@ -22,5 +22,6 @@ type Option = llmopenai.Option
 // [llmopenai.WithBaseURL] is prepended with [DefaultBaseURL]; pass it again in
 // opts to override.
 func NewLLM(opts ...Option) llm.LLM {
-	return llmopenai.NewLLM(append([]Option{llmopenai.WithBaseURL(DefaultBaseURL)}, opts...)...)
+	return llmopenai.NewLLM(
+		append([]Option{llmopenai.WithBaseURL(DefaultBaseURL)}, opts...)...)
 }

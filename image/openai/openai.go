@@ -237,16 +237,24 @@ func (c *Client) buildParams(prompt string) openaisdk.ImageGenerateParams {
 	}
 
 	if c.options.background != "" && apiModel != "gpt-image-2" {
-		params.Background = openaisdk.ImageGenerateParamsBackground(c.options.background)
+		params.Background = openaisdk.ImageGenerateParamsBackground(
+			c.options.background,
+		)
 	}
 	if c.options.moderation != "" {
-		params.Moderation = openaisdk.ImageGenerateParamsModeration(c.options.moderation)
+		params.Moderation = openaisdk.ImageGenerateParamsModeration(
+			c.options.moderation,
+		)
 	}
 	if c.options.outputFormat != "" {
-		params.OutputFormat = openaisdk.ImageGenerateParamsOutputFormat(c.options.outputFormat)
+		params.OutputFormat = openaisdk.ImageGenerateParamsOutputFormat(
+			c.options.outputFormat,
+		)
 	}
 	if c.options.outputCompression != nil {
-		params.OutputCompression = openaisdk.Int(int64(*c.options.outputCompression))
+		params.OutputCompression = openaisdk.Int(
+			int64(*c.options.outputCompression),
+		)
 	}
 	if c.options.user != "" {
 		params.User = openaisdk.String(c.options.user)
