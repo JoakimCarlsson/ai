@@ -60,6 +60,16 @@ use (
 	./llm/azure
 	./llm/vertexai
 	./llm/bedrock
+	./llm/xai
+	./llm/openrouter
+	./llm/groq
+	./llm/deepseek
+	./llm/perplexity
+	./llm/mistral
+	./llm/cerebras
+	./llm/fireworks
+	./llm/together
+	./llm/ollama
 
 	./tokens
 	./tokens/sliding
