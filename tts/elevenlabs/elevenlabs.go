@@ -8,13 +8,18 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net"
 	"net/http"
+	"net/url"
 	"strconv"
+	"sync"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tts"
 )
@@ -404,8 +409,13 @@ func (c *Client) generateWithTimestamps(
 	}, nil
 }
 
-// StreamAudio creates audio from text and returns a channel of audio chunks.
-// If alignment is enabled, calls the /stream/with-timestamps endpoint.
+// StreamAudio opens a WebSocket to ElevenLabs' stream-input endpoint and
+// emits audio chunks (and alignment data when [tts.WithAlignmentEnabled] is set)
+// as the server produces them. Lower TTFB than the HTTP streaming path; the
+// caller-facing semantics are unchanged.
+//
+// Note: [tts.WithOptimizeStreamingLatency] is documented for ElevenLabs' HTTP
+// endpoint only and has no effect on the WS path.
 func (c *Client) StreamAudio(
 	ctx context.Context,
 	text string,
@@ -415,14 +425,35 @@ func (c *Client) StreamAudio(
 	for _, opt := range options {
 		opt(opts)
 	}
-
-	if opts.EnableAlignment {
-		return c.streamWithTimestamps(ctx, text, opts)
-	}
-	return c.streamStandard(ctx, text, opts)
+	return c.streamWS(ctx, text, opts)
 }
 
-func (c *Client) streamStandard(
+const (
+	wsHandshakeTimeout = 10 * time.Second
+	wsReadDeadline     = 60 * time.Second
+	wsReadLimit        = 16 * 1024 * 1024
+)
+
+type wsBeginMessage struct {
+	Text          string         `json:"text"`
+	VoiceSettings *voiceSettings `json:"voice_settings,omitempty"`
+}
+
+type wsTextMessage struct {
+	Text string `json:"text"`
+}
+
+type wsServerMessage struct {
+	Audio               string             `json:"audio"`
+	IsFinal             *bool              `json:"isFinal"`
+	Alignment           *alignmentResponse `json:"alignment"`
+	NormalizedAlignment *alignmentResponse `json:"normalizedAlignment"`
+	Error               string             `json:"error"`
+	Message             string             `json:"message"`
+	Code                int                `json:"code"`
+}
+
+func (c *Client) streamWS(
 	ctx context.Context,
 	text string,
 	opts *tts.GenerationOptions,
@@ -432,208 +463,216 @@ func (c *Client) streamStandard(
 		outputFormat = opts.OutputFormat
 	}
 
-	reqBody := ttsRequest{
-		Text:          text,
-		ModelID:       c.modelID,
+	wsURL, err := c.buildStreamURL(outputFormat, opts.EnableAlignment)
+	if err != nil {
+		ch := make(chan tts.Chunk, 1)
+		ch <- tts.Chunk{Error: fmt.Errorf("failed to build ws url: %w", err)}
+		close(ch)
+		return ch, nil
+	}
+
+	hdr := http.Header{}
+	hdr.Set("xi-api-key", c.apiKey)
+
+	dialer := websocket.Dialer{HandshakeTimeout: wsHandshakeTimeout}
+	conn, resp, err := dialer.DialContext(ctx, wsURL, hdr)
+	if resp != nil {
+		_ = resp.Body.Close()
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial websocket: %w", err)
+	}
+
+	conn.SetReadLimit(wsReadLimit)
+	_ = conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
+	conn.SetPongHandler(func(string) error {
+		return conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
+	})
+
+	var writeMu sync.Mutex
+	send := func(messageType int, data []byte) error {
+		writeMu.Lock()
+		defer writeMu.Unlock()
+		return conn.WriteMessage(messageType, data)
+	}
+
+	bos, err := json.Marshal(wsBeginMessage{
+		Text:          " ",
 		VoiceSettings: c.buildVoiceSettings(opts),
-	}
-
-	jsonData, err := json.Marshal(reqBody)
+	})
 	if err != nil {
+		_ = conn.Close()
 		ch := make(chan tts.Chunk, 1)
-		ch <- tts.Chunk{Error: fmt.Errorf("failed to marshal request: %w", err)}
+		ch <- tts.Chunk{Error: fmt.Errorf("failed to marshal bos: %w", err)}
+		close(ch)
+		return ch, nil
+	}
+	if err := send(websocket.TextMessage, bos); err != nil {
+		_ = conn.Close()
+		ch := make(chan tts.Chunk, 1)
+		ch <- tts.Chunk{Error: fmt.Errorf("failed to send bos: %w", err)}
 		close(ch)
 		return ch, nil
 	}
 
-	url := fmt.Sprintf("%s/text-to-speech/%s/stream?output_format=%s",
-		c.baseURL, c.voiceID, outputFormat)
-	if opts.OptimizeStreamingLatency != nil {
-		url = fmt.Sprintf(
-			"%s&optimize_streaming_latency=%d",
-			url,
-			*opts.OptimizeStreamingLatency,
-		)
-	}
-
-	req, err := http.NewRequestWithContext(
-		ctx,
-		"POST",
-		url,
-		bytes.NewBuffer(jsonData),
-	)
+	textMsg, err := json.Marshal(wsTextMessage{Text: text + " "})
 	if err != nil {
+		_ = conn.Close()
 		ch := make(chan tts.Chunk, 1)
-		ch <- tts.Chunk{Error: fmt.Errorf("failed to create request: %w", err)}
+		ch <- tts.Chunk{Error: fmt.Errorf("failed to marshal text: %w", err)}
 		close(ch)
 		return ch, nil
 	}
-	req.Header.Set("xi-api-key", c.apiKey)
-	req.Header.Set("Content-Type", "application/json")
+	if err := send(websocket.TextMessage, textMsg); err != nil {
+		_ = conn.Close()
+		ch := make(chan tts.Chunk, 1)
+		ch <- tts.Chunk{Error: fmt.Errorf("failed to send text: %w", err)}
+		close(ch)
+		return ch, nil
+	}
+
+	if err := send(websocket.TextMessage, []byte(`{"text":""}`)); err != nil {
+		_ = conn.Close()
+		ch := make(chan tts.Chunk, 1)
+		ch <- tts.Chunk{Error: fmt.Errorf("failed to send eos: %w", err)}
+		close(ch)
+		return ch, nil
+	}
 
 	chunkChan := make(chan tts.Chunk, 10)
-
-	go func() {
-		defer close(chunkChan)
-
-		resp, err := c.httpClient.Do(req)
-		if err != nil {
-			chunkChan <- tts.Chunk{Error: fmt.Errorf("request failed: %w", err)}
-			return
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			chunkChan <- tts.Chunk{Error: c.parseError(resp)}
-			return
-		}
-
-		buffer := make([]byte, 4096)
-		for {
-			n, err := resp.Body.Read(buffer)
-			if n > 0 {
-				data := make([]byte, n)
-				copy(data, buffer[:n])
-				chunkChan <- tts.Chunk{Data: data, Done: false}
-			}
-
-			if err == io.EOF {
-				chunkChan <- tts.Chunk{Done: true}
-				break
-			}
-
-			if err != nil {
-				chunkChan <- tts.Chunk{Error: fmt.Errorf("stream read error: %w", err)}
-				break
-			}
-
-			select {
-			case <-ctx.Done():
-				chunkChan <- tts.Chunk{Error: ctx.Err()}
-				return
-			default:
-			}
-		}
-	}()
-
+	go runStreamReader(ctx, conn, chunkChan)
 	return chunkChan, nil
 }
 
-type streamChunkWithTimestamps struct {
-	AudioBase64         string            `json:"audio_base64"`
-	Alignment           alignmentResponse `json:"alignment"`
-	NormalizedAlignment alignmentResponse `json:"normalized_alignment"`
+func (c *Client) buildStreamURL(outputFormat string, syncAlignment bool) (string, error) {
+	base, err := url.Parse(c.baseURL)
+	if err != nil {
+		return "", err
+	}
+	scheme := "wss"
+	if base.Scheme == "http" {
+		scheme = "ws"
+	}
+	q := url.Values{}
+	q.Set("model_id", c.modelID)
+	if outputFormat != "" {
+		q.Set("output_format", outputFormat)
+	}
+	q.Set("inactivity_timeout", "20")
+	q.Set("auto_mode", "false")
+	if syncAlignment {
+		q.Set("sync_alignment", "true")
+	}
+	u := url.URL{
+		Scheme:   scheme,
+		Host:     base.Host,
+		Path:     base.Path + "/text-to-speech/" + c.voiceID + "/stream-input",
+		RawQuery: q.Encode(),
+	}
+	return u.String(), nil
 }
 
-func (c *Client) streamWithTimestamps(
+func runStreamReader(
 	ctx context.Context,
-	text string,
-	opts *tts.GenerationOptions,
-) (<-chan tts.Chunk, error) {
-	outputFormat := c.outputFormat
-	if opts.OutputFormat != "" {
-		outputFormat = opts.OutputFormat
-	}
+	conn *websocket.Conn,
+	out chan<- tts.Chunk,
+) {
+	defer close(out)
+	defer func() { _ = conn.Close() }()
 
-	reqBody := ttsRequest{
-		Text:          text,
-		ModelID:       c.modelID,
-		VoiceSettings: c.buildVoiceSettings(opts),
-	}
-
-	jsonData, err := json.Marshal(reqBody)
-	if err != nil {
-		ch := make(chan tts.Chunk, 1)
-		ch <- tts.Chunk{Error: fmt.Errorf("failed to marshal request: %w", err)}
-		close(ch)
-		return ch, nil
-	}
-
-	url := fmt.Sprintf(
-		"%s/text-to-speech/%s/stream/with-timestamps?output_format=%s",
-		c.baseURL,
-		c.voiceID,
-		outputFormat,
-	)
-	if opts.OptimizeStreamingLatency != nil {
-		url = fmt.Sprintf(
-			"%s&optimize_streaming_latency=%d",
-			url,
-			*opts.OptimizeStreamingLatency,
-		)
-	}
-
-	req, err := http.NewRequestWithContext(
-		ctx,
-		"POST",
-		url,
-		bytes.NewBuffer(jsonData),
-	)
-	if err != nil {
-		ch := make(chan tts.Chunk, 1)
-		ch <- tts.Chunk{Error: fmt.Errorf("failed to create request: %w", err)}
-		close(ch)
-		return ch, nil
-	}
-	req.Header.Set("xi-api-key", c.apiKey)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-
-	chunkChan := make(chan tts.Chunk, 10)
-
+	readDone := make(chan struct{})
 	go func() {
-		defer close(chunkChan)
-
-		resp, err := c.httpClient.Do(req)
-		if err != nil {
-			chunkChan <- tts.Chunk{Error: fmt.Errorf("request failed: %w", err)}
-			return
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			chunkChan <- tts.Chunk{Error: c.parseError(resp)}
-			return
-		}
-
-		decoder := json.NewDecoder(resp.Body)
+		defer close(readDone)
 		for {
-			var chunk streamChunkWithTimestamps
-			err := decoder.Decode(&chunk)
-
-			if err == io.EOF {
-				chunkChan <- tts.Chunk{Done: true}
-				break
-			}
-
+			_, msg, err := conn.ReadMessage()
 			if err != nil {
-				chunkChan <- tts.Chunk{Error: fmt.Errorf("stream decode error: %w", err)}
-				break
-			}
-
-			audioData, err := base64.StdEncoding.DecodeString(chunk.AudioBase64)
-			if err != nil {
-				chunkChan <- tts.Chunk{Error: fmt.Errorf("failed to decode base64 audio: %w", err)}
-				break
-			}
-
-			chunkChan <- tts.Chunk{
-				Data:                audioData,
-				Done:                false,
-				Alignment:           toAlignmentData(chunk.Alignment),
-				NormalizedAlignment: toAlignmentData(chunk.NormalizedAlignment),
-			}
-
-			select {
-			case <-ctx.Done():
-				chunkChan <- tts.Chunk{Error: ctx.Err()}
+				if !isCleanWSClose(err) && !errors.Is(err, net.ErrClosed) {
+					select {
+					case out <- tts.Chunk{Error: err}:
+					case <-ctx.Done():
+					}
+				}
 				return
-			default:
+			}
+			_ = conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
+
+			var srv wsServerMessage
+			if err := json.Unmarshal(msg, &srv); err != nil {
+				select {
+				case out <- tts.Chunk{Error: fmt.Errorf("failed to decode ws frame: %w", err)}:
+				case <-ctx.Done():
+				}
+				return
+			}
+
+			if srv.Error != "" || srv.Message != "" {
+				detail := srv.Message
+				if detail == "" {
+					detail = srv.Error
+				}
+				select {
+				case out <- tts.Chunk{Error: fmt.Errorf("audio generation failed: %s", detail)}:
+				case <-ctx.Done():
+				}
+				return
+			}
+
+			if srv.Audio != "" {
+				audioBytes, decErr := base64.StdEncoding.DecodeString(srv.Audio)
+				if decErr != nil {
+					select {
+					case out <- tts.Chunk{Error: fmt.Errorf("failed to decode base64 audio: %w", decErr)}:
+					case <-ctx.Done():
+					}
+					return
+				}
+				chunk := tts.Chunk{Data: audioBytes}
+				if srv.Alignment != nil {
+					chunk.Alignment = toAlignmentData(*srv.Alignment)
+				}
+				if srv.NormalizedAlignment != nil {
+					chunk.NormalizedAlignment = toAlignmentData(*srv.NormalizedAlignment)
+				}
+				select {
+				case out <- chunk:
+				case <-ctx.Done():
+					return
+				}
+			}
+
+			if srv.IsFinal != nil && *srv.IsFinal {
+				select {
+				case out <- tts.Chunk{Done: true}:
+				case <-ctx.Done():
+				}
+				_ = conn.WriteControl(
+					websocket.CloseMessage,
+					websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+					time.Now().Add(2*time.Second),
+				)
+				return
 			}
 		}
 	}()
 
-	return chunkChan, nil
+	select {
+	case <-readDone:
+	case <-ctx.Done():
+		_ = conn.WriteControl(
+			websocket.CloseMessage,
+			websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+			time.Now().Add(2*time.Second),
+		)
+		<-readDone
+	}
+}
+
+func isCleanWSClose(err error) bool {
+	return websocket.IsCloseError(err,
+		websocket.CloseNormalClosure,
+		websocket.CloseGoingAway,
+		websocket.CloseNoStatusReceived,
+	)
 }
 
 // ListVoices retrieves the list of available voices from ElevenLabs.

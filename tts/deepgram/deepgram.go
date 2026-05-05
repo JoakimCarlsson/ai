@@ -5,13 +5,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tts"
 )
@@ -233,63 +237,195 @@ func (c *Client) GenerateAudio(
 	}, nil
 }
 
-// StreamAudio reads the Deepgram response body in 4KB chunks for real-time playback.
+// StreamAudio opens a WebSocket to Deepgram's /v1/speak endpoint, sends a
+// Speak/Flush sequence, and emits audio chunks as binary frames arrive.
+//
+// WS streaming requires a raw audio encoding (linear16, mulaw, alaw); if no
+// encoding is configured the implementation defaults to linear16 for the WS
+// path. Set [WithEncoding] explicitly to override.
 func (c *Client) StreamAudio(
 	ctx context.Context,
 	text string,
 	_ ...tts.GenerationOption,
 ) (<-chan tts.Chunk, error) {
-	req, err := c.newRequest(ctx, text)
+	wsURL, err := c.buildStreamURL()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to build ws url: %w", err)
+	}
+
+	hdr := http.Header{}
+	hdr.Set("Authorization", "Token "+c.options.apiKey)
+
+	dialer := websocket.Dialer{HandshakeTimeout: wsHandshakeTimeout}
+	conn, resp, err := dialer.DialContext(ctx, wsURL, hdr)
+	if resp != nil {
+		_ = resp.Body.Close()
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial websocket: %w", err)
+	}
+
+	_ = conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
+	conn.SetPongHandler(func(string) error {
+		return conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
+	})
+
+	var writeMu sync.Mutex
+	send := func(data []byte) error {
+		writeMu.Lock()
+		defer writeMu.Unlock()
+		return conn.WriteMessage(websocket.TextMessage, data)
+	}
+
+	speak, err := json.Marshal(speakMessage{Type: "Speak", Text: text})
+	if err != nil {
+		_ = conn.Close()
+		return nil, fmt.Errorf("failed to marshal speak message: %w", err)
+	}
+	if err := send(speak); err != nil {
+		_ = conn.Close()
+		return nil, fmt.Errorf("failed to send speak: %w", err)
+	}
+	if err := send([]byte(`{"type":"Flush"}`)); err != nil {
+		_ = conn.Close()
+		return nil, fmt.Errorf("failed to send flush: %w", err)
 	}
 
 	chunkChan := make(chan tts.Chunk, 10)
+	go runStreamReader(ctx, conn, chunkChan, send)
+	return chunkChan, nil
+}
 
+const (
+	wsHandshakeTimeout = 10 * time.Second
+	wsReadDeadline     = 60 * time.Second
+)
+
+type speakMessage struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+type serverFrame struct {
+	Type        string `json:"type"`
+	SequenceID  int    `json:"sequence_id"`
+	Code        string `json:"code"`
+	Description string `json:"description"`
+}
+
+func (c *Client) buildStreamURL() (string, error) {
+	base, err := url.Parse(c.options.baseURL)
+	if err != nil {
+		return "", err
+	}
+	scheme := "wss"
+	if base.Scheme == "http" {
+		scheme = "ws"
+	}
+	q := url.Values{}
+	q.Set("model", c.resolved)
+
+	encoding := c.options.encoding
+	if encoding == "" {
+		encoding = "linear16"
+	}
+	q.Set("encoding", encoding)
+	q.Set("container", "none")
+
+	if c.options.sampleRate != 0 {
+		q.Set("sample_rate", strconv.Itoa(c.options.sampleRate))
+	}
+	if c.options.bitRate != 0 {
+		q.Set("bit_rate", strconv.Itoa(c.options.bitRate))
+	}
+
+	u := url.URL{
+		Scheme:   scheme,
+		Host:     base.Host,
+		Path:     base.Path + "/speak",
+		RawQuery: q.Encode(),
+	}
+	return u.String(), nil
+}
+
+func runStreamReader(
+	ctx context.Context,
+	conn *websocket.Conn,
+	out chan<- tts.Chunk,
+	send func([]byte) error,
+) {
+	defer close(out)
+	defer func() { _ = conn.Close() }()
+
+	readDone := make(chan struct{})
 	go func() {
-		defer close(chunkChan)
-
-		resp, err := c.httpClient.Do(req)
-		if err != nil {
-			chunkChan <- tts.Chunk{Error: fmt.Errorf("request failed: %w", err)}
-			return
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			chunkChan <- tts.Chunk{Error: c.parseError(resp)}
-			return
-		}
-
-		buffer := make([]byte, 4096)
+		defer close(readDone)
 		for {
-			n, err := resp.Body.Read(buffer)
-			if n > 0 {
-				data := make([]byte, n)
-				copy(data, buffer[:n])
-				chunkChan <- tts.Chunk{Data: data, Done: false}
-			}
-
-			if err == io.EOF {
-				chunkChan <- tts.Chunk{Done: true}
-				return
-			}
-
+			msgType, msg, err := conn.ReadMessage()
 			if err != nil {
-				chunkChan <- tts.Chunk{Error: fmt.Errorf("stream read error: %w", err)}
+				if !isCleanWSClose(err) && !errors.Is(err, net.ErrClosed) {
+					select {
+					case out <- tts.Chunk{Error: err}:
+					case <-ctx.Done():
+					}
+				}
 				return
 			}
+			_ = conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
 
-			select {
-			case <-ctx.Done():
-				chunkChan <- tts.Chunk{Error: ctx.Err()}
-				return
-			default:
+			switch msgType {
+			case websocket.BinaryMessage:
+				data := make([]byte, len(msg))
+				copy(data, msg)
+				select {
+				case out <- tts.Chunk{Data: data}:
+				case <-ctx.Done():
+					return
+				}
+			case websocket.TextMessage:
+				var srv serverFrame
+				if err := json.Unmarshal(msg, &srv); err != nil {
+					continue
+				}
+				switch srv.Type {
+				case "Flushed":
+					select {
+					case out <- tts.Chunk{Done: true}:
+					case <-ctx.Done():
+					}
+					_ = send([]byte(`{"type":"Close"}`))
+					_ = conn.WriteControl(
+						websocket.CloseMessage,
+						websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+						time.Now().Add(2*time.Second),
+					)
+					return
+				case "Warning":
+					// non-fatal; continue receiving audio
+				}
 			}
 		}
 	}()
 
-	return chunkChan, nil
+	select {
+	case <-readDone:
+	case <-ctx.Done():
+		_ = send([]byte(`{"type":"Close"}`))
+		_ = conn.WriteControl(
+			websocket.CloseMessage,
+			websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+			time.Now().Add(2*time.Second),
+		)
+		<-readDone
+	}
+}
+
+func isCleanWSClose(err error) bool {
+	return websocket.IsCloseError(err,
+		websocket.CloseNormalClosure,
+		websocket.CloseGoingAway,
+		websocket.CloseNoStatusReceived,
+	)
 }
 
 // ListVoices returns the static set of Aura voices known to deps/ai. Deepgram
