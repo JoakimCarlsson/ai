@@ -21,6 +21,7 @@ use (
 	./image
 	./image/openai
 	./image/gemini
+	./image/xai
 
 	./rerankers
 	./rerankers/voyage

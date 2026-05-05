@@ -22,12 +22,12 @@ func main() {
 		imagegemini.WithModel(
 			model.GeminiImageGenerationModels[model.Imagen4Fast],
 		),
+		imagegemini.WithAspectRatio(imagegemini.AspectRatio1x1),
 	)
 
 	resp, err := client.GenerateImage(
 		context.Background(),
 		"A clean flat illustration of Go modules as neatly stacked packages",
-		image.WithSize("1:1"),
 	)
 	if err != nil {
 		log.Fatal(err)

@@ -16,9 +16,28 @@ Each native LLM vendor is its own sub-module under `llm/`:
 | `llm/azure` | Azure OpenAI (wraps `llm/openai`) | ✅ | ✅ | ✅ | ✅ |
 | `llm/vertexai` | Google Vertex AI (wraps `llm/gemini`) | ✅ | ✅ | ✅ | ✅ |
 
-OpenAI-compatible providers — Groq, OpenRouter, xAI, Mistral, DeepSeek,
-Perplexity, Qwen, Meta (via partners), and any custom OpenAI-compatible
-endpoint — use `llm/openai` with `WithBaseURL(...)`. See [BYOM](../advanced/byom.md).
+### OpenAI-compatible vendors
+
+These are thin wrappers over `llm/openai` that hardcode the vendor's base URL.
+They expose only the OpenAI-compatible subset; vendor-unique features (xAI Live
+Search, Perplexity citations, etc.) are not wired up. Pass any vendor-supported
+model id via `openai.WithModel` even without an entry in the `model` package.
+
+| Module | Provider | Default base URL |
+|---|---|---|
+| `llm/xai` | xAI (Grok) | `https://api.x.ai/v1` |
+| `llm/openrouter` | OpenRouter | `https://openrouter.ai/api/v1` |
+| `llm/groq` | Groq | `https://api.groq.com/openai/v1` |
+| `llm/deepseek` | DeepSeek | `https://api.deepseek.com/v1` |
+| `llm/perplexity` | Perplexity Sonar | `https://api.perplexity.ai` |
+| `llm/mistral` | Mistral AI | `https://api.mistral.ai/v1` |
+| `llm/cerebras` | Cerebras Inference | `https://api.cerebras.ai/v1` |
+| `llm/fireworks` | Fireworks AI | `https://api.fireworks.ai/inference/v1` |
+| `llm/together` | Together AI | `https://api.together.xyz/v1` |
+| `llm/ollama` | Ollama (local) | `http://localhost:11434/v1` |
+
+For any other OpenAI-compatible endpoint, use `llm/openai` directly with
+`WithBaseURL(...)`. See [BYOM](../advanced/byom.md).
 
 ## Embedding Providers
 
@@ -48,11 +67,9 @@ Under `image/`:
 
 | Module | Provider | Models | Streaming |
 |---|---|---|---|
-| `image/openai` | OpenAI | DALL-E 2, DALL-E 3, GPT Image 1 | ✅ (gpt-image-1) |
-| `image/gemini` | Google Gemini | Gemini 2.5 Flash Image, Imagen 3/4 | ❌ |
-
-xAI Grok image generation: use `image/openai` with
-`WithBaseURL("https://api.x.ai/v1")`.
+| `image/openai` | OpenAI | DALL-E 2, DALL-E 3, GPT Image 1 / 1-mini / 1.5 / 2 | ✅ (gpt-image-*) |
+| `image/gemini` | Google Gemini | Gemini 2.5 Flash Image, Gemini 3 Pro Image, Imagen 4 / 4 Ultra / 4 Fast | ❌ |
+| `image/xai` | xAI | Grok 2 Image, Grok Imagine, Grok Imagine Pro | ❌ |
 
 ## TTS (Text-to-Speech) Providers
 

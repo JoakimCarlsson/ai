@@ -10,6 +10,7 @@ import (
 	"github.com/joakimcarlsson/ai/image"
 	imagegemini "github.com/joakimcarlsson/ai/image/gemini"
 	imageopenai "github.com/joakimcarlsson/ai/image/openai"
+	imagexai "github.com/joakimcarlsson/ai/image/xai"
 	"github.com/joakimcarlsson/ai/model"
 )
 
@@ -19,8 +20,6 @@ func main() {
 	resp, err := client.GenerateImage(
 		context.Background(),
 		"A simple diagram showing interchangeable AI providers",
-		image.WithSize("1:1"),
-		image.WithResponseFormat("b64_json"),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -49,17 +48,28 @@ func newImageClient() (image.Generation, string) {
 			imagegemini.WithModel(
 				model.GeminiImageGenerationModels[model.Imagen4Fast],
 			),
+			imagegemini.WithAspectRatio(imagegemini.AspectRatio1x1),
 		), provider
 	case "openai":
 		return imageopenai.NewGeneration(
 			imageopenai.WithAPIKey(requiredEnv("OPENAI_API_KEY")),
 			imageopenai.WithModel(
-				model.OpenAIImageGenerationModels[model.GPTImage1Mini],
+				model.OpenAIImageGenerationModels[model.GPTImage15],
 			),
+			imageopenai.WithSize(imageopenai.Size1024x1024),
+		), provider
+	case "xai":
+		return imagexai.NewGeneration(
+			imagexai.WithAPIKey(requiredEnv("XAI_API_KEY")),
+			imagexai.WithModel(
+				model.XAIImageGenerationModels[model.XAIGrokImagineImage],
+			),
+			imagexai.WithAspectRatio(imagexai.AspectRatio1x1),
+			imagexai.WithResponseFormat(imagexai.ResponseFormatBase64),
 		), provider
 	default:
 		log.Fatalf(
-			"unsupported AI_PROVIDER %q (use openai or gemini)",
+			"unsupported AI_PROVIDER %q (use openai, gemini, or xai)",
 			provider,
 		)
 		return nil, ""

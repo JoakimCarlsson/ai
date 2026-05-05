@@ -18,7 +18,10 @@ const (
 	XAIGrok420Reasoning       ID = "grok-4.20-0309-reasoning"
 	XAIGrok420NonReasoning    ID = "grok-4.20-0309-non-reasoning"
 	XAIGrok420MultiAgent      ID = "grok-4.20-multi-agent-0309"
+	XAIGrok43                 ID = "grok-4.3"
 	XAIGrok2Image             ID = "grok-2-image-1212"
+	XAIGrokImagineImage       ID = "grok-imagine-image"
+	XAIGrokImagineImagePro    ID = "grok-imagine-image-pro"
 )
 
 // XAIModels maps xAI chat model IDs to their configurations.
@@ -205,9 +208,31 @@ var XAIModels = map[ID]Model{
 		DefaultMaxTokens:      20_000,
 		SupportsStructuredOut: true,
 	},
+	// Pricing source: https://docs.x.ai/developers/models/grok-4.3. Fetched: 2026-05-04.
+	// Reasoning is enabled by default; reasoning tokens are billed at the
+	// output rate. Per OpenRouter, requests > 200k tokens are billed at a
+	// higher tier; the rate below is the base tier.
+	XAIGrok43: {
+		ID:                    XAIGrok43,
+		Name:                  "Grok 4.3",
+		Provider:              ProviderXAI,
+		APIModel:              "grok-4.3",
+		CostPer1MIn:           1.25,
+		CostPer1MInCached:     0,
+		CostPer1MOut:          2.50,
+		CostPer1MOutCached:    0,
+		ContextWindow:         1_000_000,
+		DefaultMaxTokens:      32_000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
 }
 
 // XAIImageGenerationModels maps xAI image generation model IDs to their configurations.
+//
+// Pricing source: https://docs.x.ai/developers/models/. Fetched: 2026-05-04.
+// Grok Imagine pricing is flat per image regardless of resolution or quality.
 var XAIImageGenerationModels = map[ID]ImageGenerationModel{
 	XAIGrok2Image: {
 		ID:       XAIGrok2Image,
@@ -220,6 +245,44 @@ var XAIImageGenerationModels = map[ID]ImageGenerationModel{
 			},
 		},
 		MaxPromptTokens:    1000,
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	XAIGrokImagineImage: {
+		ID:       XAIGrokImagineImage,
+		Name:     "Grok Imagine Image",
+		Provider: ProviderXAI,
+		APIModel: "grok-imagine-image",
+		Pricing: map[string]map[string]float64{
+			"default": {
+				"default": 0.02,
+			},
+		},
+		MaxPromptTokens: 1000,
+		SupportedAspectRatios: []string{
+			"1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "2:1", "1:2",
+			"19.5:9", "9:19.5", "20:9", "9:20", "auto",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	XAIGrokImagineImagePro: {
+		ID:       XAIGrokImagineImagePro,
+		Name:     "Grok Imagine Image Pro",
+		Provider: ProviderXAI,
+		APIModel: "grok-imagine-image-pro",
+		Pricing: map[string]map[string]float64{
+			"default": {
+				"default": 0.07,
+			},
+		},
+		MaxPromptTokens: 1000,
+		SupportedAspectRatios: []string{
+			"1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "2:1", "1:2",
+			"19.5:9", "9:19.5", "20:9", "9:20", "auto",
+		},
+		DefaultAspectRatio: "1:1",
 		SupportedQualities: []string{"default"},
 		DefaultQuality:     "default",
 	},
