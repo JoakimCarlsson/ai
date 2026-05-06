@@ -4,7 +4,8 @@ package model
 const (
 	ProviderAzureSpeech Provider = "azure-speech"
 
-	AzureSpeechNeural ID = "azure-speech-neural"
+	AzureSpeechNeural            ID = "azure-speech-neural"
+	AzureSpeechFastTranscription ID = "azure-speech-fast-transcription"
 )
 
 // AzureSpeechAudioModels maps Azure Speech model IDs to their configurations.
@@ -26,5 +27,27 @@ var AzureSpeechAudioModels = map[ID]AudioModel{
 		},
 		DefaultFormat:     "audio-24khz-160kbitrate-mono-mp3",
 		SupportsStreaming: false,
+	},
+}
+
+// AzureSpeechTranscriptionModels maps Azure Speech transcription model IDs to
+// their configurations. Pricing source:
+// https://azure.microsoft.com/pricing/details/cognitive-services/speech-services/
+// Fetched: 2026-05-05.
+var AzureSpeechTranscriptionModels = map[ID]TranscriptionModel{
+	AzureSpeechFastTranscription: {
+		ID:                     AzureSpeechFastTranscription,
+		Name:                   "Azure Speech Fast Transcription",
+		Provider:               ProviderAzureSpeech,
+		APIModel:               "fast-transcription",
+		CostPer1MIn:            0,
+		CostPer1MOut:           0,
+		MaxFileSizeMB:          200,
+		SupportedFormats:       []string{"wav", "mp3", "ogg", "flac", "wma", "aac", "alaw", "mulaw", "amr", "webm", "speex"},
+		SupportsTimestamps:     true,
+		SupportsWordTimestamps: true,
+		SupportsDiarization:    true,
+		SupportsTranslation:    false,
+		SupportsStreaming:      false,
 	},
 }
