@@ -5,6 +5,7 @@ go 1.25.0
 require (
 	github.com/joakimcarlsson/ai/model v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/stt v0.0.0-00010101000000-000000000000
+	github.com/joakimcarlsson/ai/stt/azure v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/stt/deepgram v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/stt/openai v0.0.0-00010101000000-000000000000
 )
@@ -72,6 +73,7 @@ replace (
 	github.com/joakimcarlsson/ai/rerankers/voyage => ../../../rerankers/voyage
 	github.com/joakimcarlsson/ai/schema => ../../../schema
 	github.com/joakimcarlsson/ai/stt => ../../../stt
+	github.com/joakimcarlsson/ai/stt/azure => ../../../stt/azure
 	github.com/joakimcarlsson/ai/stt/deepgram => ../../../stt/deepgram
 	github.com/joakimcarlsson/ai/stt/openai => ../../../stt/openai
 	github.com/joakimcarlsson/ai/tokens => ../../../tokens

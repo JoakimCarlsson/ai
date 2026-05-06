@@ -9,6 +9,7 @@ import (
 
 	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/stt"
+	sttazure "github.com/joakimcarlsson/ai/stt/azure"
 	sttdeepgram "github.com/joakimcarlsson/ai/stt/deepgram"
 	sttopenai "github.com/joakimcarlsson/ai/stt/openai"
 )
@@ -57,13 +58,29 @@ func newSTT() (stt.SpeechToText, string) {
 			),
 			sttopenai.WithLanguage("en"),
 		), provider
+	case "azure":
+		return sttazure.NewSpeechToText(
+			sttazure.WithAPIKey(requiredEnv("AZURE_SPEECH_KEY")),
+			sttazure.WithRegion(envOrDefault("AZURE_SPEECH_REGION", "eastus")),
+			sttazure.WithModel(
+				model.AzureSpeechTranscriptionModels[model.AzureSpeechFastTranscription],
+			),
+			sttazure.WithLocales("en-US"),
+		), provider
 	default:
 		log.Fatalf(
-			"unsupported AI_PROVIDER %q (use openai or deepgram)",
+			"unsupported AI_PROVIDER %q (use openai, deepgram, or azure)",
 			provider,
 		)
 		return nil, ""
 	}
+}
+
+func envOrDefault(name, fallback string) string {
+	if v := os.Getenv(name); v != "" {
+		return v
+	}
+	return fallback
 }
 
 func providerName() string {

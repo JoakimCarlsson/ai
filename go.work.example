@@ -37,6 +37,7 @@ use (
 	./stt/assemblyai
 	./stt/deepgram
 	./stt/elevenlabs
+	./stt/azure
 
 	./embeddings
 	./embeddings/openai
