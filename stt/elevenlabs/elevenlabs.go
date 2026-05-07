@@ -368,8 +368,14 @@ func (c *Client) StreamTranscribe(
 
 	q := url.Values{}
 	q.Set("audio_format", fmt.Sprintf("pcm_%d", sampleRate))
+	q.Set("commit_strategy", "vad")
 	if lang != "" {
 		q.Set("language_code", lang)
+	}
+	if c.options.streamVADSilenceMs != nil {
+		secs := float64(*c.options.streamVADSilenceMs) / 1000.0
+		q.Set("vad_silence_threshold_secs",
+			strconv.FormatFloat(secs, 'f', -1, 64))
 	}
 	for _, kt := range c.options.streamKeyterms {
 		q.Add("keyterms", kt)
