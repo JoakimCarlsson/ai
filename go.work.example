@@ -1,0 +1,85 @@
+go 1.25.0
+
+use (
+	./tests
+
+	./agent
+	./agent/memory
+	./agent/memory/pgvector
+	./agent/memory/postgres
+	./agent/memory/sqlite
+	./cmd/llmstxt
+
+	./model
+	./types
+	./tracing
+	./schema
+	./tool
+	./prompt
+	./message
+
+	./image
+	./image/openai
+	./image/gemini
+	./image/xai
+
+	./rerankers
+	./rerankers/voyage
+	./rerankers/cohere
+
+	./fim
+	./fim/mistral
+	./fim/deepseek
+
+	./stt
+	./stt/openai
+	./stt/google
+	./stt/assemblyai
+	./stt/deepgram
+	./stt/elevenlabs
+	./stt/azure
+
+	./embeddings
+	./embeddings/openai
+	./embeddings/voyage
+	./embeddings/cohere
+	./embeddings/mistral
+	./embeddings/gemini
+	./embeddings/bedrock
+
+	./tts
+	./tts/openai
+	./tts/elevenlabs
+	./tts/google
+	./tts/azure
+	./tts/deepgram
+
+	./llm
+	./llm/anthropic
+	./llm/openai
+	./llm/gemini
+	./llm/azure
+	./llm/vertexai
+	./llm/bedrock
+	./llm/xai
+	./llm/openrouter
+	./llm/groq
+	./llm/deepseek
+	./llm/perplexity
+	./llm/mistral
+	./llm/cerebras
+	./llm/fireworks
+	./llm/together
+	./llm/ollama
+
+	./tokens
+	./tokens/sliding
+	./tokens/truncate
+	./tokens/summarize
+
+	./batch
+	./batch/openai
+	./batch/anthropic
+	./batch/gemini
+	./batch/concurrent
+)

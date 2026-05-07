@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/joakimcarlsson/ai/agent"
+	llm "github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/types"
 )
 

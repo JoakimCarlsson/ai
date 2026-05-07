@@ -1,56 +1,48 @@
 # Fill-in-the-Middle (FIM)
 
-Code completion by providing a prompt (code before the cursor) and an optional suffix (code after the cursor), with the model filling in the middle. Useful for code editors and IDE integrations.
+Code completion that takes a `Prompt` (code before the cursor) and an optional
+`Suffix` (code after the cursor) and fills in the middle. Useful for code
+editors and IDE integrations. The `fim` modality lives at `fim/`; vendors
+under `fim/<name>/`.
 
-## Supported Providers
-
-| Provider | Model |
-|----------|-------|
-| Mistral | Codestral |
-| DeepSeek | DeepSeek Coder |
-
-## Setup
+## Mistral Codestral
 
 ```go
 import (
     "github.com/joakimcarlsson/ai/fim"
+    fimmistral "github.com/joakimcarlsson/ai/fim/mistral"
     "github.com/joakimcarlsson/ai/model"
 )
 
-client, err := fim.NewFIM(model.ProviderMistral,
-    fim.WithAPIKey(os.Getenv("MISTRAL_API_KEY")),
-    fim.WithModel(model.MistralModels[model.Codestral]),
+client := fimmistral.NewFIM(
+    fimmistral.WithAPIKey(os.Getenv("MISTRAL_API_KEY")),
+    fimmistral.WithModel(model.MistralModels[model.Codestral]),
 )
-if err != nil {
-    log.Fatal(err)
-}
-```
-
-## Basic Completion
-
-```go
-maxTokens := int64(100)
 
 resp, err := client.Complete(ctx, fim.Request{
-    Prompt:    "func Add(a, b int) int {\n    ",
-    Suffix:    "\n}",
-    MaxTokens: &maxTokens,
+    Prompt: "def add(a, b):\n    ",
+    Suffix: "\n    return result",
 })
-if err != nil {
-    log.Fatal(err)
-}
-
 fmt.Println(resp.Content)
-// "return a + b"
+```
+
+## DeepSeek
+
+```go
+import fimdeepseek "github.com/joakimcarlsson/ai/fim/deepseek"
+
+client := fimdeepseek.NewFIM(
+    fimdeepseek.WithAPIKey(os.Getenv("DEEPSEEK_API_KEY")),
+    fimdeepseek.WithModel(model.DeepSeekModels[model.DeepSeekCoder]),
+)
 ```
 
 ## Streaming
 
 ```go
 events := client.CompleteStream(ctx, fim.Request{
-    Prompt:    "func Max(numbers []int) int {\n    ",
-    Suffix:    "\n}",
-    MaxTokens: &maxTokens,
+    Prompt: prompt,
+    Suffix: suffix,
 })
 
 for event := range events {
@@ -58,37 +50,42 @@ for event := range events {
     case fim.EventContentDelta:
         fmt.Print(event.Content)
     case fim.EventComplete:
-        fmt.Printf("\nTokens: %d in, %d out\n",
-            event.Response.Usage.InputTokens,
-            event.Response.Usage.OutputTokens,
-        )
+        fmt.Printf("\nFinish: %s\n", event.Response.FinishReason)
     case fim.EventError:
         log.Fatal(event.Error)
     }
 }
 ```
 
-## Request
+## Per-request overrides
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `Prompt` | `string` | Code before the cursor (required) |
-| `Suffix` | `string` | Code after the cursor (optional) |
-| `MaxTokens` | `*int64` | Max tokens to generate |
-| `Temperature` | `*float64` | Sampling temperature (0.0–1.0) |
-| `TopP` | `*float64` | Nucleus sampling probability |
-| `Stop` | `[]string` | Sequences that halt generation |
-| `RandomSeed` | `*int64` | Seed for deterministic output |
+The `fim.Request` struct lets you override constructor defaults per call:
 
-## Client Options
+```go
+maxTokens := int64(500)
+temp := 0.2
 
-| Option | Description |
-|--------|-------------|
-| `fim.WithAPIKey(key)` | API key for authentication |
-| `fim.WithModel(m)` | Model to use |
-| `fim.WithMaxTokens(n)` | Default max tokens |
-| `fim.WithTemperature(t)` | Default temperature |
-| `fim.WithTopP(p)` | Default top-p |
-| `fim.WithTimeout(d)` | API request timeout |
-| `fim.WithMistralOptions(...)` | Mistral-specific options |
-| `fim.WithDeepSeekOptions(...)` | DeepSeek-specific options |
+resp, err := client.Complete(ctx, fim.Request{
+    Prompt:      prompt,
+    Suffix:      suffix,
+    MaxTokens:   &maxTokens,
+    Temperature: &temp,
+    Stop:        []string{"\n\n"},
+})
+```
+
+## Vendor-specific options
+
+Mistral:
+
+```go
+fimmistral.WithMinTokens(20)
+```
+
+DeepSeek:
+
+```go
+fimdeepseek.WithFrequencyPenalty(0.3)
+fimdeepseek.WithPresencePenalty(0.3)
+fimdeepseek.WithEcho(true)
+```

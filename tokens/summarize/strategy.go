@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	llm "github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	llm "github.com/joakimcarlsson/ai/providers"
 	"github.com/joakimcarlsson/ai/tokens"
 )
 

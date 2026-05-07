@@ -24,6 +24,10 @@ type ImageGenerationModel struct {
 	SupportedQualities []string `json:"supported_qualities,omitempty"`
 	// DefaultQuality is the default quality level if not specified.
 	DefaultQuality string `json:"default_quality,omitempty"`
+	// SupportedAspectRatios lists the aspect ratios this model can generate (e.g., "1:1", "16:9").
+	SupportedAspectRatios []string `json:"supported_aspect_ratios,omitempty"`
+	// DefaultAspectRatio is the default aspect ratio if not specified.
+	DefaultAspectRatio string `json:"default_aspect_ratio,omitempty"`
 	// SupportsStreaming indicates if this model supports streaming partial images during generation.
 	SupportsStreaming bool `json:"supports_streaming,omitempty"`
 }

@@ -1,21 +1,21 @@
 # Document Reranking
 
-## Basic Usage
+The `rerankers` modality. Vendors under `rerankers/`.
+
+## Voyage
 
 ```go
 import (
-    "github.com/joakimcarlsson/ai/rerankers"
     "github.com/joakimcarlsson/ai/model"
+    rrvoyage "github.com/joakimcarlsson/ai/rerankers/voyage"
 )
 
-reranker, err := rerankers.NewReranker(model.ProviderVoyage,
-    rerankers.WithAPIKey(""),
-    rerankers.WithModel(model.VoyageRerankerModels[model.Rerank25Lite]),
-    rerankers.WithReturnDocuments(true),
+reranker := rrvoyage.NewReranker(
+    rrvoyage.WithAPIKey(os.Getenv("VOYAGE_API_KEY")),
+    rrvoyage.WithModel(model.VoyageRerankerModels[model.Rerank25Lite]),
+    rrvoyage.WithTopK(5),
+    rrvoyage.WithReturnDocuments(true),
 )
-if err != nil {
-    log.Fatal(err)
-}
 
 query := "What is machine learning?"
 documents := []string{
@@ -24,27 +24,37 @@ documents := []string{
     "Deep learning uses neural networks.",
 }
 
-response, err := reranker.Rerank(context.Background(), query, documents)
-if err != nil {
-    log.Fatal(err)
-}
-
-for i, result := range response.Results {
-    fmt.Printf("Rank %d (Score: %.4f): %s\n",
-        i+1, result.RelevanceScore, result.Document)
+resp, err := reranker.Rerank(ctx, query, documents)
+for i, r := range resp.Results {
+    fmt.Printf("Rank %d (score=%.4f): %s\n", i+1, r.RelevanceScore, r.Document)
 }
 ```
 
-## Client Options
+## Cohere
 
 ```go
-reranker, err := rerankers.NewReranker(
-    model.ProviderVoyage,
-    rerankers.WithAPIKey(""),
-    rerankers.WithModel(model.VoyageRerankerModels[model.Rerank25Lite]),
-    rerankers.WithTopK(10),
-    rerankers.WithReturnDocuments(true),
-    rerankers.WithTruncation(true),
-    rerankers.WithTimeout(30*time.Second),
+import rrcohere "github.com/joakimcarlsson/ai/rerankers/cohere"
+
+reranker := rrcohere.NewReranker(
+    rrcohere.WithAPIKey(os.Getenv("COHERE_API_KEY")),
+    rrcohere.WithModel(model.CohereRerankerModels[model.RerankV35]),
+    rrcohere.WithTopK(5),
+    rrcohere.WithReturnDocuments(true),
 )
+
+resp, err := reranker.Rerank(ctx, query, documents)
+```
+
+## Vendor-specific options
+
+Voyage:
+
+```go
+rrvoyage.WithTruncation(true)
+```
+
+Cohere:
+
+```go
+rrcohere.WithMaxChunksPerDoc(8)
 ```

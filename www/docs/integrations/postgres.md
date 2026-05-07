@@ -1,19 +1,22 @@
 # PostgreSQL
 
-PostgreSQL-backed session store for persistent conversation history. No extensions required.
+PostgreSQL-backed session store for persistent conversation history. No
+extensions required.
 
 ## Installation
 
 ```bash
-go get github.com/joakimcarlsson/ai/integrations/postgres
+go get github.com/joakimcarlsson/ai/agent/memory/postgres
 ```
 
 ## Setup
 
 ```go
-import "github.com/joakimcarlsson/ai/integrations/postgres"
+import pgsess "github.com/joakimcarlsson/ai/agent/memory/postgres"
 
-sessionStore, err := postgres.SessionStore(ctx, "postgres://user:pass@localhost:5432/mydb?sslmode=disable")
+sessionStore, err := pgsess.SessionStore(ctx,
+    "postgres://user:pass@localhost:5432/mydb?sslmode=disable",
+)
 if err != nil {
     log.Fatal(err)
 }
@@ -48,18 +51,18 @@ CREATE INDEX messages_session_idx ON messages(session_id, created_at);
 ## Options
 
 | Option | Description |
-|--------|-------------|
-| `postgres.WithIDGenerator(fn)` | Custom ID generator for message records. Default: UUID v4 |
+|---|---|
+| `pgsess.WithIDGenerator(fn)` | Custom ID generator for message records. Default: UUID v4 |
 
 ```go
-store, err := postgres.SessionStore(ctx, connString,
-    postgres.WithIDGenerator(func() string {
+store, err := pgsess.SessionStore(ctx, connString,
+    pgsess.WithIDGenerator(func() string {
         return myCustomID()
     }),
 )
 ```
 
-## Full Example
+## Full example
 
 ```go
 package main
@@ -72,41 +75,33 @@ import (
 
     "github.com/joakimcarlsson/ai/agent"
     "github.com/joakimcarlsson/ai/agent/memory"
-    "github.com/joakimcarlsson/ai/embeddings"
-    "github.com/joakimcarlsson/ai/integrations/pgvector"
-    "github.com/joakimcarlsson/ai/integrations/postgres"
+    pgvectormem "github.com/joakimcarlsson/ai/agent/memory/pgvector"
+    pgsess "github.com/joakimcarlsson/ai/agent/memory/postgres"
+    embopenai "github.com/joakimcarlsson/ai/embeddings/openai"
+    llmopenai "github.com/joakimcarlsson/ai/llm/openai"
     "github.com/joakimcarlsson/ai/model"
-    llm "github.com/joakimcarlsson/ai/providers"
 )
 
 func main() {
     ctx := context.Background()
     connString := "postgres://postgres:password@localhost:5432/example?sslmode=disable"
 
-    embedder, err := embeddings.NewEmbedding(
-        model.ProviderOpenAI,
-        embeddings.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-        embeddings.WithModel(model.OpenAIEmbeddingModels[model.TextEmbedding3Small]),
+    embedder := embopenai.NewEmbedding(
+        embopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+        embopenai.WithModel(model.OpenAIEmbeddingModels[model.TextEmbedding3Small]),
     )
-    if err != nil {
-        log.Fatal(err)
-    }
 
-    llmClient, err := llm.NewLLM(
-        model.ProviderOpenAI,
-        llm.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-        llm.WithModel(model.OpenAIModels[model.GPT4o]),
+    llmClient := llmopenai.NewLLM(
+        llmopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+        llmopenai.WithModel(model.OpenAIModels[model.GPT4o]),
     )
+
+    sessionStore, err := pgsess.SessionStore(ctx, connString)
     if err != nil {
         log.Fatal(err)
     }
 
-    sessionStore, err := postgres.SessionStore(ctx, connString)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    memoryStore, err := pgvector.MemoryStore(ctx, connString, embedder)
+    memoryStore, err := pgvectormem.MemoryStore(ctx, connString, embedder)
     if err != nil {
         log.Fatal(err)
     }

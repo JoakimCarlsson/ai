@@ -1,159 +1,211 @@
 # Configuration
 
-## LLM Client Options
+After the modular split, every option lives on the vendor module. Each
+`llm/<vendor>`, `embeddings/<vendor>`, etc. exports its own `Options` type
+and `WithXxx` helpers — there's no generic factory or provider switch.
+
+## LLM client options
+
+Each LLM vendor module exports a `NewLLM` plus shared and vendor-specific
+options.
+
+### OpenAI
 
 ```go
-client, err := llm.NewLLM(
-    model.ProviderOpenAI,
-    llm.WithAPIKey("your-key"),
-    llm.WithModel(model.OpenAIModels[model.GPT4o]),
-    llm.WithMaxTokens(2000),
-    llm.WithTemperature(0.7),
-    llm.WithTopP(0.9),
-    llm.WithTimeout(30*time.Second),
-    llm.WithStopSequences("STOP", "END"),
+import (
+    llmopenai "github.com/joakimcarlsson/ai/llm/openai"
+    "github.com/joakimcarlsson/ai/model"
+)
+
+client := llmopenai.NewLLM(
+    llmopenai.WithAPIKey("your-key"),
+    llmopenai.WithModel(model.OpenAIModels[model.GPT4o]),
+    llmopenai.WithMaxTokens(2000),
+    llmopenai.WithTemperature(0.7),
+    llmopenai.WithTopP(0.9),
+    llmopenai.WithTimeout(30*time.Second),
+    llmopenai.WithStopSequences("STOP", "END"),
+    llmopenai.WithBaseURL("https://custom-endpoint"),
+    llmopenai.WithExtraHeaders(map[string]string{"X-Header": "value"}),
+    llmopenai.WithDisableCache(),
+    llmopenai.WithReasoningEffort(llmopenai.ReasoningEffortHigh),
+    llmopenai.WithFrequencyPenalty(0.5),
+    llmopenai.WithPresencePenalty(0.3),
+    llmopenai.WithSeed(42),
+    llmopenai.WithParallelToolCalls(false),
 )
 ```
 
-## Embedding Client Options
+### Anthropic
 
 ```go
-embedder, err := embeddings.NewEmbedding(
-    model.ProviderVoyage,
-    embeddings.WithAPIKey(""),
-    embeddings.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
-    embeddings.WithBatchSize(100),
-    embeddings.WithTimeout(30*time.Second),
-    embeddings.WithVoyageOptions(
-        embeddings.WithInputType("document"),
-        embeddings.WithOutputDimension(1024),
-        embeddings.WithOutputDtype("float"),
-    ),
+import llmanthropic "github.com/joakimcarlsson/ai/llm/anthropic"
+
+client := llmanthropic.NewLLM(
+    llmanthropic.WithAPIKey("your-key"),
+    llmanthropic.WithModel(model.AnthropicModels[model.Claude45Sonnet]),
+    llmanthropic.WithMaxTokens(4000),
+    llmanthropic.WithTemperature(0.7),
+    llmanthropic.WithBeta("beta-feature"),
+    llmanthropic.WithBedrock(true),
+    llmanthropic.WithDisableCache(),
+    llmanthropic.WithReasoningEffort(llmanthropic.ReasoningEffortMedium),
 )
 ```
 
-## Reranker Client Options
+### Gemini
 
 ```go
-reranker, err := rerankers.NewReranker(
-    model.ProviderVoyage,
-    rerankers.WithAPIKey(""),
-    rerankers.WithModel(model.VoyageRerankerModels[model.Rerank25Lite]),
-    rerankers.WithTopK(10),
-    rerankers.WithReturnDocuments(true),
-    rerankers.WithTruncation(true),
-    rerankers.WithTimeout(30*time.Second),
+import llmgemini "github.com/joakimcarlsson/ai/llm/gemini"
+
+client := llmgemini.NewLLM(
+    llmgemini.WithAPIKey("your-key"),
+    llmgemini.WithModel(model.GeminiModels[model.Gemini25Flash]),
+    llmgemini.WithMaxTokens(2000),
+    llmgemini.WithDisableCache(),
+    llmgemini.WithFrequencyPenalty(0.5),
+    llmgemini.WithPresencePenalty(0.3),
+    llmgemini.WithSeed(42),
+    llmgemini.WithThinkingLevel(llmgemini.ThinkingLevelHigh),
 )
 ```
 
-## Image Generation Client Options
+### Azure OpenAI
 
 ```go
-// OpenAI/xAI
-client, err := image_generation.NewImageGeneration(
-    model.ProviderOpenAI,
-    image_generation.WithAPIKey("your-key"),
-    image_generation.WithModel(model.OpenAIImageGenerationModels[model.DALLE3]),
-    image_generation.WithTimeout(60*time.Second),
-    image_generation.WithOpenAIOptions(
-        image_generation.WithOpenAIBaseURL("custom-endpoint"),
-    ),
-)
+import llmazure "github.com/joakimcarlsson/ai/llm/azure"
 
-// Gemini
-client, err := image_generation.NewImageGeneration(
-    model.ProviderGemini,
-    image_generation.WithAPIKey("your-key"),
-    image_generation.WithModel(model.GeminiImageGenerationModels[model.Imagen4]),
-    image_generation.WithTimeout(60*time.Second),
-    image_generation.WithGeminiOptions(
-        image_generation.WithGeminiBackend(genai.BackendVertexAI),
-    ),
+client := llmazure.NewLLM(
+    llmazure.WithAPIKey("your-key"),
+    llmazure.WithEndpoint("https://your-resource.openai.azure.com"),
+    llmazure.WithAPIVersion("2024-02-15-preview"),
+    llmazure.WithModel(model.AzureModels[model.AzureGPT4o]),
 )
 ```
 
-## Audio Generation Client Options
+### Bedrock
 
 ```go
-client, err := audio.NewAudioGeneration(
-    model.ProviderElevenLabs,
-    audio.WithAPIKey("your-key"),
-    audio.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
-    audio.WithTimeout(30*time.Second),
-    audio.WithElevenLabsOptions(
-        audio.WithElevenLabsBaseURL("custom-endpoint"),
-    ),
+import llmbedrock "github.com/joakimcarlsson/ai/llm/bedrock"
+
+client := llmbedrock.NewLLM(
+    llmbedrock.WithRegion("us-east-1"),
+    llmbedrock.WithModel(model.BedrockModels[model.BedrockClaude45Sonnet]),
 )
 ```
 
-## Speech-to-Text Client Options
+## Embedding client options
 
 ```go
-client, err := transcription.NewSpeechToText(
-    model.ProviderOpenAI,
-    transcription.WithAPIKey("your-key"),
-    transcription.WithModel(model.OpenAITranscriptionModels[model.GPT4oTranscribe]),
-    transcription.WithTimeout(30*time.Second),
+import embvoyage "github.com/joakimcarlsson/ai/embeddings/voyage"
+
+embedder := embvoyage.NewEmbedding(
+    embvoyage.WithAPIKey(""),
+    embvoyage.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
+    embvoyage.WithBatchSize(100),
+    embvoyage.WithTimeout(30*time.Second),
+    embvoyage.WithInputType("document"),
+    embvoyage.WithOutputDimension(1024),
+    embvoyage.WithOutputDtype("float"),
 )
 ```
 
-## Provider-Specific Options
+The same shape applies to `embeddings/openai`, `embeddings/gemini`,
+`embeddings/cohere`, `embeddings/mistral`, `embeddings/jina`. Vendor-specific
+options live on the vendor's module.
+
+## Reranker client options
 
 ```go
-// Anthropic
-llm.WithAnthropicOptions(
-    llm.WithAnthropicBeta("beta-feature"),
-    llm.WithAnthropicBedrock(true),
-    llm.WithAnthropicDisableCache(),
-    llm.WithAnthropicReasoningEffort(llm.AnthropicReasoningEffortMedium),
+import rerankvoyage "github.com/joakimcarlsson/ai/rerankers/voyage"
+
+reranker := rerankvoyage.NewReranker(
+    rerankvoyage.WithAPIKey(""),
+    rerankvoyage.WithModel(model.VoyageRerankerModels[model.Rerank25Lite]),
+    rerankvoyage.WithTopK(10),
+    rerankvoyage.WithReturnDocuments(true),
+    rerankvoyage.WithTruncation(true),
+    rerankvoyage.WithTimeout(30*time.Second),
+)
+```
+
+## Image generation client options
+
+```go
+import (
+    imageopenai "github.com/joakimcarlsson/ai/image/openai"
+    imagegemini "github.com/joakimcarlsson/ai/image/gemini"
+    "google.golang.org/genai"
 )
 
 // OpenAI
-llm.WithOpenAIOptions(
-    llm.WithOpenAIBaseURL("custom-endpoint"),
-    llm.WithOpenAIExtraHeaders(map[string]string{"Custom-Header": "value"}),
-    llm.WithOpenAIDisableCache(),
-    llm.WithReasoningEffort(llm.OpenAIReasoningEffortHigh),
-    llm.WithOpenAIFrequencyPenalty(0.5),
-    llm.WithOpenAIPresencePenalty(0.3),
-    llm.WithOpenAISeed(42),
-    llm.WithOpenAIParallelToolCalls(false),
+client := imageopenai.NewGeneration(
+    imageopenai.WithAPIKey("your-key"),
+    imageopenai.WithModel(model.OpenAIImageGenerationModels[model.GPTImage15]),
+    imageopenai.WithTimeout(60*time.Second),
+    imageopenai.WithBaseURL("custom-endpoint"),
 )
 
-// Gemini
-llm.WithGeminiOptions(
-    llm.WithGeminiDisableCache(),
-    llm.WithGeminiFrequencyPenalty(0.5),
-    llm.WithGeminiPresencePenalty(0.3),
-    llm.WithGeminiSeed(42),
+// Gemini / Vertex AI
+client := imagegemini.NewImageGeneration(
+    imagegemini.WithAPIKey("your-key"),
+    imagegemini.WithModel(model.GeminiImageGenerationModels[model.Imagen4]),
+    imagegemini.WithTimeout(60*time.Second),
+    imagegemini.WithBackend(genai.BackendVertexAI),
 )
-
-// Azure OpenAI
-llm.WithAzureOptions(
-    llm.WithAzureEndpoint("https://your-resource.openai.azure.com"),
-    llm.WithAzureAPIVersion("2024-02-15-preview"),
-)
-
-// Bedrock (via Anthropic)
-llm.WithAnthropicOptions(
-    llm.WithAnthropicBedrock(true),
-)
-llm.WithBedrockOptions(...)
 ```
 
-## Retry Configuration
-
-All LLM providers include automatic retry with exponential backoff and jitter. Each provider has optimized defaults:
+## TTS client options
 
 ```go
-// Default retry config (used by most providers)
-llm.DefaultRetryConfig()   // retries: 429, 500, 502, 503, 504
+import ttseleven "github.com/joakimcarlsson/ai/tts/elevenlabs"
 
-// Provider-specific configs
-llm.OpenAIRetryConfig()     // retries: 429, 500
-llm.AnthropicRetryConfig()  // retries: 429, 529
-llm.GeminiRetryConfig()     // no Retry-After header support
-llm.MistralRetryConfig()    // retries: 429, 500, 502, 503
+client := ttseleven.NewAudioGeneration(
+    ttseleven.WithAPIKey("your-key"),
+    ttseleven.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
+    ttseleven.WithTimeout(30*time.Second),
+    ttseleven.WithBaseURL("custom-endpoint"),
+)
+```
+
+## STT client options
+
+```go
+import sttopenai "github.com/joakimcarlsson/ai/stt/openai"
+
+client := sttopenai.NewSpeechToText(
+    sttopenai.WithAPIKey("your-key"),
+    sttopenai.WithModel(model.OpenAITranscriptionModels[model.GPT4oTranscribe]),
+    sttopenai.WithTimeout(30*time.Second),
+)
+```
+
+## Retry configuration
+
+Each LLM vendor module exposes its own retry config with provider-tuned
+defaults. They all share the same field shape via `llm.RetryConfig`:
+
+```go
+import (
+    "github.com/joakimcarlsson/ai/llm"
+    llmopenai "github.com/joakimcarlsson/ai/llm/openai"
+    llmanthropic "github.com/joakimcarlsson/ai/llm/anthropic"
+)
+
+// Defaults baked into each vendor
+llmopenai.DefaultRetryConfig()      // retries: 429, 500
+llmanthropic.DefaultRetryConfig()   // retries: 429, 529
+
+// Override per-client
+client := llmopenai.NewLLM(
+    llmopenai.WithRetryConfig(llm.RetryConfig{
+        MaxRetries:       5,
+        BaseBackoffMs:    1000,
+        JitterPercent:    0.2,
+        RetryStatusCodes: []int{429, 500, 502, 503, 504},
+        CheckRetryAfter:  true,
+    }),
+)
 ```
 
 | Setting | Default | Description |
@@ -164,8 +216,27 @@ llm.MistralRetryConfig()    // retries: 429, 500, 502, 503
 | `RetryStatusCodes` | varies | HTTP status codes that trigger retries |
 | `CheckRetryAfter` | true | Respect the `Retry-After` header |
 
-Retries use exponential backoff: `base * 2^(attempt-1) + jitter`. When `CheckRetryAfter` is enabled and the server sends a `Retry-After` header, that value takes precedence.
+Retries use exponential backoff: `base * 2^(attempt-1) + jitter`. When
+`CheckRetryAfter` is enabled and the server sends a `Retry-After` header,
+that value takes precedence.
 
-## Agent Options
+## Tracing wrappers
 
-See the [Agent Framework Overview](../agent/overview.md) for a full table of agent configuration options.
+Every modality interface module exports a `WithTracing` helper that wraps
+any vendor client without dragging an SDK into the import:
+
+```go
+import "github.com/joakimcarlsson/ai/llm"
+
+traced := llm.WithTracing(client, llm.TracingAttrs{
+    Provider: "openai",
+    Model:    "gpt-4o",
+})
+```
+
+See [Tracing](tracing.md) for the full picture.
+
+## Agent options
+
+See the [Agent Framework Overview](../agent/overview.md) for a full table of
+agent configuration options.

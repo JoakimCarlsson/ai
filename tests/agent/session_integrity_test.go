@@ -51,7 +51,8 @@ func validateSessionMessages(
 			if next.Role != message.Tool {
 				t.Errorf(
 					"pos %d: assistant with tool_calls followed by %s, want tool",
-					i, next.Role,
+					i,
+					next.Role,
 				)
 			}
 		}
