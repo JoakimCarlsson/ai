@@ -4,12 +4,12 @@ go 1.25.0
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/joakimcarlsson/ai/batch v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/embeddings v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/llm v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/message v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/model v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/tool v0.0.0-00010101000000-000000000000
+	github.com/joakimcarlsson/ai/batch v0.1.0
+	github.com/joakimcarlsson/ai/embeddings v0.1.0
+	github.com/joakimcarlsson/ai/llm v0.1.0
+	github.com/joakimcarlsson/ai/message v0.1.0
+	github.com/joakimcarlsson/ai/model v0.1.0
+	github.com/joakimcarlsson/ai/tool v0.1.0
 	google.golang.org/genai v1.55.0
 )
 
@@ -28,9 +28,9 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
-	github.com/joakimcarlsson/ai/schema v0.0.0-00010101000000-000000000000 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.0.0-00010101000000-000000000000 // indirect
-	github.com/joakimcarlsson/ai/types v0.0.0-00010101000000-000000000000 // indirect
+	github.com/joakimcarlsson/ai/schema v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/types v0.1.0 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.6.0 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
