@@ -29,6 +29,18 @@ const (
 	streamHandshakeTimeout = 10 * time.Second
 )
 
+// CommitStrategy controls when the streaming session emits committed transcripts.
+type CommitStrategy string
+
+const (
+	// CommitStrategyVAD lets ElevenLabs' server-side VAD decide when to commit
+	// based on silence detection. This is ElevenLabs' default.
+	CommitStrategyVAD CommitStrategy = "vad"
+	// CommitStrategyManual requires the caller to send an explicit commit
+	// message (audio_base_64 empty, commit=true) to finalize a segment.
+	CommitStrategyManual CommitStrategy = "manual"
+)
+
 // Options configures the ElevenLabs Scribe client.
 type Options struct {
 	apiKey  string
@@ -39,6 +51,7 @@ type Options struct {
 	numSpeakers                 *int
 	timestampGranularity        string
 	tagAudioEvents              *bool
+	streamCommitStrategy        CommitStrategy
 	streamVADSilenceMs          *int
 	streamLanguageCode          string
 	streamKeyterms              []string
@@ -100,6 +113,13 @@ func WithTagAudioEvents(
 	enabled bool,
 ) Option {
 	return func(o *Options) { o.tagAudioEvents = &enabled }
+}
+
+// WithStreamCommitStrategy selects how committed transcripts are produced.
+// Defaults to [CommitStrategyVAD] (server-side voice activity detection).
+// Use [CommitStrategyManual] to drive commits from the client.
+func WithStreamCommitStrategy(s CommitStrategy) Option {
+	return func(o *Options) { o.streamCommitStrategy = s }
 }
 
 // WithStreamVADSilenceMs sets the silence window (ms) ElevenLabs' VAD waits before emitting
@@ -366,13 +386,18 @@ func (c *Client) StreamTranscribe(
 		lang = opts.Language
 	}
 
+	strategy := c.options.streamCommitStrategy
+	if strategy == "" {
+		strategy = CommitStrategyVAD
+	}
+
 	q := url.Values{}
 	q.Set("audio_format", fmt.Sprintf("pcm_%d", sampleRate))
-	q.Set("commit_strategy", "vad")
+	q.Set("commit_strategy", string(strategy))
 	if lang != "" {
 		q.Set("language_code", lang)
 	}
-	if c.options.streamVADSilenceMs != nil {
+	if strategy == CommitStrategyVAD && c.options.streamVADSilenceMs != nil {
 		secs := float64(*c.options.streamVADSilenceMs) / 1000.0
 		q.Set("vad_silence_threshold_secs",
 			strconv.FormatFloat(secs, 'f', -1, 64))
