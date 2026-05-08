@@ -139,6 +139,22 @@ type ForcedAlignmentProvider interface {
 	) (*ForcedAlignmentData, error)
 }
 
+// StreamingTextProvider is an optional sub-interface for providers that accept
+// text incrementally and produce audio as the text arrives (e.g. forwarding LLM
+// deltas to a TTS WebSocket). Implementations consume textIn until the channel
+// is closed by the caller, then signal end-of-input to the provider.
+//
+// Detect support via type assertion on the [Generation] returned from a vendor's
+// NewGeneration constructor. The [WithTracing] wrapper preserves this interface
+// when the inner client implements it.
+type StreamingTextProvider interface {
+	StreamAudioFromText(
+		ctx context.Context,
+		textIn <-chan string,
+		options ...GenerationOption,
+	) (<-chan Chunk, error)
+}
+
 // GenerationOptions contains parameters for customizing audio generation requests.
 type GenerationOptions struct {
 	OutputFormat             string
@@ -200,15 +216,32 @@ type TracingAttrs struct {
 }
 
 // WithTracing wraps a Generation client so every call records OpenTelemetry spans
-// and metrics. If the inner client also implements [ForcedAlignmentProvider], the
-// returned wrapper does too — type assertion on the wrapper succeeds and the call
-// is traced and forwarded to the inner client.
+// and metrics. If the inner client also implements [ForcedAlignmentProvider] or
+// [StreamingTextProvider], the returned wrapper preserves those interfaces — type
+// assertions on the wrapper succeed and the call is traced and forwarded to the
+// inner client.
 func WithTracing(inner Generation, attrs TracingAttrs) Generation {
 	base := &tracingGeneration{inner: inner, attrs: attrs}
-	if fap, ok := inner.(ForcedAlignmentProvider); ok {
+	fap, hasFAP := inner.(ForcedAlignmentProvider)
+	stp, hasSTP := inner.(StreamingTextProvider)
+	switch {
+	case hasFAP && hasSTP:
+		return &tracingGenerationWithForcedAlignmentAndStreamingText{
+			tracingGenerationWithForcedAlignment: tracingGenerationWithForcedAlignment{
+				tracingGeneration: base,
+				fap:               fap,
+			},
+			stp: stp,
+		}
+	case hasFAP:
 		return &tracingGenerationWithForcedAlignment{
 			tracingGeneration: base,
 			fap:               fap,
+		}
+	case hasSTP:
+		return &tracingGenerationWithStreamingText{
+			tracingGeneration: base,
+			stp:               stp,
 		}
 	}
 	return base
@@ -366,4 +399,70 @@ func (t *tracingGenerationWithForcedAlignment) GenerateForcedAlignment(
 		time.Since(start), 0, 0, nil,
 	)
 	return resp, nil
+}
+
+// tracingGenerationWithStreamingText is the tracing wrapper used when the inner
+// Generation client also implements StreamingTextProvider.
+type tracingGenerationWithStreamingText struct {
+	*tracingGeneration
+	stp StreamingTextProvider
+}
+
+func (t *tracingGenerationWithStreamingText) StreamAudioFromText(
+	ctx context.Context,
+	textIn <-chan string,
+	options ...GenerationOption,
+) (<-chan Chunk, error) {
+	m := t.inner.Model()
+	start := time.Now()
+	ctx, span := tracing.StartAudioSpan(
+		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
+	)
+
+	innerCh, err := t.stp.StreamAudioFromText(ctx, textIn, options...)
+	if err != nil {
+		tracing.SetError(span, err)
+		tracing.RecordMetrics(
+			ctx, "stream_audio_from_text", m.APIModel, string(m.Provider),
+			time.Since(start), 0, 0, err,
+		)
+		span.End()
+		return nil, err
+	}
+
+	outCh := make(chan Chunk)
+	go func() {
+		defer close(outCh)
+		defer span.End()
+		for chunk := range innerCh {
+			if chunk.Error != nil {
+				tracing.SetError(span, chunk.Error)
+			}
+			outCh <- chunk
+		}
+		tracing.RecordMetrics(
+			ctx, "stream_audio_from_text", m.APIModel, string(m.Provider),
+			time.Since(start), 0, 0, nil,
+		)
+	}()
+	return outCh, nil
+}
+
+// tracingGenerationWithForcedAlignmentAndStreamingText is the tracing wrapper
+// used when the inner Generation client implements both optional sub-interfaces.
+type tracingGenerationWithForcedAlignmentAndStreamingText struct {
+	tracingGenerationWithForcedAlignment
+	stp StreamingTextProvider
+}
+
+func (t *tracingGenerationWithForcedAlignmentAndStreamingText) StreamAudioFromText(
+	ctx context.Context,
+	textIn <-chan string,
+	options ...GenerationOption,
+) (<-chan Chunk, error) {
+	wrapper := &tracingGenerationWithStreamingText{
+		tracingGeneration: t.tracingGeneration,
+		stp:               t.stp,
+	}
+	return wrapper.StreamAudioFromText(ctx, textIn, options...)
 }
