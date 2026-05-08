@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -98,7 +99,8 @@ type Client struct {
 
 // NewGeneration constructs an ElevenLabs TTS client. The returned [tts.Generation]
 // is wrapped with [tts.WithTracing]; the wrapper preserves [tts.ForcedAlignmentProvider]
-// support so type assertion against the returned value succeeds.
+// and [tts.StreamingTextProvider] support so type assertions against the returned
+// value succeed.
 func NewGeneration(opts ...Option) tts.Generation {
 	options := Options{}
 	for _, o := range opts {
@@ -440,7 +442,8 @@ type wsBeginMessage struct {
 }
 
 type wsTextMessage struct {
-	Text string `json:"text"`
+	Text  string `json:"text"`
+	Flush bool   `json:"flush,omitempty"`
 }
 
 type wsServerMessage struct {
@@ -458,61 +461,9 @@ func (c *Client) streamWS(
 	text string,
 	opts *tts.GenerationOptions,
 ) (<-chan tts.Chunk, error) {
-	outputFormat := c.outputFormat
-	if opts.OutputFormat != "" {
-		outputFormat = opts.OutputFormat
-	}
-
-	wsURL, err := c.buildStreamURL(outputFormat, opts.EnableAlignment)
+	conn, send, err := c.dialStreamWS(ctx, opts)
 	if err != nil {
-		ch := make(chan tts.Chunk, 1)
-		ch <- tts.Chunk{Error: fmt.Errorf("failed to build ws url: %w", err)}
-		close(ch)
-		return ch, nil
-	}
-
-	hdr := http.Header{}
-	hdr.Set("xi-api-key", c.apiKey)
-
-	dialer := websocket.Dialer{HandshakeTimeout: wsHandshakeTimeout}
-	conn, resp, err := dialer.DialContext(ctx, wsURL, hdr)
-	if resp != nil {
-		_ = resp.Body.Close()
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to dial websocket: %w", err)
-	}
-
-	conn.SetReadLimit(wsReadLimit)
-	_ = conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
-	conn.SetPongHandler(func(string) error {
-		return conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
-	})
-
-	var writeMu sync.Mutex
-	send := func(messageType int, data []byte) error {
-		writeMu.Lock()
-		defer writeMu.Unlock()
-		return conn.WriteMessage(messageType, data)
-	}
-
-	bos, err := json.Marshal(wsBeginMessage{
-		Text:          " ",
-		VoiceSettings: c.buildVoiceSettings(opts),
-	})
-	if err != nil {
-		_ = conn.Close()
-		ch := make(chan tts.Chunk, 1)
-		ch <- tts.Chunk{Error: fmt.Errorf("failed to marshal bos: %w", err)}
-		close(ch)
-		return ch, nil
-	}
-	if err := send(websocket.TextMessage, bos); err != nil {
-		_ = conn.Close()
-		ch := make(chan tts.Chunk, 1)
-		ch <- tts.Chunk{Error: fmt.Errorf("failed to send bos: %w", err)}
-		close(ch)
-		return ch, nil
+		return nil, err
 	}
 
 	textMsg, err := json.Marshal(wsTextMessage{Text: text + " "})
@@ -544,7 +495,133 @@ func (c *Client) streamWS(
 	return chunkChan, nil
 }
 
-func (c *Client) buildStreamURL(outputFormat string, syncAlignment bool) (string, error) {
+// dialStreamWS opens the WS to ElevenLabs, sends the BOS frame, and returns the
+// connection along with a goroutine-safe send function. The caller is responsible
+// for sending text frames, the EOS frame, and starting the reader.
+func (c *Client) dialStreamWS(
+	ctx context.Context,
+	opts *tts.GenerationOptions,
+) (*websocket.Conn, func(int, []byte) error, error) {
+	outputFormat := c.outputFormat
+	if opts.OutputFormat != "" {
+		outputFormat = opts.OutputFormat
+	}
+
+	wsURL, err := c.buildStreamURL(outputFormat, opts.EnableAlignment)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to build ws url: %w", err)
+	}
+
+	hdr := http.Header{}
+	hdr.Set("xi-api-key", c.apiKey)
+
+	dialer := websocket.Dialer{HandshakeTimeout: wsHandshakeTimeout}
+	conn, resp, err := dialer.DialContext(ctx, wsURL, hdr)
+	if resp != nil {
+		_ = resp.Body.Close()
+	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to dial websocket: %w", err)
+	}
+
+	conn.SetReadLimit(wsReadLimit)
+	_ = conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
+	conn.SetPongHandler(func(string) error {
+		return conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
+	})
+
+	var writeMu sync.Mutex
+	send := func(messageType int, data []byte) error {
+		writeMu.Lock()
+		defer writeMu.Unlock()
+		return conn.WriteMessage(messageType, data)
+	}
+
+	bos, err := json.Marshal(wsBeginMessage{
+		Text:          " ",
+		VoiceSettings: c.buildVoiceSettings(opts),
+	})
+	if err != nil {
+		_ = conn.Close()
+		return nil, nil, fmt.Errorf("failed to marshal bos: %w", err)
+	}
+	if err := send(websocket.TextMessage, bos); err != nil {
+		_ = conn.Close()
+		return nil, nil, fmt.Errorf("failed to send bos: %w", err)
+	}
+
+	return conn, send, nil
+}
+
+// StreamAudioFromText opens a WebSocket to ElevenLabs and pumps text frames as
+// they arrive on textIn. Closing textIn signals end-of-input; the WS sends an
+// EOS frame and the audio channel closes once the server returns the final
+// frame. This is the streaming-text path used to forward LLM deltas with low
+// time-to-first-byte. Implements [tts.StreamingTextProvider].
+func (c *Client) StreamAudioFromText(
+	ctx context.Context,
+	textIn <-chan string,
+	options ...tts.GenerationOption,
+) (<-chan tts.Chunk, error) {
+	opts := &tts.GenerationOptions{}
+	for _, opt := range options {
+		opt(opts)
+	}
+
+	conn, send, err := c.dialStreamWS(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	chunkChan := make(chan tts.Chunk, 10)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				_ = send(websocket.TextMessage, []byte(`{"text":""}`))
+				return
+			case piece, ok := <-textIn:
+				if !ok {
+					_ = send(websocket.TextMessage, []byte(`{"text":""}`))
+					return
+				}
+				if piece == "" {
+					continue
+				}
+				if !strings.HasSuffix(piece, " ") {
+					piece += " "
+				}
+				msg, mErr := json.Marshal(
+					wsTextMessage{Text: piece, Flush: true},
+				)
+				if mErr != nil {
+					select {
+					case chunkChan <- tts.Chunk{Error: fmt.Errorf("failed to marshal text: %w", mErr)}:
+					case <-ctx.Done():
+					}
+					_ = send(websocket.TextMessage, []byte(`{"text":""}`))
+					return
+				}
+				if sErr := send(websocket.TextMessage, msg); sErr != nil {
+					select {
+					case chunkChan <- tts.Chunk{Error: fmt.Errorf("failed to send text: %w", sErr)}:
+					case <-ctx.Done():
+					}
+					return
+				}
+			}
+		}
+	}()
+
+	go runStreamReader(ctx, conn, chunkChan)
+	return chunkChan, nil
+}
+
+func (c *Client) buildStreamURL(
+	outputFormat string,
+	syncAlignment bool,
+) (string, error) {
 	base, err := url.Parse(c.baseURL)
 	if err != nil {
 		return "", err
@@ -631,7 +708,9 @@ func runStreamReader(
 					chunk.Alignment = toAlignmentData(*srv.Alignment)
 				}
 				if srv.NormalizedAlignment != nil {
-					chunk.NormalizedAlignment = toAlignmentData(*srv.NormalizedAlignment)
+					chunk.NormalizedAlignment = toAlignmentData(
+						*srv.NormalizedAlignment,
+					)
 				}
 				select {
 				case out <- chunk:
@@ -647,7 +726,10 @@ func runStreamReader(
 				}
 				_ = conn.WriteControl(
 					websocket.CloseMessage,
-					websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+					websocket.FormatCloseMessage(
+						websocket.CloseNormalClosure,
+						"",
+					),
 					time.Now().Add(2*time.Second),
 				)
 				return

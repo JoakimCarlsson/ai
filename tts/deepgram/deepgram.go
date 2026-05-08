@@ -248,33 +248,9 @@ func (c *Client) StreamAudio(
 	text string,
 	_ ...tts.GenerationOption,
 ) (<-chan tts.Chunk, error) {
-	wsURL, err := c.buildStreamURL()
+	conn, send, err := c.dialStreamWS(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to build ws url: %w", err)
-	}
-
-	hdr := http.Header{}
-	hdr.Set("Authorization", "Token "+c.options.apiKey)
-
-	dialer := websocket.Dialer{HandshakeTimeout: wsHandshakeTimeout}
-	conn, resp, err := dialer.DialContext(ctx, wsURL, hdr)
-	if resp != nil {
-		_ = resp.Body.Close()
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to dial websocket: %w", err)
-	}
-
-	_ = conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
-	conn.SetPongHandler(func(string) error {
-		return conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
-	})
-
-	var writeMu sync.Mutex
-	send := func(data []byte) error {
-		writeMu.Lock()
-		defer writeMu.Unlock()
-		return conn.WriteMessage(websocket.TextMessage, data)
+		return nil, err
 	}
 
 	speak, err := json.Marshal(speakMessage{Type: "Speak", Text: text})
@@ -292,7 +268,110 @@ func (c *Client) StreamAudio(
 	}
 
 	chunkChan := make(chan tts.Chunk, 10)
-	go runStreamReader(ctx, conn, chunkChan, send)
+	go runStreamReader(ctx, conn, chunkChan, send, true)
+	return chunkChan, nil
+}
+
+// dialStreamWS opens the WS to Deepgram's /v1/speak endpoint and returns the
+// connection along with a goroutine-safe send function.
+func (c *Client) dialStreamWS(
+	ctx context.Context,
+) (*websocket.Conn, func([]byte) error, error) {
+	wsURL, err := c.buildStreamURL()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to build ws url: %w", err)
+	}
+
+	hdr := http.Header{}
+	hdr.Set("Authorization", "Token "+c.options.apiKey)
+
+	dialer := websocket.Dialer{HandshakeTimeout: wsHandshakeTimeout}
+	conn, resp, err := dialer.DialContext(ctx, wsURL, hdr)
+	if resp != nil {
+		_ = resp.Body.Close()
+	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to dial websocket: %w", err)
+	}
+
+	_ = conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
+	conn.SetPongHandler(func(string) error {
+		return conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
+	})
+
+	var writeMu sync.Mutex
+	send := func(data []byte) error {
+		writeMu.Lock()
+		defer writeMu.Unlock()
+		return conn.WriteMessage(websocket.TextMessage, data)
+	}
+
+	return conn, send, nil
+}
+
+// StreamAudioFromText opens a WebSocket to Deepgram and sends a Speak frame for
+// each piece received on textIn (with an immediate Flush so audio for that piece
+// starts generating). Closing textIn sends Close, which triggers a final Flushed
+// frame before the connection terminates. Implements [tts.StreamingTextProvider].
+//
+// Like [StreamAudio], this requires a raw audio encoding (linear16, mulaw, alaw);
+// the WS endpoint does not accept compressed encodings.
+func (c *Client) StreamAudioFromText(
+	ctx context.Context,
+	textIn <-chan string,
+	_ ...tts.GenerationOption,
+) (<-chan tts.Chunk, error) {
+	conn, send, err := c.dialStreamWS(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	chunkChan := make(chan tts.Chunk, 10)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				_ = send([]byte(`{"type":"Close"}`))
+				return
+			case piece, ok := <-textIn:
+				if !ok {
+					_ = send([]byte(`{"type":"Close"}`))
+					return
+				}
+				if piece == "" {
+					continue
+				}
+				speak, mErr := json.Marshal(
+					speakMessage{Type: "Speak", Text: piece},
+				)
+				if mErr != nil {
+					select {
+					case chunkChan <- tts.Chunk{Error: fmt.Errorf("failed to marshal speak: %w", mErr)}:
+					case <-ctx.Done():
+					}
+					_ = send([]byte(`{"type":"Close"}`))
+					return
+				}
+				if sErr := send(speak); sErr != nil {
+					select {
+					case chunkChan <- tts.Chunk{Error: fmt.Errorf("failed to send speak: %w", sErr)}:
+					case <-ctx.Done():
+					}
+					return
+				}
+				if fErr := send([]byte(`{"type":"Flush"}`)); fErr != nil {
+					select {
+					case chunkChan <- tts.Chunk{Error: fmt.Errorf("failed to send flush: %w", fErr)}:
+					case <-ctx.Done():
+					}
+					return
+				}
+			}
+		}
+	}()
+
+	go runStreamReader(ctx, conn, chunkChan, send, false)
 	return chunkChan, nil
 }
 
@@ -353,6 +432,7 @@ func runStreamReader(
 	conn *websocket.Conn,
 	out chan<- tts.Chunk,
 	send func([]byte) error,
+	closeOnFlushed bool,
 ) {
 	defer close(out)
 	defer func() { _ = conn.Close() }()
@@ -389,6 +469,12 @@ func runStreamReader(
 				}
 				switch srv.Type {
 				case "Flushed":
+					if !closeOnFlushed {
+						// streaming-text path: each Flushed is just a per-chunk
+						// boundary. Keep the connection open until the caller
+						// closes textIn (which sends a Close frame).
+						continue
+					}
 					select {
 					case out <- tts.Chunk{Done: true}:
 					case <-ctx.Done():
@@ -396,7 +482,10 @@ func runStreamReader(
 					_ = send([]byte(`{"type":"Close"}`))
 					_ = conn.WriteControl(
 						websocket.CloseMessage,
-						websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+						websocket.FormatCloseMessage(
+							websocket.CloseNormalClosure,
+							"",
+						),
 						time.Now().Add(2*time.Second),
 					)
 					return
