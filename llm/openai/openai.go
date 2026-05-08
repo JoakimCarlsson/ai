@@ -19,9 +19,9 @@ import (
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
-	openaisdk "github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
-	"github.com/openai/openai-go/shared"
+	openaisdk "github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
+	"github.com/openai/openai-go/v3/shared"
 )
 
 // ReasoningEffort controls reasoning depth for OpenAI o-series models.
@@ -303,16 +303,17 @@ func (c *Client) convertMessages(
 
 			if len(msg.ToolCalls()) > 0 {
 				assistantMsg.ToolCalls = make(
-					[]openaisdk.ChatCompletionMessageToolCallParam,
+					[]openaisdk.ChatCompletionMessageToolCallUnionParam,
 					len(msg.ToolCalls()),
 				)
 				for i, call := range msg.ToolCalls() {
-					assistantMsg.ToolCalls[i] = openaisdk.ChatCompletionMessageToolCallParam{
-						ID:   call.ID,
-						Type: "function",
-						Function: openaisdk.ChatCompletionMessageToolCallFunctionParam{
-							Name:      call.Name,
-							Arguments: call.Input,
+					assistantMsg.ToolCalls[i] = openaisdk.ChatCompletionMessageToolCallUnionParam{
+						OfFunction: &openaisdk.ChatCompletionMessageFunctionToolCallParam{
+							ID: call.ID,
+							Function: openaisdk.ChatCompletionMessageFunctionToolCallFunctionParam{
+								Name:      call.Name,
+								Arguments: call.Input,
+							},
 						},
 					}
 				}
@@ -339,8 +340,8 @@ func (c *Client) convertMessages(
 
 func (c *Client) convertTools(
 	tools []tool.BaseTool,
-) []openaisdk.ChatCompletionToolParam {
-	out := make([]openaisdk.ChatCompletionToolParam, len(tools))
+) []openaisdk.ChatCompletionToolUnionParam {
+	out := make([]openaisdk.ChatCompletionToolUnionParam, len(tools))
 
 	for i, t := range tools {
 		info := t.Info()
@@ -351,11 +352,13 @@ func (c *Client) convertTools(
 		if len(info.Required) > 0 {
 			params["required"] = info.Required
 		}
-		out[i] = openaisdk.ChatCompletionToolParam{
-			Function: openaisdk.FunctionDefinitionParam{
-				Name:        info.Name,
-				Description: openaisdk.String(info.Description),
-				Parameters:  params,
+		out[i] = openaisdk.ChatCompletionToolUnionParam{
+			OfFunction: &openaisdk.ChatCompletionFunctionToolParam{
+				Function: openaisdk.FunctionDefinitionParam{
+					Name:        info.Name,
+					Description: openaisdk.String(info.Description),
+					Parameters:  params,
+				},
 			},
 		}
 	}
@@ -378,7 +381,7 @@ func (c *Client) finishReason(reason string) message.FinishReason {
 
 func (c *Client) preparedParams(
 	messages []openaisdk.ChatCompletionMessageParamUnion,
-	tools []openaisdk.ChatCompletionToolParam,
+	tools []openaisdk.ChatCompletionToolUnionParam,
 ) openaisdk.ChatCompletionNewParams {
 	params := openaisdk.ChatCompletionNewParams{
 		Model:    openaisdk.ChatModel(c.options.model.APIModel),
