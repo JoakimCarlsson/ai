@@ -12,9 +12,9 @@ import (
 	"github.com/joakimcarlsson/ai/llm"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 	"github.com/joakimcarlsson/ai/model"
-	openaisdk "github.com/openai/openai-go"
-	"github.com/openai/openai-go/azure"
-	"github.com/openai/openai-go/option"
+	openaisdk "github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/azure"
+	"github.com/openai/openai-go/v3/option"
 )
 
 // Options configures the Azure OpenAI LLM client.
