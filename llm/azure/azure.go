@@ -6,6 +6,7 @@
 package azure
 
 import (
+	"strings"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -136,6 +137,21 @@ func NewLLM(opts ...Option) llm.LLM {
 				openaiOpts,
 				llmopenai.WithAPIKey(options.apiKey),
 			)
+		}
+		return llmopenai.NewLLM(openaiOpts...)
+	}
+
+	// Azure's v1 endpoint (".../openai/v1") is OpenAI-compatible: it does not
+	// accept the api-version query param and uses /chat/completions directly,
+	// not /openai/deployments/<name>/chat/completions. Route via the plain
+	// OpenAI client with WithBaseURL.
+	if strings.Contains(options.endpoint, "/openai/v1") {
+		openaiOpts = append(
+			openaiOpts,
+			llmopenai.WithBaseURL(strings.TrimRight(options.endpoint, "/")),
+		)
+		if options.apiKey != "" {
+			openaiOpts = append(openaiOpts, llmopenai.WithAPIKey(options.apiKey))
 		}
 		return llmopenai.NewLLM(openaiOpts...)
 	}
