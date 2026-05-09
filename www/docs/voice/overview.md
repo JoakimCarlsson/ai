@@ -1,0 +1,123 @@
+# Voice Agent
+
+The `voice` package provides a streaming voice agent that runs an STT → LLM → TTS pipeline over a duplex audio transport. STT and TTS are pluggable: pass any `stt.SpeechToText` and any `tts.Generation` implementation when you construct the agent.
+
+When the TTS client implements `tts.StreamingTextProvider` (ElevenLabs does), the pipeline streams LLM tokens directly into TTS for end-to-end concurrent text-to-audio. When it does not (OpenAI, etc.), the pipeline buffers the LLM output at sentence boundaries and falls back to single-shot `tts.Generation.StreamAudio` per sentence.
+
+## Quick start
+
+```go
+import (
+    llmopenai "github.com/joakimcarlsson/ai/llm/openai"
+    "github.com/joakimcarlsson/ai/model"
+    "github.com/joakimcarlsson/ai/stt"
+    sttelevenlabs "github.com/joakimcarlsson/ai/stt/elevenlabs"
+    "github.com/joakimcarlsson/ai/tts"
+    ttselevenlabs "github.com/joakimcarlsson/ai/tts/elevenlabs"
+    "github.com/joakimcarlsson/ai/voice"
+)
+
+llmClient := llmopenai.NewLLM(
+    llmopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+    llmopenai.WithModel(model.OpenAIModels[model.GPT4oMini]),
+)
+
+sttClient := sttelevenlabs.NewSpeechToText(
+    sttelevenlabs.WithAPIKey(os.Getenv("ELEVENLABS_API_KEY")),
+    sttelevenlabs.WithModel(model.ElevenLabsTranscriptionModels[model.ElevenLabsScribeV2]),
+    sttelevenlabs.WithStreamCommitStrategy(sttelevenlabs.CommitStrategyVAD),
+    sttelevenlabs.WithStreamVADSilenceMs(500),
+)
+
+ttsClient := ttselevenlabs.NewGeneration(
+    ttselevenlabs.WithAPIKey(os.Getenv("ELEVENLABS_API_KEY")),
+    ttselevenlabs.WithModel(model.ElevenLabsAudioModels[model.ElevenFlashV2_5]),
+    ttselevenlabs.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),
+    ttselevenlabs.WithOutputFormat("pcm_16000"),
+)
+
+agent := voice.New(llmClient, sttClient, ttsClient,
+    voice.WithSystemPrompt("You are a concise voice assistant."),
+    voice.WithTools(myTool),
+)
+
+conv, err := agent.StartConversation(ctx, transport)
+if err != nil {
+    log.Fatal(err)
+}
+
+go func() {
+    for evt := range conv.Events() {
+        // observe transcripts, deltas, tool calls, etc.
+    }
+}()
+
+if err := conv.Wait(); err != nil {
+    log.Println("conversation ended with error:", err)
+}
+```
+
+## Configuration options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `WithSystemPrompt(prompt)` | System prompt prepended to every LLM call | none |
+| `WithTools(tools...)` | Tools the LLM can call during a conversation | none |
+| `WithMaxToolIterations(n)` | Cap on tool-call rounds inside one assistant turn | 4 |
+
+Sample rate, channel count, voice, and TTS output format are configured on the STT and TTS clients you pass to `voice.New`. The voice package does not redeclare them.
+
+## Audio transport
+
+`voice.AudioTransport` is the duplex audio channel for a conversation. Implementations adapt WebSockets, telephony streams, in-memory pipes (for tests), files, etc.
+
+```go
+type AudioTransport interface {
+    Read(ctx context.Context) ([]byte, error)
+    Write(ctx context.Context, frame []byte) error
+    Close() error
+}
+```
+
+`Read` returns one mono PCM frame per call. `Write` is called for every TTS audio frame. The PCM encoding (sample rate, channel count) is whatever the consumer configured on the STT and TTS clients; the voice package does not inspect the bytes. The example at `examples/voice/web` adapts a `coder/websocket` connection.
+
+## Events
+
+`Conversation.Events()` returns a channel of typed events. The channel closes when the conversation ends. The consumer must drain it; failing to do so blocks the pipeline.
+
+| Type | Fired when | Populated fields |
+|------|-----------|-------------------|
+| `EventReady` | Conversation is ready to receive audio | (none beyond `Type`, `Timestamp`) |
+| `EventUserTranscriptPartial` | STT emits an interim result | `Text` |
+| `EventUserTranscriptFinal` | STT commits a final transcript | `Text` |
+| `EventAssistantDelta` | LLM streams a content token | `Text` |
+| `EventAssistantDone` | The current assistant turn ends | `Text` (full reply) |
+| `EventToolCallStart` | A tool is about to run | `ToolCall` |
+| `EventToolCallEnd` | A tool finished running | `ToolCall`, `ToolResult` |
+| `EventTTSStarted` | A TTS stream opens for this turn | (none) |
+| `EventTTSEnded` | The TTS stream for this turn drains | (none) |
+| `EventConversationEnd` | The pipeline goroutines have all returned | (none) |
+| `EventError` | An unrecoverable error terminated the conversation | `Error` |
+
+## How it works
+
+The conversation runs four goroutines coordinated by an `errgroup`:
+
+1. **Audio in** reads frames from `AudioTransport.Read` and feeds them into the STT stream.
+2. **STT consumer** drains `<-chan stt.StreamResult`. Partial results emit `EventUserTranscriptPartial`. On `IsFinal=true`, it emits `EventUserTranscriptFinal` and triggers the turn driver.
+3. **Turn driver** runs `runAssistantTurn`: calls `llm.LLM.StreamResponse`, type-asserts the TTS client for `tts.StreamingTextProvider`, opens TTS lazily on the first content delta. Tool calls are executed sequentially up to `WithMaxToolIterations`.
+4. **Audio out** drains TTS audio frames and writes them to `AudioTransport.Write`.
+
+Sentence chunking (in the streaming-text path) splits text on `.`, `!`, `?`, `\n` followed by whitespace, with a 12-rune minimum length floor so fragments like `"Mr."` or `"1."` keep accumulating.
+
+## Termination
+
+Cancel the context passed to `StartConversation` to terminate the conversation. The runner closes its goroutines, drains the STT stream, calls `AudioTransport.Close`, and emits `EventConversationEnd` followed by closing `Events()`. `Wait()` then returns nil (or any unrecoverable error encountered).
+
+## Not in this slice
+
+The first slice ships the streaming pipeline with tool calls. Future work covers barge-in / interruption, memory injection, agent transfer (handoffs), filler audio while slow tools run, idle and max-duration timeouts, and voice-specific hooks. None of those are present yet.
+
+## Example
+
+See [`examples/voice/web`](https://github.com/JoakimCarlsson/ai/tree/main/examples/voice/web) for an end-to-end browser demo: a Vite + TypeScript frontend captures mic audio, streams it to a Go server over WebSocket, and plays back the agent's audio response.
