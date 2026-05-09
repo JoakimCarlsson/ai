@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/joakimcarlsson/ai/agent/memory"
-	"github.com/joakimcarlsson/ai/agent/session"
 	"github.com/joakimcarlsson/ai/agent/team"
 	llm "github.com/joakimcarlsson/ai/llm"
+	"github.com/joakimcarlsson/ai/memory"
+	"github.com/joakimcarlsson/ai/session"
 	"github.com/joakimcarlsson/ai/tokens"
 	"github.com/joakimcarlsson/ai/tool"
 )

@@ -1,12 +1,12 @@
-module github.com/joakimcarlsson/ai/agent/memory/pgvector
+module github.com/joakimcarlsson/ai/memory
 
 go 1.25.0
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/joakimcarlsson/ai/agent/memory v0.1.0
 	github.com/joakimcarlsson/ai/embeddings v0.1.0
-	github.com/lib/pq v1.12.3
+	github.com/joakimcarlsson/ai/llm v0.1.0
+	github.com/joakimcarlsson/ai/message v0.1.0
 )
 
 require (
@@ -16,8 +16,6 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
-	github.com/joakimcarlsson/ai/llm v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/message v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/model v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/schema v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/tool v0.1.0 // indirect
@@ -51,13 +49,12 @@ require (
 )
 
 replace (
-	github.com/joakimcarlsson/ai/agent/memory => ../
-	github.com/joakimcarlsson/ai/embeddings => ../../../embeddings
-	github.com/joakimcarlsson/ai/llm => ../../../llm
-	github.com/joakimcarlsson/ai/message => ../../../message
-	github.com/joakimcarlsson/ai/model => ../../../model
-	github.com/joakimcarlsson/ai/schema => ../../../schema
-	github.com/joakimcarlsson/ai/tool => ../../../tool
-	github.com/joakimcarlsson/ai/tracing => ../../../tracing
-	github.com/joakimcarlsson/ai/types => ../../../types
+	github.com/joakimcarlsson/ai/embeddings => ../embeddings
+	github.com/joakimcarlsson/ai/llm => ../llm
+	github.com/joakimcarlsson/ai/message => ../message
+	github.com/joakimcarlsson/ai/model => ../model
+	github.com/joakimcarlsson/ai/schema => ../schema
+	github.com/joakimcarlsson/ai/tool => ../tool
+	github.com/joakimcarlsson/ai/tracing => ../tracing
+	github.com/joakimcarlsson/ai/types => ../types
 )

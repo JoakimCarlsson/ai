@@ -6,13 +6,13 @@ extensions required.
 ## Installation
 
 ```bash
-go get github.com/joakimcarlsson/ai/agent/memory/postgres
+go get github.com/joakimcarlsson/ai/memory/postgres
 ```
 
 ## Setup
 
 ```go
-import pgsess "github.com/joakimcarlsson/ai/agent/memory/postgres"
+import pgsess "github.com/joakimcarlsson/ai/memory/postgres"
 
 sessionStore, err := pgsess.SessionStore(ctx,
     "postgres://user:pass@localhost:5432/mydb?sslmode=disable",
@@ -74,9 +74,9 @@ import (
     "os"
 
     "github.com/joakimcarlsson/ai/agent"
-    "github.com/joakimcarlsson/ai/agent/memory"
-    pgvectormem "github.com/joakimcarlsson/ai/agent/memory/pgvector"
-    pgsess "github.com/joakimcarlsson/ai/agent/memory/postgres"
+    "github.com/joakimcarlsson/ai/memory"
+    pgvectormem "github.com/joakimcarlsson/ai/memory/pgvector"
+    pgsess "github.com/joakimcarlsson/ai/memory/postgres"
     embopenai "github.com/joakimcarlsson/ai/embeddings/openai"
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
     "github.com/joakimcarlsson/ai/model"

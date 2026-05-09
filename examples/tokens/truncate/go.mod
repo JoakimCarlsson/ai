@@ -22,7 +22,7 @@ require (
 
 replace (
 	github.com/joakimcarlsson/ai/agent => ../../../agent
-	github.com/joakimcarlsson/ai/agent/memory => ../../../agent/memory
+	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/batch => ../../../batch
 	github.com/joakimcarlsson/ai/batch/concurrent => ../../../batch/concurrent
 	github.com/joakimcarlsson/ai/embeddings => ../../../embeddings
@@ -34,6 +34,7 @@ replace (
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
 	github.com/joakimcarlsson/ai/rerankers => ../../../rerankers
 	github.com/joakimcarlsson/ai/schema => ../../../schema
+	github.com/joakimcarlsson/ai/session => ../../../session
 	github.com/joakimcarlsson/ai/stt => ../../../stt
 	github.com/joakimcarlsson/ai/tokens => ../../../tokens
 	github.com/joakimcarlsson/ai/tokens/truncate => ../../../tokens/truncate

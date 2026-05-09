@@ -7,7 +7,7 @@ The agent package provides multi-agent orchestration with automatic tool executi
 ```go
 import (
     "github.com/joakimcarlsson/ai/agent"
-    "github.com/joakimcarlsson/ai/agent/session"
+    "github.com/joakimcarlsson/ai/session"
 )
 
 myAgent := agent.New(llmClient,

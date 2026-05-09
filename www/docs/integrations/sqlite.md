@@ -7,7 +7,7 @@ itself has zero external SDK deps.
 ## Installation
 
 ```bash
-go get github.com/joakimcarlsson/ai/agent/memory/sqlite
+go get github.com/joakimcarlsson/ai/memory/sqlite
 ```
 
 ## Setup
@@ -17,7 +17,7 @@ import (
     "database/sql"
 
     _ "modernc.org/sqlite" // or any SQLite driver
-    sqlitemem "github.com/joakimcarlsson/ai/agent/memory/sqlite"
+    sqlitemem "github.com/joakimcarlsson/ai/memory/sqlite"
 )
 
 db, err := sql.Open("sqlite", "./chat.db")
@@ -85,7 +85,7 @@ import (
     _ "modernc.org/sqlite"
 
     "github.com/joakimcarlsson/ai/agent"
-    sqlitemem "github.com/joakimcarlsson/ai/agent/memory/sqlite"
+    sqlitemem "github.com/joakimcarlsson/ai/memory/sqlite"
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
     "github.com/joakimcarlsson/ai/model"
 )

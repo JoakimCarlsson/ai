@@ -1,14 +1,66 @@
-# Migration Guide — v0.18.x → v0.1.0 (multi-module split)
+# Migration Guide
 
-The library has been split from a single Go module into ~50 independent
-per-vendor modules. Existing consumers on `v0.18.5` continue to work — the
-old monolithic version stays published indefinitely. Migrating gives you
-per-vendor dependency isolation: importing `llm/openai` no longer transitively
-pulls Anthropic SDK / Google Genai / AWS SDK into your build.
+This document covers two migrations. Each section is self-contained.
 
-This document covers everything a consumer needs to update.
+- **[v0.1.x → v0.2.0](#v01x--v020--memory-and-session-lifted)** — `memory` and `session` lifted out of `agent/` to top-level modules.
+- **[v0.18.x → v0.1.0](#v018x--v010--multi-module-split)** — single Go module split into ~50 per-vendor modules.
 
-## Why
+If you're on v0.18.x and want the latest, apply both in order: do the multi-module split first, then the lift. The path tables in the split section already show the final post-lift destinations, so a single-pass migration also works.
+
+---
+
+## v0.1.x → v0.2.0 — `memory` and `session` lifted
+
+`memory` and `session` were lifted out of `agent/` to become top-level modules.
+Both are pure conversation primitives that any LLM consumer (agents, voice
+runtimes, evaluation pipelines) can use independently — keeping them under
+`agent/` implied an ownership that did not exist.
+
+`agent/memory` was already its own module; it now lives at the top level.
+`agent/session` was a sub-package of the `agent` module; it has been extracted
+into its own module.
+
+| Old import path (v0.1.x) | New import path (v0.2.0) |
+|---|---|
+| `github.com/joakimcarlsson/ai/agent/memory` | `github.com/joakimcarlsson/ai/memory` |
+| `github.com/joakimcarlsson/ai/agent/memory/pgvector` | `github.com/joakimcarlsson/ai/memory/pgvector` |
+| `github.com/joakimcarlsson/ai/agent/memory/postgres` | `github.com/joakimcarlsson/ai/memory/postgres` |
+| `github.com/joakimcarlsson/ai/agent/memory/sqlite` | `github.com/joakimcarlsson/ai/memory/sqlite` |
+| `github.com/joakimcarlsson/ai/agent/session` | `github.com/joakimcarlsson/ai/session` |
+
+Type identities (`memory.Store`, `session.Session`, `session.MemoryStore`,
+`session.FileStore`, etc.) and method signatures are unchanged. Only the
+import paths move.
+
+Mechanical migration:
+
+```
+sed -i 's|github.com/joakimcarlsson/ai/agent/memory|github.com/joakimcarlsson/ai/memory|g' **/*.go
+sed -i 's|github.com/joakimcarlsson/ai/agent/session|github.com/joakimcarlsson/ai/session|g' **/*.go
+```
+
+Then update your `go.mod`:
+
+- Drop `require github.com/joakimcarlsson/ai/agent/memory` (and any sub-module entries).
+- Add `require github.com/joakimcarlsson/ai/memory v0.1.0` (plus `memory/pgvector`, `memory/postgres`, `memory/sqlite` as needed).
+- If you were using `session` transitively via the `agent` module, you now need an explicit `require github.com/joakimcarlsson/ai/session v0.1.0`.
+- Run `go mod tidy`.
+
+---
+
+## v0.18.x → v0.1.0 — multi-module split
+
+The library was split from a single Go module into ~50 independent per-vendor
+modules. Existing consumers on `v0.18.5` continue to work — the old monolithic
+version stays published indefinitely. Migrating gives you per-vendor dependency
+isolation: importing `llm/openai` no longer transitively pulls Anthropic SDK /
+Google Genai / AWS SDK into your build.
+
+The path-rename tables below show v0.2.0 destinations (post-lift); if you're
+landing on v0.1.x specifically, swap `memory` paths back to `agent/memory` and
+`session` back to `agent/session`.
+
+### Why
 
 Before the split, importing any sub-package of `github.com/joakimcarlsson/ai`
 pulled every vendor SDK in the tree. Concrete example: `integrations/pgvector`
@@ -17,20 +69,20 @@ listed ~85 indirect dependencies because it transitively imported the root
 Each vendor implementation is its own module; you import only the SDKs you
 actually use.
 
-## Versioning
+### Versioning
 
 Every new module starts at **`v0.1.0`**. The leading zero signals the surface
 may shift while the new layout settles. Modules will graduate to `v1.0.0` once
 the API has been exercised by real consumers for a release cycle.
 
 The integrations packages were at `integrations/{pgvector,postgres,sqlite}/v1.0.8`
-in the old layout. Their new paths (`agent/memory/{pgvector,postgres,sqlite}`)
+in the old layout. Their new paths (`memory/{pgvector,postgres,sqlite}`)
 are different Go module identities — the proxy sees them as new modules — and
 restart at `v0.1.0` for consistency with the rest of the split.
 
-## Path renames
+### Path renames
 
-### Top-level package moves
+#### Top-level package moves
 
 | Old import path | New import path |
 |---|---|
@@ -38,15 +90,15 @@ restart at `v0.1.0` for consistency with the rest of the split.
 | `github.com/joakimcarlsson/ai/transcription` | `github.com/joakimcarlsson/ai/stt` |
 | `github.com/joakimcarlsson/ai/image_generation` | `github.com/joakimcarlsson/ai/image` |
 | `github.com/joakimcarlsson/ai/providers` | `github.com/joakimcarlsson/ai/llm` (interface only) |
-| `github.com/joakimcarlsson/ai/integrations/pgvector` | `github.com/joakimcarlsson/ai/agent/memory/pgvector` |
-| `github.com/joakimcarlsson/ai/integrations/postgres` | `github.com/joakimcarlsson/ai/agent/memory/postgres` |
-| `github.com/joakimcarlsson/ai/integrations/sqlite` | `github.com/joakimcarlsson/ai/agent/memory/sqlite` |
+| `github.com/joakimcarlsson/ai/integrations/pgvector` | `github.com/joakimcarlsson/ai/memory/pgvector` |
+| `github.com/joakimcarlsson/ai/integrations/postgres` | `github.com/joakimcarlsson/ai/memory/postgres` |
+| `github.com/joakimcarlsson/ai/integrations/sqlite` | `github.com/joakimcarlsson/ai/memory/sqlite` |
 
 `agent/`, `batch/`, `embeddings/`, `fim/`, `message/`, `model/`, `prompt/`,
 `rerankers/`, `schema/`, `tokens/`, `tracing/`, `types/`, `tool/` keep their
 top-level names.
 
-### Vendor implementations: now in sub-modules
+#### Vendor implementations: now in sub-modules
 
 Old layout: vendors were files inside the modality package
 (e.g. `audio/elevenlabs.go`, `providers/openai.go`). Constructors used a
@@ -90,7 +142,7 @@ New layout: each vendor is its own sub-module with its own `go.mod`.
 | `batch/gemini.go` | `github.com/joakimcarlsson/ai/batch/gemini` |
 | `batch/concurrent.go` | `github.com/joakimcarlsson/ai/batch/concurrent` |
 
-### New OpenAI-compatible LLM wrapper modules
+#### New OpenAI-compatible LLM wrapper modules
 
 Vendors that speak OpenAI's chat-completions wire format used to require
 calling `llm/openai` with `WithBaseURL("https://...")`. Each now ships as
@@ -109,9 +161,9 @@ its own thin module — same `Option` type, hardcoded base URL, no other deps.
 | `github.com/joakimcarlsson/ai/llm/together` | `https://api.together.xyz/v1` |
 | `github.com/joakimcarlsson/ai/llm/ollama` | `http://localhost:11434/v1` |
 
-## API changes
+### API changes
 
-### Factory functions removed
+#### Factory functions removed
 
 The old layout exposed factory functions that switched on a `Provider`
 constant. These are gone — each vendor sub-module exports its own `New*`
@@ -136,7 +188,7 @@ client := openaillm.NewLLM(
 Same shape applies to TTS, STT, embeddings, image, rerankers, FIM. The
 `provider` argument disappears; the import path identifies the vendor.
 
-### Image module — substantial redesign
+#### Image module — substantial redesign
 
 The `image` modality changed shape more than the others. Three things to
 update:
@@ -189,7 +241,7 @@ If you were on DALL-E 3, switch to `model.GPTImage15`; the call surface is
 similar but quality presets are `low`/`medium`/`high` rather than
 `standard`/`hd`.
 
-### Per-modality interface stays; vendor-construction is more verbose
+#### Per-modality interface stays; vendor-construction is more verbose
 
 Each modality interface (`llm.LLM`, `tts.Generation`, `stt.SpeechToText`,
 `image.Generation`, `embeddings.Embedding`, `rerankers.Reranker`, `fim.FIM`)
@@ -197,7 +249,7 @@ keeps the same shape it had at v0.18.5, minus the factory functions. Code
 written against those interfaces continues to work as long as you replace
 the construction site with the vendor's own constructor.
 
-## Mechanical migration
+### Mechanical migration
 
 1. **Pin to a working state first.** In your go.mod, your existing
    `require github.com/joakimcarlsson/ai v0.18.5` resolves indefinitely;
@@ -226,7 +278,7 @@ the construction site with the vendor's own constructor.
 
 9. **Run tests.**
 
-## Staying on the monolith
+### Staying on the monolith
 
 If you're not ready to migrate, keep `require github.com/joakimcarlsson/ai v0.18.5`
 in your go.mod. That tag is supported by the Go module proxy indefinitely.

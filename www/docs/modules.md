@@ -121,17 +121,17 @@ Each carries exactly one vendor SDK.
 | Module | Purpose |
 |---|---|
 | `agent` | Agent runtime: chat, streaming, hooks, tools, sessions, sub-agents, handoffs, fan-out |
-| `agent/memory` | Persistent memory interface, dedup + extraction helpers |
+| `memory` | Persistent memory interface, dedup + extraction helpers |
 
-`agent/team` and `agent/session` are sub-packages of `agent` (same module).
+`agent/team` and `session` are sub-packages of `agent` (same module).
 
 ## Tier 5 — Persistence
 
 | Module | Purpose |
 |---|---|
-| `agent/memory/pgvector` | PostgreSQL + pgvector backend with HNSW vector search |
-| `agent/memory/postgres` | PostgreSQL session + memory store |
-| `agent/memory/sqlite` | SQLite session + memory store |
+| `memory/pgvector` | PostgreSQL + pgvector backend with HNSW vector search |
+| `memory/postgres` | PostgreSQL session + memory store |
+| `memory/sqlite` | SQLite session + memory store |
 
 ## Adding new modules
 

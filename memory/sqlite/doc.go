@@ -7,14 +7,14 @@
 //
 // This is a separate Go module to avoid adding database dependencies to the core library:
 //
-//	go get github.com/joakimcarlsson/ai/agent/memory/sqlite
+//	go get github.com/joakimcarlsson/ai/memory/sqlite
 //
 // # Basic Usage
 //
 // The package accepts an existing *sql.DB connection, allowing the caller to choose
 // their preferred SQLite driver and configure connection settings:
 //
-//	import "github.com/joakimcarlsson/ai/agent/memory/sqlite"
+//	import "github.com/joakimcarlsson/ai/memory/sqlite"
 //
 //	store, err := sqlite.SessionStore(ctx, db)
 //	if err != nil {

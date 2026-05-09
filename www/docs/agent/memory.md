@@ -5,7 +5,7 @@ Memory enables cross-conversation fact storage and retrieval using vector-based 
 ## Setup
 
 ```go
-import "github.com/joakimcarlsson/ai/agent/memory"
+import "github.com/joakimcarlsson/ai/memory"
 
 store := memory.NewStore(embedder)
 

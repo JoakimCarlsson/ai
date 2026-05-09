@@ -7,11 +7,11 @@
 //
 // This is a separate Go module to avoid adding database dependencies to the core library:
 //
-//	go get github.com/joakimcarlsson/ai/agent/memory/postgres
+//	go get github.com/joakimcarlsson/ai/memory/postgres
 //
 // # Basic Usage
 //
-//	import "github.com/joakimcarlsson/ai/agent/memory/postgres"
+//	import "github.com/joakimcarlsson/ai/memory/postgres"
 //
 //	store, err := postgres.SessionStore(ctx, "postgres://user:pass@localhost/db?sslmode=disable")
 //	if err != nil {

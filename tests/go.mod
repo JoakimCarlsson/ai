@@ -9,6 +9,7 @@ require (
 	github.com/joakimcarlsson/ai/model v0.1.0
 	github.com/joakimcarlsson/ai/prompt v0.1.0
 	github.com/joakimcarlsson/ai/schema v0.1.0
+	github.com/joakimcarlsson/ai/session v0.1.0
 	github.com/joakimcarlsson/ai/tokens v0.1.0
 	github.com/joakimcarlsson/ai/tool v0.1.0
 	github.com/joakimcarlsson/ai/tracing v0.1.0
@@ -28,8 +29,8 @@ require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
-	github.com/joakimcarlsson/ai/agent/memory v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/embeddings v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/memory v0.1.0 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.6.0 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
@@ -54,13 +55,14 @@ require (
 
 replace (
 	github.com/joakimcarlsson/ai/agent => ../agent
-	github.com/joakimcarlsson/ai/agent/memory => ../agent/memory
 	github.com/joakimcarlsson/ai/embeddings => ../embeddings
 	github.com/joakimcarlsson/ai/llm => ../llm
+	github.com/joakimcarlsson/ai/memory => ../memory
 	github.com/joakimcarlsson/ai/message => ../message
 	github.com/joakimcarlsson/ai/model => ../model
 	github.com/joakimcarlsson/ai/prompt => ../prompt
 	github.com/joakimcarlsson/ai/schema => ../schema
+	github.com/joakimcarlsson/ai/session => ../session
 	github.com/joakimcarlsson/ai/tokens => ../tokens
 	github.com/joakimcarlsson/ai/tool => ../tool
 	github.com/joakimcarlsson/ai/tracing => ../tracing

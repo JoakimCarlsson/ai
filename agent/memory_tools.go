@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/joakimcarlsson/ai/agent/memory"
+	"github.com/joakimcarlsson/ai/memory"
 	"github.com/joakimcarlsson/ai/tool"
 )
 

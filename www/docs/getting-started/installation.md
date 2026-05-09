@@ -44,8 +44,8 @@ go get github.com/joakimcarlsson/ai/model
 
 ```bash
 go get github.com/joakimcarlsson/ai/agent
-go get github.com/joakimcarlsson/ai/agent/memory
-go get github.com/joakimcarlsson/ai/agent/memory/pgvector
+go get github.com/joakimcarlsson/ai/memory
+go get github.com/joakimcarlsson/ai/memory/pgvector
 go get github.com/joakimcarlsson/ai/embeddings
 go get github.com/joakimcarlsson/ai/embeddings/openai
 ```
@@ -68,8 +68,8 @@ For agent-runtime code that wires multiple modalities:
 ```go
 import (
     "github.com/joakimcarlsson/ai/agent"
-    "github.com/joakimcarlsson/ai/agent/memory"
-    pgvectormem "github.com/joakimcarlsson/ai/agent/memory/pgvector"
+    "github.com/joakimcarlsson/ai/memory"
+    pgvectormem "github.com/joakimcarlsson/ai/memory/pgvector"
     embopenai "github.com/joakimcarlsson/ai/embeddings/openai"
     llmanthropic "github.com/joakimcarlsson/ai/llm/anthropic"
     "github.com/joakimcarlsson/ai/model"

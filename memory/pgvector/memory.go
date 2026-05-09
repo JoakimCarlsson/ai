@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/joakimcarlsson/ai/agent/memory"
 	"github.com/joakimcarlsson/ai/embeddings"
+	"github.com/joakimcarlsson/ai/memory"
 )
 
 const createMemoriesTableSQL = `

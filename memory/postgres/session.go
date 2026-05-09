@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/joakimcarlsson/ai/agent/session"
 	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/session"
 )
 
 const createSessionsTableSQL = `
