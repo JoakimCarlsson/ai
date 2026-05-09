@@ -44,6 +44,8 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 	finals := make(chan string, finalsBufferSize)
 	ttsAudio := make(chan []byte, audioOutBufferSize)
 
+	state := c.state
+
 	sttResults, err := v.stt.StreamTranscribe(gctx, audioIn)
 	if err != nil {
 		emit(Event{Type: EventError, Error: err})
@@ -75,6 +77,7 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 	})
 
 	g.Go(func() error {
+		var sawPartialThisUtterance bool
 		for r := range sttResults {
 			if r.Error != nil {
 				if errors.Is(r.Error, context.Canceled) {
@@ -87,12 +90,26 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 			}
 			if r.IsFinal {
 				emit(Event{Type: EventUserTranscriptFinal, Text: r.Text})
+				sawPartialThisUtterance = false
 				select {
 				case finals <- r.Text:
 				case <-gctx.Done():
 					return gctx.Err()
 				}
 				continue
+			}
+			if !sawPartialThisUtterance {
+				emit(Event{Type: EventUserSpeechStart})
+				sawPartialThisUtterance = true
+				if v.bargeIn == BargeInInterrupt && state.agentSpeaking.Load() {
+					spoken := state.loadSpoken()
+					state.dropAudio.Store(true)
+					state.fireCancel()
+					emit(Event{
+						Type: EventAgentInterrupted,
+						Text: spoken,
+					})
+				}
 			}
 			emit(Event{Type: EventUserTranscriptPartial, Text: r.Text})
 		}
@@ -113,7 +130,34 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 					continue
 				}
 				history = append(history, message.NewUserMessage(userText))
-				if err := runAssistantTurn(gctx, v, &history, emit, ttsAudio); err != nil {
+
+				drainAudio(ttsAudio)
+
+				turnCtx, turnCancel := context.WithCancel(gctx)
+				cancelFn := func() { turnCancel() }
+				state.cancelTurn.Store(&cancelFn)
+				state.setSpoken("")
+				state.dropAudio.Store(false)
+				state.agentSpeaking.Store(false)
+
+				err := runAssistantTurn(turnCtx, v, &history, emit, ttsAudio, state)
+
+				turnCancel()
+				state.cancelTurn.Store(nil)
+
+				if errors.Is(err, context.Canceled) && state.dropAudio.Load() {
+					spoken := strings.TrimSpace(state.loadSpoken())
+					if spoken != "" {
+						history = append(history, message.NewMessage(
+							message.Assistant,
+							[]message.ContentPart{
+								message.TextContent{Text: spoken + " [interrupted]"},
+							},
+						))
+					}
+					continue
+				}
+				if err != nil {
 					if errors.Is(err, context.Canceled) {
 						return nil
 					}
@@ -131,6 +175,9 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 			case frame, ok := <-ttsAudio:
 				if !ok {
 					return nil
+				}
+				if state.dropAudio.Load() {
+					continue
 				}
 				if err := audio.Write(gctx, frame); err != nil {
 					if errors.Is(err, context.Canceled) {
@@ -164,6 +211,16 @@ func initialHistory(systemPrompt string) []message.Message {
 		return nil
 	}
 	return []message.Message{message.NewSystemMessage(systemPrompt)}
+}
+
+func drainAudio(ch <-chan []byte) {
+	for {
+		select {
+		case <-ch:
+		default:
+			return
+		}
+	}
 }
 
 // avoid unused import if no stt symbol is referenced directly

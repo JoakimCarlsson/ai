@@ -66,6 +66,7 @@ if err := conv.Wait(); err != nil {
 | `WithMaxToolIterations(n)` | Cap on tool-call rounds inside one assistant turn | 4 |
 | `WithFiller(cfg)` | Speak a short filler phrase if the LLM is slow to produce its first content delta | disabled |
 | `WithToolSound(cfg)` | Loop ambient PCM audio while a tool is executing | disabled |
+| `WithBargeIn(policy)` | Cancel the current turn when the user speaks over the agent | `BargeInIgnore` |
 
 Sample rate, channel count, voice, and TTS output format are configured on the STT and TTS clients you pass to `voice.New`. The voice package does not redeclare them.
 
@@ -101,6 +102,8 @@ type AudioTransport interface {
 | `EventFiller` | A filler phrase has been queued for TTS | `Text` (the spoken filler) |
 | `EventToolSoundStart` | Ambient tool-sound looper has started for a tool batch | (none) |
 | `EventToolSoundEnd` | Ambient tool-sound looper has stopped | (none) |
+| `EventUserSpeechStart` | First non-empty STT partial of a new user utterance | (none) |
+| `EventAgentInterrupted` | Barge-in fired and the current turn was canceled | `Text` (spoken-so-far approximation) |
 | `EventConversationEnd` | The pipeline goroutines have all returned | (none) |
 | `EventError` | An unrecoverable error terminated the conversation | `Error` |
 
@@ -178,6 +181,39 @@ ffmpeg -i input.wav -f s16le -ar 16000 -ac 1 output.pcm
 ```
 
 then `//go:embed output.pcm` it into your binary. The `examples/voice/web` example synthesizes a short typing-like loop programmatically so it works without any external assets.
+
+## Barge-in
+
+When the user starts speaking while the agent is mid-reply, the agent should stop talking, throw away the in-flight LLM/TTS work, and listen. `WithBargeIn` controls this. Modeled on ElevenAgents' interruption toggle.
+
+```go
+voice.WithBargeIn(voice.BargeInInterrupt)
+```
+
+`BargeInPolicy` values:
+
+| Value | Description |
+|---|---|
+| `BargeInIgnore` (default) | Agent finishes whatever it's saying; STT partials during agent speech are observed but cause no action. |
+| `BargeInInterrupt` | Cancels the current LLM/TTS turn the moment STT emits a non-empty partial during agent speech. |
+
+**Detection:** the package leans on the STT's own VAD. The first non-empty partial of a new user utterance fires `EventUserSpeechStart`. If `BargeInInterrupt` is set and the agent is currently speaking (between `EventTTSStarted` and `EventTTSEnded`), the package fires `EventAgentInterrupted` with the spoken-so-far text and cancels the per-turn context.
+
+**What gets canceled:** the in-flight `llm.LLM.StreamResponse`, the sentence chunker, the TTS WebSocket. Any tool execution running for the canceled iteration also unwinds via the per-turn context.
+
+**Server-side audio drop:** queued PCM frames in the runner's `ttsAudio` channel are discarded (not written to `AudioTransport`) until the next turn's TTS opens. This prevents a multi-second tail of already-synthesized audio from leaking into the next turn.
+
+**Browser-side audio flush:** the consumer is responsible for cutting the playback queue as soon as `EventAgentInterrupted` arrives. The example handles this by closing and recreating the `AudioContext`:
+
+```ts
+case "agent_interrupted":
+  void player?.flush();
+  // ...
+```
+
+**History truncation:** when barge-in fires, the runner appends a truncated assistant message to the in-memory history of the form `<spoken-so-far> [interrupted]`. The next LLM call then knows what the user actually heard versus what was planned.
+
+The detection is binary: any non-empty partial during agent speech triggers the interrupt. There's no minimum-words or confidence threshold knob yet — STT vendors with sensitive VAD may produce false positives on small noises. If that becomes a problem, raise it in an issue and we'll add a sensitivity option.
 
 ## How it works
 

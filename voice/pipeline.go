@@ -20,9 +20,10 @@ func runAssistantTurn(
 	history *[]message.Message,
 	emit func(Event),
 	ttsAudio chan<- []byte,
+	state *turnState,
 ) error {
 	for i := 0; i < v.maxToolIterations; i++ {
-		text, toolCalls, err := streamLLMAndSpeak(ctx, v, history, emit, ttsAudio)
+		text, toolCalls, err := streamLLMAndSpeak(ctx, v, history, emit, ttsAudio, state)
 		if err != nil {
 			return err
 		}
@@ -58,6 +59,7 @@ func streamLLMAndSpeak(
 	history *[]message.Message,
 	emit func(Event),
 	ttsAudio chan<- []byte,
+	state *turnState,
 ) (string, []message.ToolCall, error) {
 	stp, supportsStreaming := v.tts.(tts.StreamingTextProvider)
 
@@ -86,6 +88,9 @@ func streamLLMAndSpeak(
 			return err
 		}
 		emit(Event{Type: EventTTSStarted, Timestamp: time.Now()})
+		if state != nil {
+			state.agentSpeaking.Store(true)
+		}
 		textIn = ch
 		audioOut = out
 		audioPumpDone = make(chan struct{})
@@ -132,6 +137,9 @@ func streamLLMAndSpeak(
 		close(textIn)
 		textIn = nil
 		<-audioPumpDone
+		if state != nil {
+			state.agentSpeaking.Store(false)
+		}
 		emit(Event{Type: EventTTSEnded, Timestamp: time.Now()})
 	}
 
@@ -191,6 +199,9 @@ func streamLLMAndSpeak(
 					}
 				}
 				buf.WriteString(ev.Content)
+				if state != nil {
+					state.setSpoken(buf.String())
+				}
 				emit(Event{
 					Type:      EventAssistantDelta,
 					Timestamp: time.Now(),

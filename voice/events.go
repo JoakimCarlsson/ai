@@ -12,8 +12,10 @@ type EventType string
 // EventType values.
 const (
 	EventReady                 EventType = "ready"
+	EventUserSpeechStart       EventType = "user_speech_start"
 	EventUserTranscriptPartial EventType = "user_transcript_partial"
 	EventUserTranscriptFinal   EventType = "user_transcript_final"
+	EventAgentInterrupted      EventType = "agent_interrupted"
 	EventAssistantDelta        EventType = "assistant_delta"
 	EventAssistantDone         EventType = "assistant_done"
 	EventToolCallStart         EventType = "tool_call_start"

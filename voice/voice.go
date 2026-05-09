@@ -18,6 +18,7 @@ type VoiceAgent struct {
 	maxToolIterations int
 	filler            FillerConfig
 	toolSound         ToolSoundConfig
+	bargeIn           BargeInPolicy
 }
 
 const defaultMaxToolIterations = 4

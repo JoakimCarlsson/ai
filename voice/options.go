@@ -46,3 +46,10 @@ func WithToolSound(cfg ToolSoundConfig) Option {
 		v.toolSound = cfg
 	}
 }
+
+// WithBargeIn sets the barge-in policy. Default is BargeInIgnore.
+func WithBargeIn(policy BargeInPolicy) Option {
+	return func(v *VoiceAgent) {
+		v.bargeIn = policy
+	}
+}

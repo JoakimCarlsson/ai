@@ -135,6 +135,19 @@ function handleEvent(evt: VoiceEvent): void {
         assistantTurnEl.classList.remove("partial");
       }
       break;
+    case "agent_interrupted":
+      void player?.flush();
+      if (assistantTurnEl) {
+        assistantTurnEl.classList.remove("partial");
+        assistantTurnEl.textContent =
+          (assistantTurnEl.textContent ?? "") + " [interrupted]";
+      } else if (evt.text) {
+        const bubble = addAssistantBubble();
+        bubble.textContent = `${evt.text} [interrupted]`;
+        bubble.classList.remove("partial");
+      }
+      assistantTurnEl = null;
+      break;
     case "tool_call_start": {
       const line = document.createElement("div");
       line.className = "bubble tool";

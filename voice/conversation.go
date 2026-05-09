@@ -18,6 +18,12 @@ type Conversation struct {
 
 	errMu sync.Mutex
 	err   error
+
+	state *turnState
+}
+
+func (c *Conversation) turnState() *turnState {
+	return c.state
 }
 
 // ID returns a stable identifier for this conversation, useful for logging
@@ -64,6 +70,7 @@ func (v *VoiceAgent) StartConversation(
 		id:     newConversationID(),
 		events: make(chan Event, 32),
 		done:   make(chan struct{}),
+		state:  &turnState{},
 	}
 	go c.run(ctx, v, audio)
 	return c, nil

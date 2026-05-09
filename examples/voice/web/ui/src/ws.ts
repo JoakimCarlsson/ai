@@ -6,14 +6,19 @@
 
 export type VoiceEventType =
   | "ready"
+  | "user_speech_start"
   | "user_transcript_partial"
   | "user_transcript_final"
   | "assistant_delta"
   | "assistant_done"
+  | "agent_interrupted"
   | "tool_call_start"
   | "tool_call_end"
+  | "tool_sound_start"
+  | "tool_sound_end"
   | "tts_started"
   | "tts_ended"
+  | "filler"
   | "conversation_end"
   | "error";
 

@@ -120,6 +120,15 @@ export class PCMPlayer {
       this.nextStart = 0;
     }
   }
+
+  /**
+   * flush stops any currently scheduled audio immediately by closing the
+   * AudioContext. The next enqueue() reinitializes a fresh context so
+   * subsequent audio plays normally. Used to drop queued audio on barge-in.
+   */
+  async flush(): Promise<void> {
+    await this.close();
+  }
 }
 
 function analyserRMS(a: AnalyserNode, gain = 2.5): number {
