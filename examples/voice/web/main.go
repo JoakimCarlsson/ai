@@ -14,6 +14,7 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,24 +27,35 @@ import (
 	"github.com/coder/websocket"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/prompt"
 	sttassemblyai "github.com/joakimcarlsson/ai/stt/assemblyai"
 	"github.com/joakimcarlsson/ai/tool"
 	ttsdeepgram "github.com/joakimcarlsson/ai/tts/deepgram"
 	"github.com/joakimcarlsson/ai/voice"
 )
 
+//go:embed prompt.md
+var systemPromptTemplate string
+
 func main() {
 	openaiKey := requireEnv("OPENAI_API_KEY")
 	assemblyKey := requireEnv("ASSEMBLYAI_API_KEY")
 	deepgramKey := requireEnv("DEEPGRAM_API_KEY")
 	deepgramVoice := envOr("DEEPGRAM_VOICE", string(model.DeepgramAura2Thalia))
+	agentName := envOr("AGENT_NAME", "Aura")
 
 	addr := envOr("LISTEN_ADDR", ":8080")
 
 	mux := http.NewServeMux()
 	mux.HandleFunc(
 		"/ws",
-		wsHandler(openaiKey, assemblyKey, deepgramKey, deepgramVoice),
+		wsHandler(
+			openaiKey,
+			assemblyKey,
+			deepgramKey,
+			deepgramVoice,
+			agentName,
+		),
 	)
 
 	slog.Info("voice example listening", "addr", addr)
@@ -60,7 +72,7 @@ func main() {
 }
 
 func wsHandler(
-	openaiKey, assemblyKey, deepgramKey, deepgramVoice string,
+	openaiKey, assemblyKey, deepgramKey, deepgramVoice, agentName string,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
@@ -79,10 +91,26 @@ func wsHandler(
 		ctx, cancel := context.WithCancel(r.Context())
 		defer cancel()
 
+		systemPrompt, err := prompt.Process(
+			systemPromptTemplate,
+			map[string]any{
+				"AgentName": agentName,
+				"Today":     time.Now().Format("Monday, January 2, 2006"),
+			},
+		)
+		if err != nil {
+			slog.Error("render system prompt", "err", err)
+			_ = conn.Close(
+				websocket.StatusInternalError,
+				"prompt render failed",
+			)
+			return
+		}
+
 		llmClient := llmopenai.NewLLM(
 			llmopenai.WithAPIKey(openaiKey),
 			llmopenai.WithModel(model.OpenAIModels[model.GPT54Nano]),
-			llmopenai.WithMaxTokens(256),
+			llmopenai.WithMaxTokens(4096),
 		)
 
 		sttClient := sttassemblyai.NewSpeechToText(
@@ -100,10 +128,8 @@ func wsHandler(
 		)
 
 		agent := voice.New(llmClient, sttClient, ttsClient,
-			voice.WithSystemPrompt(
-				"You are a concise voice assistant. Keep replies short.",
-			),
-			voice.WithTools(echoTool{}),
+			voice.WithSystemPrompt(systemPrompt),
+			voice.WithTools(currentTimeTool{}),
 		)
 
 		transport := newWSTransport(conn)
@@ -209,37 +235,27 @@ func writeJSON(ctx context.Context, conn *websocket.Conn, v any) {
 	_ = conn.Write(ctx, websocket.MessageText, b)
 }
 
-// echoTool is a trivial demo tool. The LLM can call `echo({"text": "..."})`
-// and the result comes back verbatim.
-type echoTool struct{}
+// currentTimeTool returns the current wall-clock time as a sentence the agent
+// can read aloud. Demonstrates how a voice agent invokes tools mid-turn: the
+// LLM calls this when the user asks for the time, the result lands in history,
+// and the LLM continues its reply incorporating it.
+type currentTimeTool struct{}
 
-func (echoTool) Info() tool.Info {
+func (currentTimeTool) Info() tool.Info {
 	return tool.Info{
-		Name:        "echo",
-		Description: "Echoes the given text back as the tool result.",
-		Parameters: map[string]any{
-			"text": map[string]any{
-				"type":        "string",
-				"description": "The text to echo back.",
-			},
-		},
-		Required: []string{"text"},
+		Name: "get_current_time",
+		Description: "Returns the current date and time. " +
+			"Call this whenever the user asks what time, what day, or what date it is. " +
+			"Takes no arguments. Do not ask the user for a time zone first.",
+		Parameters: map[string]any{},
 	}
 }
 
-func (echoTool) Run(
-	_ context.Context,
-	params tool.Call,
-) (tool.Response, error) {
-	var input struct {
-		Text string `json:"text"`
-	}
-	if err := json.Unmarshal([]byte(params.Input), &input); err != nil {
-		return tool.NewTextErrorResponse(
-			"invalid echo input: " + err.Error(),
-		), nil
-	}
-	return tool.NewTextResponse(input.Text), nil
+func (currentTimeTool) Run(_ context.Context, _ tool.Call) (tool.Response, error) {
+	now := time.Now()
+	return tool.NewTextResponse(
+		now.Format("Monday, January 2, 2006 at 3:04 PM"),
+	), nil
 }
 
 func requireEnv(name string) string {

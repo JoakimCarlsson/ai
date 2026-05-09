@@ -8,124 +8,279 @@
       :root {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
         color-scheme: dark;
+        --bg: #0a0a0b;
+        --panel: #111114;
+        --border: #1f1f23;
+        --text: #e6edf3;
+        --muted: #6e7681;
+        --accent: #1f6feb;
+        --accent-hover: #388bfd;
+        --danger: #f43f5e;
+        --danger-hover: #e11d48;
+        --rose: #fb7185;
+        --sky: #38bdf8;
+        --emerald: #34d399;
+        --amber: #fbbf24;
       }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
       body {
-        margin: 0;
-        background: #0d1117;
-        color: #e6edf3;
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        min-height: 100vh;
+        background:
+          radial-gradient(ellipse 80% 60% at 50% 0%, rgba(31, 111, 235, 0.08), transparent 60%),
+          var(--bg);
+        color: var(--text);
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        grid-template-rows: auto 1fr auto;
+        grid-template-areas:
+          "header events"
+          "main events"
+          "controls events";
+        height: 100vh;
+        overflow: hidden;
       }
       header {
-        padding: 16px 24px;
-        border-bottom: 1px solid #21262d;
+        grid-area: header;
         display: flex;
         align-items: center;
-        gap: 16px;
-      }
-      header h1 {
-        font-size: 16px;
-        font-weight: 600;
-        margin: 0;
-      }
-      #status {
-        font-size: 13px;
-        color: #7d8590;
-      }
-      main {
-        flex: 1;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-        padding: 16px 24px;
-        min-height: 0;
-      }
-      section {
-        display: flex;
-        flex-direction: column;
         gap: 8px;
-        min-height: 0;
-      }
-      h2 {
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: #7d8590;
-        margin: 0;
-      }
-      .log {
-        flex: 1;
-        overflow-y: auto;
-        background: #161b22;
-        border: 1px solid #21262d;
-        border-radius: 6px;
-        padding: 12px;
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        font-size: 13px;
-        line-height: 1.5;
-        white-space: pre-wrap;
-        word-break: break-word;
-      }
-      .log .partial { color: #7d8590; }
-      .log .final { color: #e6edf3; }
-      .log .delta { color: #79c0ff; }
-      .log .tool { color: #d2a8ff; }
-      .log .error { color: #ff7b72; }
-      .log .info { color: #56d364; }
-      footer {
         padding: 16px 24px;
-        border-top: 1px solid #21262d;
-        display: flex;
-        gap: 12px;
-        align-items: center;
       }
-      button {
-        padding: 8px 16px;
+      header .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--emerald);
+      }
+      header .title {
         font-size: 14px;
         font-weight: 500;
-        border-radius: 6px;
-        border: 1px solid #30363d;
-        background: #21262d;
-        color: #e6edf3;
+      }
+      main {
+        grid-area: main;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        padding: 24px;
+        min-height: 0;
+      }
+      .blob {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        height: 120px;
+      }
+      .blob-bar {
+        width: 6px;
+        border-radius: 999px;
+        background: #3f3f46;
+        box-shadow: none;
+        transition: background-color 700ms, box-shadow 700ms;
+      }
+      .blob[data-mode="user"] .blob-bar {
+        background: var(--sky);
+        box-shadow: 0 0 12px rgba(56, 189, 248, 0.7);
+      }
+      .blob[data-mode="assistant"] .blob-bar {
+        background: var(--rose);
+        box-shadow: 0 0 12px rgba(251, 113, 133, 0.7);
+      }
+      #status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 500;
+        background: rgba(110, 118, 129, 0.2);
+        color: var(--muted);
+      }
+      #status .ping {
+        position: relative;
+        display: inline-flex;
+        width: 6px;
+        height: 6px;
+      }
+      #status .ping::before,
+      #status .ping::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: currentColor;
+      }
+      #status .ping::before { opacity: 0.7; }
+      #status[data-tone="connecting"] { background: rgba(56, 189, 248, 0.15); color: var(--sky); }
+      #status[data-tone="listening"]  { background: rgba(52, 211, 153, 0.15); color: var(--emerald); }
+      #status[data-tone="thinking"]   { background: rgba(251, 191, 36, 0.15); color: var(--amber); }
+      #status[data-tone="speaking"]   { background: rgba(251, 113, 133, 0.15); color: var(--rose); }
+      #status[data-tone="connecting"] .ping::before,
+      #status[data-tone="listening"]  .ping::before,
+      #status[data-tone="thinking"]   .ping::before,
+      #status[data-tone="speaking"]   .ping::before {
+        animation: ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+      }
+      @keyframes ping {
+        0%   { transform: scale(1);   opacity: 0.7; }
+        75%, 100% { transform: scale(2.5); opacity: 0; }
+      }
+
+      #transcript {
+        flex: 1;
+        width: 100%;
+        max-width: 640px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px 4px;
+      }
+      #transcript:empty::before {
+        content: "Press the mic and start talking.";
+        display: block;
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 32px;
+      }
+      .bubble {
+        max-width: 85%;
+        padding: 6px 0;
+        font-size: 14px;
+        line-height: 1.5;
+        animation: fadein 200ms ease-out;
+      }
+      @keyframes fadein {
+        from { opacity: 0; transform: translateY(4px); }
+        to   { opacity: 1; transform: none; }
+      }
+      .bubble.user { align-self: flex-end; text-align: right; }
+      .bubble.assistant { align-self: flex-start; text-align: left; }
+      .bubble.partial { opacity: 0.65; }
+      .bubble.tool {
+        align-self: stretch;
+        text-align: left;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        color: #c084fc;
+      }
+      .bubble.error { color: var(--danger); }
+
+      .controls {
+        grid-area: controls;
+        display: flex;
+        justify-content: center;
+        padding: 24px;
+      }
+      #mic {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: none;
         cursor: pointer;
+        background: var(--accent);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 18px rgba(31, 111, 235, 0.4);
+        transition: background 150ms, transform 100ms;
       }
-      button:hover:not(:disabled) {
-        background: #30363d;
+      #mic:hover:not(:disabled) { background: var(--accent-hover); }
+      #mic:active:not(:disabled) { transform: translateY(1px); }
+      #mic:disabled { opacity: 0.5; cursor: not-allowed; }
+      #mic[data-active="true"] {
+        background: var(--danger);
+        box-shadow: 0 4px 18px rgba(244, 63, 94, 0.4);
       }
-      button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
+      #mic[data-active="true"]:hover { background: var(--danger-hover); }
+      #mic svg { width: 24px; height: 24px; }
+      #mic .icon-stop { display: none; }
+      #mic[data-active="true"] .icon-mic { display: none; }
+      #mic[data-active="true"] .icon-stop { display: block; }
+
+      aside {
+        grid-area: events;
+        background: var(--panel);
+        border-left: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
       }
-      button.primary {
-        background: #1f6feb;
-        border-color: #1f6feb;
+      aside .panel-header {
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--border);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
       }
-      button.primary:hover:not(:disabled) {
-        background: #388bfd;
+      #events {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px 16px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        line-height: 1.45;
       }
+      .event {
+        word-break: break-all;
+        white-space: pre-wrap;
+        margin-bottom: 4px;
+        color: #79c0ff;
+      }
+      .event[data-type="user_transcript_partial"],
+      .event[data-type="user_transcript_final"] { color: var(--emerald); }
+      .event[data-type="assistant_delta"],
+      .event[data-type="assistant_done"]        { color: var(--sky); }
+      .event[data-type="tool_call_start"],
+      .event[data-type="tool_call_end"]         { color: #c084fc; }
+      .event[data-type="tts_started"],
+      .event[data-type="tts_ended"]             { color: var(--rose); }
+      .event[data-type="error"]                 { color: var(--danger); }
     </style>
   </head>
   <body>
     <header>
-      <h1>Voice Agent Demo</h1>
-      <div id="status">disconnected</div>
+      <div class="dot"></div>
+      <div class="title">Voice agent</div>
     </header>
+
     <main>
-      <section>
-        <h2>Conversation</h2>
-        <div id="conversation" class="log"></div>
-      </section>
-      <section>
-        <h2>Events</h2>
-        <div id="events" class="log"></div>
-      </section>
+      <div id="blob" class="blob"></div>
+      <div id="status">
+        <span class="ping"></span>
+        <span class="status-label">Idle</span>
+      </div>
+      <div id="transcript"></div>
     </main>
-    <footer>
-      <button id="start" class="primary">Start</button>
-      <button id="stop" disabled>Stop</button>
-    </footer>
+
+    <div class="controls">
+      <button id="mic" aria-label="Start" data-active="false">
+        <svg class="icon-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+          <line x1="12" y1="19" x2="12" y2="23"></line>
+          <line x1="8" y1="23" x2="16" y2="23"></line>
+        </svg>
+        <svg class="icon-stop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+          <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path>
+          <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path>
+          <line x1="12" y1="19" x2="12" y2="23"></line>
+          <line x1="8" y1="23" x2="16" y2="23"></line>
+        </svg>
+      </button>
+    </div>
+
+    <aside>
+      <div class="panel-header">Events</div>
+      <div id="events"></div>
+    </aside>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
