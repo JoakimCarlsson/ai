@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/joakimcarlsson/ai/session"
 	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/session"
 )
 
 type sessionStore struct {

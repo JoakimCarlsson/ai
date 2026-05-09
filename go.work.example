@@ -4,10 +4,6 @@ use (
 	./tests
 
 	./agent
-	./agent/memory
-	./agent/memory/pgvector
-	./agent/memory/postgres
-	./agent/memory/sqlite
 	./cmd/llmstxt
 
 	./model
@@ -16,7 +12,14 @@ use (
 	./schema
 	./tool
 	./prompt
+	./memory
+	./memory/pgvector
+	./memory/postgres
+	./memory/sqlite
+
 	./message
+
+	./session
 
 	./image
 	./image/openai

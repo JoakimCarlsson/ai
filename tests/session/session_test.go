@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/joakimcarlsson/ai/session"
 	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/session"
 )
 
 func TestMemoryStore_CreateAndLoad(t *testing.T) {
