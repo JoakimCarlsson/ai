@@ -2,6 +2,7 @@ package voice
 
 import (
 	"github.com/joakimcarlsson/ai/llm"
+	"github.com/joakimcarlsson/ai/session"
 	"github.com/joakimcarlsson/ai/stt"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/tts"
@@ -19,6 +20,7 @@ type VoiceAgent struct {
 	filler            FillerConfig
 	toolSound         ToolSoundConfig
 	bargeIn           BargeInPolicy
+	session           session.Session
 }
 
 const defaultMaxToolIterations = 4

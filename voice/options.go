@@ -1,6 +1,11 @@
 package voice
 
-import "github.com/joakimcarlsson/ai/tool"
+import (
+	"context"
+
+	"github.com/joakimcarlsson/ai/session"
+	"github.com/joakimcarlsson/ai/tool"
+)
 
 // Option configures a VoiceAgent. Pass options to New.
 type Option func(*VoiceAgent)
@@ -51,5 +56,29 @@ func WithToolSound(cfg ToolSoundConfig) Option {
 func WithBargeIn(policy BargeInPolicy) Option {
 	return func(v *VoiceAgent) {
 		v.bargeIn = policy
+	}
+}
+
+// WithSession configures a session store and id for this agent. When set,
+// the runner loads existing messages from the store at conversation start
+// and persists new messages at turn boundaries.
+//
+// Mirrors agent.WithSession. If store is nil the option is a no-op. If id
+// does not exist in the store it is created.
+func WithSession(id string, store session.Store) Option {
+	return func(v *VoiceAgent) {
+		if store == nil {
+			return
+		}
+		ctx := context.Background()
+		exists, err := store.Exists(ctx, id)
+		if err != nil {
+			return
+		}
+		if exists {
+			v.session, _ = store.Load(ctx, id)
+		} else {
+			v.session, _ = store.Create(ctx, id)
+		}
 	}
 }

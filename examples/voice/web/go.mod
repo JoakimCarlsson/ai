@@ -7,6 +7,7 @@ require (
 	github.com/joakimcarlsson/ai/llm/openai v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/model v0.1.0
 	github.com/joakimcarlsson/ai/prompt v0.1.0
+	github.com/joakimcarlsson/ai/session v0.1.0
 	github.com/joakimcarlsson/ai/stt/assemblyai v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/tool v0.1.0
 	github.com/joakimcarlsson/ai/tts/deepgram v0.0.0-00010101000000-000000000000
@@ -69,6 +70,7 @@ replace (
 	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
 	github.com/joakimcarlsson/ai/schema => ../../../schema
+	github.com/joakimcarlsson/ai/session => ../../../session
 	github.com/joakimcarlsson/ai/stt => ../../../stt
 	github.com/joakimcarlsson/ai/stt/assemblyai => ../../../stt/assemblyai
 	github.com/joakimcarlsson/ai/tool => ../../../tool

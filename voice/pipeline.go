@@ -29,6 +29,12 @@ func runAssistantTurn(
 		}
 
 		if len(toolCalls) == 0 {
+			if t := strings.TrimSpace(text); t != "" {
+				*history = append(*history, message.NewMessage(
+					message.Assistant,
+					[]message.ContentPart{message.TextContent{Text: t}},
+				))
+			}
 			emit(Event{Type: EventAssistantDone, Timestamp: time.Now(), Text: text})
 			return nil
 		}

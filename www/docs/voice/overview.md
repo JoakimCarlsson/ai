@@ -67,6 +67,7 @@ if err := conv.Wait(); err != nil {
 | `WithFiller(cfg)` | Speak a short filler phrase if the LLM is slow to produce its first content delta | disabled |
 | `WithToolSound(cfg)` | Loop ambient PCM audio while a tool is executing | disabled |
 | `WithBargeIn(policy)` | Cancel the current turn when the user speaks over the agent | `BargeInIgnore` |
+| `WithSession(id, store)` | Persist conversation history to a `session.Store`; load on start, append at turn boundaries | disabled |
 
 Sample rate, channel count, voice, and TTS output format are configured on the STT and TTS clients you pass to `voice.New`. The voice package does not redeclare them.
 
@@ -215,6 +216,32 @@ case "agent_interrupted":
 
 The detection is binary: any non-empty partial during agent speech triggers the interrupt. There's no minimum-words or confidence threshold knob yet — STT vendors with sensitive VAD may produce false positives on small noises. If that becomes a problem, raise it in an issue and we'll add a sensitivity option.
 
+## Session persistence
+
+By default the conversation lives only in memory. `WithSession` plugs in any `session.Store` (in-memory, file, or your own) so history survives across reconnects within the same process — and across server restarts when the store is durable.
+
+```go
+import "github.com/joakimcarlsson/ai/session"
+
+agent := voice.New(llm, stt, tts,
+    voice.WithSystemPrompt("..."),
+    voice.WithSession("user-42", session.MemoryStore()),
+)
+```
+
+It mirrors `agent.WithSession` exactly — same `session.Store` and `session.Session` interfaces. Drop in `session.MemoryStore()`, the file store from `session/file.go`, or any custom implementation.
+
+**Behavior:**
+
+- At conversation start, the runner calls `store.Load(ctx, id)` (or `store.Create` if new) and uses the stored messages as the starting history. If the session is empty and a system prompt is configured, the system prompt is persisted as the first message.
+- New messages added during a turn — user, assistant + tool calls per iteration, tool results, final assistant reply — are persisted in a single `session.AddMessages` call once the turn finishes (or once the barge-in branch appends its truncated reply).
+- A store error surfaces as `EventError` and ends the conversation, the same as any other unrecoverable error.
+
+**Constraints:**
+
+- One session id per `VoiceAgent`. Concurrent conversations writing to the same id is not supported (last writer wins) — use one agent per id.
+- Persistence is batched per turn, not message-by-message. A crash mid-turn loses that turn's tail; the user message survives because it's appended just before the turn opens.
+
 ## How it works
 
 The conversation runs four goroutines coordinated by an `errgroup`:
@@ -230,9 +257,9 @@ Sentence chunking (in the streaming-text path) splits text on `.`, `!`, `?`, `\n
 
 Cancel the context passed to `StartConversation` to terminate the conversation. The runner closes its goroutines, drains the STT stream, calls `AudioTransport.Close`, and emits `EventConversationEnd` followed by closing `Events()`. `Wait()` then returns nil (or any unrecoverable error encountered).
 
-## Not in this slice
+## Not yet covered
 
-The first slice ships the streaming pipeline with tool calls. Future work covers barge-in / interruption, memory injection, agent transfer (handoffs), filler audio while slow tools run, idle and max-duration timeouts, and voice-specific hooks. None of those are present yet.
+Memory injection (`agent.WithMemory` parity), agent transfer (handoffs), context-window strategies, idle / max-duration timeouts, and voice-specific lifecycle hooks. None of those are present yet.
 
 ## Example
 

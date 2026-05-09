@@ -117,7 +117,23 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 	})
 
 	g.Go(func() error {
-		history := initialHistory(v.systemPrompt)
+		history, sessionPersisted, err := loadInitialHistory(gctx, v)
+		if err != nil {
+			return err
+		}
+
+		persistNew := func() error {
+			if v.session == nil || sessionPersisted >= len(history) {
+				return nil
+			}
+			newMsgs := history[sessionPersisted:]
+			if err := v.session.AddMessages(gctx, newMsgs); err != nil {
+				return err
+			}
+			sessionPersisted = len(history)
+			return nil
+		}
+
 		for {
 			select {
 			case <-gctx.Done():
@@ -155,6 +171,9 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 							},
 						))
 					}
+					if perr := persistNew(); perr != nil {
+						return perr
+					}
 					continue
 				}
 				if err != nil {
@@ -162,6 +181,9 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 						return nil
 					}
 					return err
+				}
+				if perr := persistNew(); perr != nil {
+					return perr
 				}
 			}
 		}
@@ -211,6 +233,32 @@ func initialHistory(systemPrompt string) []message.Message {
 		return nil
 	}
 	return []message.Message{message.NewSystemMessage(systemPrompt)}
+}
+
+// loadInitialHistory builds the starting history. When v.session is set it
+// loads existing messages from the store; if the session is empty and a
+// system prompt is configured, it persists the system prompt as the first
+// message. Returns the history and the count of messages already persisted
+// to the session (0 when no session is configured).
+func loadInitialHistory(ctx context.Context, v *VoiceAgent) ([]message.Message, int, error) {
+	if v.session == nil {
+		return initialHistory(v.systemPrompt), 0, nil
+	}
+	existing, err := v.session.GetMessages(ctx, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+	if len(existing) > 0 {
+		return existing, len(existing), nil
+	}
+	if strings.TrimSpace(v.systemPrompt) == "" {
+		return nil, 0, nil
+	}
+	sysMsg := message.NewSystemMessage(v.systemPrompt)
+	if err := v.session.AddMessages(ctx, []message.Message{sysMsg}); err != nil {
+		return nil, 0, err
+	}
+	return []message.Message{sysMsg}, 1, nil
 }
 
 func drainAudio(ch <-chan []byte) {

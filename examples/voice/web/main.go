@@ -30,6 +30,7 @@ import (
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/prompt"
+	"github.com/joakimcarlsson/ai/session"
 	sttassemblyai "github.com/joakimcarlsson/ai/stt/assemblyai"
 	"github.com/joakimcarlsson/ai/tool"
 	ttsdeepgram "github.com/joakimcarlsson/ai/tts/deepgram"
@@ -74,6 +75,8 @@ func main() {
 
 	addr := envOr("LISTEN_ADDR", ":8080")
 
+	sessionStore := session.MemoryStore()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc(
 		"/ws",
@@ -83,6 +86,7 @@ func main() {
 			deepgramKey,
 			deepgramVoice,
 			agentName,
+			sessionStore,
 		),
 	)
 
@@ -101,6 +105,7 @@ func main() {
 
 func wsHandler(
 	openaiKey, assemblyKey, deepgramKey, deepgramVoice, agentName string,
+	sessionStore session.Store,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
@@ -163,6 +168,7 @@ func wsHandler(
 		agent := voice.New(llmClient, sttClient, ttsClient,
 			voice.WithSystemPrompt(systemPrompt),
 			voice.WithTools(currentTimeTool{}),
+			voice.WithSession("web-demo", sessionStore),
 			voice.WithFiller(voice.FillerConfig{
 				Timeout: 1500 * time.Millisecond,
 				Message: "One moment.",
@@ -171,6 +177,7 @@ func wsHandler(
 				Audio:    toolSoundClip,
 				Behavior: voice.ToolSoundAlways,
 			}),
+			voice.WithBargeIn(voice.BargeInInterrupt),
 		)
 
 		transport := newWSTransport(conn)
