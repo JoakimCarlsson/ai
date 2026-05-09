@@ -65,6 +65,7 @@ if err := conv.Wait(); err != nil {
 | `WithTools(tools...)` | Tools the LLM can call during a conversation | none |
 | `WithMaxToolIterations(n)` | Cap on tool-call rounds inside one assistant turn | 4 |
 | `WithFiller(cfg)` | Speak a short filler phrase if the LLM is slow to produce its first content delta | disabled |
+| `WithToolSound(cfg)` | Loop ambient PCM audio while a tool is executing | disabled |
 
 Sample rate, channel count, voice, and TTS output format are configured on the STT and TTS clients you pass to `voice.New`. The voice package does not redeclare them.
 
@@ -98,6 +99,8 @@ type AudioTransport interface {
 | `EventTTSStarted` | A TTS stream opens for this turn | (none) |
 | `EventTTSEnded` | The TTS stream for this turn drains | (none) |
 | `EventFiller` | A filler phrase has been queued for TTS | `Text` (the spoken filler) |
+| `EventToolSoundStart` | Ambient tool-sound looper has started for a tool batch | (none) |
+| `EventToolSoundEnd` | Ambient tool-sound looper has stopped | (none) |
 | `EventConversationEnd` | The pipeline goroutines have all returned | (none) |
 | `EventError` | An unrecoverable error terminated the conversation | `Error` |
 
@@ -145,6 +148,36 @@ voice.WithFiller(voice.FillerConfig{
 The filler is only spoken when the TTS client implements `tts.StreamingTextProvider`. Single-shot TTS providers can't speak a filler during the LLM wait — they need the full LLM output buffered first. ElevenLabs and Deepgram TTS both implement the streaming-text-input interface; OpenAI TTS does not.
 
 The filler bypasses sentence-boundary chunking and is sent to TTS as a single phrase so it's spoken immediately. After it plays, the real assistant response continues in the same TTS stream.
+
+## Tool call sounds
+
+While a tool is executing, the conversation goes silent: the LLM has emitted its tool-call decision and is waiting for the result before producing more audio. `WithToolSound` fills that gap with ambient pre-recorded audio that loops until the tool returns. Modeled on ElevenAgents' `tool_call_sound`.
+
+```go
+voice.WithToolSound(voice.ToolSoundConfig{
+    Audio:    pcmClipBytes,            // PCM 16-bit LE mono at the TTS sample rate
+    Behavior: voice.ToolSoundAlways,
+})
+```
+
+`ToolSoundConfig` fields:
+
+| Field | Description |
+|---|---|
+| `Audio` | The PCM clip to loop. Format must match what the configured `tts.Generation` client emits (typically signed 16-bit little-endian PCM mono at 16 kHz). Empty disables tool sound entirely. |
+| `Behavior` | `ToolSoundAuto` (default) plays only if the agent emitted spoken content in the same iteration before the tool call. `ToolSoundAlways` plays on every tool invocation. |
+
+The `Auto` behavior maps to the natural case where the agent says something like "let me check that" before invoking a tool — the looped sound feels like a continuation. With `Always`, the sound plays even when the LLM goes straight to a tool with no preamble.
+
+The looper sends 100ms PCM chunks into the same audio sink the TTS pipeline uses, so the sound rides through `AudioTransport.Write` exactly like spoken audio. When the tool returns, the looper is canceled; the next iteration's TTS audio plays normally after a brief tail (a single buffered chunk may trail out before the looper goroutine drains).
+
+The package does not bundle audio assets. Convert your own clip with e.g.:
+
+```bash
+ffmpeg -i input.wav -f s16le -ar 16000 -ac 1 output.pcm
+```
+
+then `//go:embed output.pcm` it into your binary. The `examples/voice/web` example synthesizes a short typing-like loop programmatically so it works without any external assets.
 
 ## How it works
 

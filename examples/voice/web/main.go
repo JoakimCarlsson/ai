@@ -15,10 +15,12 @@ package main
 import (
 	"context"
 	_ "embed"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"net/http"
 	"os"
 	"sync"
@@ -36,6 +38,32 @@ import (
 
 //go:embed prompt.md
 var systemPromptTemplate string
+
+// toolSoundClip is a synthesized 2-second loop of soft "thinking" clicks at
+// 16 kHz mono PCM16 LE. Replace with a real recording for production use.
+var toolSoundClip = generateThinkingClicks(16000, 2*time.Second)
+
+func generateThinkingClicks(sampleRate int, duration time.Duration) []byte {
+	samples := int(float64(sampleRate) * duration.Seconds())
+	out := make([]byte, samples*2)
+	burstInterval := sampleRate / 3 // a click every ~330ms
+	burstLen := sampleRate / 25     // 40ms burst
+	for i := 0; i < samples; i++ {
+		var sample int16
+		pos := i % burstInterval
+		if pos < burstLen {
+			t := float64(pos) / float64(burstLen)
+			envelope := 1.0 - t
+			// Mix two frequencies for a more pronounced "tap" sound.
+			phase1 := 2 * math.Pi * 600 * float64(pos) / float64(sampleRate)
+			phase2 := 2 * math.Pi * 1100 * float64(pos) / float64(sampleRate)
+			signal := 0.6*math.Sin(phase1) + 0.4*math.Sin(phase2)
+			sample = int16(envelope * 16000 * signal)
+		}
+		binary.LittleEndian.PutUint16(out[i*2:], uint16(sample))
+	}
+	return out
+}
 
 func main() {
 	openaiKey := requireEnv("OPENAI_API_KEY")
@@ -113,10 +141,15 @@ func wsHandler(
 			llmopenai.WithMaxTokens(4096),
 		)
 
+		slog.Info("voice agent ready",
+			"agent", agentName,
+			"tool", currentTimeTool{}.Info().Name,
+		)
+
 		sttClient := sttassemblyai.NewSpeechToText(
 			sttassemblyai.WithAPIKey(assemblyKey),
 			sttassemblyai.WithModel(
-				model.AssemblyAITranscriptionModels[model.AssemblyAIUniversalStreamingMulti],
+				model.AssemblyAITranscriptionModels[model.AssemblyAIU3RTPro],
 			),
 		)
 
@@ -130,6 +163,14 @@ func wsHandler(
 		agent := voice.New(llmClient, sttClient, ttsClient,
 			voice.WithSystemPrompt(systemPrompt),
 			voice.WithTools(currentTimeTool{}),
+			voice.WithFiller(voice.FillerConfig{
+				Timeout: 1500 * time.Millisecond,
+				Message: "One moment.",
+			}),
+			voice.WithToolSound(voice.ToolSoundConfig{
+				Audio:    toolSoundClip,
+				Behavior: voice.ToolSoundAlways,
+			}),
 		)
 
 		transport := newWSTransport(conn)
@@ -251,7 +292,14 @@ func (currentTimeTool) Info() tool.Info {
 	}
 }
 
-func (currentTimeTool) Run(_ context.Context, _ tool.Call) (tool.Response, error) {
+func (currentTimeTool) Run(ctx context.Context, _ tool.Call) (tool.Response, error) {
+	// Artificial 2s delay so the tool-sound loop is audible long enough
+	// to demo. Respects ctx so it cancels cleanly if the conversation ends.
+	select {
+	case <-time.After(2 * time.Second):
+	case <-ctx.Done():
+		return tool.Response{}, ctx.Err()
+	}
 	now := time.Now()
 	return tool.NewTextResponse(
 		now.Format("Monday, January 2, 2006 at 3:04 PM"),

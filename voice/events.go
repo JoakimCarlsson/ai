@@ -21,6 +21,8 @@ const (
 	EventTTSStarted            EventType = "tts_started"
 	EventTTSEnded              EventType = "tts_ended"
 	EventFiller                EventType = "filler"
+	EventToolSoundStart        EventType = "tool_sound_start"
+	EventToolSoundEnd          EventType = "tool_sound_end"
 	EventConversationEnd       EventType = "conversation_end"
 	EventError                 EventType = "error"
 )

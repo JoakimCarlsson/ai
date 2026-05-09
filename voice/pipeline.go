@@ -33,7 +33,9 @@ func runAssistantTurn(
 		}
 
 		appendAssistantToolCalls(history, text, toolCalls)
-		if err := runToolCalls(ctx, v.tools, toolCalls, history, emit); err != nil {
+		if err := runToolsWithSound(
+			ctx, v, text, toolCalls, history, emit, ttsAudio,
+		); err != nil {
 			return err
 		}
 	}

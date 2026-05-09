@@ -38,3 +38,11 @@ func WithFiller(cfg FillerConfig) Option {
 		v.filler = cfg
 	}
 }
+
+// WithToolSound configures ambient audio that loops while a tool is executing.
+// Disabled when cfg.Audio is empty.
+func WithToolSound(cfg ToolSoundConfig) Option {
+	return func(v *VoiceAgent) {
+		v.toolSound = cfg
+	}
+}
