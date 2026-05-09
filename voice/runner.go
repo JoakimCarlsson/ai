@@ -77,7 +77,7 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 	})
 
 	g.Go(func() error {
-		var sawPartialThisUtterance bool
+		var sawSpeechThisUtterance bool
 		for r := range sttResults {
 			if r.Error != nil {
 				if errors.Is(r.Error, context.Canceled) {
@@ -88,19 +88,9 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 			if r.Text == "" {
 				continue
 			}
-			if r.IsFinal {
-				emit(Event{Type: EventUserTranscriptFinal, Text: r.Text})
-				sawPartialThisUtterance = false
-				select {
-				case finals <- r.Text:
-				case <-gctx.Done():
-					return gctx.Err()
-				}
-				continue
-			}
-			if !sawPartialThisUtterance {
+			if !sawSpeechThisUtterance {
 				emit(Event{Type: EventUserSpeechStart})
-				sawPartialThisUtterance = true
+				sawSpeechThisUtterance = true
 				if v.bargeIn == BargeInInterrupt && state.agentSpeaking.Load() {
 					spoken := state.loadSpoken()
 					state.dropAudio.Store(true)
@@ -110,6 +100,16 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 						Text: spoken,
 					})
 				}
+			}
+			if r.IsFinal {
+				emit(Event{Type: EventUserTranscriptFinal, Text: r.Text})
+				sawSpeechThisUtterance = false
+				select {
+				case finals <- r.Text:
+				case <-gctx.Done():
+					return gctx.Err()
+				}
+				continue
 			}
 			emit(Event{Type: EventUserTranscriptPartial, Text: r.Text})
 		}

@@ -3,6 +3,7 @@ package voice
 import (
 	"context"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -58,6 +59,9 @@ type testAgent struct {
 	tts       *fakeTTS
 	transport *fakeTransport
 	cancel    context.CancelFunc
+
+	mu     sync.Mutex
+	events []Event
 }
 
 func newTestAgent(t *testing.T, llmFake *fakeLLM, opts ...Option) *testAgent {
@@ -73,17 +77,37 @@ func newTestAgent(t *testing.T, llmFake *fakeLLM, opts ...Option) *testAgent {
 		cancel()
 		t.Fatalf("StartConversation: %v", err)
 	}
-	go func() {
-		for range conv.Events() {
-		}
-	}()
-	return &testAgent{
+	a := &testAgent{
 		conv:      conv,
 		stt:       sttFake,
 		tts:       ttsFake,
 		transport: transport,
 		cancel:    cancel,
 	}
+	go func() {
+		for evt := range conv.Events() {
+			a.mu.Lock()
+			a.events = append(a.events, evt)
+			a.mu.Unlock()
+		}
+	}()
+	return a
+}
+
+func (a *testAgent) hasEvent(t EventType) bool {
+	return a.countEvents(t) > 0
+}
+
+func (a *testAgent) countEvents(t EventType) int {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	n := 0
+	for _, e := range a.events {
+		if e.Type == t {
+			n++
+		}
+	}
+	return n
 }
 
 func TestBargeIn_CancelsAndUpdatesSpokenSoFar(t *testing.T) {
@@ -115,6 +139,38 @@ func TestBargeIn_CancelsAndUpdatesSpokenSoFar(t *testing.T) {
 		s := a.conv.turnState()
 		return s != nil && s.dropAudio.Load()
 	}, "dropAudio set after barge-in")
+
+	close(hold)
+	a.cancel()
+	_ = a.conv.Wait()
+}
+
+// Some STT providers emit short utterances as a single final with no
+// preceding partial. Barge-in must still fire in that case.
+func TestBargeIn_FinalWithoutPartialFires(t *testing.T) {
+	hold := make(chan struct{})
+	llmFake := &fakeLLM{}
+	llmFake.push(streamThenHold(
+		[]string{"Once upon a time, ", "there was a duck."},
+		hold,
+	))
+
+	a := newTestAgent(t, llmFake, WithBargeIn(BargeInInterrupt))
+	defer a.cancel()
+
+	a.stt.push(stt.StreamResult{Text: "tell me a story", IsFinal: true})
+
+	waitFor(t, func() bool { return a.tts.currentStream() != nil }, "TTS opened")
+	waitFor(t, func() bool {
+		s := a.conv.turnState()
+		return s != nil && s.agentSpeaking.Load()
+	}, "agentSpeaking set")
+
+	a.stt.push(stt.StreamResult{Text: "hello", IsFinal: true})
+
+	waitFor(t, func() bool {
+		return a.hasEvent(EventAgentInterrupted)
+	}, "EventAgentInterrupted fired after final-only barge-in")
 
 	close(hold)
 	a.cancel()
@@ -188,6 +244,123 @@ func TestBargeIn_RepeatedInterruptsDoNotLeak(t *testing.T) {
 			t.Fatalf("interrupted-turn junk leaked to transport at write %d: %v", i, w)
 		}
 	}
+}
+
+// Realistic STT flow: a partial fires barge-in, then a final for the same
+// utterance arrives. The new final must be picked up as the next user turn
+// and the agent must respond to it.
+func TestBargeIn_PartialThenFinalStartsNewTurn(t *testing.T) {
+	hold1 := make(chan struct{})
+	hold2 := make(chan struct{})
+	llmFake := &fakeLLM{}
+	llmFake.push(streamThenHold([]string{"First. "}, hold1))
+	llmFake.push(streamThenHold([]string{"Second. "}, hold2))
+
+	a := newTestAgent(t, llmFake, WithBargeIn(BargeInInterrupt))
+	defer a.cancel()
+
+	a.stt.push(stt.StreamResult{Text: "first", IsFinal: true})
+	waitFor(t, func() bool {
+		s := a.conv.turnState()
+		return s != nil && s.agentSpeaking.Load()
+	}, "turn 1 speaking")
+
+	a.stt.push(stt.StreamResult{Text: "act", IsFinal: false})
+	a.stt.push(stt.StreamResult{Text: "actually wait", IsFinal: false})
+	a.stt.push(stt.StreamResult{Text: "actually wait what", IsFinal: true})
+
+	waitFor(t, func() bool {
+		return a.hasEvent(EventAgentInterrupted)
+	}, "agent interrupted on partial")
+
+	close(hold1)
+
+	waitFor(t, func() bool {
+		s := a.conv.turnState()
+		return s != nil && s.agentSpeaking.Load() && !s.dropAudio.Load()
+	}, "turn 2 picked up new final and started speaking")
+
+	if a.countEvents(EventAgentInterrupted) != 1 {
+		t.Fatalf("expected exactly one interrupt event, got %d",
+			a.countEvents(EventAgentInterrupted))
+	}
+
+	close(hold2)
+	a.cancel()
+	_ = a.conv.Wait()
+}
+
+// Multiple partials within the same utterance should produce only one
+// EventAgentInterrupted: the flag is reset only when the utterance closes
+// with a final.
+func TestBargeIn_FiresOncePerUtterance(t *testing.T) {
+	hold := make(chan struct{})
+	llmFake := &fakeLLM{}
+	llmFake.push(streamThenHold([]string{"telling story. "}, hold))
+
+	a := newTestAgent(t, llmFake, WithBargeIn(BargeInInterrupt))
+	defer a.cancel()
+
+	a.stt.push(stt.StreamResult{Text: "go", IsFinal: true})
+	waitFor(t, func() bool {
+		s := a.conv.turnState()
+		return s != nil && s.agentSpeaking.Load()
+	}, "turn speaking")
+
+	for _, p := range []string{"st", "sto", "stop", "stop now", "stop talking"} {
+		a.stt.push(stt.StreamResult{Text: p, IsFinal: false})
+	}
+
+	waitFor(t, func() bool {
+		return a.hasEvent(EventAgentInterrupted)
+	}, "agent interrupted")
+
+	time.Sleep(50 * time.Millisecond)
+
+	if got := a.countEvents(EventAgentInterrupted); got != 1 {
+		t.Fatalf("expected 1 interrupt event for one utterance, got %d", got)
+	}
+
+	close(hold)
+	a.cancel()
+	_ = a.conv.Wait()
+}
+
+// After an interrupt, the next user utterance must drive a new agent turn —
+// the interrupted state must not strand the runner.
+func TestBargeIn_AgentRespondsAfterInterrupt(t *testing.T) {
+	hold1 := make(chan struct{})
+	hold2 := make(chan struct{})
+	llmFake := &fakeLLM{}
+	llmFake.push(streamThenHold([]string{"First. "}, hold1))
+	llmFake.push(streamThenHold([]string{"Second response. "}, hold2))
+
+	a := newTestAgent(t, llmFake, WithBargeIn(BargeInInterrupt))
+	defer a.cancel()
+
+	a.stt.push(stt.StreamResult{Text: "first ask", IsFinal: true})
+	waitFor(t, func() bool {
+		s := a.conv.turnState()
+		return s != nil && s.agentSpeaking.Load()
+	}, "turn 1 speaking")
+
+	a.stt.push(stt.StreamResult{Text: "wait", IsFinal: false})
+	waitFor(t, func() bool {
+		return a.hasEvent(EventAgentInterrupted)
+	}, "first interrupt fired")
+
+	close(hold1)
+
+	a.stt.push(stt.StreamResult{Text: "what time is it", IsFinal: true})
+
+	waitFor(t, func() bool {
+		s := a.conv.turnState()
+		return s != nil && strings.Contains(s.loadSpoken(), "Second response")
+	}, "agent produces second-turn content")
+
+	close(hold2)
+	a.cancel()
+	_ = a.conv.Wait()
 }
 
 func TestBargeIn_StaleAudioDoesNotLeakIntoNextTurn(t *testing.T) {
