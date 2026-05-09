@@ -12,7 +12,7 @@ extension is enabled automatically on first use.
 ## Installation
 
 ```bash
-go get github.com/joakimcarlsson/ai/agent/memory/pgvector
+go get github.com/joakimcarlsson/ai/memory/pgvector
 ```
 
 ## Setup
@@ -20,8 +20,8 @@ go get github.com/joakimcarlsson/ai/agent/memory/pgvector
 ```go
 import (
     "github.com/joakimcarlsson/ai/agent"
-    "github.com/joakimcarlsson/ai/agent/memory"
-    pgvectormem "github.com/joakimcarlsson/ai/agent/memory/pgvector"
+    "github.com/joakimcarlsson/ai/memory"
+    pgvectormem "github.com/joakimcarlsson/ai/memory/pgvector"
 )
 
 memoryStore, err := pgvectormem.MemoryStore(ctx,
@@ -88,9 +88,9 @@ import (
     "os"
 
     "github.com/joakimcarlsson/ai/agent"
-    "github.com/joakimcarlsson/ai/agent/memory"
-    pgvectormem "github.com/joakimcarlsson/ai/agent/memory/pgvector"
-    pgsessmem "github.com/joakimcarlsson/ai/agent/memory/postgres"
+    "github.com/joakimcarlsson/ai/memory"
+    pgvectormem "github.com/joakimcarlsson/ai/memory/pgvector"
+    pgsessmem "github.com/joakimcarlsson/ai/memory/postgres"
     embopenai "github.com/joakimcarlsson/ai/embeddings/openai"
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
     "github.com/joakimcarlsson/ai/model"

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/joakimcarlsson/ai/agent"
-	"github.com/joakimcarlsson/ai/agent/session"
+	"github.com/joakimcarlsson/ai/session"
 	"github.com/joakimcarlsson/ai/message"
 )
 

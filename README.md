@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/go-1.25%2B-00ADD8?logo=go)](https://go.dev/)
 
-> **Migrating from `v0.18.x`?** The library has been split into ~50 per-vendor modules. See [MIGRATION.md](MIGRATION.md) for path renames and API changes.
+> **Migrating?** [MIGRATION.md](MIGRATION.md) covers two transitions: `v0.18.x → v0.1.0` (single module split into ~50 per-vendor modules) and `v0.1.x → v0.2.0` (`memory` and `session` lifted out of `agent/` to top-level modules).
 
 A multi-provider Go library for AI: LLMs, embeddings, image generation, TTS,
 STT, rerankers, and fill-in-the-middle. Each capability is a modality module
@@ -36,8 +36,8 @@ The library is published as ~50 independent Go modules organised by tier:
 - **Tier 1 modality interfaces** — `llm`, `embeddings`, `tts`, `stt`, `image`, `rerankers`, `fim` (no vendor SDKs)
 - **Tier 2 vendor implementations** — `llm/openai`, `llm/anthropic`, `embeddings/voyage`, `tts/elevenlabs`, etc. (carry the vendor SDK)
 - **Tier 3 utilities** — `tokens/{sliding,truncate,summarize}`, `batch/{openai,anthropic,gemini,concurrent}`
-- **Tier 4 agent runtime** — `agent`, `agent/team`, `agent/session`, `agent/memory`
-- **Tier 5 persistence** — `agent/memory/{pgvector,postgres,sqlite}`
+- **Tier 4 agent runtime** — `agent`, `agent/team`, `session`, `memory`
+- **Tier 5 persistence** — `memory/{pgvector,postgres,sqlite}`
 
 See the **[full module list](https://joakimcarlsson.github.io/ai/modules/)** for every package, its purpose, and the vendor SDK it carries.
 
@@ -115,7 +115,7 @@ Plus any OpenAI-compatible endpoint via [BYOM](https://joakimcarlsson.github.io/
 ```go
 import (
     "github.com/joakimcarlsson/ai/agent"
-    "github.com/joakimcarlsson/ai/agent/session"
+    "github.com/joakimcarlsson/ai/session"
 )
 
 myAgent := agent.New(llmClient,
@@ -127,7 +127,7 @@ myAgent := agent.New(llmClient,
 response, _ := myAgent.Chat(ctx, "What's the weather in Tokyo?")
 ```
 
-The agent framework supports [sub-agents](https://joakimcarlsson.github.io/ai/agent/sub-agents/), [handoffs](https://joakimcarlsson.github.io/ai/agent/handoffs/), [fan-out](https://joakimcarlsson.github.io/ai/agent/fan-out/), [team coordination](https://joakimcarlsson.github.io/ai/agent/team-coordination/), [continue/resume](https://joakimcarlsson.github.io/ai/agent/continue/), [context strategies](https://joakimcarlsson.github.io/ai/agent/context-strategies/), [persistent memory](https://joakimcarlsson.github.io/ai/agent/memory/), and [instruction templates](https://joakimcarlsson.github.io/ai/agent/instruction-templates/).
+The agent framework supports [sub-agents](https://joakimcarlsson.github.io/ai/agent/sub-agents/), [handoffs](https://joakimcarlsson.github.io/ai/agent/handoffs/), [fan-out](https://joakimcarlsson.github.io/ai/agent/fan-out/), [team coordination](https://joakimcarlsson.github.io/ai/agent/team-coordination/), [continue/resume](https://joakimcarlsson.github.io/ai/agent/continue/), [context strategies](https://joakimcarlsson.github.io/ai/agent/context-strategies/), [persistent memory](https://joakimcarlsson.github.io/ai/memory/), and [instruction templates](https://joakimcarlsson.github.io/ai/agent/instruction-templates/).
 
 ## Batch processing
 
@@ -184,7 +184,7 @@ system resolves versions.
 | llm/openai | `llm/openai/vX.Y.Z` | `llm/openai/v0.1.0` |
 | embeddings/voyage | `embeddings/voyage/vX.Y.Z` | `embeddings/voyage/v0.1.0` |
 | agent | `agent/vX.Y.Z` | `agent/v0.2.0` |
-| agent/memory/pgvector | `agent/memory/pgvector/vX.Y.Z` | `agent/memory/pgvector/v0.1.0` |
+| memory/pgvector | `memory/pgvector/vX.Y.Z` | `memory/pgvector/v0.1.0` |
 
 All modules follow [semantic versioning](https://semver.org).
 

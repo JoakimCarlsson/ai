@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/joakimcarlsson/ai/agent/memory"
+	"github.com/joakimcarlsson/ai/memory"
 )
 
 func (a *Agent) extractAndStoreMemories(ctx context.Context) error {

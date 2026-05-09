@@ -4,11 +4,11 @@ go 1.25.0
 
 require (
 	github.com/joakimcarlsson/ai/agent v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/llm v0.0.0-00010101000000-000000000000
+	github.com/joakimcarlsson/ai/llm v0.1.0
 	github.com/joakimcarlsson/ai/llm/anthropic v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/llm/gemini v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/llm/openai v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/model v0.0.0-00010101000000-000000000000
+	github.com/joakimcarlsson/ai/model v0.1.0
 )
 
 require (
@@ -16,20 +16,21 @@ require (
 	cloud.google.com/go/auth v0.9.3 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	github.com/anthropics/anthropic-sdk-go v1.38.0 // indirect
-	github.com/aws/aws-sdk-go-v2 v1.30.3 // indirect
-	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.3 // indirect
-	github.com/aws/aws-sdk-go-v2/config v1.27.27 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.27 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.11 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.15 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.15 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.11.3 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.11.17 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.22.4 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.26.4 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.30.3 // indirect
-	github.com/aws/smithy-go v1.20.3 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.41.7 // indirect
+	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.10 // indirect
+	github.com/aws/aws-sdk-go-v2/config v1.32.17 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.19.16 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.23 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.23 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.23 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.24 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.9 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.23 // indirect
+	github.com/aws/aws-sdk-go-v2/service/signin v1.0.11 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.30.17 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.21 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.42.1 // indirect
+	github.com/aws/smithy-go v1.25.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.2 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
@@ -45,18 +46,19 @@ require (
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
 	github.com/invopop/jsonschema v0.13.0 // indirect
-	github.com/joakimcarlsson/ai/agent/memory v0.0.0-00010101000000-000000000000 // indirect
-	github.com/joakimcarlsson/ai/embeddings v0.0.0-00010101000000-000000000000 // indirect
-	github.com/joakimcarlsson/ai/message v0.0.0-00010101000000-000000000000 // indirect
-	github.com/joakimcarlsson/ai/prompt v0.0.0-00010101000000-000000000000 // indirect
-	github.com/joakimcarlsson/ai/schema v0.0.0-00010101000000-000000000000 // indirect
-	github.com/joakimcarlsson/ai/tokens v0.0.0-00010101000000-000000000000 // indirect
-	github.com/joakimcarlsson/ai/tool v0.0.0-00010101000000-000000000000 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.0.0-00010101000000-000000000000 // indirect
-	github.com/joakimcarlsson/ai/types v0.0.0-00010101000000-000000000000 // indirect
+	github.com/joakimcarlsson/ai/embeddings v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/memory v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/message v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/prompt v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/schema v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/session v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/tokens v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/tool v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/types v0.1.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.6.0 // indirect
-	github.com/openai/openai-go v1.12.0 // indirect
+	github.com/openai/openai-go/v3 v3.35.0 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
@@ -95,7 +97,6 @@ require (
 
 replace (
 	github.com/joakimcarlsson/ai/agent => ../../../agent
-	github.com/joakimcarlsson/ai/agent/memory => ../../../agent/memory
 	github.com/joakimcarlsson/ai/batch => ../../../batch
 	github.com/joakimcarlsson/ai/batch/concurrent => ../../../batch/concurrent
 	github.com/joakimcarlsson/ai/embeddings => ../../../embeddings
@@ -112,6 +113,7 @@ replace (
 	github.com/joakimcarlsson/ai/llm/anthropic => ../../../llm/anthropic
 	github.com/joakimcarlsson/ai/llm/gemini => ../../../llm/gemini
 	github.com/joakimcarlsson/ai/llm/openai => ../../../llm/openai
+	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
 	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
@@ -119,6 +121,7 @@ replace (
 	github.com/joakimcarlsson/ai/rerankers/cohere => ../../../rerankers/cohere
 	github.com/joakimcarlsson/ai/rerankers/voyage => ../../../rerankers/voyage
 	github.com/joakimcarlsson/ai/schema => ../../../schema
+	github.com/joakimcarlsson/ai/session => ../../../session
 	github.com/joakimcarlsson/ai/stt => ../../../stt
 	github.com/joakimcarlsson/ai/stt/deepgram => ../../../stt/deepgram
 	github.com/joakimcarlsson/ai/stt/openai => ../../../stt/openai

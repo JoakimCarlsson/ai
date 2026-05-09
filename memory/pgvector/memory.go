@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/joakimcarlsson/ai/agent/memory"
+	"github.com/joakimcarlsson/ai/memory"
 	"github.com/joakimcarlsson/ai/embeddings"
 )
 

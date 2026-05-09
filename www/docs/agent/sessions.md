@@ -5,7 +5,7 @@ Sessions persist conversation history across multiple `Chat()` calls.
 ## Setup
 
 ```go
-import "github.com/joakimcarlsson/ai/agent/session"
+import "github.com/joakimcarlsson/ai/session"
 
 myAgent := agent.New(llmClient,
     agent.WithSystemPrompt("You are a helpful assistant."),

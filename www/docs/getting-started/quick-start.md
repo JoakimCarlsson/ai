@@ -102,7 +102,7 @@ memory into a runtime:
 ```go
 import (
     "github.com/joakimcarlsson/ai/agent"
-    "github.com/joakimcarlsson/ai/agent/session"
+    "github.com/joakimcarlsson/ai/session"
 )
 
 myAgent := agent.New(client,

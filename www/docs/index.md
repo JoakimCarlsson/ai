@@ -28,8 +28,8 @@ The library is published as ~50 independent Go modules. The core split:
 - **Tier 0 leaves** (`model`, `message`, `tool`, `schema`, `tracing`,
   `prompt`, `types`) are dependency-free building blocks shared across the
   rest.
-- **Agent runtime** (`agent`, `agent/memory`) and persistence integrations
-  (`agent/memory/{pgvector,postgres,sqlite}`) layer on top.
+- **Agent runtime** (`agent`, `memory`) and persistence integrations
+  (`memory/{pgvector,postgres,sqlite}`) layer on top.
 
 ## Install
 
