@@ -16,6 +16,7 @@ type VoiceAgent struct {
 	systemPrompt      string
 	tools             []tool.BaseTool
 	maxToolIterations int
+	filler            FillerConfig
 }
 
 const defaultMaxToolIterations = 4

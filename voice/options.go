@@ -29,3 +29,12 @@ func WithMaxToolIterations(n int) Option {
 		}
 	}
 }
+
+// WithFiller enables filler audio that fires when the LLM is slow to produce
+// its first content delta. Disabled when Timeout is zero or Message is empty
+// (and Source is nil).
+func WithFiller(cfg FillerConfig) Option {
+	return func(v *VoiceAgent) {
+		v.filler = cfg
+	}
+}

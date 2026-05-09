@@ -62,13 +62,15 @@ func streamLLMAndSpeak(
 	events := v.llm.StreamResponse(ctx, *history, v.tools)
 
 	var (
-		buf           strings.Builder
-		toolCalls     []message.ToolCall
-		chunker       sentenceChunker
-		textIn        chan string
-		audioOut      <-chan tts.Chunk
-		audioPumpDone chan struct{}
-		ttsErr        error
+		buf             strings.Builder
+		toolCalls       []message.ToolCall
+		chunker         sentenceChunker
+		textIn          chan string
+		audioOut        <-chan tts.Chunk
+		audioPumpDone   chan struct{}
+		ttsErr          error
+		gotFirstContent bool
+		fillerFired     bool
 	)
 
 	startTTS := func() error {
@@ -131,37 +133,124 @@ func streamLLMAndSpeak(
 		emit(Event{Type: EventTTSEnded, Timestamp: time.Now()})
 	}
 
-	for ev := range events {
-		switch ev.Type {
-		case types.EventContentDelta:
-			if ev.Content == "" {
-				continue
-			}
-			buf.WriteString(ev.Content)
+	queueFillerText := func(text string) {
+		if !supportsStreaming || text == "" {
+			return
+		}
+		if err := startTTS(); err != nil {
+			return
+		}
+		select {
+		case textIn <- text:
 			emit(Event{
-				Type:      EventAssistantDelta,
+				Type:      EventFiller,
 				Timestamp: time.Now(),
-				Text:      ev.Content,
+				Text:      text,
 			})
-			if !supportsStreaming {
+		case <-ctx.Done():
+		}
+	}
+
+	fillerTimerCh := make(chan struct{}, 1)
+	fillerTextCh := make(chan string, 1)
+	var fillerTimer *time.Timer
+	if v.filler.Timeout > 0 &&
+		(v.filler.Message != "" || v.filler.Source != nil) {
+		fillerTimer = time.AfterFunc(v.filler.Timeout, func() {
+			select {
+			case fillerTimerCh <- struct{}{}:
+			default:
+			}
+		})
+		defer fillerTimer.Stop()
+	}
+
+	streamDone := false
+	for !streamDone {
+		select {
+		case <-ctx.Done():
+			closeTTS()
+			return buf.String(), toolCalls, ctx.Err()
+
+		case ev, ok := <-events:
+			if !ok {
+				streamDone = true
 				continue
 			}
-			if err := startTTS(); err != nil {
-				supportsStreaming = false
+			switch ev.Type {
+			case types.EventContentDelta:
+				if ev.Content == "" {
+					continue
+				}
+				if !gotFirstContent {
+					gotFirstContent = true
+					if fillerTimer != nil {
+						fillerTimer.Stop()
+					}
+				}
+				buf.WriteString(ev.Content)
+				emit(Event{
+					Type:      EventAssistantDelta,
+					Timestamp: time.Now(),
+					Text:      ev.Content,
+				})
+				if !supportsStreaming {
+					continue
+				}
+				if err := startTTS(); err != nil {
+					supportsStreaming = false
+					continue
+				}
+				for _, sentence := range chunker.push(ev.Content) {
+					flushSentence(sentence)
+				}
+			case types.EventComplete:
+				if ev.Response != nil && len(ev.Response.ToolCalls) > 0 {
+					toolCalls = ev.Response.ToolCalls
+				}
+			case types.EventError:
+				if ev.Error != nil {
+					closeTTS()
+					return "", nil, ev.Error
+				}
+			}
+
+		case <-fillerTimerCh:
+			if gotFirstContent || fillerFired {
 				continue
 			}
-			for _, sentence := range chunker.push(ev.Content) {
-				flushSentence(sentence)
+			if v.filler.Source == nil {
+				queueFillerText(v.filler.Message)
+				fillerFired = true
+				continue
 			}
-		case types.EventComplete:
-			if ev.Response != nil && len(ev.Response.ToolCalls) > 0 {
-				toolCalls = ev.Response.ToolCalls
+			deadline := v.filler.SourceDeadline
+			if deadline <= 0 {
+				deadline = defaultSourceDeadline
 			}
-		case types.EventError:
-			if ev.Error != nil {
-				closeTTS()
-				return "", nil, ev.Error
+			snapshot := append([]message.Message(nil), *history...)
+			fallback := v.filler.Message
+			source := v.filler.Source
+			go func() {
+				sourceCtx, cancel := context.WithTimeout(ctx, deadline)
+				defer cancel()
+				text := fallback
+				if t, err := source(sourceCtx, snapshot); err == nil &&
+					t != "" {
+					text = t
+				}
+				select {
+				case fillerTextCh <- text:
+				default:
+				}
+			}()
+
+		case msg := <-fillerTextCh:
+			if gotFirstContent || fillerFired || msg == "" {
+				continue
 			}
+			queueFillerText(msg)
+			fillerFired = true
 		}
 	}
 

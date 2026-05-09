@@ -64,6 +64,7 @@ if err := conv.Wait(); err != nil {
 | `WithSystemPrompt(prompt)` | System prompt prepended to every LLM call | none |
 | `WithTools(tools...)` | Tools the LLM can call during a conversation | none |
 | `WithMaxToolIterations(n)` | Cap on tool-call rounds inside one assistant turn | 4 |
+| `WithFiller(cfg)` | Speak a short filler phrase if the LLM is slow to produce its first content delta | disabled |
 
 Sample rate, channel count, voice, and TTS output format are configured on the STT and TTS clients you pass to `voice.New`. The voice package does not redeclare them.
 
@@ -96,8 +97,54 @@ type AudioTransport interface {
 | `EventToolCallEnd` | A tool finished running | `ToolCall`, `ToolResult` |
 | `EventTTSStarted` | A TTS stream opens for this turn | (none) |
 | `EventTTSEnded` | The TTS stream for this turn drains | (none) |
+| `EventFiller` | A filler phrase has been queued for TTS | `Text` (the spoken filler) |
 | `EventConversationEnd` | The pipeline goroutines have all returned | (none) |
 | `EventError` | An unrecoverable error terminated the conversation | `Error` |
+
+## Filler audio
+
+If the LLM takes a long time to produce its first content delta (slow first token, slow tool-call resolution before any visible text, etc.), the user hears silence. `WithFiller` mitigates that by speaking a short phrase after a configurable timeout. It's modeled on the `soft_timeout_config` from ElevenAgents.
+
+```go
+voice.WithFiller(voice.FillerConfig{
+    Timeout: 1500 * time.Millisecond,
+    Message: "One moment.",
+})
+```
+
+`FillerConfig` fields:
+
+| Field | Description |
+|---|---|
+| `Timeout` | How long to wait before speaking the filler. A non-positive value disables the feature. |
+| `Message` | Static phrase spoken when `Timeout` fires. Required when `Source` is nil. Also serves as the fallback when `Source` errors or returns an empty string. |
+| `Source` | Optional `FillerSource` callback that generates the filler dynamically from the conversation history. |
+| `SourceDeadline` | Caps how long `Source` may run before falling back to `Message`. Defaults to 800ms. Ignored when `Source` is nil. |
+
+**Dynamic filler example** — generate context-aware fillers via a small fast LLM:
+
+```go
+voice.WithFiller(voice.FillerConfig{
+    Timeout:        1500 * time.Millisecond,
+    Message:        "One moment.",        // fallback
+    SourceDeadline: 600 * time.Millisecond,
+    Source: func(ctx context.Context, history []message.Message) (string, error) {
+        resp, err := fastLLM.SendMessages(ctx, append(history,
+            message.NewUserMessage(
+                "In one short spoken phrase (under six words), say something to fill silence while you think. No greetings.",
+            ),
+        ), nil)
+        if err != nil {
+            return "", err
+        }
+        return resp.Content, nil
+    },
+})
+```
+
+The filler is only spoken when the TTS client implements `tts.StreamingTextProvider`. Single-shot TTS providers can't speak a filler during the LLM wait — they need the full LLM output buffered first. ElevenLabs and Deepgram TTS both implement the streaming-text-input interface; OpenAI TTS does not.
+
+The filler bypasses sentence-boundary chunking and is sent to TTS as a single phrase so it's spoken immediately. After it plays, the real assistant response continues in the same TTS stream.
 
 ## How it works
 
