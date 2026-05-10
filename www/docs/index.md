@@ -28,8 +28,9 @@ The library is published as ~50 independent Go modules. The core split:
 - **Tier 0 leaves** (`model`, `message`, `tool`, `schema`, `tracing`,
   `prompt`, `types`) are dependency-free building blocks shared across the
   rest.
-- **Agent runtime** (`agent`, `memory`) and persistence integrations
-  (`memory/{pgvector,postgres,sqlite}`) layer on top.
+- **Agent runtimes** (`agent` for text, `voice` for voice-first conversations)
+  build on top of `memory`, `session`, and the modality interfaces. Persistence
+  integrations live under `memory/{pgvector,postgres,sqlite}`.
 
 ## Install
 
@@ -85,4 +86,5 @@ func main() {
 - [Provider Overview](providers/overview.md) — every supported provider with capability matrix
 - [LLM module](providers/llm.md) — chat, streaming, tools, structured output
 - [Agent Framework](agent/overview.md) — multi-agent runtime
+- [Voice Agent](voice/overview.md) — streaming STT → LLM → TTS with tool calls
 - [Bring Your Own Model (BYOM)](advanced/byom.md) — Ollama, LocalAI, custom OpenAI-compatible endpoints

@@ -1,4 +1,4 @@
-package agent
+package memory
 
 import (
 	"context"
@@ -6,17 +6,29 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/joakimcarlsson/ai/memory"
 	"github.com/joakimcarlsson/ai/tool"
 )
 
-type storeMemoryTool struct {
-	store    memory.Store
-	memoryID string
+// Tools returns a set of tools the LLM can use to manage memory directly:
+// store_memory, recall_memories, replace_memory, delete_memory. The tools
+// operate on the given Store under memoryID. Wire them into your agent
+// when you want the LLM to control persistence explicitly (i.e., when
+// auto-extraction is disabled).
+//
+// Used by both agent.WithMemory and voice.WithMemory in their non-auto-
+// extract modes.
+func Tools(store Store, memoryID string) []tool.BaseTool {
+	return []tool.BaseTool{
+		&storeMemoryTool{store: store, memoryID: memoryID},
+		&recallMemoriesTool{store: store, memoryID: memoryID},
+		&replaceMemoryTool{store: store, memoryID: memoryID},
+		&deleteMemoryTool{store: store, memoryID: memoryID},
+	}
 }
 
-func newStoreMemoryTool(store memory.Store, memoryID string) *storeMemoryTool {
-	return &storeMemoryTool{store: store, memoryID: memoryID}
+type storeMemoryTool struct {
+	store    Store
+	memoryID string
 }
 
 func (t *storeMemoryTool) Info() tool.Info {
@@ -73,15 +85,8 @@ func (t *storeMemoryTool) Run(
 }
 
 type recallMemoriesTool struct {
-	store    memory.Store
+	store    Store
 	memoryID string
-}
-
-func newRecallMemoriesTool(
-	store memory.Store,
-	memoryID string,
-) *recallMemoriesTool {
-	return &recallMemoriesTool{store: store, memoryID: memoryID}
 }
 
 func (t *recallMemoriesTool) Info() tool.Info {
@@ -131,15 +136,8 @@ func (t *recallMemoriesTool) Run(
 }
 
 type deleteMemoryTool struct {
-	store    memory.Store
+	store    Store
 	memoryID string
-}
-
-func newDeleteMemoryTool(
-	store memory.Store,
-	memoryID string,
-) *deleteMemoryTool {
-	return &deleteMemoryTool{store: store, memoryID: memoryID}
 }
 
 func (t *deleteMemoryTool) Info() tool.Info {
@@ -184,15 +182,8 @@ func (t *deleteMemoryTool) Run(
 }
 
 type replaceMemoryTool struct {
-	store    memory.Store
+	store    Store
 	memoryID string
-}
-
-func newReplaceMemoryTool(
-	store memory.Store,
-	memoryID string,
-) *replaceMemoryTool {
-	return &replaceMemoryTool{store: store, memoryID: memoryID}
 }
 
 func (t *replaceMemoryTool) Info() tool.Info {
@@ -251,13 +242,4 @@ func (t *replaceMemoryTool) Run(
 	}
 
 	return tool.NewTextResponse("Memory replaced successfully"), nil
-}
-
-func createMemoryTools(store memory.Store, memoryID string) []tool.BaseTool {
-	return []tool.BaseTool{
-		newStoreMemoryTool(store, memoryID),
-		newRecallMemoriesTool(store, memoryID),
-		newReplaceMemoryTool(store, memoryID),
-		newDeleteMemoryTool(store, memoryID),
-	}
 }

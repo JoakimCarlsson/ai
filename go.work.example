@@ -85,4 +85,6 @@ use (
 	./batch/anthropic
 	./batch/gemini
 	./batch/concurrent
+
+	./voice
 )

@@ -5,15 +5,19 @@ go 1.25.0
 require (
 	github.com/joakimcarlsson/ai/agent v0.1.0
 	github.com/joakimcarlsson/ai/llm v0.1.0
+	github.com/joakimcarlsson/ai/memory v0.1.0
 	github.com/joakimcarlsson/ai/message v0.1.0
 	github.com/joakimcarlsson/ai/model v0.1.0
 	github.com/joakimcarlsson/ai/prompt v0.1.0
 	github.com/joakimcarlsson/ai/schema v0.1.0
 	github.com/joakimcarlsson/ai/session v0.1.0
+	github.com/joakimcarlsson/ai/stt v0.1.0
 	github.com/joakimcarlsson/ai/tokens v0.1.0
 	github.com/joakimcarlsson/ai/tool v0.1.0
 	github.com/joakimcarlsson/ai/tracing v0.1.0
+	github.com/joakimcarlsson/ai/tts v0.2.0
 	github.com/joakimcarlsson/ai/types v0.1.0
+	github.com/joakimcarlsson/ai/voice v0.0.0-00010101000000-000000000000
 	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/log v0.19.0
 	go.opentelemetry.io/otel/sdk v1.43.0
@@ -30,7 +34,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
 	github.com/joakimcarlsson/ai/embeddings v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/memory v0.1.0 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.6.0 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
@@ -45,6 +48,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260401024825-9d38bb4040a9 // indirect
@@ -63,8 +67,11 @@ replace (
 	github.com/joakimcarlsson/ai/prompt => ../prompt
 	github.com/joakimcarlsson/ai/schema => ../schema
 	github.com/joakimcarlsson/ai/session => ../session
+	github.com/joakimcarlsson/ai/stt => ../stt
 	github.com/joakimcarlsson/ai/tokens => ../tokens
 	github.com/joakimcarlsson/ai/tool => ../tool
 	github.com/joakimcarlsson/ai/tracing => ../tracing
+	github.com/joakimcarlsson/ai/tts => ../tts
 	github.com/joakimcarlsson/ai/types => ../types
+	github.com/joakimcarlsson/ai/voice => ../voice
 )

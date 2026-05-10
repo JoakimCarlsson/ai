@@ -159,7 +159,9 @@ func (c *Client) Translate(
 	_ []byte,
 	_ ...stt.Option,
 ) (*stt.Response, error) {
-	return nil, fmt.Errorf("azure speech: translation is not supported by the fast transcription api")
+	return nil, fmt.Errorf(
+		"azure speech: translation is not supported by the fast transcription api",
+	)
 }
 
 type definitionPayload struct {
@@ -283,7 +285,10 @@ func (c *Client) buildURL() (string, error) {
 		if c.options.region == "" {
 			return "", fmt.Errorf("region or endpoint is required")
 		}
-		host = fmt.Sprintf("https://%s.api.cognitive.microsoft.com", c.options.region)
+		host = fmt.Sprintf(
+			"https://%s.api.cognitive.microsoft.com",
+			c.options.region,
+		)
 	}
 	host = strings.TrimRight(host, "/")
 	return fmt.Sprintf(
@@ -341,7 +346,11 @@ func (c *Client) buildMultipart(
 	return &buf, mw.FormDataContentType(), nil
 }
 
-func mapResponse(ft *fastTranscriptionResponse, apiModel string, locales []string) *stt.Response {
+func mapResponse(
+	ft *fastTranscriptionResponse,
+	apiModel string,
+	locales []string,
+) *stt.Response {
 	var combined strings.Builder
 	for i, p := range ft.CombinedPhrases {
 		if i > 0 {
@@ -356,8 +365,10 @@ func mapResponse(ft *fastTranscriptionResponse, apiModel string, locales []strin
 		seg := stt.Segment{
 			ID:    i,
 			Start: float64(p.OffsetMilliseconds) / 1000.0,
-			End:   float64(p.OffsetMilliseconds+p.DurationMilliseconds) / 1000.0,
-			Text:  p.Text,
+			End: float64(
+				p.OffsetMilliseconds+p.DurationMilliseconds,
+			) / 1000.0,
+			Text: p.Text,
 		}
 		if p.Speaker > 0 {
 			seg.Speaker = fmt.Sprintf("speaker-%d", p.Speaker)
@@ -368,7 +379,9 @@ func mapResponse(ft *fastTranscriptionResponse, apiModel string, locales []strin
 			words = append(words, stt.Word{
 				Word:  w.Text,
 				Start: float64(w.OffsetMilliseconds) / 1000.0,
-				End:   float64(w.OffsetMilliseconds+w.DurationMilliseconds) / 1000.0,
+				End: float64(
+					w.OffsetMilliseconds+w.DurationMilliseconds,
+				) / 1000.0,
 			})
 		}
 	}

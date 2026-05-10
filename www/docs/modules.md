@@ -116,14 +116,16 @@ Each carries exactly one vendor SDK.
 | `batch/gemini` | Gemini / Vertex AI native batch API processor |
 | `batch/concurrent` | Bounded-concurrency runner over any LLM / embedding client |
 
-## Tier 4 — Agent runtime
+## Tier 4 — Agent runtimes and conversation primitives
 
 | Module | Purpose |
 |---|---|
-| `agent` | Agent runtime: chat, streaming, hooks, tools, sessions, sub-agents, handoffs, fan-out |
+| `agent` | Agent runtime: chat, streaming, hooks, tools, sub-agents, handoffs, fan-out |
+| `voice` | Voice-first agent: streaming STT → LLM → TTS pipeline with tool calls |
 | `memory` | Persistent memory interface, dedup + extraction helpers |
+| `session` | Conversation session storage interfaces and implementations |
 
-`agent/team` and `session` are sub-packages of `agent` (same module).
+`agent/team` is a sub-package of `agent` (same module).
 
 ## Tier 5 — Persistence
 

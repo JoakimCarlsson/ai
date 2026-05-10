@@ -86,7 +86,7 @@ func (a *Agent) getToolsWithContext(ctx context.Context) []tool.BaseTool {
 	}
 
 	if a.memory != nil && !a.autoExtract && a.memoryID != "" {
-		memoryTools := createMemoryTools(a.memory, a.memoryID)
+		memoryTools := memory.Tools(a.memory, a.memoryID)
 		allTools = append(allTools, memoryTools...)
 	}
 
