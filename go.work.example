@@ -87,4 +87,8 @@ use (
 	./batch/concurrent
 
 	./voice
+
+	./rag
+	./rag/chunkers/fixed
+	./rag/store/memory
 )

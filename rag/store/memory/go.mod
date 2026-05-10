@@ -1,22 +1,8 @@
-module github.com/joakimcarlsson/ai/voice
+module github.com/joakimcarlsson/ai/rag/store/memory
 
 go 1.25.0
 
-require (
-	github.com/joakimcarlsson/ai/llm v0.1.0
-	github.com/joakimcarlsson/ai/memory v0.1.0
-	github.com/joakimcarlsson/ai/message v0.1.0
-	github.com/joakimcarlsson/ai/model v0.1.0
-	github.com/joakimcarlsson/ai/rag v0.1.0
-	github.com/joakimcarlsson/ai/schema v0.1.0
-	github.com/joakimcarlsson/ai/session v0.1.0
-	github.com/joakimcarlsson/ai/stt v0.1.0
-	github.com/joakimcarlsson/ai/tokens v0.1.0
-	github.com/joakimcarlsson/ai/tool v0.1.0
-	github.com/joakimcarlsson/ai/tts v0.1.0
-	github.com/joakimcarlsson/ai/types v0.1.0
-	golang.org/x/sync v0.20.0
-)
+require github.com/joakimcarlsson/ai/rag v0.1.0
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
@@ -27,6 +13,8 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
 	github.com/joakimcarlsson/ai/embeddings v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/model v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/tool v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/tracing v0.1.0 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.6.0 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
@@ -56,18 +44,13 @@ require (
 )
 
 replace (
-	github.com/joakimcarlsson/ai/embeddings => ../embeddings
-	github.com/joakimcarlsson/ai/llm => ../llm
-	github.com/joakimcarlsson/ai/memory => ../memory
-	github.com/joakimcarlsson/ai/message => ../message
-	github.com/joakimcarlsson/ai/model => ../model
-	github.com/joakimcarlsson/ai/rag => ../rag
-	github.com/joakimcarlsson/ai/schema => ../schema
-	github.com/joakimcarlsson/ai/session => ../session
-	github.com/joakimcarlsson/ai/stt => ../stt
-	github.com/joakimcarlsson/ai/tokens => ../tokens
-	github.com/joakimcarlsson/ai/tool => ../tool
-	github.com/joakimcarlsson/ai/tracing => ../tracing
-	github.com/joakimcarlsson/ai/tts => ../tts
-	github.com/joakimcarlsson/ai/types => ../types
+	github.com/joakimcarlsson/ai/embeddings => ../../../embeddings
+	github.com/joakimcarlsson/ai/llm => ../../../llm
+	github.com/joakimcarlsson/ai/message => ../../../message
+	github.com/joakimcarlsson/ai/model => ../../../model
+	github.com/joakimcarlsson/ai/rag => ../..
+	github.com/joakimcarlsson/ai/schema => ../../../schema
+	github.com/joakimcarlsson/ai/tool => ../../../tool
+	github.com/joakimcarlsson/ai/tracing => ../../../tracing
+	github.com/joakimcarlsson/ai/types => ../../../types
 )

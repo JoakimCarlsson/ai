@@ -7,6 +7,7 @@ require (
 	github.com/joakimcarlsson/ai/memory v0.1.0
 	github.com/joakimcarlsson/ai/message v0.1.0
 	github.com/joakimcarlsson/ai/prompt v0.1.0
+	github.com/joakimcarlsson/ai/rag v0.1.0
 	github.com/joakimcarlsson/ai/session v0.1.0
 	github.com/joakimcarlsson/ai/tokens v0.1.0
 	github.com/joakimcarlsson/ai/tool v0.1.0
@@ -59,6 +60,7 @@ replace (
 	github.com/joakimcarlsson/ai/message => ../message
 	github.com/joakimcarlsson/ai/model => ../model
 	github.com/joakimcarlsson/ai/prompt => ../prompt
+	github.com/joakimcarlsson/ai/rag => ../rag
 	github.com/joakimcarlsson/ai/schema => ../schema
 	github.com/joakimcarlsson/ai/session => ../session
 	github.com/joakimcarlsson/ai/tokens => ../tokens
