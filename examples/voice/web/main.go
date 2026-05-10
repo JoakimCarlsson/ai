@@ -32,6 +32,7 @@ import (
 	"github.com/joakimcarlsson/ai/prompt"
 	"github.com/joakimcarlsson/ai/session"
 	sttassemblyai "github.com/joakimcarlsson/ai/stt/assemblyai"
+	"github.com/joakimcarlsson/ai/tokens/sliding"
 	"github.com/joakimcarlsson/ai/tool"
 	ttsdeepgram "github.com/joakimcarlsson/ai/tts/deepgram"
 	"github.com/joakimcarlsson/ai/voice"
@@ -169,6 +170,7 @@ func wsHandler(
 			voice.WithSystemPrompt(systemPrompt),
 			voice.WithTools(currentTimeTool{}),
 			voice.WithSession("web-demo", sessionStore),
+			voice.WithContextStrategy(sliding.Strategy(sliding.KeepLast(40)), 8000),
 			voice.WithFiller(voice.FillerConfig{
 				Timeout: 1500 * time.Millisecond,
 				Message: "One moment.",

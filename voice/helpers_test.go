@@ -17,9 +17,10 @@ import (
 )
 
 type fakeLLM struct {
-	mu      sync.Mutex
-	calls   int
-	scripts []func(ctx context.Context) <-chan llm.Event
+	mu       sync.Mutex
+	calls    int
+	scripts  []func(ctx context.Context) <-chan llm.Event
+	lastMsgs []message.Message
 }
 
 func (f *fakeLLM) push(script func(ctx context.Context) <-chan llm.Event) {
@@ -28,12 +29,22 @@ func (f *fakeLLM) push(script func(ctx context.Context) <-chan llm.Event) {
 	f.scripts = append(f.scripts, script)
 }
 
+func (f *fakeLLM) lastMessages() []message.Message {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]message.Message, len(f.lastMsgs))
+	copy(out, f.lastMsgs)
+	return out
+}
+
 func (f *fakeLLM) StreamResponse(
 	ctx context.Context,
-	_ []message.Message,
+	msgs []message.Message,
 	_ []tool.BaseTool,
 ) <-chan llm.Event {
 	f.mu.Lock()
+	f.lastMsgs = make([]message.Message, len(msgs))
+	copy(f.lastMsgs, msgs)
 	if len(f.scripts) == 0 {
 		f.mu.Unlock()
 		ch := make(chan llm.Event)

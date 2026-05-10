@@ -68,6 +68,7 @@ if err := conv.Wait(); err != nil {
 | `WithToolSound(cfg)` | Loop ambient PCM audio while a tool is executing | disabled |
 | `WithBargeIn(policy)` | Cancel the current turn when the user speaks over the agent | `BargeInIgnore` |
 | `WithSession(id, store)` | Persist conversation history to a `session.Store`; load on start, append at turn boundaries | disabled |
+| `WithContextStrategy(strategy, maxTokens)` | Trim, slide, or summarize the message list before each LLM call when it exceeds `maxTokens` | disabled |
 
 Sample rate, channel count, voice, and TTS output format are configured on the STT and TTS clients you pass to `voice.New`. The voice package does not redeclare them.
 
@@ -241,6 +242,42 @@ It mirrors `agent.WithSession` exactly — same `session.Store` and `session.Ses
 
 - One session id per `VoiceAgent`. Concurrent conversations writing to the same id is not supported (last writer wins) — use one agent per id.
 - Persistence is batched per turn, not message-by-message. A crash mid-turn loses that turn's tail; the user message survives because it's appended just before the turn opens.
+
+## Context-window management
+
+Voice conversations grow without bound. With `WithSession` enabled the history can re-load from disk at thousands of messages. Without management every LLM call eventually hits the model's context window and fails. `WithContextStrategy` plugs in a `tokens.Strategy` that runs **before every LLM call**: it counts tokens, and if the conversation exceeds the budget it trims, slides, or summarizes.
+
+```go
+import (
+    "github.com/joakimcarlsson/ai/tokens/sliding"
+    "github.com/joakimcarlsson/ai/tokens/truncate"
+    "github.com/joakimcarlsson/ai/tokens/summarize"
+)
+
+// Drop oldest messages until we fit.
+voice.WithContextStrategy(truncate.Strategy(), 8000)
+
+// Keep only the last N messages.
+voice.WithContextStrategy(sliding.Strategy(sliding.KeepLast(40)), 8000)
+
+// Replace older messages with an LLM-generated summary.
+voice.WithContextStrategy(summarize.Strategy(summaryLLM), 8000)
+```
+
+Mirrors `agent.WithContextStrategy` exactly — same `tokens.Strategy` interface, same three strategies in `tokens/sliding`, `tokens/truncate`, `tokens/summarize`.
+
+**Behavior:**
+
+- The strategy is invoked at the top of `streamLLMAndSpeak`, once per LLM iteration (so a turn that fans out into multiple tool calls runs it multiple times). Its result (`Messages`) is what's sent to the LLM; the agent's full in-memory history is left untouched, except for the SessionUpdate folding described below.
+- If the strategy returns a `SessionUpdate.AddMessages` (typically a single summary message), those messages are appended to the live history. The runner's per-turn persist step then writes them to the configured `session.Store` together with the rest of the turn's new messages — no double-write.
+- When `maxContextTokens` is left at zero, the option falls back to `model.ContextWindow - 4096` (4096 reserved for output). When the model's context window is also unknown, the strategy is silently skipped — same as if it weren't configured.
+- A strategy error surfaces as `EventError` and ends the conversation.
+
+**Picking a strategy:**
+
+- `truncate` — cheapest, no LLM cost, but loses early context outright.
+- `sliding` — keep last N messages. Good when older context rarely matters; predictable.
+- `summarize` — preserves long-range gist via an LLM-generated summary; costs an extra LLM call when it fires. Good for long support / agent-style calls where early context (user identity, ticket id, etc.) keeps mattering.
 
 ## How it works
 

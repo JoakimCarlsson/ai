@@ -2,14 +2,18 @@ package voice
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/tokens"
 	"github.com/joakimcarlsson/ai/tts"
 	"github.com/joakimcarlsson/ai/types"
 )
+
+const defaultReserveTokens int64 = 4096
 
 // runAssistantTurn drives the assistant's response loop for one user message.
 // It calls the LLM, speaks the streamed text via TTS, and runs any tool calls
@@ -69,7 +73,12 @@ func streamLLMAndSpeak(
 ) (string, []message.ToolCall, error) {
 	stp, supportsStreaming := v.tts.(tts.StreamingTextProvider)
 
-	events := v.llm.StreamResponse(ctx, *history, v.tools)
+	llmMessages, err := applyContextStrategy(ctx, v, history)
+	if err != nil {
+		return "", nil, err
+	}
+
+	events := v.llm.StreamResponse(ctx, llmMessages, v.tools)
 
 	var (
 		buf             strings.Builder
@@ -339,6 +348,63 @@ func appendAssistantToolCalls(
 		parts = append(parts, c)
 	}
 	*history = append(*history, message.NewMessage(message.Assistant, parts))
+}
+
+// applyContextStrategy runs the configured context-window strategy (if any)
+// over the current history and returns the message slice that should be
+// passed to the LLM. When the strategy emits a SessionUpdate the appended
+// messages (typically a summary) are folded into the live history so
+// subsequent turns start from the trimmed state. The runner's per-turn
+// persist step then writes them to the session along with the rest of the
+// turn's new messages.
+func applyContextStrategy(
+	ctx context.Context,
+	v *VoiceAgent,
+	history *[]message.Message,
+) ([]message.Message, error) {
+	if v.contextStrategy == nil {
+		return *history, nil
+	}
+	maxTokens := resolveMaxTokens(v)
+	if maxTokens <= 0 {
+		return *history, nil
+	}
+	counter, err := tokens.NewCounter()
+	if err != nil {
+		return nil, fmt.Errorf("token counter: %w", err)
+	}
+	result, err := v.contextStrategy.Fit(ctx, tokens.StrategyInput{
+		Messages:     *history,
+		SystemPrompt: v.systemPrompt,
+		Tools:        v.tools,
+		Counter:      counter,
+		MaxTokens:    maxTokens,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("context strategy: %w", err)
+	}
+	if result == nil {
+		return *history, nil
+	}
+	if result.SessionUpdate != nil &&
+		len(result.SessionUpdate.AddMessages) > 0 {
+		*history = append(*history, result.SessionUpdate.AddMessages...)
+	}
+	return result.Messages, nil
+}
+
+func resolveMaxTokens(v *VoiceAgent) int64 {
+	if v.maxContextTokens > 0 {
+		return v.maxContextTokens
+	}
+	cw := v.llm.Model().ContextWindow
+	if cw <= 0 {
+		return 0
+	}
+	if cw <= defaultReserveTokens {
+		return cw
+	}
+	return cw - defaultReserveTokens
 }
 
 // llm.Event is referenced indirectly via the channel returned by

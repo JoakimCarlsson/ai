@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/joakimcarlsson/ai/session"
+	"github.com/joakimcarlsson/ai/tokens"
 	"github.com/joakimcarlsson/ai/tool"
 )
 
@@ -56,6 +57,33 @@ func WithToolSound(cfg ToolSoundConfig) Option {
 func WithBargeIn(policy BargeInPolicy) Option {
 	return func(v *VoiceAgent) {
 		v.bargeIn = policy
+	}
+}
+
+// WithContextStrategy configures automatic context-window management. The
+// strategy is invoked before every LLM call inside an assistant turn; when
+// the conversation exceeds maxContextTokens it trims, slides, or summarizes
+// the message list before it is sent to the model.
+//
+// If maxContextTokens is <= 0 the option is a no-op until both fields are
+// set. The strategy is shared across all conversations on this agent.
+//
+// Example with sliding:
+//
+//	voice.WithContextStrategy(sliding.Strategy(sliding.KeepLast(20)), 8000)
+//
+// Example with summarization:
+//
+//	voice.WithContextStrategy(summarize.Strategy(summaryLLM), 8000)
+//
+// Mirrors agent.WithContextStrategy.
+func WithContextStrategy(
+	strategy tokens.Strategy,
+	maxContextTokens int64,
+) Option {
+	return func(v *VoiceAgent) {
+		v.contextStrategy = strategy
+		v.maxContextTokens = maxContextTokens
 	}
 }
 

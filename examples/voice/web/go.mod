@@ -9,6 +9,7 @@ require (
 	github.com/joakimcarlsson/ai/prompt v0.1.0
 	github.com/joakimcarlsson/ai/session v0.1.0
 	github.com/joakimcarlsson/ai/stt/assemblyai v0.0.0-00010101000000-000000000000
+	github.com/joakimcarlsson/ai/tokens/sliding v0.1.0
 	github.com/joakimcarlsson/ai/tool v0.1.0
 	github.com/joakimcarlsson/ai/tts/deepgram v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/voice v0.0.0-00010101000000-000000000000
@@ -27,6 +28,7 @@ require (
 	github.com/joakimcarlsson/ai/message v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/schema v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/stt v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/tokens v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/tracing v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/tts v0.2.0 // indirect
 	github.com/joakimcarlsson/ai/types v0.1.0 // indirect
@@ -73,6 +75,8 @@ replace (
 	github.com/joakimcarlsson/ai/session => ../../../session
 	github.com/joakimcarlsson/ai/stt => ../../../stt
 	github.com/joakimcarlsson/ai/stt/assemblyai => ../../../stt/assemblyai
+	github.com/joakimcarlsson/ai/tokens => ../../../tokens
+	github.com/joakimcarlsson/ai/tokens/sliding => ../../../tokens/sliding
 	github.com/joakimcarlsson/ai/tool => ../../../tool
 	github.com/joakimcarlsson/ai/tracing => ../../../tracing
 	github.com/joakimcarlsson/ai/tts => ../../../tts

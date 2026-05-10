@@ -4,6 +4,7 @@ import (
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/session"
 	"github.com/joakimcarlsson/ai/stt"
+	"github.com/joakimcarlsson/ai/tokens"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/tts"
 )
@@ -21,6 +22,8 @@ type VoiceAgent struct {
 	toolSound         ToolSoundConfig
 	bargeIn           BargeInPolicy
 	session           session.Session
+	contextStrategy   tokens.Strategy
+	maxContextTokens  int64
 }
 
 const defaultMaxToolIterations = 4
