@@ -56,7 +56,9 @@ func main() {
 
 	embedder := embeddingsopenai.NewEmbedding(
 		embeddingsopenai.WithAPIKey(openaiKey),
-		embeddingsopenai.WithModel(model.OpenAIEmbeddingModels[model.TextEmbedding3Small]),
+		embeddingsopenai.WithModel(
+			model.OpenAIEmbeddingModels[model.TextEmbedding3Small],
+		),
 	)
 
 	kb := rag.New("voice-docs", embedder, ragmem.New(),

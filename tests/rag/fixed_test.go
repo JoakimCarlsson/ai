@@ -13,8 +13,11 @@ func TestFixedChunkerProducesChunks(t *testing.T) {
 
 	c := fixed.New(64, 8)
 	doc := rag.Document{
-		ID:      "doc-1",
-		Content: strings.Repeat("alpha bravo charlie delta echo foxtrot golf hotel ", 30),
+		ID: "doc-1",
+		Content: strings.Repeat(
+			"alpha bravo charlie delta echo foxtrot golf hotel ",
+			30,
+		),
 	}
 	chunks := c.Chunk(doc)
 	if len(chunks) == 0 {
@@ -44,7 +47,9 @@ func TestFixedChunkerProducesChunks(t *testing.T) {
 		}
 	}
 	if !found {
-		t.Errorf("expected 'alpha bravo charlie' to appear in at least one chunk")
+		t.Errorf(
+			"expected 'alpha bravo charlie' to appear in at least one chunk",
+		)
 	}
 }
 

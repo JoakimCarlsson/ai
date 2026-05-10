@@ -92,4 +92,7 @@ use (
 	./rag/chunkers/fixed
 	./rag/store/memory
 	./rag/store/pgvector
+
+	./eval
+	./eval/judge
 )

@@ -49,13 +49,13 @@ func SchemaVersion() int {
 	if err != nil {
 		return 0
 	}
-	max := 0
+	highest := 0
 	for _, e := range entries {
-		if v, ok := parseMigrationVersion(e.Name()); ok && v > max {
-			max = v
+		if v, ok := parseMigrationVersion(e.Name()); ok && v > highest {
+			highest = v
 		}
 	}
-	return max
+	return highest
 }
 
 // Migrate applies any pending schema migrations to the database
@@ -197,7 +197,8 @@ func listMigrations() ([]migration, error) {
 		if m.version != i+1 {
 			return nil, fmt.Errorf(
 				"pgvector: non-contiguous migration versions; got %d at index %d",
-				m.version, i,
+				m.version,
+				i,
 			)
 		}
 	}
@@ -235,7 +236,9 @@ func applyOne(
 		return fmt.Errorf("pgvector: read %s: %w", m.name, err)
 	}
 
-	tmpl, err := template.New(m.name).Option("missingkey=error").Parse(string(raw))
+	tmpl, err := template.New(m.name).
+		Option("missingkey=error").
+		Parse(string(raw))
 	if err != nil {
 		return fmt.Errorf("pgvector: parse %s: %w", m.name, err)
 	}
@@ -297,4 +300,3 @@ func advisoryLockKey(table string) int64 {
 	_, _ = h.Write([]byte(table))
 	return int64(h.Sum64())
 }
-

@@ -63,8 +63,10 @@ import (
 	"fmt"
 	"strings"
 
-	_ "github.com/lib/pq"
 	"github.com/joakimcarlsson/ai/rag"
+
+	// pq registers the postgres driver with database/sql.
+	_ "github.com/lib/pq"
 )
 
 // DefaultTable is the table name used when WithTable is not passed.
@@ -151,7 +153,8 @@ SELECT EXISTS (
 	if !ledgerExists {
 		return fmt.Errorf(
 			"pgvector: schema not initialised (no %s table); run pgvector.Migrate(ctx, dsn, %d) as a privileged role first",
-			ledger, expectedDims,
+			ledger,
+			expectedDims,
 		)
 	}
 
@@ -163,7 +166,8 @@ SELECT EXISTS (
 	if current < expected {
 		return fmt.Errorf(
 			"pgvector: schema is at version %d but this build expects %d; run pgvector.Migrate to upgrade",
-			current, expected,
+			current,
+			expected,
 		)
 	}
 	// current > expected is forward compatibility; allowed but the
@@ -197,7 +201,11 @@ WHERE n.nspname = current_schema()
 		)
 	}
 	if err != nil {
-		return fmt.Errorf("pgvector: read column type for %s.embedding: %w", table, err)
+		return fmt.Errorf(
+			"pgvector: read column type for %s.embedding: %w",
+			table,
+			err,
+		)
 	}
 
 	actualDims, err := parseVectorDims(typFmt)
@@ -210,7 +218,9 @@ WHERE n.nspname = current_schema()
 	if actualDims != expectedDims {
 		return fmt.Errorf(
 			"pgvector: schema mismatch for %s.embedding: column is %s but code expects vector(%d); a re-embed migration is required",
-			table, typFmt, expectedDims,
+			table,
+			typFmt,
+			expectedDims,
 		)
 	}
 	return nil
@@ -219,7 +229,8 @@ WHERE n.nspname = current_schema()
 // parseVectorDims pulls N out of a pgvector format_type result like
 // "vector(1536)".
 func parseVectorDims(typFmt string) (int, error) {
-	if !strings.HasPrefix(typFmt, "vector(") || !strings.HasSuffix(typFmt, ")") {
+	if !strings.HasPrefix(typFmt, "vector(") ||
+		!strings.HasSuffix(typFmt, ")") {
 		return 0, fmt.Errorf("not a sized vector type: %q", typFmt)
 	}
 	inner := typFmt[len("vector(") : len(typFmt)-1]

@@ -92,7 +92,10 @@ func TestKnowledgeBaseRetrieveEmptyInputs(t *testing.T) {
 		t.Fatalf("Retrieve(\"\"): %v", err)
 	}
 	if hits != nil {
-		t.Errorf("Retrieve with empty query should return nil, got %d hits", len(hits))
+		t.Errorf(
+			"Retrieve with empty query should return nil, got %d hits",
+			len(hits),
+		)
 	}
 
 	hits, err = kb.Retrieve(ctx, "anything", 0)

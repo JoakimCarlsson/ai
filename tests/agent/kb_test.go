@@ -170,7 +170,10 @@ func TestKnowledgeBase_NoKBNoEffect(t *testing.T) {
 					tc.Text,
 					"Relevant context from the knowledge base",
 				) {
-				t.Errorf("unexpected KB header without WithKnowledgeBase: %q", tc.Text)
+				t.Errorf(
+					"unexpected KB header without WithKnowledgeBase: %q",
+					tc.Text,
+				)
 			}
 		}
 	}

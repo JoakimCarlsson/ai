@@ -35,7 +35,7 @@ import (
 const (
 	dbURL = "postgres://rag:rag@localhost:5433/rag?sslmode=disable"
 	kbID  = "support-docs"
-	dims  = 1536 // text-embedding-3-small
+	dims  = 1536
 )
 
 func main() {
