@@ -43,6 +43,16 @@ type turnState struct {
 	// been pushed into TTS for the current turn. Used to truncate the
 	// history entry on barge-in.
 	spokenSoFar atomic.Pointer[string]
+
+	// memorySearched marks whether the per-turn memory recall has already
+	// run. Set on the first LLM iteration of a turn so subsequent tool-call
+	// iterations reuse the cached recall context instead of re-searching.
+	memorySearched atomic.Bool
+
+	// memoryContext caches the formatted recall string for the current
+	// turn. Read by streamLLMAndSpeak to prepend a transient system
+	// message before the LLM call.
+	memoryContext atomic.Pointer[string]
 }
 
 // setSpoken stores text as the current spoken-so-far value.

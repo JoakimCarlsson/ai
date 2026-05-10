@@ -200,6 +200,8 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 					if perr := persistNew(); perr != nil {
 						return perr
 					}
+					state.memorySearched.Store(false)
+					state.memoryContext.Store(nil)
 					continue
 				}
 				if err != nil {
@@ -210,6 +212,13 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 				}
 				if perr := persistNew(); perr != nil {
 					return perr
+				}
+				state.memorySearched.Store(false)
+				state.memoryContext.Store(nil)
+				if activeAgent.autoExtract && activeAgent.session != nil &&
+					activeAgent.memory != nil && activeAgent.memoryID != "" {
+					ag := activeAgent
+					go func() { _ = ag.extractAndStoreMemories(context.Background()) }()
 				}
 			}
 		}

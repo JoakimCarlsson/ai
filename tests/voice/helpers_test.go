@@ -54,12 +54,14 @@ func scriptedLLM(events ...llm.Event) func(ctx context.Context) <-chan llm.Event
 }
 
 type fakeLLM struct {
-	mu        sync.Mutex
-	id        string
-	calls     int
-	scripts   []func(ctx context.Context) <-chan llm.Event
-	lastMsgs  []message.Message
-	lastTools []tool.BaseTool
+	mu             sync.Mutex
+	id             string
+	calls          int
+	scripts        []func(ctx context.Context) <-chan llm.Event
+	lastMsgs       []message.Message
+	lastTools      []tool.BaseTool
+	sendMsgCalls   int
+	sendMsgScript  func(msgs []message.Message) (*llm.Response, error)
 }
 
 func newFakeLLM(id string) *fakeLLM { return &fakeLLM{id: id} }
@@ -116,11 +118,32 @@ func (f *fakeLLM) StreamResponse(
 }
 
 func (f *fakeLLM) SendMessages(
-	context.Context,
-	[]message.Message,
-	[]tool.BaseTool,
+	_ context.Context,
+	msgs []message.Message,
+	_ []tool.BaseTool,
 ) (*llm.Response, error) {
-	return nil, errors.New("not implemented")
+	f.mu.Lock()
+	f.sendMsgCalls++
+	script := f.sendMsgScript
+	f.mu.Unlock()
+	if script != nil {
+		return script(msgs)
+	}
+	return &llm.Response{Content: ""}, nil
+}
+
+func (f *fakeLLM) sendMessageCallCount() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.sendMsgCalls
+}
+
+func (f *fakeLLM) setSendMessageScript(
+	fn func(msgs []message.Message) (*llm.Response, error),
+) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.sendMsgScript = fn
 }
 
 func (f *fakeLLM) SendMessagesWithStructuredOutput(

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/joakimcarlsson/ai/llm"
+	"github.com/joakimcarlsson/ai/memory"
 	"github.com/joakimcarlsson/ai/session"
 	"github.com/joakimcarlsson/ai/stt"
 	"github.com/joakimcarlsson/ai/tokens"
@@ -29,20 +30,30 @@ type VoiceAgent struct {
 	maxContextTokens  int64
 	hooks             []Hooks
 	handoffs          []HandoffConfig
+	memory            memory.Store
+	memoryID          string
+	autoExtract       bool
+	autoDedup         bool
+	memoryLLM         llm.LLM
 }
 
-// toolsForContext returns the union of static tools and toolset-resolved
-// tools for the given context. Toolsets are evaluated on each call so
-// implementations can return different tools depending on per-call ctx
-// values (e.g., authenticated user role, feature flags).
+// toolsForContext returns the union of static tools, toolset-resolved
+// tools, and (when memory is configured without auto-extract) the memory
+// management tools. Toolsets are evaluated on each call so implementations
+// can return different tools depending on per-call ctx values.
 func (v *VoiceAgent) toolsForContext(ctx context.Context) []tool.BaseTool {
-	if len(v.toolsets) == 0 {
+	hasToolsets := len(v.toolsets) > 0
+	hasMemoryTools := v.memory != nil && !v.autoExtract && v.memoryID != ""
+	if !hasToolsets && !hasMemoryTools {
 		return v.tools
 	}
 	out := make([]tool.BaseTool, 0, len(v.tools))
 	out = append(out, v.tools...)
 	for _, ts := range v.toolsets {
 		out = append(out, ts.Tools(ctx)...)
+	}
+	if hasMemoryTools {
+		out = append(out, memory.Tools(v.memory, v.memoryID)...)
 	}
 	return out
 }

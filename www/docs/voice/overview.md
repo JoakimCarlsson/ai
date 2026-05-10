@@ -72,6 +72,7 @@ if err := conv.Wait(); err != nil {
 | `WithContextStrategy(strategy, maxTokens)` | Trim, slide, or summarize the message list before each LLM call when it exceeds `maxTokens` | disabled |
 | `WithHooks(hooks...)` | Synchronous interception points (mutate / deny / observe) at user-message commit, LLM call, tool use, lifecycle | disabled |
 | `WithHandoffs(configs...)` | Register `transfer_to_<Name>` tools that swap the active agent mid-conversation | disabled |
+| `WithMemory(id, store, opts...)` | Long-term cross-conversation recall + (optional) automatic fact extraction | disabled |
 
 Sample rate, channel count, voice, and TTS output format are configured on the STT and TTS clients you pass to `voice.New`. The voice package does not redeclare them.
 
@@ -354,6 +355,50 @@ Toolsets compose: `tool.NewCompositeToolset(name, child1, child2, ...)` merges m
 Mirrors `agent.WithToolsets`.
 
 See [`examples/voice/toolsets`](https://github.com/JoakimCarlsson/ai/tree/main/examples/voice/toolsets) for an end-to-end demo: a per-connection role (`/ws?role=admin`) toggles staff-only tools at the toolset level so the LLM literally sees a different tool list depending on who's connected.
+
+## Memory
+
+`WithMemory(id, store, opts...)` adds long-term, cross-conversation memory to the agent. Mirrors `agent.WithMemory` exactly. Memory is keyed by an owner id (typically a user id) and persists across conversation restarts via any `memory.Store` implementation (in-memory + embedder, file, pgvector, etc.).
+
+```go
+import (
+    "github.com/joakimcarlsson/ai/embeddings/openai"
+    "github.com/joakimcarlsson/ai/memory"
+)
+
+embedder := openai.NewEmbedding(openai.WithAPIKey(os.Getenv("OPENAI_API_KEY")))
+store := memory.NewStore(embedder)
+
+agent := voice.New(llm, stt, tts,
+    voice.WithSession("session-1", session.MemoryStore()),
+    voice.WithMemory("user-42", store,
+        memory.AutoExtract(),
+        memory.AutoDedup(),
+    ),
+)
+```
+
+**Two phases:**
+
+- **Recall** — runs **before every LLM call** (cached per turn so multi-iteration tool-call loops don't re-search). The runner takes the most recent user message, calls `store.Search(ctx, id, text, 5)`, and prepends a transient `"Relevant memories about this user: ..."` system message to the LLM-bound message slice. Not persisted to history or session.
+- **Extract** — runs in a **background goroutine** after each successful user turn (only if `AutoExtract()` is set and a session is configured). Calls `memory.ExtractFacts(ctx, llm, sessionMessages)` to identify durable facts and persists each via `store.Store` (or `storeWithDedup` if `AutoDedup()` is set). Uses `context.Background()` so it survives the conversation cancellation; fire-and-forget.
+
+**Manual mode (no `AutoExtract`):**
+
+When `AutoExtract` is disabled but a `memoryID` is set, the agent registers four tools that the LLM can call to manage memory directly: `store_memory`, `recall_memories`, `replace_memory`, `delete_memory`. These are the same tools as `agent.WithMemory`'s manual mode — both packages share `memory.Tools(store, id)`.
+
+**Picking a store:**
+
+- `memory.NewStore(embedder)` — in-memory, vector-similarity recall via the supplied embedder. Fast, lost on restart.
+- `memory.FileStore(path, embedder)` — file-backed, survives restarts.
+- `memory/pgvector` — Postgres + pgvector, production scale.
+- Custom — implement `memory.Store` for anything else.
+
+**LLM for extraction:**
+
+Extraction and dedup default to using the agent's main LLM. Pass `memory.LLM(separateLLM)` to use a smaller / cheaper model for the extraction round-trip.
+
+See [`examples/voice/memory`](https://github.com/JoakimCarlsson/ai/tree/main/examples/voice/memory) for an end-to-end demo: tell the agent something about yourself, reload the tab, ask "what do you remember about me?". The recalled facts arrive as a transient system message before the LLM call.
 
 ## Handoffs
 

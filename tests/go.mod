@@ -5,6 +5,7 @@ go 1.25.0
 require (
 	github.com/joakimcarlsson/ai/agent v0.1.0
 	github.com/joakimcarlsson/ai/llm v0.1.0
+	github.com/joakimcarlsson/ai/memory v0.1.0
 	github.com/joakimcarlsson/ai/message v0.1.0
 	github.com/joakimcarlsson/ai/model v0.1.0
 	github.com/joakimcarlsson/ai/prompt v0.1.0
@@ -33,7 +34,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
 	github.com/joakimcarlsson/ai/embeddings v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/memory v0.1.0 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.6.0 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect

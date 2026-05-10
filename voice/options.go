@@ -3,6 +3,7 @@ package voice
 import (
 	"context"
 
+	"github.com/joakimcarlsson/ai/memory"
 	"github.com/joakimcarlsson/ai/session"
 	"github.com/joakimcarlsson/ai/tokens"
 	"github.com/joakimcarlsson/ai/tool"
@@ -132,6 +133,47 @@ func WithContextStrategy(
 	return func(v *VoiceAgent) {
 		v.contextStrategy = strategy
 		v.maxContextTokens = maxContextTokens
+	}
+}
+
+// WithMemory configures long-term memory recall and (optional) automatic
+// fact extraction for this agent. Mirrors agent.WithMemory.
+//
+// id is the owner identifier (typically a user id) under which memories
+// are stored and searched. store is any memory.Store implementation.
+//
+// Behavior driven by opts:
+//   - memory.AutoExtract() — after each successful user turn, the runner
+//     fires a background goroutine that calls memory.ExtractFacts on the
+//     session messages and persists the results to the store. Requires
+//     a session (WithSession) so there's something to extract from.
+//   - memory.AutoDedup() — before storing each extracted fact, run
+//     memory.Deduplicate against the top-5 nearest existing memories and
+//     apply the resulting Add/Update/Delete decisions.
+//   - memory.LLM(separate) — use a different LLM for extraction/dedup
+//     than the conversation LLM. If unset, uses the agent's main LLM.
+//
+// When AutoExtract is disabled and a memoryID is set, the agent registers
+// the four memory.Tools (store_memory / recall_memories / replace_memory /
+// delete_memory) so the LLM can manage memory explicitly via tool calls.
+//
+// Recall happens before every LLM call: top-5 memories matching the most
+// recent user message are prepended as a transient system message; not
+// persisted to history or session.
+func WithMemory(
+	id string,
+	store memory.Store,
+	opts ...memory.Option,
+) Option {
+	return func(v *VoiceAgent) {
+		v.memoryID = id
+		v.memory = store
+		cfg := memory.Apply(opts...)
+		v.autoExtract = cfg.AutoExtract
+		v.autoDedup = cfg.AutoDedup
+		if cfg.LLM != nil {
+			v.memoryLLM = cfg.LLM
+		}
 	}
 }
 

@@ -93,6 +93,20 @@ func streamLLMAndSpeak(
 		return "", nil, err
 	}
 
+	if state != nil && v.memory != nil && v.memoryID != "" {
+		if !state.memorySearched.Load() {
+			state.memorySearched.Store(true)
+			recallCtx := v.recallMemoriesContext(ctx, lastUserText(*history), 5)
+			if recallCtx != "" {
+				state.memoryContext.Store(&recallCtx)
+			}
+		}
+		if p := state.memoryContext.Load(); p != nil && *p != "" {
+			memMsg := message.NewSystemMessage(*p)
+			llmMessages = append([]message.Message{memMsg}, llmMessages...)
+		}
+	}
+
 	llmTools := v.toolsForContext(ctx)
 	if len(v.hooks) > 0 {
 		hookRes, err := runPreModelCall(ctx, v.hooks, ModelCallContext{
