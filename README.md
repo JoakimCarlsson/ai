@@ -18,6 +18,7 @@ SDKs you actually use.
 - **Per-vendor modules** — Pull only the SDKs you need; no transitive bloat
 - **LLM** — Chat, streaming, tool calling, structured output, reasoning
 - **Agent framework** — Sub-agents, handoffs, fan-out, sessions, persistent memory, context strategies
+- **Voice agent** — Low-latency streaming STT → LLM → TTS pipeline with barge-in, filler audio, tool-call sounds, sessions, hooks, handoffs, toolsets, and memory
 - **Embeddings** — Text, multimodal, and contextualized
 - **Image generation** — OpenAI, Gemini, xAI
 - **Audio** — TTS (ElevenLabs, OpenAI, Google Cloud, Azure Speech) and STT (OpenAI Whisper, ElevenLabs Scribe, Deepgram, AssemblyAI, Google Cloud)
@@ -36,7 +37,7 @@ The library is published as ~50 independent Go modules organised by tier:
 - **Tier 1 modality interfaces** — `llm`, `embeddings`, `tts`, `stt`, `image`, `rerankers`, `fim` (no vendor SDKs)
 - **Tier 2 vendor implementations** — `llm/openai`, `llm/anthropic`, `embeddings/voyage`, `tts/elevenlabs`, etc. (carry the vendor SDK)
 - **Tier 3 utilities** — `tokens/{sliding,truncate,summarize}`, `batch/{openai,anthropic,gemini,concurrent}`
-- **Tier 4 agent runtime** — `agent`, `agent/team`, `session`, `memory`
+- **Tier 4 agent runtime** — `agent`, `agent/team`, `session`, `memory`, `voice`
 - **Tier 5 persistence** — `memory/{pgvector,postgres,sqlite}`
 
 See the **[full module list](https://joakimcarlsson.github.io/ai/modules/)** for every package, its purpose, and the vendor SDK it carries.
@@ -128,6 +129,31 @@ response, _ := myAgent.Chat(ctx, "What's the weather in Tokyo?")
 ```
 
 The agent framework supports [sub-agents](https://joakimcarlsson.github.io/ai/agent/sub-agents/), [handoffs](https://joakimcarlsson.github.io/ai/agent/handoffs/), [fan-out](https://joakimcarlsson.github.io/ai/agent/fan-out/), [team coordination](https://joakimcarlsson.github.io/ai/agent/team-coordination/), [continue/resume](https://joakimcarlsson.github.io/ai/agent/continue/), [context strategies](https://joakimcarlsson.github.io/ai/agent/context-strategies/), [persistent memory](https://joakimcarlsson.github.io/ai/memory/), and [instruction templates](https://joakimcarlsson.github.io/ai/agent/instruction-templates/).
+
+## Voice agent
+
+`voice/` ships a streaming STT → LLM → TTS pipeline for building low-latency, voice-first conversational agents. Pluggable providers — bring any `stt.SpeechToText`, `llm.LLM`, and `tts.Generation` implementation.
+
+```go
+import (
+    "github.com/joakimcarlsson/ai/session"
+    "github.com/joakimcarlsson/ai/voice"
+)
+
+agent := voice.New(llmClient, sttClient, ttsClient,
+    voice.WithSystemPrompt("You are a concise voice assistant."),
+    voice.WithTools(myTool),
+    voice.WithBargeIn(voice.BargeInInterrupt),
+    voice.WithSession("user-42", session.MemoryStore()),
+)
+
+conv, _ := agent.StartConversation(ctx, audioTransport)
+for evt := range conv.Events() {
+    // observe transcripts, tool calls, deltas, etc.
+}
+```
+
+The voice agent supports [barge-in](https://joakimcarlsson.github.io/ai/voice/overview/#barge-in), [filler audio](https://joakimcarlsson.github.io/ai/voice/overview/#filler-audio) and [tool-call sounds](https://joakimcarlsson.github.io/ai/voice/overview/#tool-call-sounds) for slow first tokens / tool execution, [sessions](https://joakimcarlsson.github.io/ai/voice/overview/#session-persistence), [context strategies](https://joakimcarlsson.github.io/ai/voice/overview/#context-window-management), [hooks](https://joakimcarlsson.github.io/ai/voice/overview/#hooks), [handoffs](https://joakimcarlsson.github.io/ai/voice/overview/#handoffs), [toolsets](https://joakimcarlsson.github.io/ai/voice/overview/#toolsets), and [memory](https://joakimcarlsson.github.io/ai/voice/overview/#memory). Four runnable end-to-end examples under [`examples/voice/`](examples/voice/): `web` (kitchen-sink), `handoff`, `toolsets`, `memory`.
 
 ## Batch processing
 
