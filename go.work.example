@@ -91,4 +91,5 @@ use (
 	./rag
 	./rag/chunkers/fixed
 	./rag/store/memory
+	./rag/store/pgvector
 )

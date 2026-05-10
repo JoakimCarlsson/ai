@@ -1,15 +1,10 @@
-module github.com/joakimcarlsson/ai/examples/agent/rag
+module github.com/joakimcarlsson/ai/rag/store/pgvector
 
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/agent v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/embeddings/openai v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/llm/openai v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/model v0.1.0
 	github.com/joakimcarlsson/ai/rag v0.1.0
-	github.com/joakimcarlsson/ai/rag/chunkers/fixed v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/rag/store/memory v0.0.0-00010101000000-000000000000
+	github.com/lib/pq v1.12.3
 )
 
 require (
@@ -21,25 +16,12 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
 	github.com/joakimcarlsson/ai/embeddings v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/llm v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/memory v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/message v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/prompt v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/schema v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/session v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/tokens v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/model v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/tool v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/tracing v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/types v0.1.0 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.6.0 // indirect
-	github.com/openai/openai-go v1.12.0 // indirect
-	github.com/openai/openai-go/v3 v3.35.0 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
-	github.com/tidwall/gjson v1.18.0 // indirect
-	github.com/tidwall/match v1.1.1 // indirect
-	github.com/tidwall/pretty v1.2.1 // indirect
-	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel v1.43.0 // indirect
@@ -65,21 +47,12 @@ require (
 )
 
 replace (
-	github.com/joakimcarlsson/ai/agent => ../../../agent
 	github.com/joakimcarlsson/ai/embeddings => ../../../embeddings
-	github.com/joakimcarlsson/ai/embeddings/openai => ../../../embeddings/openai
 	github.com/joakimcarlsson/ai/llm => ../../../llm
-	github.com/joakimcarlsson/ai/llm/openai => ../../../llm/openai
-	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
 	github.com/joakimcarlsson/ai/model => ../../../model
-	github.com/joakimcarlsson/ai/prompt => ../../../prompt
-	github.com/joakimcarlsson/ai/rag => ../../../rag
-	github.com/joakimcarlsson/ai/rag/chunkers/fixed => ../../../rag/chunkers/fixed
-	github.com/joakimcarlsson/ai/rag/store/memory => ../../../rag/store/memory
+	github.com/joakimcarlsson/ai/rag => ../..
 	github.com/joakimcarlsson/ai/schema => ../../../schema
-	github.com/joakimcarlsson/ai/session => ../../../session
-	github.com/joakimcarlsson/ai/tokens => ../../../tokens
 	github.com/joakimcarlsson/ai/tool => ../../../tool
 	github.com/joakimcarlsson/ai/tracing => ../../../tracing
 	github.com/joakimcarlsson/ai/types => ../../../types
