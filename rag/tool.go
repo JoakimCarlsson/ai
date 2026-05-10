@@ -37,18 +37,14 @@ func (s *searchTool) Info() tool.Info {
 		Name:        searchToolName,
 		Description: searchToolDescription,
 		Parameters: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"query": map[string]any{
-					"type":        "string",
-					"description": "Question or search phrase to look up in the knowledge base.",
-				},
-				"k": map[string]any{
-					"type":        "integer",
-					"description": "Maximum number of passages to return (default 5).",
-				},
+			"query": map[string]any{
+				"type":        "string",
+				"description": "Question or search phrase to look up in the knowledge base.",
 			},
-			"required": []string{"query"},
+			"k": map[string]any{
+				"type":        "integer",
+				"description": "Maximum number of passages to return (default 5).",
+			},
 		},
 		Required: []string{"query"},
 	}
