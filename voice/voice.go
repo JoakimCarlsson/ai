@@ -24,6 +24,7 @@ type VoiceAgent struct {
 	session           session.Session
 	contextStrategy   tokens.Strategy
 	maxContextTokens  int64
+	hooks             []Hooks
 }
 
 const defaultMaxToolIterations = 4

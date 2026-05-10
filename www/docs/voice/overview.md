@@ -69,6 +69,7 @@ if err := conv.Wait(); err != nil {
 | `WithBargeIn(policy)` | Cancel the current turn when the user speaks over the agent | `BargeInIgnore` |
 | `WithSession(id, store)` | Persist conversation history to a `session.Store`; load on start, append at turn boundaries | disabled |
 | `WithContextStrategy(strategy, maxTokens)` | Trim, slide, or summarize the message list before each LLM call when it exceeds `maxTokens` | disabled |
+| `WithHooks(hooks...)` | Synchronous interception points (mutate / deny / observe) at user-message commit, LLM call, tool use, lifecycle | disabled |
 
 Sample rate, channel count, voice, and TTS output format are configured on the STT and TTS clients you pass to `voice.New`. The voice package does not redeclare them.
 
@@ -278,6 +279,49 @@ Mirrors `agent.WithContextStrategy` exactly — same `tokens.Strategy` interface
 - `truncate` — cheapest, no LLM cost, but loses early context outright.
 - `sliding` — keep last N messages. Good when older context rarely matters; predictable.
 - `summarize` — preserves long-range gist via an LLM-generated summary; costs an extra LLM call when it fires. Good for long support / agent-style calls where early context (user identity, ticket id, etc.) keeps mattering.
+
+## Hooks
+
+`Conversation.Events()` is async, fire-and-forget, observe-only. `WithHooks` registers synchronous callbacks that fire at well-defined interception points and can **allow**, **deny**, or **modify** the in-flight values. Use hooks when you need to mutate or veto; use Events when you just need to watch.
+
+```go
+voice.WithHooks(voice.Hooks{
+    OnUserMessage: func(_ context.Context, uc voice.UserMessageContext) (voice.UserMessageResult, error) {
+        if containsPII(uc.Text) {
+            return voice.UserMessageResult{
+                Action:     voice.HookDeny,
+                DenyReason: "user message contained PII",
+            }, nil
+        }
+        return voice.UserMessageResult{Action: voice.HookAllow}, nil
+    },
+    PreToolUse: func(_ context.Context, tc voice.ToolUseContext) (voice.PreToolUseResult, error) {
+        return voice.PreToolUseResult{
+            Action: voice.HookModify,
+            Input:  redact(tc.Input),
+        }, nil
+    },
+})
+```
+
+Multiple `Hooks` structs can be passed; they run in registration order and `HookModify` mutations chain (later hooks see earlier ones' edits).
+
+| Callback | Fires | Capability |
+|---|---|---|
+| `OnConversationStart` | once when the runner begins | observe |
+| `OnConversationEnd` | once when the runner returns | observe |
+| `OnUserMessage` | after STT commits a final transcript, before history append | allow / deny / modify |
+| `PreModelCall` | before every LLM call (after context-window strategy) | allow / modify |
+| `PostModelCall` | after every LLM call returns or errors | observe |
+| `PreToolUse` | before every tool invocation | allow / deny / modify |
+| `PostToolUse` | after every successful tool invocation | allow / modify |
+| `OnToolError` | when a tool run errors | allow / modify (recover) |
+
+**Deny semantics:** `OnUserMessage` deny drops the user turn entirely and surfaces an `EventError` wrapping `voice.ErrUserMessageDenied`. `PreToolUse` deny skips the tool execution and writes a tool-result message carrying the deny reason as content with `IsError=true`, so the LLM sees a structured refusal it can react to.
+
+**Modify semantics:** the modified values flow forward — modified user text reaches history and the LLM; modified `Messages` / `Tools` reach the LLM; modified tool input reaches the tool; modified tool output replaces what lands in history. `OnToolError` modify additionally clears the error flag so downstream sees a successful tool result.
+
+Hooks have no `OnEvent` mass-fanout — that's what `Conversation.Events()` is for.
 
 ## How it works
 

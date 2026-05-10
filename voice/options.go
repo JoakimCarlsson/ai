@@ -60,6 +60,18 @@ func WithBargeIn(policy BargeInPolicy) Option {
 	}
 }
 
+// WithHooks registers callbacks invoked at synchronous interception points
+// during a conversation: lifecycle, user-message commit, LLM call boundary,
+// tool-use boundary, tool error. Multiple Hooks structs may be passed; they
+// run in registration order and HookModify mutations chain. Pair with
+// Conversation.Events for async observation; use hooks when you need to
+// mutate or veto.
+func WithHooks(hooks ...Hooks) Option {
+	return func(v *VoiceAgent) {
+		v.hooks = append(v.hooks, hooks...)
+	}
+}
+
 // WithContextStrategy configures automatic context-window management. The
 // strategy is invoked before every LLM call inside an assistant turn; when
 // the conversation exceeds maxContextTokens it trims, slides, or summarizes

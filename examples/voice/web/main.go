@@ -23,6 +23,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -171,6 +172,7 @@ func wsHandler(
 			voice.WithTools(currentTimeTool{}),
 			voice.WithSession("web-demo", sessionStore),
 			voice.WithContextStrategy(sliding.Strategy(sliding.KeepLast(40)), 8000),
+			voice.WithHooks(moderationHook()),
 			voice.WithFiller(voice.FillerConfig{
 				Timeout: 1500 * time.Millisecond,
 				Message: "One moment.",
@@ -283,6 +285,24 @@ func writeJSON(ctx context.Context, conn *websocket.Conn, v any) {
 		return
 	}
 	_ = conn.Write(ctx, websocket.MessageText, b)
+}
+
+// moderationHook is a tiny illustration of voice.WithHooks: it strips the
+// word "badword" from any user message before it reaches the LLM. Real
+// deployments would call a moderation API or run a proper classifier.
+func moderationHook() voice.Hooks {
+	return voice.Hooks{
+		OnUserMessage: func(_ context.Context, uc voice.UserMessageContext) (voice.UserMessageResult, error) {
+			cleaned := strings.ReplaceAll(uc.Text, "badword", "***")
+			if cleaned == uc.Text {
+				return voice.UserMessageResult{Action: voice.HookAllow}, nil
+			}
+			return voice.UserMessageResult{
+				Action: voice.HookModify,
+				Text:   cleaned,
+			}, nil
+		},
+	}
 }
 
 // currentTimeTool returns the current wall-clock time as a sentence the agent

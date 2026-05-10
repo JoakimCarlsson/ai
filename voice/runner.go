@@ -28,6 +28,11 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 	defer close(c.done)
 	defer audio.Close()
 
+	ctx = withConversationID(ctx, c.id)
+	lifecycle := ConversationLifecycleContext{ConversationID: c.id}
+	runOnConversationStart(ctx, v.hooks, lifecycle)
+	defer runOnConversationEnd(ctx, v.hooks, lifecycle)
+
 	emit := func(evt Event) {
 		if evt.Timestamp.IsZero() {
 			evt.Timestamp = time.Now()
@@ -104,8 +109,26 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 			if r.IsFinal {
 				emit(Event{Type: EventUserTranscriptFinal, Text: r.Text})
 				sawSpeechThisUtterance = false
+
+				text := r.Text
+				if len(v.hooks) > 0 {
+					hookRes, err := runOnUserMessage(gctx, v.hooks, UserMessageContext{
+						ConversationID: c.id,
+						Text:           r.Text,
+					})
+					if err != nil {
+						return err
+					}
+					if hookRes.Action == HookDeny {
+						emit(Event{Type: EventError, Error: errUserMessageDenied(hookRes.DenyReason)})
+						continue
+					}
+					if hookRes.Action == HookModify {
+						text = hookRes.Text
+					}
+				}
 				select {
-				case finals <- r.Text:
+				case finals <- text:
 				case <-gctx.Done():
 					return gctx.Err()
 				}

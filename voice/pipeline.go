@@ -78,7 +78,38 @@ func streamLLMAndSpeak(
 		return "", nil, err
 	}
 
-	events := v.llm.StreamResponse(ctx, llmMessages, v.tools)
+	llmTools := v.tools
+	if len(v.hooks) > 0 {
+		hookRes, err := runPreModelCall(ctx, v.hooks, ModelCallContext{
+			ConversationID: conversationIDFromCtx(ctx),
+			Messages:       llmMessages,
+			Tools:          llmTools,
+		})
+		if err != nil {
+			return "", nil, err
+		}
+		if hookRes.Action == HookModify {
+			llmMessages = hookRes.Messages
+			llmTools = hookRes.Tools
+		}
+	}
+
+	llmStarted := time.Now()
+	events := v.llm.StreamResponse(ctx, llmMessages, llmTools)
+
+	postModelCallFired := false
+	firePostModelCall := func(callErr error) {
+		if postModelCallFired || len(v.hooks) == 0 {
+			return
+		}
+		postModelCallFired = true
+		runPostModelCall(ctx, v.hooks, ModelResponseContext{
+			ConversationID: conversationIDFromCtx(ctx),
+			Duration:       time.Since(llmStarted),
+			Error:          callErr,
+		})
+	}
+	defer firePostModelCall(nil)
 
 	var (
 		buf             strings.Builder
@@ -194,11 +225,13 @@ func streamLLMAndSpeak(
 	for !streamDone {
 		select {
 		case <-ctx.Done():
+			firePostModelCall(ctx.Err())
 			closeTTS()
 			return buf.String(), toolCalls, ctx.Err()
 
 		case ev, ok := <-events:
 			if !ok {
+				firePostModelCall(nil)
 				streamDone = true
 				continue
 			}
@@ -238,6 +271,7 @@ func streamLLMAndSpeak(
 				}
 			case types.EventError:
 				if ev.Error != nil {
+					firePostModelCall(ev.Error)
 					closeTTS()
 					return "", nil, ev.Error
 				}

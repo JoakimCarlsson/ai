@@ -103,7 +103,7 @@ func runToolsWithSound(
 ) error {
 	spoke := strings.TrimSpace(text) != ""
 	if !shouldPlayToolSound(v.toolSound, spoke) {
-		return runToolCalls(ctx, v.tools, toolCalls, history, emit)
+		return runToolCalls(ctx, v, toolCalls, history, emit)
 	}
 
 	soundCtx, soundCancel := context.WithCancel(ctx)
@@ -116,7 +116,7 @@ func runToolsWithSound(
 		loopToolSound(soundCtx, v.toolSound.Audio, ttsAudio)
 	}()
 
-	runErr := runToolCalls(ctx, v.tools, toolCalls, history, emit)
+	runErr := runToolCalls(ctx, v, toolCalls, history, emit)
 
 	soundCancel()
 	<-soundDone
