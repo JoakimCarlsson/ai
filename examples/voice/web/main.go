@@ -167,11 +167,17 @@ func wsHandler(
 			ttsdeepgram.WithSampleRate(16000),
 		)
 
-		agent := voice.New(llmClient, sttClient, ttsClient,
+		agent := voice.New(
+			llmClient,
+			sttClient,
+			ttsClient,
 			voice.WithSystemPrompt(systemPrompt),
 			voice.WithTools(currentTimeTool{}),
 			voice.WithSession("web-demo", sessionStore),
-			voice.WithContextStrategy(sliding.Strategy(sliding.KeepLast(40)), 8000),
+			voice.WithContextStrategy(
+				sliding.Strategy(sliding.KeepLast(40)),
+				8000,
+			),
 			voice.WithHooks(moderationHook()),
 			voice.WithFiller(voice.FillerConfig{
 				Timeout: 1500 * time.Millisecond,
@@ -321,7 +327,10 @@ func (currentTimeTool) Info() tool.Info {
 	}
 }
 
-func (currentTimeTool) Run(ctx context.Context, _ tool.Call) (tool.Response, error) {
+func (currentTimeTool) Run(
+	ctx context.Context,
+	_ tool.Call,
+) (tool.Response, error) {
 	// Artificial 2s delay so the tool-sound loop is audible long enough
 	// to demo. Respects ctx so it cancels cleanly if the conversation ends.
 	select {

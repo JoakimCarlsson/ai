@@ -84,7 +84,7 @@ func (f *fakeLLM) StreamResponseWithStructuredOutput(
 	return nil
 }
 
-func (f *fakeLLM) Model() model.Model     { return model.Model{} }
+func (f *fakeLLM) Model() model.Model             { return model.Model{} }
 func (f *fakeLLM) SupportsStructuredOutput() bool { return false }
 
 type fakeSTT struct {
@@ -146,8 +146,9 @@ func (f *fakeSTT) Translate(
 	return nil, errors.New("not implemented")
 }
 
-func (f *fakeSTT) SupportsStreaming() bool          { return true }
-func (f *fakeSTT) Model() model.TranscriptionModel  { return model.TranscriptionModel{} }
+func (f *fakeSTT) SupportsStreaming() bool { return true }
+
+func (f *fakeSTT) Model() model.TranscriptionModel { return model.TranscriptionModel{} }
 
 type fakeTTS struct {
 	mu       sync.Mutex
@@ -169,9 +170,9 @@ func (f *fakeTTS) currentStream() *fakeTTSStream {
 }
 
 type fakeTTSStream struct {
-	textIn  <-chan string
-	chunks  chan tts.Chunk
-	closed  chan struct{}
+	textIn <-chan string
+	chunks chan tts.Chunk
+	closed chan struct{}
 }
 
 func (f *fakeTTS) StreamAudioFromText(
@@ -306,7 +307,9 @@ func (f *fakeTransport) writes() [][]byte {
 
 // scriptedLLM produces a deterministic stream of llm.Events. Returns a
 // function that the fakeLLM can be loaded with.
-func scriptedLLM(events ...llm.Event) func(ctx context.Context) <-chan llm.Event {
+func scriptedLLM(
+	events ...llm.Event,
+) func(ctx context.Context) <-chan llm.Event {
 	return func(ctx context.Context) <-chan llm.Event {
 		ch := make(chan llm.Event, len(events)+1)
 		go func() {
@@ -326,7 +329,10 @@ func scriptedLLM(events ...llm.Event) func(ctx context.Context) <-chan llm.Event
 
 // holdingLLM produces nothing until the hold channel closes, then emits
 // events. Lets a test keep the LLM "thinking" so a barge-in can fire mid-turn.
-func holdingLLM(hold <-chan struct{}, events ...llm.Event) func(ctx context.Context) <-chan llm.Event {
+func holdingLLM(
+	hold <-chan struct{},
+	events ...llm.Event,
+) func(ctx context.Context) <-chan llm.Event {
 	return func(ctx context.Context) <-chan llm.Event {
 		ch := make(chan llm.Event, len(events)+1)
 		go func() {

@@ -102,7 +102,10 @@ func rebuildMessagesForHandoff(
 	var rebuilt []message.Message
 
 	if newAgent.systemPrompt != "" {
-		rebuilt = append(rebuilt, message.NewSystemMessage(newAgent.systemPrompt))
+		rebuilt = append(
+			rebuilt,
+			message.NewSystemMessage(newAgent.systemPrompt),
+		)
 	}
 
 	for _, msg := range history {

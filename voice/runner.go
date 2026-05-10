@@ -23,7 +23,11 @@ const (
 // (ctx cancelled, transport closed, or unrecoverable error). The error is
 // stored on the Conversation and surfaced via Wait; the events channel is
 // closed before run returns.
-func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransport) {
+func (c *Conversation) run(
+	ctx context.Context,
+	v *VoiceAgent,
+	audio AudioTransport,
+) {
 	defer close(c.events)
 	defer close(c.done)
 	defer audio.Close()
@@ -112,15 +116,24 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 
 				text := r.Text
 				if len(v.hooks) > 0 {
-					hookRes, err := runOnUserMessage(gctx, v.hooks, UserMessageContext{
-						ConversationID: c.id,
-						Text:           r.Text,
-					})
+					hookRes, err := runOnUserMessage(
+						gctx,
+						v.hooks,
+						UserMessageContext{
+							ConversationID: c.id,
+							Text:           r.Text,
+						},
+					)
 					if err != nil {
 						return err
 					}
 					if hookRes.Action == HookDeny {
-						emit(Event{Type: EventError, Error: errUserMessageDenied(hookRes.DenyReason)})
+						emit(
+							Event{
+								Type:  EventError,
+								Error: errUserMessageDenied(hookRes.DenyReason),
+							},
+						)
 						continue
 					}
 					if hookRes.Action == HookModify {
@@ -181,7 +194,14 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 				state.dropAudio.Store(false)
 				state.agentSpeaking.Store(false)
 
-				newAgent, err := runAssistantTurn(turnCtx, activeAgent, &history, emit, ttsAudio, state)
+				newAgent, err := runAssistantTurn(
+					turnCtx,
+					activeAgent,
+					&history,
+					emit,
+					ttsAudio,
+					state,
+				)
 				activeAgent = newAgent
 
 				turnCancel()
@@ -193,7 +213,9 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 						history = append(history, message.NewMessage(
 							message.Assistant,
 							[]message.ContentPart{
-								message.TextContent{Text: spoken + " [interrupted]"},
+								message.TextContent{
+									Text: spoken + " [interrupted]",
+								},
 							},
 						))
 					}
@@ -275,7 +297,10 @@ func initialHistory(systemPrompt string) []message.Message {
 // system prompt is configured, it persists the system prompt as the first
 // message. Returns the history and the count of messages already persisted
 // to the session (0 when no session is configured).
-func loadInitialHistory(ctx context.Context, v *VoiceAgent) ([]message.Message, int, error) {
+func loadInitialHistory(
+	ctx context.Context,
+	v *VoiceAgent,
+) ([]message.Message, int, error) {
 	if v.session == nil {
 		return initialHistory(v.systemPrompt), 0, nil
 	}

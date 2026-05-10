@@ -43,7 +43,11 @@ func idForIndex(i int) string {
 	return "mem-" + string(rune('a'+i))
 }
 
-func (f *fakeMemory) Store(_ context.Context, ownerID, fact string, metadata map[string]any) error {
+func (f *fakeMemory) Store(
+	_ context.Context,
+	ownerID, fact string,
+	metadata map[string]any,
+) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	id := idForIndex(len(f.entries))
@@ -59,7 +63,12 @@ func (f *fakeMemory) Store(_ context.Context, ownerID, fact string, metadata map
 	return nil
 }
 
-func (f *fakeMemory) Search(_ context.Context, _ string, _ string, _ int) ([]memory.Entry, error) {
+func (f *fakeMemory) Search(
+	_ context.Context,
+	_ string,
+	_ string,
+	_ int,
+) ([]memory.Entry, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.searches++
@@ -68,7 +77,11 @@ func (f *fakeMemory) Search(_ context.Context, _ string, _ string, _ int) ([]mem
 	return out, nil
 }
 
-func (f *fakeMemory) GetAll(_ context.Context, _ string, _ int) ([]memory.Entry, error) {
+func (f *fakeMemory) GetAll(
+	_ context.Context,
+	_ string,
+	_ int,
+) ([]memory.Entry, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	out := make([]memory.Entry, len(f.entries))
@@ -83,7 +96,11 @@ func (f *fakeMemory) Delete(_ context.Context, memoryID string) error {
 	return nil
 }
 
-func (f *fakeMemory) Update(_ context.Context, memoryID, fact string, metadata map[string]any) error {
+func (f *fakeMemory) Update(
+	_ context.Context,
+	memoryID, fact string,
+	metadata map[string]any,
+) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.updated = append(f.updated, memory.Entry{
@@ -110,9 +127,9 @@ func (f *fakeMemory) searchCount() int {
 	return f.searches
 }
 
-// 1. Recall: configured memories appear as a system message in the LLM
-//    input. The text matches the formatted "Relevant memories about this
-//    user:" block.
+//  1. Recall: configured memories appear as a system message in the LLM
+//     input. The text matches the formatted "Relevant memories about this
+//     user:" block.
 func TestMemory_RecallInjectsSystemMessage(t *testing.T) {
 	mem := newFakeMemory(
 		"the user's name is Alice",
@@ -136,7 +153,10 @@ func TestMemory_RecallInjectsSystemMessage(t *testing.T) {
 	_ = a.conv.Wait()
 
 	if mem.searchCount() < 1 {
-		t.Fatalf("expected memory.Search called >= 1, got %d", mem.searchCount())
+		t.Fatalf(
+			"expected memory.Search called >= 1, got %d",
+			mem.searchCount(),
+		)
 	}
 
 	msgs := llmFake.lastMessages()
@@ -147,7 +167,10 @@ func TestMemory_RecallInjectsSystemMessage(t *testing.T) {
 		}
 		for _, p := range m.Parts {
 			if tc, ok := p.(message.TextContent); ok &&
-				strings.Contains(tc.Text, "Relevant memories about this user") &&
+				strings.Contains(
+					tc.Text,
+					"Relevant memories about this user",
+				) &&
 				strings.Contains(tc.Text, "Alice") {
 				sawRecall = true
 			}
@@ -158,10 +181,10 @@ func TestMemory_RecallInjectsSystemMessage(t *testing.T) {
 	}
 }
 
-// 2. AutoExtract: after a successful user turn, the runner spawns a
-//    goroutine that calls memory.ExtractFacts (which calls SendMessages
-//    on the LLM). We verify by seeing SendMessages get called on the
-//    fake LLM after the turn ends.
+//  2. AutoExtract: after a successful user turn, the runner spawns a
+//     goroutine that calls memory.ExtractFacts (which calls SendMessages
+//     on the LLM). We verify by seeing SendMessages get called on the
+//     fake LLM after the turn ends.
 func TestMemory_AutoExtractFiresAfterTurn(t *testing.T) {
 	mem := newFakeMemory()
 	store := session.MemoryStore()
@@ -196,9 +219,9 @@ func TestMemory_AutoExtractFiresAfterTurn(t *testing.T) {
 	_ = a.conv.Wait()
 }
 
-// 3. Without AutoExtract but with memoryID set, memory.Tools (store /
-//    recall / replace / delete) are added to the LLM tool list so the
-//    LLM can manage memory itself.
+//  3. Without AutoExtract but with memoryID set, memory.Tools (store /
+//     recall / replace / delete) are added to the LLM tool list so the
+//     LLM can manage memory itself.
 func TestMemory_ManualToolsExposedWhenNotAutoExtract(t *testing.T) {
 	mem := newFakeMemory()
 
@@ -219,7 +242,12 @@ func TestMemory_ManualToolsExposedWhenNotAutoExtract(t *testing.T) {
 	_ = a.conv.Wait()
 
 	tools := llmFake.lastToolList()
-	want := []string{"store_memory", "recall_memories", "replace_memory", "delete_memory"}
+	want := []string{
+		"store_memory",
+		"recall_memories",
+		"replace_memory",
+		"delete_memory",
+	}
 	for _, w := range want {
 		if !containsTool(tools, w) {
 			t.Fatalf("expected %s in tool list; got %d tools", w, len(tools))
@@ -227,8 +255,8 @@ func TestMemory_ManualToolsExposedWhenNotAutoExtract(t *testing.T) {
 	}
 }
 
-// 4. Without memory configured at all: no recall injection, no extract
-//    goroutine, no tool registration. Regression check.
+//  4. Without memory configured at all: no recall injection, no extract
+//     goroutine, no tool registration. Regression check.
 func TestMemory_NoMemoryNoEffect(t *testing.T) {
 	llmFake := &fakeLLM{}
 	llmFake.push(scriptComplete("ok. "))

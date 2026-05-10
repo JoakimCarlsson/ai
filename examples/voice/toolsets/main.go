@@ -197,7 +197,10 @@ func (lookupOrderTool) Info() tool.Info {
 	)
 }
 
-func (lookupOrderTool) Run(_ context.Context, c tool.Call) (tool.Response, error) {
+func (lookupOrderTool) Run(
+	_ context.Context,
+	c tool.Call,
+) (tool.Response, error) {
 	var in lookupOrderInput
 	_ = json.Unmarshal([]byte(c.Input), &in)
 	if in.OrderID == "" {
@@ -220,7 +223,10 @@ func (issueRefundTool) Info() tool.Info {
 	}
 }
 
-func (issueRefundTool) Run(_ context.Context, _ tool.Call) (tool.Response, error) {
+func (issueRefundTool) Run(
+	_ context.Context,
+	_ tool.Call,
+) (tool.Response, error) {
 	return tool.NewTextResponse(
 		"Refund issued: $25.00 will appear on the customer's statement within 3-5 business days.",
 	), nil
@@ -231,14 +237,19 @@ type blockCustomerTool struct{}
 
 func (blockCustomerTool) Info() tool.Info {
 	return tool.Info{
-		Name: "block_customer",
+		Name:        "block_customer",
 		Description: "Blocks a customer for fraud. Staff only.",
-		Parameters: map[string]any{},
+		Parameters:  map[string]any{},
 	}
 }
 
-func (blockCustomerTool) Run(_ context.Context, _ tool.Call) (tool.Response, error) {
-	return tool.NewTextResponse("Customer blocked. Future orders will be declined."), nil
+func (blockCustomerTool) Run(
+	_ context.Context,
+	_ tool.Call,
+) (tool.Response, error) {
+	return tool.NewTextResponse(
+		"Customer blocked. Future orders will be declined.",
+	), nil
 }
 
 type eventEnvelope struct {

@@ -27,7 +27,10 @@ func waitFor(t *testing.T, cond func() bool, msg string) {
 // streamThenHold emits the given content deltas and then blocks on the hold
 // channel before emitting a completion event. Lets a test pin the assistant
 // in mid-turn so barge-in can fire.
-func streamThenHold(deltas []string, hold <-chan struct{}) func(ctx context.Context) <-chan llm.Event {
+func streamThenHold(
+	deltas []string,
+	hold <-chan struct{},
+) func(ctx context.Context) <-chan llm.Event {
 	return func(ctx context.Context) <-chan llm.Event {
 		ch := make(chan llm.Event, len(deltas)+2)
 		go func() {
@@ -123,7 +126,11 @@ func TestBargeIn_CancelsAndUpdatesSpokenSoFar(t *testing.T) {
 
 	a.stt.push(stt.StreamResult{Text: "tell me a story", IsFinal: true})
 
-	waitFor(t, func() bool { return a.tts.currentStream() != nil }, "TTS opened")
+	waitFor(
+		t,
+		func() bool { return a.tts.currentStream() != nil },
+		"TTS opened",
+	)
 	waitFor(t, func() bool {
 		s := a.conv.turnState()
 		return s != nil && s.agentSpeaking.Load()
@@ -160,7 +167,11 @@ func TestBargeIn_FinalWithoutPartialFires(t *testing.T) {
 
 	a.stt.push(stt.StreamResult{Text: "tell me a story", IsFinal: true})
 
-	waitFor(t, func() bool { return a.tts.currentStream() != nil }, "TTS opened")
+	waitFor(
+		t,
+		func() bool { return a.tts.currentStream() != nil },
+		"TTS opened",
+	)
 	waitFor(t, func() bool {
 		s := a.conv.turnState()
 		return s != nil && s.agentSpeaking.Load()
@@ -201,7 +212,12 @@ func TestBargeIn_RepeatedInterruptsDoNotLeak(t *testing.T) {
 	}
 	llmFake := &fakeLLM{}
 	for i := range holds {
-		llmFake.push(streamThenHold([]string{"reply ", string(rune('A' + i)), ". "}, holds[i]))
+		llmFake.push(
+			streamThenHold(
+				[]string{"reply ", string(rune('A' + i)), ". "},
+				holds[i],
+			),
+		)
 	}
 
 	a := newTestAgent(t, llmFake, WithBargeIn(BargeInInterrupt))
@@ -240,8 +256,13 @@ func TestBargeIn_RepeatedInterruptsDoNotLeak(t *testing.T) {
 	_ = a.conv.Wait()
 
 	for i, w := range a.transport.writes() {
-		if len(w) >= 4 && w[0] >= 0xF0 && w[1] == 0xAA && w[2] == 0xBB && w[3] == 0xCC {
-			t.Fatalf("interrupted-turn junk leaked to transport at write %d: %v", i, w)
+		if len(w) >= 4 && w[0] >= 0xF0 && w[1] == 0xAA && w[2] == 0xBB &&
+			w[3] == 0xCC {
+			t.Fatalf(
+				"interrupted-turn junk leaked to transport at write %d: %v",
+				i,
+				w,
+			)
 		}
 	}
 }
@@ -374,7 +395,11 @@ func TestBargeIn_StaleAudioDoesNotLeakIntoNextTurn(t *testing.T) {
 	defer a.cancel()
 
 	a.stt.push(stt.StreamResult{Text: "first ask", IsFinal: true})
-	waitFor(t, func() bool { return a.tts.currentStream() != nil }, "turn 1 TTS opened")
+	waitFor(
+		t,
+		func() bool { return a.tts.currentStream() != nil },
+		"turn 1 TTS opened",
+	)
 	waitFor(t, func() bool {
 		s := a.conv.turnState()
 		return s != nil && s.agentSpeaking.Load()
@@ -404,8 +429,13 @@ func TestBargeIn_StaleAudioDoesNotLeakIntoNextTurn(t *testing.T) {
 	_ = a.conv.Wait()
 
 	for i, w := range a.transport.writes() {
-		if len(w) >= 4 && w[0] == 0x01 && w[1] == 0x02 && w[2] == 0x03 && w[3] == 0x04 {
-			t.Fatalf("sentinel turn-1 stale audio leaked to transport at write %d: %v", i, w)
+		if len(w) >= 4 && w[0] == 0x01 && w[1] == 0x02 && w[2] == 0x03 &&
+			w[3] == 0x04 {
+			t.Fatalf(
+				"sentinel turn-1 stale audio leaked to transport at write %d: %v",
+				i,
+				w,
+			)
 		}
 	}
 }

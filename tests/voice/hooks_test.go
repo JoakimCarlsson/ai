@@ -24,7 +24,9 @@ func scriptComplete(text string) func(ctx context.Context) <-chan llm.Event {
 
 // scriptOneTool returns an LLM script that emits a tool call then completes.
 // The follow-up turn should be supplied separately by the caller.
-func scriptOneTool(callID, name, input string) func(ctx context.Context) <-chan llm.Event {
+func scriptOneTool(
+	callID, name, input string,
+) func(ctx context.Context) <-chan llm.Event {
 	return scriptedLLM(
 		llm.Event{Type: types.EventComplete, Response: &llm.Response{
 			ToolCalls: []message.ToolCall{
@@ -61,7 +63,10 @@ func TestHooks_OnUserMessageDenyDropsTurn(t *testing.T) {
 	}, "deny event surfaced")
 
 	if llmFake.callCount() != 0 {
-		t.Fatalf("expected LLM not called after deny, got %d calls", llmFake.callCount())
+		t.Fatalf(
+			"expected LLM not called after deny, got %d calls",
+			llmFake.callCount(),
+		)
 	}
 
 	a.cancel()
@@ -86,7 +91,11 @@ func TestHooks_OnUserMessageModifyReplacesText(t *testing.T) {
 	defer a.cancel()
 
 	a.stt.pushFinal("hello")
-	waitFor(t, func() bool { return a.hasEvent(voice.EventAssistantDone) }, "assistant done")
+	waitFor(
+		t,
+		func() bool { return a.hasEvent(voice.EventAssistantDone) },
+		"assistant done",
+	)
 
 	a.cancel()
 	_ = a.conv.Wait()
@@ -118,7 +127,11 @@ func TestHooks_PreModelCallModifiesMessages(t *testing.T) {
 	defer a.cancel()
 
 	a.stt.pushFinal("hi")
-	waitFor(t, func() bool { return a.hasEvent(voice.EventAssistantDone) }, "assistant done")
+	waitFor(
+		t,
+		func() bool { return a.hasEvent(voice.EventAssistantDone) },
+		"assistant done",
+	)
 
 	a.cancel()
 	_ = a.conv.Wait()
@@ -149,7 +162,11 @@ func TestHooks_PostModelCallObservesOnce(t *testing.T) {
 	defer a.cancel()
 
 	a.stt.pushFinal("hi")
-	waitFor(t, func() bool { return a.hasEvent(voice.EventAssistantDone) }, "assistant done")
+	waitFor(
+		t,
+		func() bool { return a.hasEvent(voice.EventAssistantDone) },
+		"assistant done",
+	)
 
 	a.cancel()
 	_ = a.conv.Wait()
@@ -183,7 +200,11 @@ func TestHooks_PreToolUseDenySkipsToolExecution(t *testing.T) {
 	defer a.cancel()
 
 	a.stt.pushFinal("call it")
-	waitFor(t, func() bool { return a.hasEvent(voice.EventAssistantDone) }, "assistant done")
+	waitFor(
+		t,
+		func() bool { return a.hasEvent(voice.EventAssistantDone) },
+		"assistant done",
+	)
 
 	a.cancel()
 	_ = a.conv.Wait()
@@ -224,7 +245,11 @@ func TestHooks_PreToolUseModifyChangesInput(t *testing.T) {
 	defer a.cancel()
 
 	a.stt.pushFinal("go")
-	waitFor(t, func() bool { return a.hasEvent(voice.EventAssistantDone) }, "assistant done")
+	waitFor(
+		t,
+		func() bool { return a.hasEvent(voice.EventAssistantDone) },
+		"assistant done",
+	)
 
 	a.cancel()
 	_ = a.conv.Wait()
@@ -257,14 +282,21 @@ func TestHooks_PostToolUseModifyReplacesOutput(t *testing.T) {
 	defer a.cancel()
 
 	a.stt.pushFinal("call")
-	waitFor(t, func() bool { return a.hasEvent(voice.EventAssistantDone) }, "assistant done")
+	waitFor(
+		t,
+		func() bool { return a.hasEvent(voice.EventAssistantDone) },
+		"assistant done",
+	)
 
 	a.cancel()
 	_ = a.conv.Wait()
 
 	msgs := llmFake.lastMessages()
 	if !anyToolResultContains(msgs, "redacted") {
-		t.Fatalf("expected tool result 'redacted' visible to LLM; got %+v", msgs)
+		t.Fatalf(
+			"expected tool result 'redacted' visible to LLM; got %+v",
+			msgs,
+		)
 	}
 	if anyToolResultContains(msgs, "raw") {
 		t.Fatalf("did not expect 'raw' to leak; got %+v", msgs)
@@ -294,7 +326,11 @@ func TestHooks_OnToolErrorRecoversWithFallbackOutput(t *testing.T) {
 	defer a.cancel()
 
 	a.stt.pushFinal("go")
-	waitFor(t, func() bool { return a.hasEvent(voice.EventAssistantDone) }, "assistant done")
+	waitFor(
+		t,
+		func() bool { return a.hasEvent(voice.EventAssistantDone) },
+		"assistant done",
+	)
 
 	a.cancel()
 	_ = a.conv.Wait()
@@ -305,7 +341,10 @@ func TestHooks_OnToolErrorRecoversWithFallbackOutput(t *testing.T) {
 	}
 	last := ends[len(ends)-1]
 	if last.ToolResult == nil || last.ToolResult.IsError {
-		t.Fatalf("expected tool-end with IsError=false after recovery, got %+v", last.ToolResult)
+		t.Fatalf(
+			"expected tool-end with IsError=false after recovery, got %+v",
+			last.ToolResult,
+		)
 	}
 	if !strings.Contains(last.ToolResult.Output, "fallback") {
 		t.Fatalf("expected fallback output, got %q", last.ToolResult.Output)
@@ -379,7 +418,11 @@ func TestHooks_MultipleHooksChainInOrder(t *testing.T) {
 	defer a.cancel()
 
 	a.stt.pushFinal("X")
-	waitFor(t, func() bool { return a.hasEvent(voice.EventAssistantDone) }, "assistant done")
+	waitFor(
+		t,
+		func() bool { return a.hasEvent(voice.EventAssistantDone) },
+		"assistant done",
+	)
 
 	a.cancel()
 	_ = a.conv.Wait()

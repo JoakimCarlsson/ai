@@ -121,14 +121,17 @@ func runToolCalls(
 			},
 		})
 
-		*history = append(*history, message.NewMessage(message.Tool, []message.ContentPart{
-			message.ToolResult{
-				ToolCallID: call.ID,
-				Name:       call.Name,
-				Content:    output,
-				IsError:    isError,
-			},
-		}))
+		*history = append(
+			*history,
+			message.NewMessage(message.Tool, []message.ContentPart{
+				message.ToolResult{
+					ToolCallID: call.ID,
+					Name:       call.Name,
+					Content:    output,
+					IsError:    isError,
+				},
+			}),
+		)
 	}
 	return nil
 }
@@ -154,14 +157,17 @@ func appendToolDeny(
 			IsError:    true,
 		},
 	})
-	*history = append(*history, message.NewMessage(message.Tool, []message.ContentPart{
-		message.ToolResult{
-			ToolCallID: call.ID,
-			Name:       call.Name,
-			Content:    reason,
-			IsError:    true,
-		},
-	}))
+	*history = append(
+		*history,
+		message.NewMessage(message.Tool, []message.ContentPart{
+			message.ToolResult{
+				ToolCallID: call.ID,
+				Name:       call.Name,
+				Content:    reason,
+				IsError:    true,
+			},
+		}),
+	)
 }
 
 func findTool(tools []tool.BaseTool, name string) tool.BaseTool {

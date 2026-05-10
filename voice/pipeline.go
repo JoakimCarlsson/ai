@@ -33,7 +33,14 @@ func runAssistantTurn(
 	active := v
 	i := 0
 	for i < active.maxToolIterations {
-		text, toolCalls, err := streamLLMAndSpeak(ctx, active, history, emit, ttsAudio, state)
+		text, toolCalls, err := streamLLMAndSpeak(
+			ctx,
+			active,
+			history,
+			emit,
+			ttsAudio,
+			state,
+		)
 		if err != nil {
 			return active, err
 		}
@@ -45,7 +52,13 @@ func runAssistantTurn(
 					[]message.ContentPart{message.TextContent{Text: t}},
 				))
 			}
-			emit(Event{Type: EventAssistantDone, Timestamp: time.Now(), Text: text})
+			emit(
+				Event{
+					Type:      EventAssistantDone,
+					Timestamp: time.Now(),
+					Text:      text,
+				},
+			)
 			return active, nil
 		}
 

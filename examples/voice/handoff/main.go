@@ -229,7 +229,10 @@ func (issueRefundTool) Info() tool.Info {
 	}
 }
 
-func (issueRefundTool) Run(_ context.Context, _ tool.Call) (tool.Response, error) {
+func (issueRefundTool) Run(
+	_ context.Context,
+	_ tool.Call,
+) (tool.Response, error) {
 	return tool.NewTextResponse(
 		"Refund issued: $25.00 will appear on the user's statement within 3-5 business days.",
 	), nil

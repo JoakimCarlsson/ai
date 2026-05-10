@@ -151,7 +151,10 @@ func NewLLM(opts ...Option) llm.LLM {
 			llmopenai.WithBaseURL(strings.TrimRight(options.endpoint, "/")),
 		)
 		if options.apiKey != "" {
-			openaiOpts = append(openaiOpts, llmopenai.WithAPIKey(options.apiKey))
+			openaiOpts = append(
+				openaiOpts,
+				llmopenai.WithAPIKey(options.apiKey),
+			)
 		}
 		return llmopenai.NewLLM(openaiOpts...)
 	}

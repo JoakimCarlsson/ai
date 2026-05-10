@@ -35,7 +35,9 @@ func waitFor(t *testing.T, cond func() bool, msg string) {
 }
 
 // scriptedLLM produces a deterministic stream of llm.Events.
-func scriptedLLM(events ...llm.Event) func(ctx context.Context) <-chan llm.Event {
+func scriptedLLM(
+	events ...llm.Event,
+) func(ctx context.Context) <-chan llm.Event {
 	return func(ctx context.Context) <-chan llm.Event {
 		ch := make(chan llm.Event, len(events)+1)
 		go func() {
@@ -54,14 +56,14 @@ func scriptedLLM(events ...llm.Event) func(ctx context.Context) <-chan llm.Event
 }
 
 type fakeLLM struct {
-	mu             sync.Mutex
-	id             string
-	calls          int
-	scripts        []func(ctx context.Context) <-chan llm.Event
-	lastMsgs       []message.Message
-	lastTools      []tool.BaseTool
-	sendMsgCalls   int
-	sendMsgScript  func(msgs []message.Message) (*llm.Response, error)
+	mu            sync.Mutex
+	id            string
+	calls         int
+	scripts       []func(ctx context.Context) <-chan llm.Event
+	lastMsgs      []message.Message
+	lastTools     []tool.BaseTool
+	sendMsgCalls  int
+	sendMsgScript func(msgs []message.Message) (*llm.Response, error)
 }
 
 func newFakeLLM(id string) *fakeLLM { return &fakeLLM{id: id} }
@@ -164,8 +166,8 @@ func (f *fakeLLM) StreamResponseWithStructuredOutput(
 	return nil
 }
 
-func (f *fakeLLM) Model() model.Model               { return model.Model{} }
-func (f *fakeLLM) SupportsStructuredOutput() bool   { return false }
+func (f *fakeLLM) Model() model.Model             { return model.Model{} }
+func (f *fakeLLM) SupportsStructuredOutput() bool { return false }
 
 type fakeSTT struct {
 	results chan stt.StreamResult
@@ -175,9 +177,19 @@ func newFakeSTT() *fakeSTT {
 	return &fakeSTT{results: make(chan stt.StreamResult, 16)}
 }
 
-func (f *fakeSTT) push(r stt.StreamResult)    { f.results <- r }
-func (f *fakeSTT) pushFinal(text string)       { f.push(stt.StreamResult{Text: text, IsFinal: true}) }
-func (f *fakeSTT) pushPartial(text string)     { f.push(stt.StreamResult{Text: text, IsFinal: false}) }
+func (f *fakeSTT) push(r stt.StreamResult) { f.results <- r }
+
+func (f *fakeSTT) pushFinal(
+	text string,
+) {
+	f.push(stt.StreamResult{Text: text, IsFinal: true})
+}
+
+func (f *fakeSTT) pushPartial(
+	text string,
+) {
+	f.push(stt.StreamResult{Text: text, IsFinal: false})
+}
 
 func (f *fakeSTT) StreamTranscribe(
 	ctx context.Context,
@@ -222,7 +234,8 @@ func (f *fakeSTT) Translate(
 	return nil, errors.New("not implemented")
 }
 
-func (f *fakeSTT) SupportsStreaming() bool         { return true }
+func (f *fakeSTT) SupportsStreaming() bool { return true }
+
 func (f *fakeSTT) Model() model.TranscriptionModel { return model.TranscriptionModel{} }
 
 type fakeTTS struct {
@@ -355,9 +368,23 @@ func newFakeTool(name string) *fakeTool {
 	return &fakeTool{name: name, desc: "fake tool", output: "ok"}
 }
 
-func (f *fakeTool) setOutput(out string)       { f.mu.Lock(); defer f.mu.Unlock(); f.output = out }
-func (f *fakeTool) setError(err error)         { f.mu.Lock(); defer f.mu.Unlock(); f.err = err }
-func (f *fakeTool) lastReceivedInput() string  { f.mu.Lock(); defer f.mu.Unlock(); return f.lastInput }
+func (f *fakeTool) setOutput(
+	out string,
+) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.output = out
+}
+
+func (f *fakeTool) setError(
+	err error,
+) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.err = err
+}
+
+func (f *fakeTool) lastReceivedInput() string { f.mu.Lock(); defer f.mu.Unlock(); return f.lastInput }
 
 func (f *fakeTool) Info() tool.Info {
 	return tool.Info{

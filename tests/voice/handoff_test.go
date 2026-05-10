@@ -51,18 +51,23 @@ func TestHandoff_RegistersTransferTool(t *testing.T) {
 
 	tools := triage.lastToolList()
 	if !containsTool(tools, "transfer_to_billing") {
-		t.Fatalf("expected transfer_to_billing in LLM tool list; got %d tools", len(tools))
+		t.Fatalf(
+			"expected transfer_to_billing in LLM tool list; got %d tools",
+			len(tools),
+		)
 	}
 }
 
-// 2. Calling the handoff tool switches the active agent: the next LLM call
-//    goes to the target's fakeLLM, not the source.
+//  2. Calling the handoff tool switches the active agent: the next LLM call
+//     goes to the target's fakeLLM, not the source.
 func TestHandoff_SwitchesActiveAgentAfterToolCall(t *testing.T) {
 	billing, billingLLM := makeHandoffAgent("billing", "you are billing")
 	billingLLM.push(scriptComplete("hi from billing. "))
 
 	triage := newFakeLLM("triage")
-	triage.push(scriptOneTool("c1", "transfer_to_billing", `{"reason":"refund"}`))
+	triage.push(
+		scriptOneTool("c1", "transfer_to_billing", `{"reason":"refund"}`),
+	)
 
 	a := newTestAgent(t, triage,
 		voice.WithSystemPrompt("you are triage"),
@@ -86,8 +91,8 @@ func TestHandoff_SwitchesActiveAgentAfterToolCall(t *testing.T) {
 	}
 }
 
-// 3. After handoff the new system prompt is the only system message in the
-//    list the target LLM receives.
+//  3. After handoff the new system prompt is the only system message in the
+//     list the target LLM receives.
 func TestHandoff_RebuildsHistoryWithNewSystemPrompt(t *testing.T) {
 	billing, billingLLM := makeHandoffAgent("billing", "BILLING_PROMPT")
 	billingLLM.push(scriptComplete("ok. "))
@@ -126,8 +131,11 @@ func TestHandoff_RebuildsHistoryWithNewSystemPrompt(t *testing.T) {
 		}
 	}
 	if systemCount != 1 {
-		t.Fatalf("expected exactly 1 system message in billing LLM input, got %d: %+v",
-			systemCount, msgs)
+		t.Fatalf(
+			"expected exactly 1 system message in billing LLM input, got %d: %+v",
+			systemCount,
+			msgs,
+		)
 	}
 	if systemText != "BILLING_PROMPT" {
 		t.Fatalf("expected billing prompt, got %q", systemText)
@@ -161,7 +169,10 @@ func TestHandoff_PreservesNonSystemHistory(t *testing.T) {
 
 	msgs := billingLLM.lastMessages()
 	if !lastUserContains(msgs, "the user question") {
-		t.Fatalf("expected user message preserved across handoff; got %+v", msgs)
+		t.Fatalf(
+			"expected user message preserved across handoff; got %+v",
+			msgs,
+		)
 	}
 	// The transfer tool call's message and result should also have been
 	// preserved as part of history (assistant tool-call + tool result).
@@ -224,14 +235,20 @@ func TestHandoff_ChainedAtoBtoC(t *testing.T) {
 	}
 }
 
-// 6. The handoff tool's "Transferring to X" response (or with reason) lands
-//    in history.
+//  6. The handoff tool's "Transferring to X" response (or with reason) lands
+//     in history.
 func TestHandoff_ToolMessageRecordsTransferring(t *testing.T) {
 	billing, billingLLM := makeHandoffAgent("billing", "billing")
 	billingLLM.push(scriptComplete("ok. "))
 
 	triage := newFakeLLM("triage")
-	triage.push(scriptOneTool("c1", "transfer_to_billing", `{"reason":"customer wants refund"}`))
+	triage.push(
+		scriptOneTool(
+			"c1",
+			"transfer_to_billing",
+			`{"reason":"customer wants refund"}`,
+		),
+	)
 
 	a := newTestAgent(t, triage,
 		voice.WithSystemPrompt("triage"),

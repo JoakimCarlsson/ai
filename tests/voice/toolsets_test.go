@@ -16,8 +16,13 @@ type dynamicToolset struct {
 	build func(ctx context.Context) []tool.BaseTool
 }
 
-func (d *dynamicToolset) Name() string                          { return d.name }
-func (d *dynamicToolset) Tools(ctx context.Context) []tool.BaseTool { return d.build(ctx) }
+func (d *dynamicToolset) Name() string { return d.name }
+
+func (d *dynamicToolset) Tools(
+	ctx context.Context,
+) []tool.BaseTool {
+	return d.build(ctx)
+}
 
 // 1. Toolset-resolved tools reach the LLM alongside static tools.
 func TestToolsets_ToolsReachLLM(t *testing.T) {
@@ -49,12 +54,15 @@ func TestToolsets_ToolsReachLLM(t *testing.T) {
 		t.Fatalf("expected static_tool in LLM tool list; got %d", len(tools))
 	}
 	if !containsTool(tools, "dyn_tool") {
-		t.Fatalf("expected dyn_tool from toolset in LLM tool list; got %d", len(tools))
+		t.Fatalf(
+			"expected dyn_tool from toolset in LLM tool list; got %d",
+			len(tools),
+		)
 	}
 }
 
-// 2. The LLM can invoke a toolset-resolved tool — findTool consults the
-//    union, not just static tools.
+//  2. The LLM can invoke a toolset-resolved tool — findTool consults the
+//     union, not just static tools.
 func TestToolsets_LLMCanInvokeToolsetTool(t *testing.T) {
 	dynT := newFakeTool("dyn_tool")
 	dynT.setOutput("dyn_result")
@@ -80,7 +88,10 @@ func TestToolsets_LLMCanInvokeToolsetTool(t *testing.T) {
 	_ = a.conv.Wait()
 
 	if dynT.lastReceivedInput() != "{}" {
-		t.Fatalf("expected dyn_tool invoked; lastInput=%q", dynT.lastReceivedInput())
+		t.Fatalf(
+			"expected dyn_tool invoked; lastInput=%q",
+			dynT.lastReceivedInput(),
+		)
 	}
 	ends := a.eventsOfType(voice.EventToolCallEnd)
 	if len(ends) == 0 {
@@ -92,8 +103,8 @@ func TestToolsets_LLMCanInvokeToolsetTool(t *testing.T) {
 	}
 }
 
-// 3. Toolset.Tools(ctx) is evaluated per LLM call (not cached at agent
-//    construction). Each conversation turn re-resolves the set.
+//  3. Toolset.Tools(ctx) is evaluated per LLM call (not cached at agent
+//     construction). Each conversation turn re-resolves the set.
 func TestToolsets_EvaluatedPerCall(t *testing.T) {
 	var calls int32
 	t1 := newFakeTool("t1")
@@ -115,24 +126,33 @@ func TestToolsets_EvaluatedPerCall(t *testing.T) {
 	defer a.cancel()
 
 	a.stt.pushFinal("first turn")
-	waitFor(t, func() bool { return a.countEvents(voice.EventAssistantDone) == 1 },
-		"first turn done")
+	waitFor(
+		t,
+		func() bool { return a.countEvents(voice.EventAssistantDone) == 1 },
+		"first turn done",
+	)
 
 	a.stt.pushFinal("second turn")
-	waitFor(t, func() bool { return a.countEvents(voice.EventAssistantDone) == 2 },
-		"second turn done")
+	waitFor(
+		t,
+		func() bool { return a.countEvents(voice.EventAssistantDone) == 2 },
+		"second turn done",
+	)
 
 	a.cancel()
 	_ = a.conv.Wait()
 
 	got := atomic.LoadInt32(&calls)
 	if got < 2 {
-		t.Fatalf("expected toolset Tools() called >= 2 times across 2 turns, got %d", got)
+		t.Fatalf(
+			"expected toolset Tools() called >= 2 times across 2 turns, got %d",
+			got,
+		)
 	}
 }
 
-// 4. Static tools and toolset tools are both invokable in the same turn —
-//    findTool resolves names from the union.
+//  4. Static tools and toolset tools are both invokable in the same turn —
+//     findTool resolves names from the union.
 func TestToolsets_StaticAndDynamicCoexist(t *testing.T) {
 	staticT := newFakeTool("static_tool")
 	dynT := newFakeTool("dyn_tool")

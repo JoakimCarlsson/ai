@@ -79,7 +79,10 @@ func TestContextStrategy_FitCalledWithExpectedInput(t *testing.T) {
 	strat.mu.Unlock()
 
 	if in.SystemPrompt != "you are helpful" {
-		t.Fatalf("expected SystemPrompt='you are helpful', got %q", in.SystemPrompt)
+		t.Fatalf(
+			"expected SystemPrompt='you are helpful', got %q",
+			in.SystemPrompt,
+		)
 	}
 	if in.MaxTokens != 8000 {
 		t.Fatalf("expected MaxTokens=8000, got %d", in.MaxTokens)
@@ -123,7 +126,11 @@ func TestContextStrategy_TrimmedMessagesReachLLM(t *testing.T) {
 
 	got := llmFake.lastMessages()
 	if len(got) != 1 {
-		t.Fatalf("expected LLM to receive 1 trimmed message, got %d: %+v", len(got), got)
+		t.Fatalf(
+			"expected LLM to receive 1 trimmed message, got %d: %+v",
+			len(got),
+			got,
+		)
 	}
 	for _, p := range got[0].Parts {
 		if tc, ok := p.(message.TextContent); ok && tc.Text != "trimmed-only" {
@@ -136,8 +143,12 @@ func TestContextStrategy_TrimmedMessagesReachLLM(t *testing.T) {
 // history and persisted alongside the rest of the turn's new messages by
 // the runner's per-turn persist step.
 func TestContextStrategy_SessionUpdatePersisted(t *testing.T) {
-	summary := message.NewMessage(message.Summary,
-		[]message.ContentPart{message.TextContent{Text: "summary of older turns"}})
+	summary := message.NewMessage(
+		message.Summary,
+		[]message.ContentPart{
+			message.TextContent{Text: "summary of older turns"},
+		},
+	)
 
 	strat := &fakeStrategy{
 		result: &tokens.StrategyResult{
@@ -186,8 +197,11 @@ func TestContextStrategy_SessionUpdatePersisted(t *testing.T) {
 		}
 	}
 	if !sawSummary {
-		t.Fatalf("expected summary message persisted to session; got %d msgs: %+v",
-			len(msgs), msgs)
+		t.Fatalf(
+			"expected summary message persisted to session; got %d msgs: %+v",
+			len(msgs),
+			msgs,
+		)
 	}
 }
 
@@ -214,7 +228,11 @@ func TestContextStrategy_NoStrategyPassesThrough(t *testing.T) {
 
 	got := llmFake.lastMessages()
 	if len(got) < 2 {
-		t.Fatalf("expected at least system+user msgs at LLM, got %d: %+v", len(got), got)
+		t.Fatalf(
+			"expected at least system+user msgs at LLM, got %d: %+v",
+			len(got),
+			got,
+		)
 	}
 }
 
