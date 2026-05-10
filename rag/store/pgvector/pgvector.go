@@ -1,36 +1,59 @@
 // Package pgvector provides a PostgreSQL-backed implementation of
 // rag.Store using the pgvector extension for cosine-similarity
-// search. Vectors persist across process restarts; the table and
-// pgvector extension are created on first use.
+// search.
 //
-// Schema:
+// # Lifecycle
 //
-//	CREATE TABLE rag_chunks (
-//	    id           TEXT PRIMARY KEY,
-//	    kb_id        TEXT NOT NULL,
-//	    document_id  TEXT NOT NULL,
-//	    content      TEXT NOT NULL,
-//	    chunk_index  INT  NOT NULL,
-//	    metadata     JSONB,
-//	    model        TEXT,
-//	    embedding    vector(<dims>),
-//	    created_at   TIMESTAMPTZ DEFAULT NOW()
-//	);
+// Schema is owned by versioned migrations embedded in the package.
+// Run Migrate(ctx, dsn, dims) once at deploy time as a privileged
+// Postgres role; run New(ctx, dsn, dims) from the application as a
+// low-privilege role. New does not issue DDL: it reads the
+// rag_pgvector_migrations ledger, refuses to start if the schema
+// version is older than the code expects, and verifies that the
+// embedding column dimensionality matches the configured dims.
 //
-// Example:
+// # Privileges
+//
+//   - Migrate needs CREATE EXTENSION (superuser or trusted-extension
+//     owner) on first run, and CREATE on the schema for the table
+//     and indexes.
+//   - New needs SELECT, INSERT, UPDATE, DELETE on the chunks table
+//     and SELECT on the rag_pgvector_migrations ledger. No CREATE,
+//     no superuser.
+//
+// # Example
 //
 //	import (
 //	    "github.com/joakimcarlsson/ai/rag"
 //	    pgstore "github.com/joakimcarlsson/ai/rag/store/pgvector"
 //	)
 //
-//	store, err := pgstore.New(ctx,
-//	    "postgres://user:pass@localhost:5432/rag?sslmode=disable",
-//	    1536, // text-embedding-3-small dimensionality
-//	)
-//	if err != nil { log.Fatal(err) }
+//	// Once at deploy time:
+//	if err := pgstore.Migrate(ctx, adminDSN, 1536); err != nil {
+//	    log.Fatal(err)
+//	}
+//
+//	// At application start:
+//	store, err := pgstore.New(ctx, runtimeDSN, 1536)
 //
 //	kb := rag.New("docs", embedder, store)
+//
+// # Plugging into your own migrator
+//
+// MigrationsFS returns the embedded migration files as an fs.FS so
+// you can hand them to golang-migrate, goose, atlas, or whatever your
+// organisation already runs. The SQL files contain Go-template
+// placeholders ({{.Table}}, {{.Dims}}) that need substituting before
+// they execute; Migrate handles this for you, external migrators
+// need a render step.
+//
+// # Dimension changes
+//
+// pgvector stores dimensionality in the column type (vector(N)).
+// Switching embedders to a different dim is a destructive migration:
+// add a sibling column, backfill by re-embedding, swap, drop. New
+// refuses to start when the configured dim does not match the
+// stored column type so the mismatch is caught loud and early.
 package pgvector
 
 import (
@@ -47,26 +70,31 @@ import (
 // DefaultTable is the table name used when WithTable is not passed.
 const DefaultTable = "rag_chunks"
 
-// Option configures the pgvector store at construction time.
+// Option configures the pgvector store.
 type Option func(*config)
 
 type config struct {
 	table string
 }
 
+func defaultConfig() *config {
+	return &config{table: DefaultTable}
+}
+
 // WithTable overrides the default table name (rag_chunks). Useful
-// when running multiple knowledge-base systems in the same database.
+// when running multiple knowledge-base systems in the same database
+// or when the table name encodes the embedder version.
 func WithTable(name string) Option {
 	return func(c *config) {
 		c.table = name
 	}
 }
 
-// New connects to a PostgreSQL database, ensures the pgvector
-// extension is enabled, creates the schema if missing, and returns a
-// rag.Store backed by it. The dims argument MUST match the embedder
-// you plan to use (1536 for text-embedding-3-small, 1024 for
-// text-embedding-3-large at default truncation, etc).
+// New opens a connection to a previously-migrated pgvector database
+// and returns a rag.Store. It does NOT issue DDL. It verifies the
+// rag_pgvector_migrations ledger is at or above the schema version
+// this code expects and that the embedding column is typed
+// vector(<dims>); fails fast otherwise. Run Migrate first.
 func New(
 	ctx context.Context,
 	connString string,
@@ -76,8 +104,7 @@ func New(
 	if dims <= 0 {
 		return nil, fmt.Errorf("pgvector: dims must be positive, got %d", dims)
 	}
-
-	cfg := &config{table: DefaultTable}
+	cfg := defaultConfig()
 	for _, opt := range opts {
 		opt(cfg)
 	}
@@ -94,38 +121,116 @@ func New(
 		return nil, fmt.Errorf("pgvector: ping: %w", err)
 	}
 
-	createSQL := fmt.Sprintf(`
-CREATE EXTENSION IF NOT EXISTS vector;
-
-CREATE TABLE IF NOT EXISTS %[1]s (
-    id           TEXT PRIMARY KEY,
-    kb_id        TEXT NOT NULL,
-    document_id  TEXT NOT NULL,
-    content      TEXT NOT NULL,
-    chunk_index  INT  NOT NULL,
-    metadata     JSONB,
-    model        TEXT,
-    embedding    vector(%[2]d),
-    created_at   TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS %[1]s_kb_idx ON %[1]s (kb_id);
-`, cfg.table, dims)
-
-	if _, err := db.ExecContext(ctx, createSQL); err != nil {
+	if err := verifySchema(ctx, db, cfg.table, dims); err != nil {
 		_ = db.Close()
-		return nil, fmt.Errorf("pgvector: create schema: %w", err)
+		return nil, err
 	}
 
-	// HNSW index for cosine. Best-effort: the cast for vector_cosine_ops
-	// requires pgvector >= 0.5; older versions silently skip.
-	indexSQL := fmt.Sprintf(
-		`CREATE INDEX IF NOT EXISTS %[1]s_hnsw_idx ON %[1]s USING hnsw (embedding vector_cosine_ops)`,
-		cfg.table,
-	)
-	_, _ = db.ExecContext(ctx, indexSQL)
-
 	return &store{db: db, table: cfg.table, dims: dims}, nil
+}
+
+// verifySchema checks the ledger version and the embedding column
+// type, in that order. Returns errors with concrete remediation hints
+// (run Migrate, re-embed, etc).
+func verifySchema(
+	ctx context.Context,
+	db *sql.DB,
+	table string,
+	expectedDims int,
+) error {
+	ledger := ledgerTableFor(table)
+	var ledgerExists bool
+	err := db.QueryRowContext(ctx, `
+SELECT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = current_schema() AND table_name = $1
+)`, ledger).Scan(&ledgerExists)
+	if err != nil {
+		return fmt.Errorf("pgvector: probe ledger: %w", err)
+	}
+	if !ledgerExists {
+		return fmt.Errorf(
+			"pgvector: schema not initialised (no %s table); run pgvector.Migrate(ctx, dsn, %d) as a privileged role first",
+			ledger, expectedDims,
+		)
+	}
+
+	current, err := readVersion(ctx, db, table)
+	if err != nil {
+		return err
+	}
+	expected := SchemaVersion()
+	if current < expected {
+		return fmt.Errorf(
+			"pgvector: schema is at version %d but this build expects %d; run pgvector.Migrate to upgrade",
+			current, expected,
+		)
+	}
+	// current > expected is forward compatibility; allowed but the
+	// caller may want to log it. The library does not.
+
+	return verifyEmbeddingDims(ctx, db, table, expectedDims)
+}
+
+// verifyEmbeddingDims reads the actual column type from pg_attribute
+// and parses the dim out of format_type, e.g. "vector(1536)".
+func verifyEmbeddingDims(
+	ctx context.Context,
+	db *sql.DB,
+	table string,
+	expectedDims int,
+) error {
+	var typFmt string
+	err := db.QueryRowContext(ctx, `
+SELECT format_type(a.atttypid, a.atttypmod)
+FROM pg_attribute a
+JOIN pg_class c ON c.oid = a.attrelid
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = current_schema()
+  AND c.relname = $1
+  AND a.attname = 'embedding'
+`, table).Scan(&typFmt)
+	if err == sql.ErrNoRows {
+		return fmt.Errorf(
+			"pgvector: table %q does not exist; run pgvector.Migrate first",
+			table,
+		)
+	}
+	if err != nil {
+		return fmt.Errorf("pgvector: read column type for %s.embedding: %w", table, err)
+	}
+
+	actualDims, err := parseVectorDims(typFmt)
+	if err != nil {
+		return fmt.Errorf(
+			"pgvector: cannot parse %s.embedding type %q: %w",
+			table, typFmt, err,
+		)
+	}
+	if actualDims != expectedDims {
+		return fmt.Errorf(
+			"pgvector: schema mismatch for %s.embedding: column is %s but code expects vector(%d); a re-embed migration is required",
+			table, typFmt, expectedDims,
+		)
+	}
+	return nil
+}
+
+// parseVectorDims pulls N out of a pgvector format_type result like
+// "vector(1536)".
+func parseVectorDims(typFmt string) (int, error) {
+	if !strings.HasPrefix(typFmt, "vector(") || !strings.HasSuffix(typFmt, ")") {
+		return 0, fmt.Errorf("not a sized vector type: %q", typFmt)
+	}
+	inner := typFmt[len("vector(") : len(typFmt)-1]
+	var n int
+	if _, err := fmt.Sscanf(inner, "%d", &n); err != nil {
+		return 0, err
+	}
+	if n <= 0 {
+		return 0, fmt.Errorf("non-positive dim: %d", n)
+	}
+	return n, nil
 }
 
 type store struct {
@@ -218,9 +323,6 @@ func (s *store) Search(
 		)
 	}
 
-	// Drain SearchOptions for forward compat. v1 has no settable
-	// fields on SearchConfig but invoking the helper guarantees the
-	// option pipeline is wired through every store.
 	_ = rag.ApplySearchOptions(opts...)
 
 	rows, err := s.db.QueryContext(ctx, fmt.Sprintf(`
@@ -280,8 +382,7 @@ func (s *store) Delete(ctx context.Context, chunkID string) error {
 	return nil
 }
 
-// Close releases the underlying database connection pool. Optional;
-// callers can also leave it to process exit.
+// Close releases the underlying database connection pool.
 func (s *store) Close() error { return s.db.Close() }
 
 // validTableName allows letters, digits, underscores. Strict so the

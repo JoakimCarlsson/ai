@@ -153,21 +153,40 @@ Slice + RWMutex with cosine-similarity scoring. Brute-force linear scan over eve
 
 ### PostgreSQL + pgvector (`rag/store/pgvector`)
 
+Persistent store backed by a Postgres database with the [pgvector](https://github.com/pgvector/pgvector) extension. Schema is owned by versioned migrations embedded in the package; the runtime path doesn't issue DDL.
+
 ```go
 import pgstore "github.com/joakimcarlsson/ai/rag/store/pgvector"
 
-store, err := pgstore.New(ctx,
-    "postgres://user:pass@localhost:5432/rag?sslmode=disable",
-    1536, // must match the embedder's dimensionality
-    pgstore.WithTable("rag_chunks"), // optional, defaults to "rag_chunks"
+// Once at deploy time, as a privileged Postgres role:
+if err := pgstore.Migrate(ctx, adminDSN, 1536); err != nil {
+    log.Fatal(err)
+}
+
+// At application start, as a low-privilege role:
+store, err := pgstore.New(ctx, runtimeDSN, 1536,
+    pgstore.WithTable("rag_chunks"), // optional, default is "rag_chunks"
 )
 ```
 
-Persistent store backed by a Postgres database with the [pgvector](https://github.com/pgvector/pgvector) extension. The table and HNSW index are created on first call. Embeddings survive process restarts, so re-running an ingest pipeline only embeds documents that are new or changed (the example under `examples/agent/rag-pgvector/` shows the pattern using a content hash in chunk metadata).
+`Migrate` is idempotent and concurrent-safe (an advisory lock serialises racing migrators so they don't collide on `CREATE EXTENSION`). `New` does not run DDL; it reads the `rag_pgvector_migrations` ledger and refuses to start if the schema version is older than the build expects, or if the embedding column type does not match the configured `dims`.
 
-Schema (auto-created):
+#### Privileges
+
+| Step | Required Postgres privileges |
+|---|---|
+| `Migrate` | `CREATE EXTENSION` (first run only — superuser or trusted-extension owner), plus `CREATE` on the schema for the chunks table, indexes, and ledger |
+| `New` + runtime | `SELECT, INSERT, UPDATE, DELETE` on the chunks table; `SELECT` on the `rag_pgvector_migrations` ledger. No `CREATE`, no superuser |
+
+The two-role pattern (admin owns DDL, app owns DML) follows the AWS Bedrock-on-Aurora reference and is the standard production posture.
+
+#### Schema
+
+Migration `001_initial.sql` creates:
 
 ```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+
 CREATE TABLE rag_chunks (
     id           TEXT PRIMARY KEY,
     kb_id        TEXT NOT NULL,
@@ -177,15 +196,38 @@ CREATE TABLE rag_chunks (
     metadata     JSONB,
     model        TEXT,
     embedding    vector(<dims>),
-    created_at   TIMESTAMPTZ DEFAULT NOW()
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX rag_chunks_hnsw_idx ON rag_chunks USING hnsw (embedding vector_cosine_ops);
 CREATE INDEX rag_chunks_kb_idx   ON rag_chunks (kb_id);
+CREATE INDEX rag_chunks_hnsw_idx ON rag_chunks USING hnsw (embedding vector_cosine_ops);
 ```
 
-The `model` column carries `EmbeddedChunk.Model` so you can detect drift if you switch embedders.
+Plus a bookkeeping table created by the migrator:
 
-Local dev: a one-line docker-compose using the pgvector image is included with the example:
+```sql
+CREATE TABLE rag_pgvector_migrations (
+    version    INT PRIMARY KEY,
+    applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+The `model` column on `rag_chunks` carries `EmbeddedChunk.Model` so you can detect drift if you switch embedders.
+
+#### Plugging into your own migrator
+
+If your application already runs `golang-migrate`, `goose`, `atlas`, or another migration tool, skip `Migrate` and feed the embedded SQL files into your existing pipeline:
+
+```go
+fsys := pgstore.MigrationsFS()  // fs.FS containing 001_initial.sql, ...
+```
+
+Files contain Go-template placeholders (`{{.Table}}`, `{{.Dims}}`) that need substituting before they execute; render them with `text/template` before handing them to your migrator.
+
+#### Dimension changes
+
+pgvector stores dimensionality in the column type as `vector(N)`. Switching embedders to a different `N` is a destructive migration: `New` refuses to start when the configured `dims` does not match the stored column type, with a message saying a re-embed is required. The migration system can ship the mechanics (add sibling column, swap, drop), but the user has to provide the embedder for the backfill — only the application knows which model to switch to.
+
+#### Local dev
 
 ```yaml
 services:
