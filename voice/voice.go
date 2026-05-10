@@ -1,6 +1,8 @@
 package voice
 
 import (
+	"context"
+
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/session"
 	"github.com/joakimcarlsson/ai/stt"
@@ -17,6 +19,7 @@ type VoiceAgent struct {
 	tts               tts.Generation
 	systemPrompt      string
 	tools             []tool.BaseTool
+	toolsets          []tool.Toolset
 	maxToolIterations int
 	filler            FillerConfig
 	toolSound         ToolSoundConfig
@@ -26,6 +29,22 @@ type VoiceAgent struct {
 	maxContextTokens  int64
 	hooks             []Hooks
 	handoffs          []HandoffConfig
+}
+
+// toolsForContext returns the union of static tools and toolset-resolved
+// tools for the given context. Toolsets are evaluated on each call so
+// implementations can return different tools depending on per-call ctx
+// values (e.g., authenticated user role, feature flags).
+func (v *VoiceAgent) toolsForContext(ctx context.Context) []tool.BaseTool {
+	if len(v.toolsets) == 0 {
+		return v.tools
+	}
+	out := make([]tool.BaseTool, 0, len(v.tools))
+	out = append(out, v.tools...)
+	for _, ts := range v.toolsets {
+		out = append(out, ts.Tools(ctx)...)
+	}
+	return out
 }
 
 const defaultMaxToolIterations = 4

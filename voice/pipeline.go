@@ -93,7 +93,7 @@ func streamLLMAndSpeak(
 		return "", nil, err
 	}
 
-	llmTools := v.tools
+	llmTools := v.toolsForContext(ctx)
 	if len(v.hooks) > 0 {
 		hookRes, err := runPreModelCall(ctx, v.hooks, ModelCallContext{
 			ConversationID: conversationIDFromCtx(ctx),

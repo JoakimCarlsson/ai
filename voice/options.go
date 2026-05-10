@@ -26,6 +26,24 @@ func WithTools(tools ...tool.BaseTool) Option {
 	}
 }
 
+// WithToolsets registers tool.Toolset implementations whose Tools(ctx)
+// method is consulted before every LLM call. Toolset tools are appended
+// to the static set registered via WithTools; the union is what the LLM
+// sees for that turn.
+//
+// Use toolsets when the available tools depend on per-call context — e.g.,
+// MCP servers (tool.MCPToolset), per-user RBAC filtering
+// (tool.NewFilterToolset), or feature-flagged sets composed via
+// tool.NewCompositeToolset. Static tools that don't change should still
+// be passed via WithTools to avoid re-resolving them every turn.
+//
+// Mirrors agent.WithToolsets.
+func WithToolsets(toolsets ...tool.Toolset) Option {
+	return func(v *VoiceAgent) {
+		v.toolsets = append(v.toolsets, toolsets...)
+	}
+}
+
 // WithMaxToolIterations caps how many tool-call rounds may run inside a single
 // assistant turn. Default is 4. Values <= 0 are ignored.
 func WithMaxToolIterations(n int) Option {

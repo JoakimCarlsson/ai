@@ -63,6 +63,7 @@ if err := conv.Wait(); err != nil {
 |--------|-------------|---------|
 | `WithSystemPrompt(prompt)` | System prompt prepended to every LLM call | none |
 | `WithTools(tools...)` | Tools the LLM can call during a conversation | none |
+| `WithToolsets(toolsets...)` | `tool.Toolset`s evaluated per LLM call to add dynamic / context-dependent tools to the static set | none |
 | `WithMaxToolIterations(n)` | Cap on tool-call rounds inside one assistant turn | 4 |
 | `WithFiller(cfg)` | Speak a short filler phrase if the LLM is slow to produce its first content delta | disabled |
 | `WithToolSound(cfg)` | Loop ambient PCM audio while a tool is executing | disabled |
@@ -323,6 +324,36 @@ Multiple `Hooks` structs can be passed; they run in registration order and `Hook
 **Modify semantics:** the modified values flow forward — modified user text reaches history and the LLM; modified `Messages` / `Tools` reach the LLM; modified tool input reaches the tool; modified tool output replaces what lands in history. `OnToolError` modify additionally clears the error flag so downstream sees a successful tool result.
 
 Hooks have no `OnEvent` mass-fanout — that's what `Conversation.Events()` is for.
+
+## Toolsets
+
+`WithTools` is for tools that don't change for the lifetime of the agent. `WithToolsets` is for tools that depend on per-call context — MCP servers, RBAC-filtered sets, feature-flagged groupings. Each toolset's `Tools(ctx)` method is invoked **before every LLM call**, and the returned slice is appended to the static tools registered via `WithTools`. The LLM sees the union; `findTool` (for invocation) sees the union too.
+
+```go
+// MCP server tools resolved at call time:
+mcp := tool.MCPToolset("kb", map[string]tool.MCPServer{
+    "kb": {Endpoint: "http://localhost:9001"},
+})
+
+// Per-user RBAC filter wrapping a base toolset:
+admin := tool.NewFilterToolset("admin-only", baseTools,
+    func(ctx context.Context, _ tool.BaseTool) bool {
+        return userIsAdmin(ctx)
+    },
+)
+
+agent := voice.New(llm, stt, tts,
+    voice.WithSystemPrompt("..."),
+    voice.WithTools(staticTool{}),  // always available
+    voice.WithToolsets(mcp, admin), // resolved per call
+)
+```
+
+Toolsets compose: `tool.NewCompositeToolset(name, child1, child2, ...)` merges multiple toolsets under one name. See the `tool` package for the Toolset interface, plus `NewToolset` (static), `NewFilterToolset` (predicate-gated), `NewCompositeToolset`, and `MCPToolset`.
+
+Mirrors `agent.WithToolsets`.
+
+See [`examples/voice/toolsets`](https://github.com/JoakimCarlsson/ai/tree/main/examples/voice/toolsets) for an end-to-end demo: a per-connection role (`/ws?role=admin`) toggles staff-only tools at the toolset level so the LLM literally sees a different tool list depending on who's connected.
 
 ## Handoffs
 

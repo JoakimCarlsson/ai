@@ -55,7 +55,7 @@ func runToolCalls(
 		}
 
 		start := time.Now()
-		t := findTool(v.tools, call.Name)
+		t := findTool(v.toolsForContext(ctx), call.Name)
 		var resp tool.Response
 		var runErr error
 		if t == nil {
