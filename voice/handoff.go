@@ -15,7 +15,7 @@ import (
 // rest of the conversation: the target's system prompt, tools, LLM, hooks,
 // context strategy, and (chained) handoffs all take over. The target's
 // STT/TTS clients are ignored — the conversation's audio path stays bound
-// to the original VoiceAgent so no audio glitch happens at the transfer
+// to the original Agent so no audio glitch happens at the transfer
 // boundary.
 //
 // Mirrors agent.HandoffConfig exactly.
@@ -25,8 +25,8 @@ type HandoffConfig struct {
 	Name string
 	// Description tells the LLM when this handoff should be used.
 	Description string
-	// Agent is the target VoiceAgent that takes over after the handoff.
-	Agent *VoiceAgent
+	// Agent is the target Agent that takes over after the handoff.
+	Agent *Agent
 }
 
 type handoffInput struct {
@@ -96,7 +96,7 @@ func isHandoffTool(name string, handoffs []HandoffConfig) *HandoffConfig {
 // messages (user turns, assistant turns, tool calls, tool results) are
 // preserved so the new agent inherits the conversation context.
 func rebuildMessagesForHandoff(
-	newAgent *VoiceAgent,
+	newAgent *Agent,
 	history []message.Message,
 ) []message.Message {
 	var rebuilt []message.Message
@@ -115,19 +115,4 @@ func rebuildMessagesForHandoff(
 	}
 
 	return rebuilt
-}
-
-// findAgentName walks the handoff tree under root and returns the
-// configured Name for active, or "" if not found. Used for tracing /
-// observability.
-func findAgentName(root, active *VoiceAgent) string {
-	for _, h := range root.handoffs {
-		if h.Agent == active {
-			return h.Name
-		}
-		if name := findAgentName(h.Agent, active); name != "" {
-			return name
-		}
-	}
-	return ""
 }

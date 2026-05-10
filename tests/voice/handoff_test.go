@@ -14,7 +14,7 @@ import (
 func makeHandoffAgent(
 	id, prompt string,
 	opts ...voice.Option,
-) (*voice.VoiceAgent, *fakeLLM) {
+) (*voice.Agent, *fakeLLM) {
 	lf := newFakeLLM(id)
 	stf := newFakeSTT()
 	tts := newFakeTTS(true)

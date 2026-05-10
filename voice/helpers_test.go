@@ -99,10 +99,6 @@ func (f *fakeSTT) push(r stt.StreamResult) {
 	f.results <- r
 }
 
-func (f *fakeSTT) closeResults() {
-	close(f.results)
-}
-
 func (f *fakeSTT) StreamTranscribe(
 	ctx context.Context,
 	_ <-chan []byte,
@@ -318,33 +314,6 @@ func scriptedLLM(
 				select {
 				case <-ctx.Done():
 					ch <- llm.Event{Type: types.EventError, Error: ctx.Err()}
-					return
-				case ch <- e:
-				}
-			}
-		}()
-		return ch
-	}
-}
-
-// holdingLLM produces nothing until the hold channel closes, then emits
-// events. Lets a test keep the LLM "thinking" so a barge-in can fire mid-turn.
-func holdingLLM(
-	hold <-chan struct{},
-	events ...llm.Event,
-) func(ctx context.Context) <-chan llm.Event {
-	return func(ctx context.Context) <-chan llm.Event {
-		ch := make(chan llm.Event, len(events)+1)
-		go func() {
-			defer close(ch)
-			select {
-			case <-ctx.Done():
-				return
-			case <-hold:
-			}
-			for _, e := range events {
-				select {
-				case <-ctx.Done():
 					return
 				case ch <- e:
 				}

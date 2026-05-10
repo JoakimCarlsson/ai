@@ -13,7 +13,7 @@ import (
 // getMemoryLLM returns the LLM used for memory extraction and dedup. Uses
 // the dedicated memory LLM if configured, falling back to the agent's
 // main LLM.
-func (v *VoiceAgent) getMemoryLLM() llm.LLM {
+func (v *Agent) getMemoryLLM() llm.LLM {
 	if v.memoryLLM != nil {
 		return v.memoryLLM
 	}
@@ -26,7 +26,7 @@ func (v *VoiceAgent) getMemoryLLM() llm.LLM {
 // invoked in a background goroutine after each user turn ends — the runner
 // fires it with context.Background() so an extraction outlives the
 // conversation cancellation.
-func (v *VoiceAgent) extractAndStoreMemories(ctx context.Context) error {
+func (v *Agent) extractAndStoreMemories(ctx context.Context) error {
 	if v.memory == nil || !v.autoExtract || v.memoryID == "" ||
 		v.session == nil {
 		return nil
@@ -59,7 +59,7 @@ func (v *VoiceAgent) extractAndStoreMemories(ctx context.Context) error {
 // storeWithDedup runs memory.Deduplicate against the top-5 nearest
 // memories before storing the new fact. Apply each Add/Update/Delete
 // decision; on any dedup error, fall back to a plain Store.
-func (v *VoiceAgent) storeWithDedup(
+func (v *Agent) storeWithDedup(
 	ctx context.Context,
 	fact string,
 	metadata map[string]any,
@@ -102,7 +102,7 @@ func (v *VoiceAgent) storeWithDedup(
 // top-N memories matching query and returns them as a single
 // system-message-shaped string ready to be prepended to the LLM message
 // list. Returns "" when no memories are configured or none match.
-func (v *VoiceAgent) recallMemoriesContext(
+func (v *Agent) recallMemoriesContext(
 	ctx context.Context,
 	query string,
 	limit int,

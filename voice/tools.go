@@ -19,7 +19,7 @@ import (
 // aborting the turn so the LLM can recover on the next iteration.
 func runToolCalls(
 	ctx context.Context,
-	v *VoiceAgent,
+	v *Agent,
 	calls []message.ToolCall,
 	history *[]message.Message,
 	emit func(Event),

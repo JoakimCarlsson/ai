@@ -8,7 +8,7 @@ import (
 )
 
 // Conversation is a running voice session. Construct one via
-// VoiceAgent.StartConversation; consume Events while it runs and call Wait to
+// Agent.StartConversation; consume Events while it runs and call Wait to
 // observe the final result. Cancel the context passed to StartConversation to
 // terminate the conversation.
 type Conversation struct {
@@ -59,7 +59,7 @@ func (c *Conversation) setErr(err error) {
 
 // StartConversation opens a new conversation over the given audio transport
 // and runs the pipeline in the background. Cancel ctx to terminate.
-func (v *VoiceAgent) StartConversation(
+func (v *Agent) StartConversation(
 	ctx context.Context,
 	audio AudioTransport,
 ) (*Conversation, error) {

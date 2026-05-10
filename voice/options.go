@@ -9,12 +9,12 @@ import (
 	"github.com/joakimcarlsson/ai/tool"
 )
 
-// Option configures a VoiceAgent. Pass options to New.
-type Option func(*VoiceAgent)
+// Option configures a Agent. Pass options to New.
+type Option func(*Agent)
 
 // WithSystemPrompt sets the system prompt prepended to every LLM call.
 func WithSystemPrompt(prompt string) Option {
-	return func(v *VoiceAgent) {
+	return func(v *Agent) {
 		v.systemPrompt = prompt
 	}
 }
@@ -22,7 +22,7 @@ func WithSystemPrompt(prompt string) Option {
 // WithTools registers tools that the LLM may call during a conversation.
 // Multiple WithTools options append.
 func WithTools(tools ...tool.BaseTool) Option {
-	return func(v *VoiceAgent) {
+	return func(v *Agent) {
 		v.tools = append(v.tools, tools...)
 	}
 }
@@ -40,7 +40,7 @@ func WithTools(tools ...tool.BaseTool) Option {
 //
 // Mirrors agent.WithToolsets.
 func WithToolsets(toolsets ...tool.Toolset) Option {
-	return func(v *VoiceAgent) {
+	return func(v *Agent) {
 		v.toolsets = append(v.toolsets, toolsets...)
 	}
 }
@@ -48,7 +48,7 @@ func WithToolsets(toolsets ...tool.Toolset) Option {
 // WithMaxToolIterations caps how many tool-call rounds may run inside a single
 // assistant turn. Default is 4. Values <= 0 are ignored.
 func WithMaxToolIterations(n int) Option {
-	return func(v *VoiceAgent) {
+	return func(v *Agent) {
 		if n > 0 {
 			v.maxToolIterations = n
 		}
@@ -59,7 +59,7 @@ func WithMaxToolIterations(n int) Option {
 // its first content delta. Disabled when Timeout is zero or Message is empty
 // (and Source is nil).
 func WithFiller(cfg FillerConfig) Option {
-	return func(v *VoiceAgent) {
+	return func(v *Agent) {
 		v.filler = cfg
 	}
 }
@@ -67,14 +67,14 @@ func WithFiller(cfg FillerConfig) Option {
 // WithToolSound configures ambient audio that loops while a tool is executing.
 // Disabled when cfg.Audio is empty.
 func WithToolSound(cfg ToolSoundConfig) Option {
-	return func(v *VoiceAgent) {
+	return func(v *Agent) {
 		v.toolSound = cfg
 	}
 }
 
 // WithBargeIn sets the barge-in policy. Default is BargeInIgnore.
 func WithBargeIn(policy BargeInPolicy) Option {
-	return func(v *VoiceAgent) {
+	return func(v *Agent) {
 		v.bargeIn = policy
 	}
 }
@@ -89,7 +89,7 @@ func WithBargeIn(policy BargeInPolicy) Option {
 //
 // Mirrors agent.WithHandoffs.
 func WithHandoffs(configs ...HandoffConfig) Option {
-	return func(v *VoiceAgent) {
+	return func(v *Agent) {
 		v.handoffs = append(v.handoffs, configs...)
 		for _, cfg := range configs {
 			v.tools = append(v.tools, newHandoffTool(cfg))
@@ -104,7 +104,7 @@ func WithHandoffs(configs ...HandoffConfig) Option {
 // Conversation.Events for async observation; use hooks when you need to
 // mutate or veto.
 func WithHooks(hooks ...Hooks) Option {
-	return func(v *VoiceAgent) {
+	return func(v *Agent) {
 		v.hooks = append(v.hooks, hooks...)
 	}
 }
@@ -130,7 +130,7 @@ func WithContextStrategy(
 	strategy tokens.Strategy,
 	maxContextTokens int64,
 ) Option {
-	return func(v *VoiceAgent) {
+	return func(v *Agent) {
 		v.contextStrategy = strategy
 		v.maxContextTokens = maxContextTokens
 	}
@@ -165,7 +165,7 @@ func WithMemory(
 	store memory.Store,
 	opts ...memory.Option,
 ) Option {
-	return func(v *VoiceAgent) {
+	return func(v *Agent) {
 		v.memoryID = id
 		v.memory = store
 		cfg := memory.Apply(opts...)
@@ -184,7 +184,7 @@ func WithMemory(
 // Mirrors agent.WithSession. If store is nil the option is a no-op. If id
 // does not exist in the store it is created.
 func WithSession(id string, store session.Store) Option {
-	return func(v *VoiceAgent) {
+	return func(v *Agent) {
 		if store == nil {
 			return
 		}

@@ -140,14 +140,6 @@ func (f *fakeLLM) sendMessageCallCount() int {
 	return f.sendMsgCalls
 }
 
-func (f *fakeLLM) setSendMessageScript(
-	fn func(msgs []message.Message) (*llm.Response, error),
-) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.sendMsgScript = fn
-}
-
 func (f *fakeLLM) SendMessagesWithStructuredOutput(
 	context.Context,
 	[]message.Message,
@@ -183,12 +175,6 @@ func (f *fakeSTT) pushFinal(
 	text string,
 ) {
 	f.push(stt.StreamResult{Text: text, IsFinal: true})
-}
-
-func (f *fakeSTT) pushPartial(
-	text string,
-) {
-	f.push(stt.StreamResult{Text: text, IsFinal: false})
 }
 
 func (f *fakeSTT) StreamTranscribe(

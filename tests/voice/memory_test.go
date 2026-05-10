@@ -111,16 +111,6 @@ func (f *fakeMemory) Update(
 	return nil
 }
 
-func (f *fakeMemory) storedFacts() []string {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	out := make([]string, len(f.stored))
-	for i, e := range f.stored {
-		out[i] = e.Content
-	}
-	return out
-}
-
 func (f *fakeMemory) searchCount() int {
 	f.mu.Lock()
 	defer f.mu.Unlock()

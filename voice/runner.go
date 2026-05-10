@@ -19,13 +19,13 @@ const (
 )
 
 // run drives a single conversation. It is invoked from a goroutine spawned by
-// VoiceAgent.StartConversation and never returns until the conversation ends
+// Agent.StartConversation and never returns until the conversation ends
 // (ctx cancelled, transport closed, or unrecoverable error). The error is
 // stored on the Conversation and surfaced via Wait; the events channel is
 // closed before run returns.
 func (c *Conversation) run(
 	ctx context.Context,
-	v *VoiceAgent,
+	v *Agent,
 	audio AudioTransport,
 ) {
 	defer close(c.events)
@@ -278,6 +278,7 @@ func (c *Conversation) run(
 	emit(Event{Type: EventConversationEnd})
 
 	// Drain any STT results still in flight to release the streaming session.
+	//nolint:revive // empty body: discarding remaining results is the intent
 	for range sttResults {
 	}
 }
@@ -299,7 +300,7 @@ func initialHistory(systemPrompt string) []message.Message {
 // to the session (0 when no session is configured).
 func loadInitialHistory(
 	ctx context.Context,
-	v *VoiceAgent,
+	v *Agent,
 ) ([]message.Message, int, error) {
 	if v.session == nil {
 		return initialHistory(v.systemPrompt), 0, nil

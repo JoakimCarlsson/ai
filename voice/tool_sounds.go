@@ -94,7 +94,7 @@ func loopToolSound(ctx context.Context, clip []byte, out chan<- []byte) {
 // function scope (avoids accumulating defers across the iteration loop).
 func runToolsWithSound(
 	ctx context.Context,
-	v *VoiceAgent,
+	v *Agent,
 	text string,
 	toolCalls []message.ToolCall,
 	history *[]message.Message,

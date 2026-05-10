@@ -244,7 +244,7 @@ It mirrors `agent.WithSession` exactly — same `session.Store` and `session.Ses
 
 **Constraints:**
 
-- One session id per `VoiceAgent`. Concurrent conversations writing to the same id is not supported (last writer wins) — use one agent per id.
+- One session id per `Agent`. Concurrent conversations writing to the same id is not supported (last writer wins) — use one agent per id.
 - Persistence is batched per turn, not message-by-message. A crash mid-turn loses that turn's tail; the user message survives because it's appended just before the turn opens.
 
 ## Context-window management
@@ -402,7 +402,7 @@ See [`examples/voice/memory`](https://github.com/JoakimCarlsson/ai/tree/main/exa
 
 ## Handoffs
 
-`WithHandoffs` lets the LLM transfer control to another `VoiceAgent` mid-conversation. Each `HandoffConfig` registers a `transfer_to_<Name>` tool on the source agent. When the LLM calls it, the runner swaps the active agent for the rest of the conversation: target's system prompt, tools, LLM, hooks, context strategy, and (chained) handoffs all take over. Subsequent user turns continue with the new agent. Mirrors `agent.WithHandoffs`.
+`WithHandoffs` lets the LLM transfer control to another `Agent` mid-conversation. Each `HandoffConfig` registers a `transfer_to_<Name>` tool on the source agent. When the LLM calls it, the runner swaps the active agent for the rest of the conversation: target's system prompt, tools, LLM, hooks, context strategy, and (chained) handoffs all take over. Subsequent user turns continue with the new agent. Mirrors `agent.WithHandoffs`.
 
 ```go
 specialist := voice.New(llm, stt, tts,

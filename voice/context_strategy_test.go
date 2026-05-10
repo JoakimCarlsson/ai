@@ -51,7 +51,7 @@ func (f *fakeStrategy) callCount() int {
 // Strategy is invoked before each LLM call with the agent's system prompt,
 // tools, and the current message history.
 func TestContextStrategy_FitCalledWithExpectedInput(t *testing.T) {
-	strat := &fakeStrategy{}
+	strategy := &fakeStrategy{}
 	llmFake := &fakeLLM{}
 	llmFake.push(scriptedLLM(
 		llm.Event{Type: types.EventContentDelta, Content: "ok. "},
@@ -60,7 +60,7 @@ func TestContextStrategy_FitCalledWithExpectedInput(t *testing.T) {
 
 	a := newTestAgent(t, llmFake,
 		WithSystemPrompt("you are helpful"),
-		WithContextStrategy(strat, 8000),
+		WithContextStrategy(strategy, 8000),
 	)
 	defer a.cancel()
 
@@ -71,12 +71,12 @@ func TestContextStrategy_FitCalledWithExpectedInput(t *testing.T) {
 	a.cancel()
 	_ = a.conv.Wait()
 
-	if strat.callCount() != 1 {
-		t.Fatalf("expected Fit called once, got %d", strat.callCount())
+	if strategy.callCount() != 1 {
+		t.Fatalf("expected Fit called once, got %d", strategy.callCount())
 	}
-	strat.mu.Lock()
-	in := strat.lastInput
-	strat.mu.Unlock()
+	strategy.mu.Lock()
+	in := strategy.lastInput
+	strategy.mu.Unlock()
 
 	if in.SystemPrompt != "you are helpful" {
 		t.Fatalf(
@@ -98,7 +98,7 @@ func TestContextStrategy_FitCalledWithExpectedInput(t *testing.T) {
 // When the strategy returns a trimmed message list, that list is what
 // reaches the LLM, not the full history.
 func TestContextStrategy_TrimmedMessagesReachLLM(t *testing.T) {
-	strat := &fakeStrategy{
+	strategy := &fakeStrategy{
 		result: &tokens.StrategyResult{
 			Messages: []message.Message{
 				message.NewUserMessage("trimmed-only"),
@@ -113,7 +113,7 @@ func TestContextStrategy_TrimmedMessagesReachLLM(t *testing.T) {
 
 	a := newTestAgent(t, llmFake,
 		WithSystemPrompt("sys"),
-		WithContextStrategy(strat, 8000),
+		WithContextStrategy(strategy, 8000),
 	)
 	defer a.cancel()
 
@@ -150,7 +150,7 @@ func TestContextStrategy_SessionUpdatePersisted(t *testing.T) {
 		},
 	)
 
-	strat := &fakeStrategy{
+	strategy := &fakeStrategy{
 		result: &tokens.StrategyResult{
 			Messages: []message.Message{
 				message.NewUserMessage("just the new ask"),
@@ -171,7 +171,7 @@ func TestContextStrategy_SessionUpdatePersisted(t *testing.T) {
 	a := newTestAgent(t, llmFake,
 		WithSystemPrompt("sys"),
 		WithSession("sess-ctx", store),
-		WithContextStrategy(strat, 8000),
+		WithContextStrategy(strategy, 8000),
 	)
 	defer a.cancel()
 
@@ -239,12 +239,12 @@ func TestContextStrategy_NoStrategyPassesThrough(t *testing.T) {
 // Strategy errors propagate as conversation errors.
 func TestContextStrategy_FitErrorEndsConversation(t *testing.T) {
 	wantErr := errors.New("strategy boom")
-	strat := &fakeStrategy{err: wantErr}
+	strategy := &fakeStrategy{err: wantErr}
 	llmFake := &fakeLLM{}
 
 	a := newTestAgent(t, llmFake,
 		WithSystemPrompt("sys"),
-		WithContextStrategy(strat, 8000),
+		WithContextStrategy(strategy, 8000),
 	)
 	defer a.cancel()
 

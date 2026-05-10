@@ -24,12 +24,12 @@ const defaultReserveTokens int64 = 4096
 // subsequent user turns with the returned agent.
 func runAssistantTurn(
 	ctx context.Context,
-	v *VoiceAgent,
+	v *Agent,
 	history *[]message.Message,
 	emit func(Event),
 	ttsAudio chan<- []byte,
 	state *turnState,
-) (*VoiceAgent, error) {
+) (*Agent, error) {
 	active := v
 	i := 0
 	for i < active.maxToolIterations {
@@ -93,7 +93,7 @@ func runAssistantTurn(
 // tts.Generation.StreamAudio.
 func streamLLMAndSpeak(
 	ctx context.Context,
-	v *VoiceAgent,
+	v *Agent,
 	history *[]message.Message,
 	emit func(Event),
 	ttsAudio chan<- []byte,
@@ -435,7 +435,7 @@ func appendAssistantToolCalls(
 // turn's new messages.
 func applyContextStrategy(
 	ctx context.Context,
-	v *VoiceAgent,
+	v *Agent,
 	history *[]message.Message,
 ) ([]message.Message, error) {
 	if v.contextStrategy == nil {
@@ -469,7 +469,7 @@ func applyContextStrategy(
 	return result.Messages, nil
 }
 
-func resolveMaxTokens(v *VoiceAgent) int64 {
+func resolveMaxTokens(v *Agent) int64 {
 	if v.maxContextTokens > 0 {
 		return v.maxContextTokens
 	}

@@ -25,7 +25,7 @@ func (s *sentenceChunker) push(piece string) []string {
 
 	var out []string
 	start := 0
-	for i := 0; i < len(current); i++ {
+	for i := range len(current) {
 		c := current[i]
 		if c != '.' && c != '!' && c != '?' && c != '\n' {
 			continue

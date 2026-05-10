@@ -12,9 +12,9 @@ import (
 	"github.com/joakimcarlsson/ai/tts"
 )
 
-// VoiceAgent is the configured, reusable definition of a voice agent. One
-// VoiceAgent can power any number of concurrent Conversations.
-type VoiceAgent struct {
+// Agent is the configured, reusable definition of a voice agent. One
+// Agent can power any number of concurrent Conversations.
+type Agent struct {
 	llm               llm.LLM
 	stt               stt.SpeechToText
 	tts               tts.Generation
@@ -41,7 +41,7 @@ type VoiceAgent struct {
 // tools, and (when memory is configured without auto-extract) the memory
 // management tools. Toolsets are evaluated on each call so implementations
 // can return different tools depending on per-call ctx values.
-func (v *VoiceAgent) toolsForContext(ctx context.Context) []tool.BaseTool {
+func (v *Agent) toolsForContext(ctx context.Context) []tool.BaseTool {
 	hasToolsets := len(v.toolsets) > 0
 	hasMemoryTools := v.memory != nil && !v.autoExtract && v.memoryID != ""
 	if !hasToolsets && !hasMemoryTools {
@@ -60,7 +60,7 @@ func (v *VoiceAgent) toolsForContext(ctx context.Context) []tool.BaseTool {
 
 const defaultMaxToolIterations = 4
 
-// New constructs a VoiceAgent from the given clients and options. STT and TTS
+// New constructs a Agent from the given clients and options. STT and TTS
 // are passed as interfaces and are fully pluggable. The TTS client is type-
 // asserted for tts.StreamingTextProvider when a conversation opens; if absent,
 // the pipeline uses a sentence-buffered single-shot fallback.
@@ -69,8 +69,8 @@ func New(
 	sttClient stt.SpeechToText,
 	ttsClient tts.Generation,
 	opts ...Option,
-) *VoiceAgent {
-	v := &VoiceAgent{
+) *Agent {
+	v := &Agent{
 		llm:               llmClient,
 		stt:               sttClient,
 		tts:               ttsClient,
