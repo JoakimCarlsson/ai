@@ -1,4 +1,4 @@
-module github.com/joakimcarlsson/ai/examples/voice/web
+module github.com/joakimcarlsson/ai/examples/voice/handoff
 
 go 1.25.0
 
@@ -6,10 +6,7 @@ require (
 	github.com/coder/websocket v1.8.13
 	github.com/joakimcarlsson/ai/llm/openai v0.2.0
 	github.com/joakimcarlsson/ai/model v0.1.0
-	github.com/joakimcarlsson/ai/prompt v0.1.0
-	github.com/joakimcarlsson/ai/session v0.1.0
 	github.com/joakimcarlsson/ai/stt/assemblyai v0.1.0
-	github.com/joakimcarlsson/ai/tokens/sliding v0.1.0
 	github.com/joakimcarlsson/ai/tool v0.1.0
 	github.com/joakimcarlsson/ai/tts/deepgram v0.2.0
 	github.com/joakimcarlsson/ai/voice v0.0.0-00010101000000-000000000000
@@ -27,6 +24,7 @@ require (
 	github.com/joakimcarlsson/ai/llm v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/message v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/schema v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/session v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/stt v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/tokens v0.1.0 // indirect
 	github.com/joakimcarlsson/ai/tracing v0.1.0 // indirect

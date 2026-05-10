@@ -54,12 +54,15 @@ func scriptedLLM(events ...llm.Event) func(ctx context.Context) <-chan llm.Event
 }
 
 type fakeLLM struct {
-	mu       sync.Mutex
-	calls    int
-	scripts  []func(ctx context.Context) <-chan llm.Event
-	lastMsgs []message.Message
+	mu        sync.Mutex
+	id        string
+	calls     int
+	scripts   []func(ctx context.Context) <-chan llm.Event
+	lastMsgs  []message.Message
 	lastTools []tool.BaseTool
 }
+
+func newFakeLLM(id string) *fakeLLM { return &fakeLLM{id: id} }
 
 func (f *fakeLLM) push(script func(ctx context.Context) <-chan llm.Event) {
 	f.mu.Lock()

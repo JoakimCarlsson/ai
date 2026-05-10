@@ -157,6 +157,8 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 			return nil
 		}
 
+		activeAgent := v
+
 		for {
 			select {
 			case <-gctx.Done():
@@ -179,7 +181,8 @@ func (c *Conversation) run(ctx context.Context, v *VoiceAgent, audio AudioTransp
 				state.dropAudio.Store(false)
 				state.agentSpeaking.Store(false)
 
-				err := runAssistantTurn(turnCtx, v, &history, emit, ttsAudio, state)
+				newAgent, err := runAssistantTurn(turnCtx, activeAgent, &history, emit, ttsAudio, state)
+				activeAgent = newAgent
 
 				turnCancel()
 				state.cancelTurn.Store(nil)

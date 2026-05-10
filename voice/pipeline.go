@@ -18,6 +18,10 @@ const defaultReserveTokens int64 = 4096
 // runAssistantTurn drives the assistant's response loop for one user message.
 // It calls the LLM, speaks the streamed text via TTS, and runs any tool calls
 // up to v.maxToolIterations times before yielding control back to the caller.
+//
+// Returns the active agent at the end of the turn — possibly different from
+// the input agent if a handoff fired during this turn. The caller continues
+// subsequent user turns with the returned agent.
 func runAssistantTurn(
 	ctx context.Context,
 	v *VoiceAgent,
@@ -25,11 +29,13 @@ func runAssistantTurn(
 	emit func(Event),
 	ttsAudio chan<- []byte,
 	state *turnState,
-) error {
-	for i := 0; i < v.maxToolIterations; i++ {
-		text, toolCalls, err := streamLLMAndSpeak(ctx, v, history, emit, ttsAudio, state)
+) (*VoiceAgent, error) {
+	active := v
+	i := 0
+	for i < active.maxToolIterations {
+		text, toolCalls, err := streamLLMAndSpeak(ctx, active, history, emit, ttsAudio, state)
 		if err != nil {
-			return err
+			return active, err
 		}
 
 		if len(toolCalls) == 0 {
@@ -40,19 +46,28 @@ func runAssistantTurn(
 				))
 			}
 			emit(Event{Type: EventAssistantDone, Timestamp: time.Now(), Text: text})
-			return nil
+			return active, nil
 		}
 
 		appendAssistantToolCalls(history, text, toolCalls)
 		if err := runToolsWithSound(
-			ctx, v, text, toolCalls, history, emit, ttsAudio,
+			ctx, active, text, toolCalls, history, emit, ttsAudio,
 		); err != nil {
-			return err
+			return active, err
 		}
+
+		if h := detectHandoff(toolCalls, active.handoffs); h != nil {
+			active = h.Agent
+			*history = rebuildMessagesForHandoff(active, *history)
+			i = 0
+			continue
+		}
+
+		i++
 	}
 
 	emit(Event{Type: EventAssistantDone, Timestamp: time.Now()})
-	return nil
+	return active, nil
 }
 
 // streamLLMAndSpeak runs the LLM stream and concurrently feeds completed

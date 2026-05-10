@@ -70,6 +70,7 @@ if err := conv.Wait(); err != nil {
 | `WithSession(id, store)` | Persist conversation history to a `session.Store`; load on start, append at turn boundaries | disabled |
 | `WithContextStrategy(strategy, maxTokens)` | Trim, slide, or summarize the message list before each LLM call when it exceeds `maxTokens` | disabled |
 | `WithHooks(hooks...)` | Synchronous interception points (mutate / deny / observe) at user-message commit, LLM call, tool use, lifecycle | disabled |
+| `WithHandoffs(configs...)` | Register `transfer_to_<Name>` tools that swap the active agent mid-conversation | disabled |
 
 Sample rate, channel count, voice, and TTS output format are configured on the STT and TTS clients you pass to `voice.New`. The voice package does not redeclare them.
 
@@ -322,6 +323,38 @@ Multiple `Hooks` structs can be passed; they run in registration order and `Hook
 **Modify semantics:** the modified values flow forward — modified user text reaches history and the LLM; modified `Messages` / `Tools` reach the LLM; modified tool input reaches the tool; modified tool output replaces what lands in history. `OnToolError` modify additionally clears the error flag so downstream sees a successful tool result.
 
 Hooks have no `OnEvent` mass-fanout — that's what `Conversation.Events()` is for.
+
+## Handoffs
+
+`WithHandoffs` lets the LLM transfer control to another `VoiceAgent` mid-conversation. Each `HandoffConfig` registers a `transfer_to_<Name>` tool on the source agent. When the LLM calls it, the runner swaps the active agent for the rest of the conversation: target's system prompt, tools, LLM, hooks, context strategy, and (chained) handoffs all take over. Subsequent user turns continue with the new agent. Mirrors `agent.WithHandoffs`.
+
+```go
+specialist := voice.New(llm, stt, tts,
+    voice.WithSystemPrompt("You are a billing specialist."),
+    voice.WithTools(issueRefundTool{}),
+)
+
+triage := voice.New(llm, stt, tts,
+    voice.WithSystemPrompt("You answer general questions and transfer billing questions."),
+    voice.WithHandoffs(voice.HandoffConfig{
+        Name:        "billing",
+        Description: "Use this when the user asks about charges, refunds, or invoices.",
+        Agent:       specialist,
+    }),
+)
+```
+
+The triage agent's tool list will include `transfer_to_billing` — described to the LLM via the `Description` field. When the user says something money-related, the LLM calls the tool; the runner detects it, rebuilds history with the specialist's system prompt prepended (old system messages stripped, all non-system messages preserved), and continues. The "Transferring to billing" tool result lands in history so the specialist's first reply has full context.
+
+**Constraints (v1):**
+
+- **STT/TTS stay bound to the original agent.** The target's STT/TTS clients are ignored — the audio path doesn't blink at the transfer boundary, but the agent voice is the same. Different voices per agent require restarting the audio streams; future slice.
+- **Session is untouched.** Handoff modifies the runner's in-memory history only. The session retains the original system prompt at position 0. On reconnect to a session that experienced a handoff, the user resumes with the original agent (carrying the post-handoff history).
+- **Pre/post-handoff hooks** aren't dedicated callbacks. The handoff is a regular tool, so it goes through `PreToolUse` / `PostToolUse` like any other tool — observe and deny work today.
+
+Chained handoffs are supported: A → B → C if B has its own `WithHandoffs(C)`. The runner walks the chain in a single conversation.
+
+See [`examples/voice/handoff`](https://github.com/JoakimCarlsson/ai/tree/main/examples/voice/handoff) for an end-to-end demo.
 
 ## How it works
 

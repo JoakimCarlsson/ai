@@ -60,6 +60,24 @@ func WithBargeIn(policy BargeInPolicy) Option {
 	}
 }
 
+// WithHandoffs registers handoff targets that the LLM may transfer control
+// to. For each config a "transfer_to_<Name>" tool is added to v.tools so
+// the LLM can invoke the handoff. When the runner detects a handoff tool
+// call it swaps the active agent for the rest of the conversation —
+// the target's system prompt, tools, LLM, hooks, context strategy, and
+// chained handoffs all take over. The target's STT/TTS clients are
+// ignored; the audio path stays bound to the original agent.
+//
+// Mirrors agent.WithHandoffs.
+func WithHandoffs(configs ...HandoffConfig) Option {
+	return func(v *VoiceAgent) {
+		v.handoffs = append(v.handoffs, configs...)
+		for _, cfg := range configs {
+			v.tools = append(v.tools, newHandoffTool(cfg))
+		}
+	}
+}
+
 // WithHooks registers callbacks invoked at synchronous interception points
 // during a conversation: lifecycle, user-message commit, LLM call boundary,
 // tool-use boundary, tool error. Multiple Hooks structs may be passed; they
