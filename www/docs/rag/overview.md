@@ -139,9 +139,67 @@ for _, c := range chunks {
 }
 ```
 
-## Built-in store
+## Stores
 
-`rag/store/memory.New()` returns an in-process slice + RWMutex store with cosine-similarity scoring. Suitable for examples, tests, and small-scale prototypes; data is lost when the process exits. Use a dedicated `rag/store/*` implementation (e.g., pgvector when it lands) for persistence and scale.
+### In-memory (`rag/store/memory`)
+
+```go
+import ragmem "github.com/joakimcarlsson/ai/rag/store/memory"
+
+store := ragmem.New()
+```
+
+Slice + RWMutex with cosine-similarity scoring. Brute-force linear scan over every chunk on every query, no index. Suitable for examples, tests, and small-scale prototypes; data is lost when the process exits, so every restart re-embeds the corpus from scratch. Fine up to a few thousand chunks; falls over above ~100k.
+
+### PostgreSQL + pgvector (`rag/store/pgvector`)
+
+```go
+import pgstore "github.com/joakimcarlsson/ai/rag/store/pgvector"
+
+store, err := pgstore.New(ctx,
+    "postgres://user:pass@localhost:5432/rag?sslmode=disable",
+    1536, // must match the embedder's dimensionality
+    pgstore.WithTable("rag_chunks"), // optional, defaults to "rag_chunks"
+)
+```
+
+Persistent store backed by a Postgres database with the [pgvector](https://github.com/pgvector/pgvector) extension. The table and HNSW index are created on first call. Embeddings survive process restarts, so re-running an ingest pipeline only embeds documents that are new or changed (the example under `examples/agent/rag-pgvector/` shows the pattern using a content hash in chunk metadata).
+
+Schema (auto-created):
+
+```sql
+CREATE TABLE rag_chunks (
+    id           TEXT PRIMARY KEY,
+    kb_id        TEXT NOT NULL,
+    document_id  TEXT NOT NULL,
+    content      TEXT NOT NULL,
+    chunk_index  INT  NOT NULL,
+    metadata     JSONB,
+    model        TEXT,
+    embedding    vector(<dims>),
+    created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX rag_chunks_hnsw_idx ON rag_chunks USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX rag_chunks_kb_idx   ON rag_chunks (kb_id);
+```
+
+The `model` column carries `EmbeddedChunk.Model` so you can detect drift if you switch embedders.
+
+Local dev: a one-line docker-compose using the pgvector image is included with the example:
+
+```yaml
+services:
+  postgres:
+    image: pgvector/pgvector:pg18
+    environment: { POSTGRES_USER: rag, POSTGRES_PASSWORD: rag, POSTGRES_DB: rag }
+    ports: ["5433:5432"]
+    volumes: [rag_pgdata:/var/lib/postgresql]
+volumes: { rag_pgdata: }
+```
+
+### Combining with `memory/pgvector`
+
+Memory and the knowledge base are independent stores. If both are configured, they each query their own table on every `Chat` and embed the user message separately, so you'll see two embedding API calls per turn. Schemas don't collide (`memories` table vs `rag_chunks` table), and you can share a single Postgres database.
 
 ## Voice
 
@@ -160,5 +218,6 @@ Recall fires on the first LLM iteration of each user turn and is cached on the p
 
 ## Examples
 
-- `examples/agent/rag/` — CLI: load markdown into a KB, ask a question, print a grounded answer
+- `examples/agent/rag/` — CLI eval harness: golden retrieval set, LLM-as-judge for faithfulness, retrieval recall + MRR over an in-memory store
+- `examples/agent/rag-pgvector/` — same pipeline backed by Postgres + pgvector via docker-compose; demonstrates persistence and content-hash skip on re-runs
 - `examples/voice/rag/` — web/voice version of the same pattern with an in-browser UI

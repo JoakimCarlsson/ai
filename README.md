@@ -19,7 +19,7 @@ SDKs you actually use.
 - **LLM** — Chat, streaming, tool calling, structured output, reasoning
 - **Agent framework** — Sub-agents, handoffs, fan-out, sessions, persistent memory, context strategies
 - **Voice agent** — Low-latency streaming STT → LLM → TTS pipeline with barge-in, filler audio, tool-call sounds, sessions, hooks, handoffs, toolsets, and memory
-- **RAG pipeline** — Ingest, chunk, embed, store, and retrieve from a knowledge base; auto-injection into agent and voice calls
+- **RAG pipeline** — Ingest, chunk, embed, store, and retrieve from a knowledge base; auto-injection into agent and voice calls. In-memory store for prototypes, Postgres + pgvector for persistence
 - **Embeddings** — Text, multimodal, and contextualized
 - **Image generation** — OpenAI, Gemini, xAI
 - **Audio** — TTS (ElevenLabs, OpenAI, Google Cloud, Azure Speech) and STT (OpenAI Whisper, ElevenLabs Scribe, Deepgram, AssemblyAI, Google Cloud)
