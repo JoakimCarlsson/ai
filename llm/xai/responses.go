@@ -52,7 +52,7 @@ type WebSearchOpts struct {
 	UserLocation      *UserLocation
 }
 
-// XSearchOpts configures the x_search built-in tool which searches X (Twitter)
+// XSearchOpts configures the x_search built-in tool which searches X
 // posts. Handle limits and date ranges follow xAI's documented bounds.
 type XSearchOpts struct {
 	AllowedXHandles          []string
@@ -157,7 +157,7 @@ func WithWebSearch(opts ...WebSearchOpts) ResponsesOption {
 	}
 }
 
-// WithXSearch enables the x_search built-in tool for searching X (Twitter) posts.
+// WithXSearch enables the x_search built-in tool for searching X posts.
 func WithXSearch(opts ...XSearchOpts) ResponsesOption {
 	return func(o *ResponsesOptions) {
 		entry := map[string]any{"type": "x_search"}
@@ -651,9 +651,8 @@ func (c *xaiResponsesClient) runStream(
 					}
 
 				case "response.output_text.annotation.added":
-					if ann, ok := annotationAsMap(event.Annotation); ok &&
-						ann["type"] == "url_citation" {
-						citations = append(citations, ann)
+					if cit, ok := urlCitationFromAnnotation(event.Annotation); ok {
+						citations = append(citations, cit)
 					}
 
 				case "response.completed":
@@ -709,14 +708,28 @@ func (c *xaiResponsesClient) runStream(
 	return eventChan
 }
 
-func annotationAsMap(a any) (map[string]any, bool) {
+// urlCitationFromAnnotation extracts a url_citation streaming annotation into
+// the same flat shape produced by [xaiResponsesClient.extractOutput], so
+// streaming and non-streaming consumers see identical citation entries.
+func urlCitationFromAnnotation(a any) (map[string]any, bool) {
 	b, err := json.Marshal(a)
 	if err != nil {
 		return nil, false
 	}
-	var m map[string]any
-	if err := json.Unmarshal(b, &m); err != nil {
+	var raw struct {
+		Type       string `json:"type"`
+		URL        string `json:"url"`
+		Title      string `json:"title"`
+		StartIndex int64  `json:"start_index"`
+		EndIndex   int64  `json:"end_index"`
+	}
+	if err := json.Unmarshal(b, &raw); err != nil || raw.Type != "url_citation" {
 		return nil, false
 	}
-	return m, true
+	return map[string]any{
+		"url":         raw.URL,
+		"title":       raw.Title,
+		"start_index": raw.StartIndex,
+		"end_index":   raw.EndIndex,
+	}, true
 }
