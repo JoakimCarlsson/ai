@@ -744,7 +744,8 @@ func urlCitationFromAnnotation(a any) (map[string]any, bool) {
 		StartIndex int64  `json:"start_index"`
 		EndIndex   int64  `json:"end_index"`
 	}
-	if err := json.Unmarshal(b, &raw); err != nil || raw.Type != "url_citation" {
+	if err := json.Unmarshal(b, &raw); err != nil ||
+		raw.Type != "url_citation" {
 		return nil, false
 	}
 	return map[string]any{
