@@ -112,6 +112,7 @@ import (
     llmgemini "github.com/joakimcarlsson/ai/llm/gemini"
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
     llmgroq "github.com/joakimcarlsson/ai/llm/groq"
+    llmxai "github.com/joakimcarlsson/ai/llm/xai"
 )
 
 // Anthropic web_search
@@ -147,6 +148,14 @@ groq := llmgroq.NewCompoundLLM(
     llmgroq.WithCompoundModel(model.Model{APIModel: "groq/compound"}),
     llmgroq.WithBrowserSearch(),
 )
+
+// xAI Responses API: web_search, x_search, code_execution
+xai := llmxai.NewResponsesLLM(
+    llmxai.WithResponsesAPIKey(os.Getenv("XAI_API_KEY")),
+    llmxai.WithResponsesModel(model.XAIModels[model.XAIGrok4]),
+    llmxai.WithWebSearch(),
+    llmxai.WithXSearch(),
+)
 ```
 
 Built-in tool results — citations, search chunks, executed-tool summaries —
@@ -172,6 +181,7 @@ The keys vary per provider:
 | Gemini | `gemini.url_context` | `map[string]any` — retrieved URLs and status |
 | OpenAI | `openai.url_citations` | `[]map[string]any` — URL, title, start/end indices |
 | Groq | `groq.executed_tools` | `[]map[string]any` — Groq's raw executed-tool entries |
+| xAI | `xai.citations` | `[]map[string]any` — URL, title, start/end indices |
 
 Built-in tools are **not dispatched through the agent loop** — they don't
 appear as `message.ToolCall` entries and don't go through `registry.Execute`.

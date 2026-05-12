@@ -195,6 +195,29 @@ client := llmgroq.NewCompoundLLM(
 The regular `llmgroq.NewLLM` wrapper stays available for OpenAI-compatible
 chat without built-ins.
 
+xAI — `web_search`, `x_search`, `code_execution` via the Responses API (use
+`NewResponsesLLM` instead of `NewLLM`):
+
+```go
+import llmxai "github.com/joakimcarlsson/ai/llm/xai"
+
+client := llmxai.NewResponsesLLM(
+    llmxai.WithResponsesAPIKey(os.Getenv("XAI_API_KEY")),
+    llmxai.WithResponsesModel(model.XAIModels[model.XAIGrok4]),
+    llmxai.WithWebSearch(llmxai.WebSearchOpts{
+        SearchContextSize: llmxai.SearchContextMedium,
+    }),
+    llmxai.WithXSearch(llmxai.XSearchOpts{
+        AllowedXHandles: []string{"xai"},
+        FromDate:        "2026-01-01",
+    }),
+    llmxai.WithCodeExecution(),
+)
+```
+
+The thin `llmxai.NewLLM` wrapper remains available for OpenAI-compatible
+chat without built-ins.
+
 ## Cross-vendor wrappers
 
 `llm/azure` (Azure OpenAI), `llm/vertexai` (Gemini on Vertex), and
@@ -234,20 +257,21 @@ client := llmvertex.NewLLM(
 
 ## OpenAI-compatible providers (BYOM)
 
-OpenRouter, xAI, Mistral, Ollama, LocalAI, etc. — point `llm/openai` at the
-right base URL:
+OpenRouter, Mistral, Ollama, LocalAI, etc. — point `llm/openai` at the right
+base URL:
 
 ```go
-xai := llmopenai.NewLLM(
-    llmopenai.WithAPIKey(os.Getenv("XAI_API_KEY")),
-    llmopenai.WithBaseURL("https://api.x.ai/v1"),
-    llmopenai.WithModel(model.XAIModels[model.Grok2]),
+openrouter := llmopenai.NewLLM(
+    llmopenai.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
+    llmopenai.WithBaseURL("https://openrouter.ai/api/v1"),
+    llmopenai.WithModel(model.OpenAIModels[model.GPT5]),
 )
 ```
 
-Groq is published as its own module (`llm/groq`) so it can expose compound-model
-built-ins on top of the OpenAI-compatible surface. Use `llmgroq.NewLLM` for the
-thin wrapper or `llmgroq.NewCompoundLLM` for built-in tools.
+Groq and xAI are published as their own modules (`llm/groq`, `llm/xai`) so
+they can expose vendor-specific built-in tools on top of the OpenAI-compatible
+surface. Use the thin `NewLLM` constructor in each for plain chat, or the
+dedicated `NewCompoundLLM` / `NewResponsesLLM` for built-in tools.
 
 For a managed registry of these, see [BYOM](../advanced/byom.md).
 

@@ -1,9 +1,10 @@
 // Example: provider-native built-in tools.
 //
-// Set AI_PROVIDER to one of: anthropic, gemini, openai-responses, groq-compound.
-// Then provide the matching API key env var. The example asks a question that
-// requires the built-in tool to answer correctly (e.g. "what's the latest stable
-// Go release?") and prints the assistant content plus any provider metadata.
+// Set AI_PROVIDER to one of: anthropic, gemini, openai-responses, groq-compound,
+// xai-responses. Then provide the matching API key env var. The example asks a
+// question that requires the built-in tool to answer correctly (e.g. "what's the
+// latest stable Go release?") and prints the assistant content plus any
+// provider metadata.
 package main
 
 import (
@@ -19,6 +20,7 @@ import (
 	llmgemini "github.com/joakimcarlsson/ai/llm/gemini"
 	llmgroq "github.com/joakimcarlsson/ai/llm/groq"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
+	llmxai "github.com/joakimcarlsson/ai/llm/xai"
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/model"
 )
@@ -82,9 +84,17 @@ func newLLM() (llm.LLM, string) {
 			llmgroq.WithBrowserSearch(),
 		), provider
 
+	case "xai-responses":
+		return llmxai.NewResponsesLLM(
+			llmxai.WithResponsesAPIKey(requiredEnv("XAI_API_KEY")),
+			llmxai.WithResponsesModel(model.XAIModels[model.XAIGrok4]),
+			llmxai.WithResponsesMaxTokens(1024),
+			llmxai.WithWebSearch(),
+		), provider
+
 	default:
 		log.Fatalf(
-			"unsupported AI_PROVIDER %q (use anthropic, gemini, openai-responses, or groq-compound)",
+			"unsupported AI_PROVIDER %q (use anthropic, gemini, openai-responses, groq-compound, or xai-responses)",
 			provider,
 		)
 		return nil, ""

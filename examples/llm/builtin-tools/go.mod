@@ -8,6 +8,7 @@ require (
 	github.com/joakimcarlsson/ai/llm/gemini v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/llm/groq v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/llm/openai v0.2.0
+	github.com/joakimcarlsson/ai/llm/xai v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/message v0.1.0
 	github.com/joakimcarlsson/ai/model v0.1.0
 )
@@ -96,6 +97,7 @@ replace (
 	github.com/joakimcarlsson/ai/llm/gemini => ../../../llm/gemini
 	github.com/joakimcarlsson/ai/llm/groq => ../../../llm/groq
 	github.com/joakimcarlsson/ai/llm/openai => ../../../llm/openai
+	github.com/joakimcarlsson/ai/llm/xai => ../../../llm/xai
 	github.com/joakimcarlsson/ai/message => ../../../message
 	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/schema => ../../../schema

@@ -90,6 +90,7 @@ Set the provider key used by the example you run:
 - `VOYAGE_API_KEY` for Voyage embedding and reranker examples
 - `GEMINI_API_KEY` for Gemini LLM, image, batch, and agent examples
 - `GROQ_API_KEY` for the `groq-compound` provider in `llm/builtin-tools`
+- `XAI_API_KEY` for the `xai-responses` provider in `llm/builtin-tools`
 - `ELEVENLABS_API_KEY` for ElevenLabs TTS examples
 - `DEEPGRAM_API_KEY` for Deepgram STT examples
 - `COHERE_API_KEY` for Cohere embedding and reranker examples
