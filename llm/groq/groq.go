@@ -1,8 +1,10 @@
-// Package groq provides an OpenAI-compatible LLM client targeting Groq.
+// Package groq provides LLM clients targeting Groq.
 //
-// This is a thin wrapper over [llm/openai] fixed to Groq's chat-completions
-// endpoint. Vendor-specific extensions (Groq's compound systems, etc.) are not
-// exposed here.
+// [NewLLM] is a thin wrapper over [llm/openai] for users who just want
+// Groq's fast OpenAI-compatible chat-completions endpoint. [NewCompoundLLM]
+// is a standalone client purpose-built for Groq's compound models, with typed
+// support for the server-side built-in tools (browser_search, code_execution,
+// visit_website) and structured executed_tools metadata.
 package groq
 
 import (

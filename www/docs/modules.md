@@ -44,9 +44,10 @@ Each carries exactly one vendor SDK.
 
 | Module | Vendor SDK |
 |---|---|
-| `llm/openai` | `openai-go` (also Groq, OpenRouter, xAI, Mistral via `WithBaseURL`) |
-| `llm/anthropic` | `anthropic-sdk-go` (also Bedrock backend) |
-| `llm/gemini` | `google.golang.org/genai` |
+| `llm/openai` | `openai-go` — Chat Completions via `NewLLM` (also OpenRouter, xAI, Mistral via `WithBaseURL`); Responses API with server-side built-in tools via `NewResponsesLLM` |
+| `llm/anthropic` | `anthropic-sdk-go` (also Bedrock backend); server-side `web_search` via `WithWebSearch` |
+| `llm/gemini` | `google.golang.org/genai`; server-side `google_search`, `code_execution`, `url_context` via dedicated options |
+| `llm/groq` | `openai-go` — fast OpenAI-compatible chat via `NewLLM`; compound-model built-ins (`browser_search`, `code_execution`, `visit_website`) via `NewCompoundLLM` |
 | `llm/vertexai` | `google.golang.org/genai` (Vertex AI backend) |
 | `llm/azure` | `openai-go` against Azure OpenAI |
 | `llm/bedrock` | `aws-sdk-go-v2` Bedrock Runtime |

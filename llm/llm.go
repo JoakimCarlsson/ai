@@ -119,6 +119,9 @@ type Response struct {
 	FinishReason               message.FinishReason
 	StructuredOutput           *string
 	UsedNativeStructuredOutput bool
+	// ProviderMetadata carries provider-specific structured data from
+	// server-side built-in tools. Keys are namespaced per provider.
+	ProviderMetadata map[string]any
 }
 
 // Event represents a single event in a streaming LLM response.
