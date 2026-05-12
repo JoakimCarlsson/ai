@@ -1,9 +1,10 @@
-// File: compound.go — Standalone client for Groq's compound models, which
-// expose server-side built-in tools (browser_search, code_execution,
-// visit_website). Compound features are not modeled by the OpenAI SDK; this
-// client borrows the SDK for HTTP transport but builds requests and parses
-// responses on its own. The thin OpenAI-compatible wrapper [NewLLM] remains
-// the right choice for users who don't need compound features.
+// Package groq compound.go defines a standalone client for Groq's compound
+// models, which expose server-side built-in tools (browser_search,
+// code_execution, visit_website). Compound features are not modeled by the
+// OpenAI SDK; this client borrows the SDK for HTTP transport but builds
+// requests and parses responses on its own. The thin OpenAI-compatible
+// wrapper [NewLLM] remains the right choice for users who don't need
+// compound features.
 package groq
 
 import (

@@ -1,9 +1,10 @@
-// File: responses.go — Standalone client for xAI's Responses API, which
-// exposes server-side built-in tools (web_search, x_search, code_execution).
-// xAI's Responses endpoint mirrors OpenAI's wire format, so this client
-// reuses openai-go for HTTP transport but builds tool entries directly so
-// the xAI-specific x_search tool is first-class. The thin OpenAI-compatible
-// wrapper [NewLLM] remains the right choice for users without built-ins.
+// Package xai responses.go defines a standalone client for xAI's Responses
+// API, which exposes server-side built-in tools (web_search, x_search,
+// code_execution). xAI's Responses endpoint mirrors OpenAI's wire format,
+// so this client reuses openai-go for HTTP transport but builds tool entries
+// directly so the xAI-specific x_search tool is first-class. The thin
+// OpenAI-compatible wrapper [NewLLM] remains the right choice for users
+// without built-ins.
 package xai
 
 import (
@@ -448,8 +449,7 @@ func (c *xaiResponsesClient) finishReason(
 	if resp == nil {
 		return message.FinishReasonUnknown
 	}
-	switch resp.IncompleteDetails.Reason {
-	case "max_output_tokens":
+	if resp.IncompleteDetails.Reason == "max_output_tokens" {
 		return message.FinishReasonMaxTokens
 	}
 	for _, item := range resp.Output {

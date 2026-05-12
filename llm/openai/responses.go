@@ -1,8 +1,9 @@
-// File: responses.go — OpenAI Responses API client. The Responses API is a
-// separate surface from Chat Completions and is the only place OpenAI exposes
-// server-side built-in tools (web_search, file_search, code_interpreter).
-// Construct with [NewResponsesLLM]; the Chat Completions client ([NewLLM])
-// remains untouched and is the right choice for OpenAI-compatible wrappers.
+// Package openai responses.go provides the OpenAI Responses API client. The
+// Responses API is a separate surface from Chat Completions and is the only
+// place OpenAI exposes server-side built-in tools (web_search, file_search,
+// code_interpreter). Construct with [NewResponsesLLM]; the Chat Completions
+// client ([NewLLM]) remains untouched and is the right choice for
+// OpenAI-compatible wrappers.
 package openai
 
 import (
@@ -467,8 +468,7 @@ func (c *responsesClient) finishReason(
 	if resp == nil {
 		return message.FinishReasonUnknown
 	}
-	switch resp.IncompleteDetails.Reason {
-	case "max_output_tokens":
+	if resp.IncompleteDetails.Reason == "max_output_tokens" {
 		return message.FinishReasonMaxTokens
 	}
 	for _, item := range resp.Output {
