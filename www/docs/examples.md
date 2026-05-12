@@ -32,6 +32,7 @@ install the modules you import with `go get`.
 
 - `llm/openai-chat` — basic chat completion with `llm/openai`
 - `llm/anthropic-stream` — streaming chat with `llm/anthropic`
+- `llm/builtin-tools` — server-side built-in tools across `anthropic`, `gemini`, `openai-responses`, `groq-compound`
 - `embeddings/voyage` — text embeddings with `embeddings/voyage`
 - `image/gemini` — image generation with `image/gemini`
 - `tts/elevenlabs` — text-to-speech with `tts/elevenlabs`
@@ -88,6 +89,8 @@ Set the provider key used by the example you run:
 - `ANTHROPIC_API_KEY` for Anthropic LLM, batch, and agent examples
 - `VOYAGE_API_KEY` for Voyage embedding and reranker examples
 - `GEMINI_API_KEY` for Gemini LLM, image, batch, and agent examples
+- `GROQ_API_KEY` for the `groq-compound` provider in `llm/builtin-tools`
+- `XAI_API_KEY` for the `xai-responses` provider in `llm/builtin-tools`
 - `ELEVENLABS_API_KEY` for ElevenLabs TTS examples
 - `DEEPGRAM_API_KEY` for Deepgram STT examples
 - `COHERE_API_KEY` for Cohere embedding and reranker examples

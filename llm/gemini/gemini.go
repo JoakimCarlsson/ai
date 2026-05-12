@@ -47,6 +47,7 @@ type Options struct {
 	presencePenalty  *float64
 	seed             *int64
 	thinkingLevel    *ThinkingLevel
+	builtinTools     []*genai.Tool
 }
 
 // Option configures Options.
@@ -119,6 +120,36 @@ func WithSeed(seed int64) Option { return func(o *Options) { o.seed = &seed } }
 // WithThinkingLevel sets the thinking level for Gemini models that support reasoning.
 func WithThinkingLevel(level ThinkingLevel) Option {
 	return func(o *Options) { o.thinkingLevel = &level }
+}
+
+// WithGoogleSearch enables Gemini's built-in Google Search grounding tool.
+// Requires Gemini 2.x or newer; Gemini 1.5 used a different tool type that is
+// not exposed here.
+func WithGoogleSearch() Option {
+	return func(o *Options) {
+		o.builtinTools = append(o.builtinTools, &genai.Tool{
+			GoogleSearch: &genai.GoogleSearch{},
+		})
+	}
+}
+
+// WithURLContext enables Gemini's url_context tool for grounding on URLs in the
+// prompt.
+func WithURLContext() Option {
+	return func(o *Options) {
+		o.builtinTools = append(o.builtinTools, &genai.Tool{
+			URLContext: &genai.URLContext{},
+		})
+	}
+}
+
+// WithCodeExecution enables Gemini's built-in code_execution tool.
+func WithCodeExecution() Option {
+	return func(o *Options) {
+		o.builtinTools = append(o.builtinTools, &genai.Tool{
+			CodeExecution: &genai.ToolCodeExecution{},
+		})
+	}
 }
 
 // RetryConfig provides retry settings tuned for Gemini API behavior.
@@ -254,30 +285,33 @@ func (c *Client) convertMessages(
 }
 
 func (c *Client) convertTools(tools []tool.BaseTool) []*genai.Tool {
-	geminiTool := &genai.Tool{}
-	geminiTool.FunctionDeclarations = make(
-		[]*genai.FunctionDeclaration,
-		0,
-		len(tools),
-	)
-
-	for _, t := range tools {
-		info := t.Info()
-		geminiTool.FunctionDeclarations = append(
-			geminiTool.FunctionDeclarations,
-			&genai.FunctionDeclaration{
-				Name:        info.Name,
-				Description: info.Description,
-				Parameters: &genai.Schema{
-					Type:       genai.TypeObject,
-					Properties: convertSchemaProperties(info.Parameters),
-					Required:   info.Required,
+	var out []*genai.Tool
+	if len(tools) > 0 {
+		geminiTool := &genai.Tool{
+			FunctionDeclarations: make(
+				[]*genai.FunctionDeclaration,
+				0,
+				len(tools),
+			),
+		}
+		for _, t := range tools {
+			info := t.Info()
+			geminiTool.FunctionDeclarations = append(
+				geminiTool.FunctionDeclarations,
+				&genai.FunctionDeclaration{
+					Name:        info.Name,
+					Description: info.Description,
+					Parameters: &genai.Schema{
+						Type:       genai.TypeObject,
+						Properties: convertSchemaProperties(info.Parameters),
+						Required:   info.Required,
+					},
 				},
-			},
-		)
+			)
+		}
+		out = append(out, geminiTool)
 	}
-
-	return []*genai.Tool{geminiTool}
+	return append(out, c.options.builtinTools...)
 }
 
 func (c *Client) finishReason(reason genai.FinishReason) message.FinishReason {
@@ -342,7 +376,7 @@ func (c *Client) buildConfig(
 		}
 	}
 
-	if len(tools) > 0 {
+	if len(tools) > 0 || len(c.options.builtinTools) > 0 {
 		config.Tools = c.convertTools(tools)
 	}
 
@@ -395,11 +429,7 @@ func (c *Client) SendMessages(
 
 			if len(resp.Candidates) > 0 && resp.Candidates[0].Content != nil {
 				for _, part := range resp.Candidates[0].Content.Parts {
-					switch {
-					case part.Thought && part.Text != "":
-					case part.Text != "":
-						content = string(part.Text)
-					case part.FunctionCall != nil:
+					if part.FunctionCall != nil {
 						id := "call_" + uuid.New().String()
 						args, _ := json.Marshal(part.FunctionCall.Args)
 						toolCalls = append(toolCalls, message.ToolCall{
@@ -409,7 +439,9 @@ func (c *Client) SendMessages(
 							Type:     "function",
 							Finished: true,
 						})
+						continue
 					}
+					content += partText(part)
 				}
 			}
 			finishReason := message.FinishReasonEndTurn
@@ -421,10 +453,11 @@ func (c *Client) SendMessages(
 			}
 
 			return &llm.Response{
-				Content:      content,
-				ToolCalls:    toolCalls,
-				Usage:        c.usage(resp),
-				FinishReason: finishReason,
+				Content:          content,
+				ToolCalls:        toolCalls,
+				Usage:            c.usage(resp),
+				FinishReason:     finishReason,
+				ProviderMetadata: groundingMetadata(resp),
 			}, nil
 		},
 	)
@@ -488,9 +521,6 @@ func (c *Client) SendMessagesWithStructuredOutput(
 					continue
 				}
 				for _, part := range candidate.Content.Parts {
-					if part.Text != "" && !part.Thought {
-						content += string(part.Text)
-					}
 					if part.FunctionCall != nil {
 						input, _ := json.Marshal(part.FunctionCall.Args)
 						toolCalls = append(toolCalls, message.ToolCall{
@@ -499,7 +529,9 @@ func (c *Client) SendMessagesWithStructuredOutput(
 							Input: string(input),
 							Type:  "function",
 						})
+						continue
 					}
+					content += partText(part)
 				}
 			}
 
@@ -520,6 +552,7 @@ func (c *Client) SendMessagesWithStructuredOutput(
 				FinishReason:               finishReason,
 				StructuredOutput:           &content,
 				UsedNativeStructuredOutput: true,
+				ProviderMetadata:           groundingMetadata(response),
 			}, nil
 		},
 	)
@@ -603,20 +636,14 @@ func (c *Client) streamInternal(
 				if len(resp.Candidates) > 0 &&
 					resp.Candidates[0].Content != nil {
 					for _, part := range resp.Candidates[0].Content.Parts {
-						switch {
-						case part.Thought && part.Text != "":
+						if part.Thought && part.Text != "" {
 							eventChan <- llm.Event{
 								Type:     types.EventThinkingDelta,
 								Thinking: string(part.Text),
 							}
-						case part.Text != "":
-							delta := string(part.Text)
-							currentContent += delta
-							eventChan <- llm.Event{
-								Type:    types.EventContentDelta,
-								Content: delta,
-							}
-						case part.FunctionCall != nil:
+							continue
+						}
+						if part.FunctionCall != nil {
 							id := "call_" + uuid.New().String()
 							args, _ := json.Marshal(part.FunctionCall.Args)
 							newCall := message.ToolCall{
@@ -639,6 +666,16 @@ func (c *Client) streamInternal(
 							if isNew {
 								toolCalls = append(toolCalls, newCall)
 							}
+							continue
+						}
+						delta := partText(part)
+						if delta == "" {
+							continue
+						}
+						currentContent += delta
+						eventChan <- llm.Event{
+							Type:    types.EventContentDelta,
+							Content: delta,
 						}
 					}
 				}
@@ -657,10 +694,11 @@ func (c *Client) streamInternal(
 					finishReason = message.FinishReasonToolUse
 				}
 				resp := &llm.Response{
-					Content:      currentContent,
-					ToolCalls:    toolCalls,
-					Usage:        c.usage(finalResp),
-					FinishReason: finishReason,
+					Content:          currentContent,
+					ToolCalls:        toolCalls,
+					Usage:            c.usage(finalResp),
+					FinishReason:     finishReason,
+					ProviderMetadata: groundingMetadata(finalResp),
 				}
 				if outputSchema != nil {
 					resp.StructuredOutput = &currentContent
@@ -673,6 +711,79 @@ func (c *Client) streamInternal(
 	}()
 
 	return eventChan
+}
+
+// partText extracts the textual representation of a non-function-call Part,
+// formatting executable_code / code_execution_result blocks as fenced code so
+// they survive concatenation into Response.Content.
+func partText(part *genai.Part) string {
+	switch {
+	case part.Text != "" && !part.Thought:
+		return string(part.Text)
+	case part.ExecutableCode != nil:
+		lang := strings.ToLower(string(part.ExecutableCode.Language))
+		if lang == "" || lang == "language_unspecified" {
+			lang = ""
+		}
+		return fmt.Sprintf("\n```%s\n%s\n```\n", lang, part.ExecutableCode.Code)
+	case part.CodeExecutionResult != nil:
+		return fmt.Sprintf("\n```\n%s\n```\n", part.CodeExecutionResult.Output)
+	}
+	return ""
+}
+
+// groundingMetadata extracts Gemini grounding / URL-context metadata from a
+// completed response into a provider-namespaced map suitable for
+// Response.ProviderMetadata. Returns nil when no grounding ran.
+func groundingMetadata(resp *genai.GenerateContentResponse) map[string]any {
+	if resp == nil || len(resp.Candidates) == 0 {
+		return nil
+	}
+	cand := resp.Candidates[0]
+	out := map[string]any{}
+	if cand.GroundingMetadata != nil {
+		gm := cand.GroundingMetadata
+		var chunks []map[string]any
+		for _, ch := range gm.GroundingChunks {
+			if ch == nil || ch.Web == nil {
+				continue
+			}
+			chunks = append(chunks, map[string]any{
+				"uri":    ch.Web.URI,
+				"title":  ch.Web.Title,
+				"domain": ch.Web.Domain,
+			})
+		}
+		grounding := map[string]any{}
+		if len(gm.WebSearchQueries) > 0 {
+			grounding["web_search_queries"] = gm.WebSearchQueries
+		}
+		if len(chunks) > 0 {
+			grounding["chunks"] = chunks
+		}
+		if len(grounding) > 0 {
+			out["gemini.grounding"] = grounding
+		}
+	}
+	if cand.URLContextMetadata != nil {
+		var urls []map[string]any
+		for _, u := range cand.URLContextMetadata.URLMetadata {
+			if u == nil {
+				continue
+			}
+			urls = append(urls, map[string]any{
+				"retrieved_url":        u.RetrievedURL,
+				"url_retrieval_status": string(u.URLRetrievalStatus),
+			})
+		}
+		if len(urls) > 0 {
+			out["gemini.url_context"] = map[string]any{"urls": urls}
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 func (c *Client) usage(resp *genai.GenerateContentResponse) llm.TokenUsage {

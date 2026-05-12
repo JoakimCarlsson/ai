@@ -125,6 +125,99 @@ llmgemini.WithFrequencyPenalty(0.5)
 llmgemini.WithSeed(42)
 ```
 
+## Provider built-in tools
+
+Server-side built-in tools (web search, code execution, file search) run
+inside the provider's infrastructure. They're opt-in per-client; results land
+inline in `Response.Content`, with structured metadata under
+`Response.ProviderMetadata`. See [Tool Calling](../advanced/tools.md#provider-built-in-tools)
+for the full picture; below is the per-provider surface.
+
+Anthropic — `web_search`:
+
+```go
+llmanthropic.WithWebSearch(llmanthropic.WebSearchConfig{
+    MaxUses:        5,
+    AllowedDomains: []string{"go.dev"},
+    BlockedDomains: nil,
+    UserLocation: &llmanthropic.WebSearchUserLocation{
+        City: "Stockholm", Country: "SE",
+    },
+})
+```
+
+Gemini — `google_search`, `code_execution`, `url_context`:
+
+```go
+llmgemini.WithGoogleSearch()
+llmgemini.WithCodeExecution()
+llmgemini.WithURLContext()
+```
+
+OpenAI (Responses API) — `web_search`, `file_search`, `code_interpreter`. The
+Responses API is a separate surface from Chat Completions; use
+`NewResponsesLLM` instead of `NewLLM`:
+
+```go
+client := llmopenai.NewResponsesLLM(
+    llmopenai.WithResponsesAPIKey(os.Getenv("OPENAI_API_KEY")),
+    llmopenai.WithResponsesModel(model.OpenAIModels[model.GPT5]),
+    llmopenai.WithResponsesMaxTokens(1024),
+    llmopenai.WithWebSearch(llmopenai.WebSearchOpts{
+        SearchContextSize: llmopenai.SearchContextMedium,
+    }),
+    llmopenai.WithFileSearch("vs_abc123"),
+    llmopenai.WithCodeInterpreter(),
+)
+```
+
+`WithWebSearchPreview` is also available for models that don't yet support
+the newer `web_search` tool.
+
+Groq — `browser_search`, `code_execution`, `visit_website` (requires a
+`groq/compound*` model via the dedicated `NewCompoundLLM`):
+
+```go
+import llmgroq "github.com/joakimcarlsson/ai/llm/groq"
+
+client := llmgroq.NewCompoundLLM(
+    llmgroq.WithCompoundAPIKey(os.Getenv("GROQ_API_KEY")),
+    llmgroq.WithCompoundModel(model.Model{APIModel: "groq/compound"}),
+    llmgroq.WithBrowserSearch(llmgroq.BrowserSearchOpts{
+        Country:       "us",
+        IncludeImages: true,
+    }),
+    llmgroq.WithCodeExecution(),
+    llmgroq.WithVisitWebsite(),
+)
+```
+
+The regular `llmgroq.NewLLM` wrapper stays available for OpenAI-compatible
+chat without built-ins.
+
+xAI — `web_search`, `x_search`, `code_execution` via the Responses API (use
+`NewResponsesLLM` instead of `NewLLM`):
+
+```go
+import llmxai "github.com/joakimcarlsson/ai/llm/xai"
+
+client := llmxai.NewResponsesLLM(
+    llmxai.WithResponsesAPIKey(os.Getenv("XAI_API_KEY")),
+    llmxai.WithResponsesModel(model.XAIModels[model.XAIGrok4]),
+    llmxai.WithWebSearch(llmxai.WebSearchOpts{
+        SearchContextSize: llmxai.SearchContextMedium,
+    }),
+    llmxai.WithXSearch(llmxai.XSearchOpts{
+        AllowedXHandles: []string{"xai"},
+        FromDate:        "2026-01-01",
+    }),
+    llmxai.WithCodeExecution(),
+)
+```
+
+The thin `llmxai.NewLLM` wrapper remains available for OpenAI-compatible
+chat without built-ins.
+
 ## Cross-vendor wrappers
 
 `llm/azure` (Azure OpenAI), `llm/vertexai` (Gemini on Vertex), and
@@ -164,16 +257,21 @@ client := llmvertex.NewLLM(
 
 ## OpenAI-compatible providers (BYOM)
 
-Groq, OpenRouter, xAI, Mistral, Ollama, LocalAI, etc. — point `llm/openai`
-at the right base URL:
+OpenRouter, Mistral, Ollama, LocalAI, etc. — point `llm/openai` at the right
+base URL:
 
 ```go
-groq := llmopenai.NewLLM(
-    llmopenai.WithAPIKey(os.Getenv("GROQ_API_KEY")),
-    llmopenai.WithBaseURL("https://api.groq.com/openai/v1"),
-    llmopenai.WithModel(model.GroqModels[model.LLaMA3_70B]),
+openrouter := llmopenai.NewLLM(
+    llmopenai.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
+    llmopenai.WithBaseURL("https://openrouter.ai/api/v1"),
+    llmopenai.WithModel(model.OpenAIModels[model.GPT5]),
 )
 ```
+
+Groq and xAI are published as their own modules (`llm/groq`, `llm/xai`) so
+they can expose vendor-specific built-in tools on top of the OpenAI-compatible
+surface. Use the thin `NewLLM` constructor in each for plain chat, or the
+dedicated `NewCompoundLLM` / `NewResponsesLLM` for built-in tools.
 
 For a managed registry of these, see [BYOM](../advanced/byom.md).
 

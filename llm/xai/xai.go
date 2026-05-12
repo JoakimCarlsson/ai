@@ -1,10 +1,10 @@
-// Package xai provides an OpenAI-compatible LLM client targeting xAI's Grok API.
+// Package xai provides LLM clients targeting xAI's Grok API.
 //
-// This is a thin wrapper over [llm/openai]. xAI exposes an OpenAI-compatible
-// chat-completions endpoint, so the entire request/response pipeline lives in
-// llm/openai; this package only fixes the base URL.
-//
-// Vendor-unique non-OpenAI features (e.g. xAI Live Search) are not exposed here.
+// [NewLLM] is a thin wrapper over [llm/openai] for users who just want
+// xAI's OpenAI-compatible chat-completions endpoint. [NewResponsesLLM] is a
+// standalone client targeting xAI's Responses API, with typed support for
+// the server-side built-in tools (web_search, x_search, code_execution) and
+// structured citation metadata.
 package xai
 
 import (

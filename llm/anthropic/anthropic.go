@@ -17,6 +17,7 @@ import (
 	anthropicsdk "github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/bedrock"
 	"github.com/anthropics/anthropic-sdk-go/option"
+	"github.com/anthropics/anthropic-sdk-go/packages/param"
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/model"
@@ -49,6 +50,7 @@ type Options struct {
 	useBedrock      bool
 	disableCache    bool
 	reasoningEffort *ReasoningEffort
+	builtinTools    []anthropicsdk.ToolUnionParam
 }
 
 // Option configures Options.
@@ -109,6 +111,56 @@ func WithDisableCache() Option { return func(o *Options) { o.disableCache = true
 // WithReasoningEffort sets the reasoning/thinking effort level.
 func WithReasoningEffort(effort ReasoningEffort) Option {
 	return func(o *Options) { o.reasoningEffort = &effort }
+}
+
+// WebSearchConfig configures the Anthropic server-side web_search tool.
+type WebSearchConfig struct {
+	MaxUses        int64
+	AllowedDomains []string
+	BlockedDomains []string
+	UserLocation   *WebSearchUserLocation
+}
+
+// WebSearchUserLocation provides approximate user location for search relevance.
+type WebSearchUserLocation struct {
+	City     string
+	Country  string
+	Region   string
+	Timezone string
+}
+
+// WithWebSearch enables Anthropic's server-side web_search tool. Each call to
+// the API that triggers a search incurs Anthropic's per-search charge.
+// Conversations containing web_search results are effectively single-turn:
+// follow-up turns do not re-attach the server tool result blocks.
+func WithWebSearch(cfg WebSearchConfig) Option {
+	return func(o *Options) {
+		p := anthropicsdk.WebSearchTool20250305Param{
+			AllowedDomains: cfg.AllowedDomains,
+			BlockedDomains: cfg.BlockedDomains,
+		}
+		if cfg.MaxUses > 0 {
+			p.MaxUses = anthropicsdk.Int(cfg.MaxUses)
+		}
+		if cfg.UserLocation != nil {
+			p.UserLocation = anthropicsdk.UserLocationParam{
+				City:     optString(cfg.UserLocation.City),
+				Country:  optString(cfg.UserLocation.Country),
+				Region:   optString(cfg.UserLocation.Region),
+				Timezone: optString(cfg.UserLocation.Timezone),
+			}
+		}
+		o.builtinTools = append(o.builtinTools, anthropicsdk.ToolUnionParam{
+			OfWebSearchTool20250305: &p,
+		})
+	}
+}
+
+func optString(s string) param.Opt[string] {
+	if s == "" {
+		return param.Opt[string]{}
+	}
+	return anthropicsdk.String(s)
 }
 
 // RetryConfig provides retry settings tuned for Anthropic API behavior.
@@ -313,7 +365,7 @@ func (c *Client) convertTools(
 		out[i] = anthropicsdk.ToolUnionParam{OfTool: &toolParam}
 	}
 
-	return out
+	return append(out, c.options.builtinTools...)
 }
 
 func (c *Client) finishReason(reason string) message.FinishReason {
@@ -442,13 +494,7 @@ func (c *Client) SendMessages(
 				return nil, wrapError(err)
 			}
 
-			content := ""
-			for _, block := range anthropicResponse.Content {
-				if text, ok := block.AsAny().(anthropicsdk.TextBlock); ok {
-					content += text.Text
-				}
-			}
-
+			content, meta := c.extractContent(*anthropicResponse)
 			return &llm.Response{
 				Content:   content,
 				ToolCalls: c.toolCalls(*anthropicResponse),
@@ -456,6 +502,7 @@ func (c *Client) SendMessages(
 				FinishReason: c.finishReason(
 					string(anthropicResponse.StopReason),
 				),
+				ProviderMetadata: meta,
 			}, nil
 		},
 	)
@@ -494,6 +541,7 @@ func (c *Client) runStream(
 	anthropicStream := c.client.Messages.NewStreaming(ctx, preparedMessages)
 	accumulatedMessage := anthropicsdk.Message{}
 
+	currentBlockType := ""
 	currentToolCallID := ""
 	for anthropicStream.Next() {
 		event := anthropicStream.Current()
@@ -504,6 +552,7 @@ func (c *Client) runStream(
 
 		switch event := event.AsAny().(type) {
 		case anthropicsdk.ContentBlockStartEvent:
+			currentBlockType = event.ContentBlock.Type
 			switch event.ContentBlock.Type {
 			case "text":
 				eventChan <- llm.Event{Type: types.EventContentStart}
@@ -548,29 +597,26 @@ func (c *Client) runStream(
 				}
 			}
 		case anthropicsdk.ContentBlockStopEvent:
-			if currentToolCallID != "" {
+			switch currentBlockType {
+			case "tool_use":
 				eventChan <- llm.Event{
 					Type:     types.EventToolUseStop,
 					ToolCall: &message.ToolCall{ID: currentToolCallID},
 				}
-				currentToolCallID = ""
-			} else {
+			case "text":
 				eventChan <- llm.Event{Type: types.EventContentStop}
 			}
+			currentBlockType = ""
+			currentToolCallID = ""
 
 		case anthropicsdk.MessageStopEvent:
-			content := ""
-			for _, block := range accumulatedMessage.Content {
-				if text, ok := block.AsAny().(anthropicsdk.TextBlock); ok {
-					content += text.Text
-				}
-			}
-
+			content, meta := c.extractContent(accumulatedMessage)
 			resp := &llm.Response{
-				Content:      content,
-				ToolCalls:    c.toolCalls(accumulatedMessage),
-				Usage:        c.usage(accumulatedMessage),
-				FinishReason: c.finishReason(string(accumulatedMessage.StopReason)),
+				Content:          content,
+				ToolCalls:        c.toolCalls(accumulatedMessage),
+				Usage:            c.usage(accumulatedMessage),
+				FinishReason:     c.finishReason(string(accumulatedMessage.StopReason)),
+				ProviderMetadata: meta,
 			}
 			if structured {
 				resp.StructuredOutput = &content
@@ -584,6 +630,37 @@ func (c *Client) runStream(
 		return wrapError(err)
 	}
 	return nil
+}
+
+// extractContent walks an Anthropic response and returns the concatenated
+// assistant text plus any provider metadata from server-side built-in tools.
+func (c *Client) extractContent(
+	msg anthropicsdk.Message,
+) (string, map[string]any) {
+	var content string
+	var searchResults []map[string]any
+	for _, block := range msg.Content {
+		switch v := block.AsAny().(type) {
+		case anthropicsdk.TextBlock:
+			content += v.Text
+		case anthropicsdk.WebSearchToolResultBlock:
+			results := v.Content.AsWebSearchResultBlockArray()
+			for _, r := range results {
+				searchResults = append(searchResults, map[string]any{
+					"tool_use_id":       v.ToolUseID,
+					"url":               r.URL,
+					"title":             r.Title,
+					"page_age":          r.PageAge,
+					"encrypted_content": r.EncryptedContent,
+				})
+			}
+		}
+	}
+	var meta map[string]any
+	if len(searchResults) > 0 {
+		meta = map[string]any{"anthropic.web_search_results": searchResults}
+	}
+	return content, meta
 }
 
 func (c *Client) toolCalls(msg anthropicsdk.Message) []message.ToolCall {
@@ -655,13 +732,7 @@ func (c *Client) SendMessagesWithStructuredOutput(
 				return nil, wrapError(err)
 			}
 
-			content := ""
-			for _, block := range anthropicResponse.Content {
-				if text, ok := block.AsAny().(anthropicsdk.TextBlock); ok {
-					content += text.Text
-				}
-			}
-
+			content, meta := c.extractContent(*anthropicResponse)
 			return &llm.Response{
 				Content:   content,
 				ToolCalls: c.toolCalls(*anthropicResponse),
@@ -671,6 +742,7 @@ func (c *Client) SendMessagesWithStructuredOutput(
 				),
 				StructuredOutput:           &content,
 				UsedNativeStructuredOutput: true,
+				ProviderMetadata:           meta,
 			}, nil
 		},
 	)
