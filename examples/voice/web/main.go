@@ -172,6 +172,7 @@ func wsHandler(
 			sttClient,
 			ttsClient,
 			voice.WithSystemPrompt(systemPrompt),
+			voice.WithInitialMessage("Hi! How can I help you today?"),
 			voice.WithTools(currentTimeTool{}),
 			voice.WithSession("web-demo", sessionStore),
 			voice.WithContextStrategy(
