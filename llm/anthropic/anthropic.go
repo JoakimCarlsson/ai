@@ -383,6 +383,21 @@ func (c *Client) finishReason(reason string) message.FinishReason {
 	}
 }
 
+func usesLegacyExtendedThinking(apiModel string) bool {
+	for _, legacy := range []string{
+		"claude-sonnet-4-20",
+		"claude-opus-4-20",
+		"claude-sonnet-4-5",
+		"claude-opus-4-5",
+		"claude-haiku-4-5",
+	} {
+		if strings.HasPrefix(apiModel, legacy) {
+			return true
+		}
+	}
+	return false
+}
+
 func (c *Client) preparedMessages(
 	messages []anthropicsdk.MessageParam,
 	tools []anthropicsdk.ToolUnionParam,
@@ -390,7 +405,7 @@ func (c *Client) preparedMessages(
 ) anthropicsdk.MessageNewParams {
 	var thinkingParam anthropicsdk.ThinkingConfigParamUnion
 	var outputConfig anthropicsdk.OutputConfigParam
-	temperature := anthropicsdk.Float(0)
+	var temperature param.Opt[float64]
 	pb := llm.NewParameterBuilder(
 		c.options.temperature,
 		c.options.topP,
@@ -401,10 +416,14 @@ func (c *Client) preparedMessages(
 	)
 
 	if c.options.reasoningEffort != nil && c.options.model.CanReason {
-		temperature = anthropicsdk.Float(1)
-		apiModel := c.options.model.APIModel
-		if strings.Contains(apiModel, "4-6") ||
-			strings.Contains(apiModel, "4.6") {
+		if usesLegacyExtendedThinking(c.options.model.APIModel) {
+			temperature = anthropicsdk.Float(1)
+			thinkingParam = anthropicsdk.ThinkingConfigParamUnion{
+				OfEnabled: &anthropicsdk.ThinkingConfigEnabledParam{
+					BudgetTokens: int64(float64(c.options.maxTokens) * 0.8),
+				},
+			}
+		} else {
 			thinkingParam = anthropicsdk.ThinkingConfigParamUnion{
 				OfAdaptive: &anthropicsdk.ThinkingConfigAdaptiveParam{},
 			}
@@ -417,12 +436,6 @@ func (c *Client) preparedMessages(
 				outputConfig.Effort = anthropicsdk.OutputConfigEffortHigh
 			case ReasoningEffortMax:
 				outputConfig.Effort = anthropicsdk.OutputConfigEffortMax
-			}
-		} else {
-			thinkingParam = anthropicsdk.ThinkingConfigParamUnion{
-				OfEnabled: &anthropicsdk.ThinkingConfigEnabledParam{
-					BudgetTokens: int64(float64(c.options.maxTokens) * 0.8),
-				},
 			}
 		}
 	}
