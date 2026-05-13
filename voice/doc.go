@@ -15,6 +15,7 @@
 //
 //	v := voice.New(llmClient, sttClient, ttsClient,
 //	    voice.WithSystemPrompt("You are a helpful assistant."),
+//	    voice.WithInitialMessage("Hi, how can I help?"),
 //	    voice.WithTools(myTool),
 //	)
 //	conv, err := v.StartConversation(ctx, transport)

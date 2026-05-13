@@ -19,6 +19,20 @@ func WithSystemPrompt(prompt string) Option {
 	}
 }
 
+// WithInitialMessage sets a fixed greeting the agent speaks once when a
+// conversation starts. The message is skipped when resuming a session that
+// already contains user or assistant messages. Empty disables the feature.
+//
+// The greeting participates in barge-in like any assistant turn: under
+// BargeInInterrupt, a user partial during the greeting cancels TTS, fires
+// EventAgentInterrupted, and records the history entry with an
+// "[interrupted]" suffix.
+func WithInitialMessage(msg string) Option {
+	return func(v *Agent) {
+		v.initialMessage = msg
+	}
+}
+
 // WithTools registers tools that the LLM may call during a conversation.
 // Multiple WithTools options append.
 func WithTools(tools ...tool.BaseTool) Option {

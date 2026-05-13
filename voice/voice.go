@@ -19,6 +19,7 @@ type Agent struct {
 	stt               stt.SpeechToText
 	tts               tts.Generation
 	systemPrompt      string
+	initialMessage    string
 	tools             []tool.BaseTool
 	toolsets          []tool.Toolset
 	maxToolIterations int

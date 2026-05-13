@@ -376,6 +376,109 @@ func streamLLMAndSpeak(
 	return text, toolCalls, nil
 }
 
+// speakInitialMessage speaks a fixed greeting once at conversation start.
+// Mirrors the TTS half of streamLLMAndSpeak: streams via
+// tts.StreamingTextProvider when available, falls back to speakOneShot
+// otherwise. Honors barge-in via ctx cancellation — on cancel it closes
+// textIn and drains audioOut so the provider goroutine releases.
+//
+// Caller is responsible for setting up turnState (cancelTurn, dropAudio,
+// agentSpeaking, spokenSoFar) before calling, and for translating the
+// returned error into a history entry.
+func speakInitialMessage(
+	ctx context.Context,
+	v *Agent,
+	text string,
+	emit func(Event),
+	ttsAudio chan<- []byte,
+	state *turnState,
+) error {
+	emit(Event{Type: EventAssistantDelta, Timestamp: time.Now(), Text: text})
+	state.setSpoken(text)
+
+	stp, ok := v.tts.(tts.StreamingTextProvider)
+	if !ok {
+		if err := speakOneShot(ctx, v.tts, text, emit, ttsAudio); err != nil {
+			return err
+		}
+		emit(Event{Type: EventAssistantDone, Timestamp: time.Now(), Text: text})
+		return nil
+	}
+
+	ch := make(chan string, 1)
+	audioOut, err := stp.StreamAudioFromText(ctx, ch)
+	if err != nil {
+		close(ch)
+		return err
+	}
+	emit(Event{Type: EventTTSStarted, Timestamp: time.Now()})
+	state.agentSpeaking.Store(true)
+
+	textInClosed := false
+	closeTextIn := func() {
+		if !textInClosed {
+			textInClosed = true
+			close(ch)
+		}
+	}
+	drainAudioOut := func() {
+		//nolint:revive // empty body: discarding remaining audio frames is the intent
+		for range audioOut {
+		}
+	}
+	finishTTS := func() {
+		closeTextIn()
+		state.agentSpeaking.Store(false)
+		emit(Event{Type: EventTTSEnded, Timestamp: time.Now()})
+	}
+
+	select {
+	case ch <- text:
+	case <-ctx.Done():
+		closeTextIn()
+		drainAudioOut()
+		finishTTS()
+		return ctx.Err()
+	}
+	closeTextIn()
+
+	for {
+		select {
+		case <-ctx.Done():
+			drainAudioOut()
+			finishTTS()
+			return ctx.Err()
+		case chunk, ok := <-audioOut:
+			if !ok {
+				finishTTS()
+				emit(
+					Event{
+						Type:      EventAssistantDone,
+						Timestamp: time.Now(),
+						Text:      text,
+					},
+				)
+				return nil
+			}
+			if chunk.Error != nil {
+				drainAudioOut()
+				finishTTS()
+				return chunk.Error
+			}
+			if len(chunk.Data) == 0 {
+				continue
+			}
+			select {
+			case ttsAudio <- chunk.Data:
+			case <-ctx.Done():
+				drainAudioOut()
+				finishTTS()
+				return ctx.Err()
+			}
+		}
+	}
+}
+
 // speakOneShot is the fallback path for TTS providers that do not implement
 // tts.StreamingTextProvider. The LLM text is buffered to completion and sent
 // via tts.Generation.StreamAudio.

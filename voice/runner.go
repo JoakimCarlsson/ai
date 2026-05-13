@@ -172,6 +172,45 @@ func (c *Conversation) run(
 
 		activeAgent := v
 
+		if v.initialMessage != "" && !historyHasNonSystem(history) {
+			drainAudio(ttsAudio)
+			turnCtx, turnCancel := context.WithCancel(gctx)
+			cancelFn := func() { turnCancel() }
+			state.cancelTurn.Store(&cancelFn)
+			state.setSpoken("")
+			state.dropAudio.Store(false)
+			state.agentSpeaking.Store(false)
+
+			err := speakInitialMessage(
+				turnCtx, v, v.initialMessage, emit, ttsAudio, state,
+			)
+
+			turnCancel()
+			state.cancelTurn.Store(nil)
+
+			switch {
+			case errors.Is(err, context.Canceled) && state.dropAudio.Load():
+				history = append(history, message.NewMessage(
+					message.Assistant,
+					[]message.ContentPart{message.TextContent{
+						Text: v.initialMessage + " [interrupted]",
+					}},
+				))
+			case err != nil && !errors.Is(err, context.Canceled):
+				return err
+			case err == nil:
+				history = append(history, message.NewMessage(
+					message.Assistant,
+					[]message.ContentPart{message.TextContent{
+						Text: v.initialMessage,
+					}},
+				))
+			}
+			if perr := persistNew(); perr != nil {
+				return perr
+			}
+		}
+
 		for {
 			select {
 			case <-gctx.Done():
@@ -320,6 +359,18 @@ func loadInitialHistory(
 		return nil, 0, err
 	}
 	return []message.Message{sysMsg}, 1, nil
+}
+
+// historyHasNonSystem reports whether the message slice contains any
+// non-system message. Used to skip the initial-message greeting when
+// resuming a session that already has user or assistant turns.
+func historyHasNonSystem(h []message.Message) bool {
+	for _, m := range h {
+		if m.Role != message.System {
+			return true
+		}
+	}
+	return false
 }
 
 func drainAudio(ch <-chan []byte) {

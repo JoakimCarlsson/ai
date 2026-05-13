@@ -62,6 +62,7 @@ if err := conv.Wait(); err != nil {
 | Option | Description | Default |
 |--------|-------------|---------|
 | `WithSystemPrompt(prompt)` | System prompt prepended to every LLM call | none |
+| `WithInitialMessage(msg)` | Greeting the agent speaks once when a conversation starts (skipped on session resume) | none |
 | `WithTools(tools...)` | Tools the LLM can call during a conversation | none |
 | `WithToolsets(toolsets...)` | `tool.Toolset`s evaluated per LLM call to add dynamic / context-dependent tools to the static set | none |
 | `WithMaxToolIterations(n)` | Cap on tool-call rounds inside one assistant turn | 4 |
@@ -112,6 +113,24 @@ type AudioTransport interface {
 | `EventAgentInterrupted` | Barge-in fired and the current turn was canceled | `Text` (spoken-so-far approximation) |
 | `EventConversationEnd` | The pipeline goroutines have all returned | (none) |
 | `EventError` | An unrecoverable error terminated the conversation | `Error` |
+
+## Initial message
+
+`WithInitialMessage` lets the agent speak first when a conversation opens — useful for greetings, prompts, or whatever you'd put in `first_message` on ElevenLabs ConvAI.
+
+```go
+voice.WithInitialMessage("Hi, how can I help you today?")
+```
+
+**Behavior:**
+
+- Fires once, right after `EventReady`, before the runner waits for the first user transcript.
+- Skipped when resuming a session whose stored history already contains user or assistant messages — a mid-thread greeting would be wrong.
+- No LLM call. The configured text is sent straight to TTS, then appended to history (and persisted via `WithSession` if configured).
+- Participates in barge-in. Under `BargeInInterrupt`, a user partial during the greeting cancels TTS, fires `EventAgentInterrupted`, and records the history entry as `<text> [interrupted]`.
+- Uses the streaming TTS path when the client implements `tts.StreamingTextProvider`; falls back to single-shot `tts.Generation.StreamAudio` otherwise.
+
+For dynamic, per-conversation greetings (e.g. addressing the user by name), keep this option empty and have your first user turn driven by the conversation initiation flow — that's a separate slice.
 
 ## Filler audio
 
