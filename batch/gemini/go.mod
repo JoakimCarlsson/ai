@@ -8,7 +8,7 @@ require (
 	github.com/joakimcarlsson/ai/embeddings v0.1.0
 	github.com/joakimcarlsson/ai/llm v0.1.0
 	github.com/joakimcarlsson/ai/message v0.1.0
-	github.com/joakimcarlsson/ai/model v0.1.0
+	github.com/joakimcarlsson/ai/model v0.2.0
 	github.com/joakimcarlsson/ai/tool v0.1.0
 	google.golang.org/genai v1.55.0
 )
