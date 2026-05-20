@@ -3,7 +3,9 @@ package gemini
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"strings"
 
 	"github.com/joakimcarlsson/ai/embeddings"
 	"github.com/joakimcarlsson/ai/model"
@@ -171,14 +173,193 @@ func (c *Client) embedBatch(
 		Model:      modelName,
 	}, nil
 }
+func taskPrefixForEmbedding2(taskType string) string {
+	switch strings.ToUpper(taskType) {
+	case "RETRIEVAL_QUERY":
+		return "task: search result | query: "
+	case "QUESTION_ANSWERING":
+		return "task: question answering | query: "
+	case "FACT_VERIFICATION":
+		return "task: fact checking | query: "
+	case "CODE_RETRIEVAL_QUERY":
+		return "task: code retrieval | query: "
+	case "CLASSIFICATION":
+		return "task: classification | query: "
+	case "CLUSTERING":
+		return "task: clustering | query: "
+	case "SEMANTIC_SIMILARITY":
+		return "task: sentence similarity | query: "
+	// RETRIEVAL_DOCUMENT uses a different shape ("title: … | text: …") and is
+	// applied at indexing time, not at query time. The caller should format
+	// document text themselves, or pass an empty taskType for documents.
+	default:
+		return ""
+	}
+}
 
-// GenerateMultimodalEmbeddings is not supported by Gemini.
+func parseDataURI(raw string) ([]byte, string, error) {
+	mimeType := "" // caller must use mc.MimeType when no data URI prefix is present
+
+	if strings.HasPrefix(raw, "data:") {
+		rest := raw[len("data:"):]
+
+		mType, remainder, found := strings.Cut(rest, ";")
+		if !found {
+			return nil, "", fmt.Errorf("malformed data URI: missing semicolon")
+		}
+		mimeType = mType
+
+		_, after, found := strings.Cut(remainder, ",")
+		if !found {
+			return nil, "", fmt.Errorf("malformed data URI: missing comma after encoding")
+		}
+		raw = after
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(raw)
+	if err != nil {
+		decoded, err = base64.URLEncoding.DecodeString(raw)
+		if err != nil {
+			return nil, "", fmt.Errorf("base64 decode failed: %w", err)
+		}
+	}
+
+	return decoded, mimeType, nil
+}
+
+// GenerateMultimodalEmbeddings create mulit model embeddings
 func (c *Client) GenerateMultimodalEmbeddings(
-	_ context.Context,
-	_ []embeddings.MultimodalInput,
-	_ ...string,
+	ctx context.Context,
+	input []embeddings.MultimodalInput,
+	taskType ...string,
 ) (*embeddings.EmbeddingResponse, error) {
-	return nil, fmt.Errorf("gemini does not support multimodal embeddings")
+	switch c.options.model.ID {
+	case model.GeminiEmbedding2:
+		if len(input) == 0 {
+			return &embeddings.EmbeddingResponse{
+				Embeddings: [][]float32{},
+				Usage:      embeddings.EmbeddingUsage{},
+				Model:      c.options.model.APIModel,
+			}, nil
+		}
+
+		resolvedTaskType := c.options.taskType
+		if len(taskType) > 0 && taskType[0] != "" {
+			resolvedTaskType = taskType[0]
+		}
+		textPrefix := taskPrefixForEmbedding2(resolvedTaskType)
+
+		// Each multimodalInput becomes its own genai.Content, producing one
+		// embedding per input.
+		contents := make([]*genai.Content, 0, len(input))
+
+		for _, mi := range input {
+			parts := make([]*genai.Part, 0, len(mi.Content))
+
+			for _, mc := range mi.Content {
+				// priority 1: raw bytes are present — this covers all binary modalities
+				// (image/png, image/jpeg, audio/mpeg, video/mp4, application/pdf, …).
+				// MimeType is the only thing that distinguishes them, exactly as in
+				// the official Python: types.Part.from_bytes(data=..., mime_type=...).
+				if len(mc.ContentData) > 0 {
+					if mc.MimeType == "" {
+						return nil, fmt.Errorf(
+							"gemini multimodal embeddings: MimeType required when ContentData is set",
+						)
+					}
+					parts = append(parts, &genai.Part{
+						InlineData: &genai.Blob{
+							MIMEType: mc.MimeType,
+							Data:     mc.ContentData,
+						},
+					})
+					continue
+				}
+
+				// Priority 2: type-based dispatch for the remaining kinds.
+				switch mc.Type {
+				case "text":
+					text := mc.Text
+					if textPrefix != "" {
+						text = textPrefix + text
+					}
+					parts = append(parts, genai.NewPartFromText(text))
+
+				case "image_base64":
+					// Legacy path: base64 string or data URI. Prefer ContentData above.
+					if mc.ImageBase64 == "" {
+						return nil, fmt.Errorf(
+							"gemini multimodal embeddings: image_base64 part has no ContentData or ImageBase64",
+						)
+					}
+					data, parsedMime, err := parseDataURI(mc.ImageBase64)
+					if err != nil {
+						return nil, fmt.Errorf("gemini multimodal embeddings: decode image_base64: %w", err)
+					}
+					mimeType := mc.MimeType
+					if mimeType == "" {
+						mimeType = parsedMime
+					}
+					if mimeType == "" {
+						return nil, fmt.Errorf(
+							"gemini multimodal embeddings: MimeType is required for image_base64 content",
+						)
+					}
+					parts = append(parts, &genai.Part{
+						InlineData: &genai.Blob{MIMEType: mimeType, Data: data},
+					})
+
+				case "image_url":
+					// For gs:// or Files API URIs only.
+					// Plain HTTPS URLs are not fetched by the API — callers must
+					// pre-fetch and supply bytes via ContentData + MimeType.
+					if mc.ImageURL == "" {
+						return nil, fmt.Errorf(
+							"gemini multimodal embeddings: image_url part has empty ImageURL",
+						)
+					}
+					parts = append(parts, &genai.Part{
+						FileData: &genai.FileData{FileURI: mc.ImageURL},
+					})
+
+				default:
+					return nil, fmt.Errorf(
+						"gemini multimodal embeddings: unsupported content type %q (valid: text, image_base64, image_url; or set ContentData+MimeType for any binary modality)",
+						mc.Type,
+					)
+				}
+			}
+
+			contents = append(contents, &genai.Content{Parts: parts})
+		}
+
+		var config *genai.EmbedContentConfig
+		if c.options.dimensions != nil {
+			dim := int32(*c.options.dimensions)
+			config = &genai.EmbedContentConfig{OutputDimensionality: &dim}
+		}
+
+		result, err := c.client.Models.EmbedContent(ctx, c.options.model.APIModel, contents, config)
+		if err != nil {
+			return nil, fmt.Errorf("gemini multimodal embeddings: %w", err)
+		}
+
+		embeds := make([][]float32, len(result.Embeddings))
+		for i, e := range result.Embeddings {
+			embeds[i] = e.Values
+		}
+
+		return &embeddings.EmbeddingResponse{
+			Embeddings: embeds,
+			Model:      c.options.model.APIModel,
+		}, nil
+
+	default:
+		return nil, fmt.Errorf(
+			"%s (%s) does not support multimodal embeddings; use gemini-embedding-2",
+			c.options.model.Name, c.options.model.ID,
+		)
+	}
 }
 
 // GenerateContextualizedEmbeddings is not supported by Gemini.
