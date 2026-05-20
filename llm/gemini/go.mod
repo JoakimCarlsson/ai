@@ -6,7 +6,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/joakimcarlsson/ai/llm v0.1.0
 	github.com/joakimcarlsson/ai/message v0.1.0
-	github.com/joakimcarlsson/ai/model v0.1.0
+	github.com/joakimcarlsson/ai/model v0.2.0
 	github.com/joakimcarlsson/ai/schema v0.1.0
 	github.com/joakimcarlsson/ai/tool v0.1.0
 	github.com/joakimcarlsson/ai/types v0.1.0

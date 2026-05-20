@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/joakimcarlsson/ai/llm v0.1.0
 	github.com/joakimcarlsson/ai/llm/gemini v0.1.0
-	github.com/joakimcarlsson/ai/model v0.1.0
+	github.com/joakimcarlsson/ai/model v0.2.0
 	google.golang.org/genai v1.55.0
 )
 
