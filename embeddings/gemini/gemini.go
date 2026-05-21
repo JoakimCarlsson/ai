@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/joakimcarlsson/ai/embeddings"
@@ -173,6 +174,7 @@ func (c *Client) embedBatch(
 		Model:      modelName,
 	}, nil
 }
+
 func taskPrefixForEmbedding2(taskType string) string {
 	switch strings.ToUpper(taskType) {
 	case "RETRIEVAL_QUERY":
@@ -207,18 +209,28 @@ func parseDataURI(raw string) ([]byte, string, error) {
 		if !found {
 			return nil, "", fmt.Errorf("malformed data URI: missing semicolon")
 		}
+
 		mimeType = mType
 
-		_, after, found := strings.Cut(remainder, ",")
+		encoding, data, found := strings.Cut(remainder, ",")
 		if !found {
 			return nil, "", fmt.Errorf("malformed data URI: missing comma after encoding")
 		}
-		raw = after
+
+		if encoding != "base64" {
+			return nil, "", fmt.Errorf(
+				"unsupported data URI encoding %q (only base64 supported)",
+				encoding,
+			)
+		}
+
+		raw = data
 	}
 
 	decoded, err := base64.StdEncoding.DecodeString(raw)
 	if err != nil {
-		decoded, err = base64.URLEncoding.DecodeString(raw)
+		// tolerate missing padding only
+		decoded, err = base64.RawStdEncoding.DecodeString(raw)
 		if err != nil {
 			return nil, "", fmt.Errorf("base64 decode failed: %w", err)
 		}
@@ -310,14 +322,33 @@ func (c *Client) GenerateMultimodalEmbeddings(
 					})
 
 				case "image_url":
-					// For gs:// or Files API URIs only.
-					// Plain HTTPS URLs are not fetched by the API — callers must
-					// pre-fetch and supply bytes via ContentData + MimeType.
 					if mc.ImageURL == "" {
 						return nil, fmt.Errorf(
 							"gemini multimodal embeddings: image_url part has empty ImageURL",
 						)
 					}
+					// Only gs:// and Gemini Files API URIs (https://generativelanguage.googleapis.com/...)
+					// are accepted by the API. plain HTTPS URLs are not fetched; callers must
+					// pre-fetch and pass bytes via ContentData + MimeType instead.
+					parsed, err := url.Parse(mc.ImageURL)
+					if err != nil {
+						return nil, fmt.Errorf("invalid URL for image")
+					}
+
+					isGS := parsed.Scheme == "gs"
+					isGeminiFile :=
+						(parsed.Scheme == "https" || parsed.Scheme == "http") &&
+							parsed.Host == "generativelanguage.googleapis.com"
+
+					if !isGS && !isGeminiFile {
+						return nil, fmt.Errorf(
+							"gemini multimodal embeddings: image_url %q is not a supported URI "+
+								"(must be gs:// or a Gemini Files API URI); "+
+								"for plain HTTPS URLs, pre-fetch the bytes and use ContentData + MimeType",
+							mc.ImageURL,
+						)
+					}
+
 					parts = append(parts, &genai.Part{
 						FileData: &genai.FileData{FileURI: mc.ImageURL},
 					})
@@ -352,6 +383,7 @@ func (c *Client) GenerateMultimodalEmbeddings(
 		return &embeddings.EmbeddingResponse{
 			Embeddings: embeds,
 			Model:      c.options.model.APIModel,
+			Usage:      embeddings.EmbeddingUsage{}, // TODO: populate Usage from result metadata. API currently doesn't expose usage
 		}, nil
 
 	default:

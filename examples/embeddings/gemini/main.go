@@ -13,7 +13,11 @@ import (
 func main() {
 	ctx := context.Background()
 
-	apiKey := "your-gemini-api-key"
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey == "" {
+		fmt.Fprintln(os.Stderr, "GEMINI_API_KEY not set")
+		os.Exit(1)
+	}
 	embedder := geminiembed.NewEmbedding(
 		geminiembed.WithAPIKey(apiKey),
 		geminiembed.WithModel(model.GeminiEmbeddingModels[model.GeminiEmbedding2]),
@@ -39,7 +43,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// use embeddings here
-	_ = resp.Embeddings
+	fmt.Printf("got %d embeddings, dim=%d\n", len(resp.Embeddings), len(resp.Embeddings[0]))
 
 }

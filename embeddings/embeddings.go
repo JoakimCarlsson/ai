@@ -51,9 +51,9 @@ type MultimodalContent struct {
 	// ImageBase64 contains base64-encoded image data when Type is "image_base64".
 	ImageBase64 string `json:"image_base64,omitempty"`
 	// MimeType represents the mime-type of the ebdding eg: 'image/png' , 'application/pdf', '...'
-	MimeType string
+	MimeType string `json:"mime_type,omitempty"`
 	// ContentData , represents the data to be embedded
-	ContentData []byte
+	ContentData []byte `json:"content_data,omitempty"`
 }
 
 // MultimodalInput represents a collection of multimodal content pieces for embedding generation.
