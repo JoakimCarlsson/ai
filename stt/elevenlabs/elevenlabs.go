@@ -25,8 +25,9 @@ import (
 
 const (
 	defaultBaseURL         = "https://api.elevenlabs.io/v1"
-	streamReadDeadline     = 30 * time.Second
+	streamReadDeadline     = 90 * time.Second
 	streamHandshakeTimeout = 10 * time.Second
+	streamPingInterval     = 20 * time.Second
 )
 
 // CommitStrategy controls when the streaming session emits committed transcripts.
@@ -517,6 +518,9 @@ func runWriter(
 	defer close(out)
 	defer func() { _ = conn.Close() }()
 
+	pinger := time.NewTicker(streamPingInterval)
+	defer pinger.Stop()
+
 	for {
 		select {
 		case <-done:
@@ -525,6 +529,12 @@ func runWriter(
 			_ = conn.Close()
 			<-done
 			return
+		case <-pinger.C:
+			_ = conn.WriteControl(
+				websocket.PingMessage,
+				[]byte(strconv.FormatInt(time.Now().UnixNano(), 10)),
+				time.Now().Add(5*time.Second),
+			)
 		case frame, ok := <-audio:
 			if !ok {
 				_ = conn.Close()
