@@ -620,12 +620,14 @@ type streamResp struct {
 	EndOfTurn       bool    `json:"end_of_turn"`
 	TurnIsFormatted bool    `json:"turn_is_formatted"`
 	EndOfTurnConf   float64 `json:"end_of_turn_confidence"`
+	SpeakerLabel    string  `json:"speaker_label"`
 	Words           []struct {
 		Text        string  `json:"text"`
 		Start       int64   `json:"start"`
 		End         int64   `json:"end"`
 		Confidence  float64 `json:"confidence"`
 		WordIsFinal bool    `json:"word_is_final"`
+		Speaker     string  `json:"speaker,omitempty"`
 	} `json:"words"`
 }
 
@@ -643,9 +645,10 @@ func parseStream(raw []byte) (stt.StreamResult, bool) {
 	words := make([]stt.Word, len(resp.Words))
 	for i, w := range resp.Words {
 		words[i] = stt.Word{
-			Word:  w.Text,
-			Start: float64(w.Start) / 1000.0,
-			End:   float64(w.End) / 1000.0,
+			Word:    w.Text,
+			Start:   float64(w.Start) / 1000.0,
+			End:     float64(w.End) / 1000.0,
+			Speaker: w.Speaker,
 		}
 	}
 	conf := resp.EndOfTurnConf
@@ -658,5 +661,6 @@ func parseStream(raw []byte) (stt.StreamResult, bool) {
 		IsFinal:    resp.EndOfTurn,
 		WordCount:  len(resp.Words),
 		Words:      words,
+		Speaker:    resp.SpeakerLabel,
 	}, true
 }

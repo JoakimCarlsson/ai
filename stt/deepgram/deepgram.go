@@ -557,9 +557,10 @@ type streamResp struct {
 			Transcript string  `json:"transcript"`
 			Confidence float64 `json:"confidence"`
 			Words      []struct {
-				Word  string  `json:"word"`
-				Start float64 `json:"start"`
-				End   float64 `json:"end"`
+				Word    string  `json:"word"`
+				Start   float64 `json:"start"`
+				End     float64 `json:"end"`
+				Speaker *int    `json:"speaker,omitempty"`
 			} `json:"words"`
 		} `json:"alternatives"`
 	} `json:"channel"`
@@ -583,6 +584,13 @@ func parseStream(raw []byte) (stt.StreamResult, bool) {
 	words := make([]stt.Word, len(alt.Words))
 	for i, w := range alt.Words {
 		words[i] = stt.Word{Word: w.Word, Start: w.Start, End: w.End}
+		if w.Speaker != nil {
+			words[i].Speaker = strconv.Itoa(*w.Speaker)
+		}
+	}
+	dominantSpeaker := ""
+	if len(words) > 0 {
+		dominantSpeaker = words[0].Speaker
 	}
 	return stt.StreamResult{
 		Text:       alt.Transcript,
@@ -590,5 +598,6 @@ func parseStream(raw []byte) (stt.StreamResult, bool) {
 		IsFinal:    resp.IsFinal || resp.SpeechFinal,
 		WordCount:  len(alt.Words),
 		Words:      words,
+		Speaker:    dominantSpeaker,
 	}, true
 }
