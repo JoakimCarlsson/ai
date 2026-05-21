@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/embeddings/voyage
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/embeddings v0.1.0
+	github.com/joakimcarlsson/ai/embeddings v0.2.0
 	github.com/joakimcarlsson/ai/model v0.1.0
 )
 
