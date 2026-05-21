@@ -239,15 +239,41 @@ make release-tag MODULE=llm/openai VERSION=v0.1.0
 The script verifies the module's `go.mod` exists and the tag prefix matches
 the directory path.
 
-### 3. Warm the Go module proxy
+### 3. Cascade to direct consumers (when bumping a shared module)
+
+When the changed module is a shared dep that surfaces user-facing symbols
+(`model`, `message`, `memory`, etc.), open a branch and bump the `require`
+line in every module a typical user `go get`s to access the new symbols.
+For example, a `model` change adding new Gemini constants cascades to
+`llm/gemini`, `image/gemini`, `embeddings/gemini`, `batch/gemini`, and
+`llm/vertexai`, but not to unrelated providers (`llm/openai`,
+`llm/anthropic`) or to umbrella modules that take a user-built client
+(`agent`, `voice`).
+
+```bash
+cd llm/gemini && go mod edit -require=github.com/joakimcarlsson/ai/model@v0.2.0 && go mod tidy
+# ...repeat for each direct consumer, then commit + PR
+```
+
+After the PR merges, tag each cascaded module with a patch bump. Without
+the cascade, users running `go get llm/gemini@latest` get the old `model`
+version via MVS and the new constants don't resolve in their build.
+
+Skip this step when the changed module isn't a shared dep (e.g. a fix
+internal to `llm/anthropic`), or when only the module's own go.mod
+changed (indirect dep bumps, `tidy` cleanup). Those have no
+consumer-visible effect and don't need tags at all.
+
+### 4. Warm the Go module proxy
 
 ```bash
 scripts/release.sh warm -t llm/openai/v0.1.0
 ```
 
 This ensures the tagged version is immediately available via `go get`.
+Run it for every tag created in steps 2 and 3.
 
-### 4. Create a dated GitHub Release
+### 5. Create a dated GitHub Release
 
 ```bash
 # Dry-run (shows what would be published)
