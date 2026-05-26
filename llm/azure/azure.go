@@ -21,7 +21,7 @@ import (
 // Options configures the Azure OpenAI LLM client.
 type Options struct {
 	apiKey        string
-	model         model.Model
+	deployment    string
 	maxTokens     int64
 	temperature   *float64
 	topP          *float64
@@ -42,8 +42,16 @@ func WithAPIKey(
 	return func(o *Options) { o.apiKey = apiKey }
 }
 
-// WithModel selects the LLM model.
-func WithModel(m model.Model) Option { return func(o *Options) { o.model = m } }
+// WithDeployment sets the Azure OpenAI deployment name. Azure routes requests
+// purely on deployment, so this is the only model selector callers need to
+// provide. Cost and context metadata are resolved by matching the deployment
+// string against [model.AzureModels] (exact APIModel match first, then a
+// substring fallback for custom deployment names like "gpt-4.1-nano-prod").
+// When no match is found, a minimal [model.Model] is used with the deployment
+// as APIModel.
+func WithDeployment(deployment string) Option {
+	return func(o *Options) { o.deployment = deployment }
+}
 
 // WithMaxTokens sets the max generation tokens.
 func WithMaxTokens(
@@ -104,8 +112,10 @@ func NewLLM(opts ...Option) llm.LLM {
 		o(&options)
 	}
 
+	resolvedModel := resolveDeployment(options.deployment)
+
 	openaiOpts := []llmopenai.Option{
-		llmopenai.WithModel(options.model),
+		llmopenai.WithModel(resolvedModel),
 		llmopenai.WithMaxTokens(options.maxTokens),
 	}
 	if options.temperature != nil {
@@ -181,12 +191,57 @@ func NewLLM(opts ...Option) llm.LLM {
 	})
 }
 
+// resolveDeployment maps an Azure deployment name to a [model.Model] carrying
+// cost and context metadata. The deployment string always becomes APIModel so
+// requests route correctly; metadata is filled in from [model.AzureModels] by
+// exact APIModel match, then by substring fallback (so a deployment named
+// "gpt-4.1-nano-prod" inherits metadata from the "gpt-4.1-nano" entry).
+func resolveDeployment(deployment string) model.Model {
+	if deployment == "" {
+		return model.Model{}
+	}
+	if m, ok := findAzureModel(deployment, true); ok {
+		m.APIModel = deployment
+		return m
+	}
+	if m, ok := findAzureModel(deployment, false); ok {
+		m.APIModel = deployment
+		return m
+	}
+	return model.Model{
+		APIModel: deployment,
+		Provider: model.ProviderAzure,
+	}
+}
+
+func findAzureModel(deployment string, exact bool) (model.Model, bool) {
+	var best model.Model
+	var bestLen int
+	found := false
+	for _, m := range model.AzureModels {
+		if exact {
+			if m.APIModel == deployment {
+				return m, true
+			}
+			continue
+		}
+		if m.APIModel != "" && strings.Contains(deployment, m.APIModel) {
+			if len(m.APIModel) > bestLen {
+				best = m
+				bestLen = len(m.APIModel)
+				found = true
+			}
+		}
+	}
+	return best, found
+}
+
 // buildOpenAIOptions converts our Options to the embedded openai package's
 // Options. The openai package keeps its options struct unexported, so we go
 // through the option-func ladder.
 func buildOpenAIOptions(o Options) llmopenai.Options {
 	var dst llmopenai.Options
-	llmopenai.WithModel(o.model)(&dst)
+	llmopenai.WithModel(resolveDeployment(o.deployment))(&dst)
 	llmopenai.WithMaxTokens(o.maxTokens)(&dst)
 	if o.temperature != nil {
 		llmopenai.WithTemperature(*o.temperature)(&dst)

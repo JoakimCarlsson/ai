@@ -76,9 +76,26 @@ func TestParseDataURI(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name:     "binary data",
-			input:    "data:application/octet-stream;base64,AAECAwQFBgcICQoLDA0ODw==",
-			wantData: []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+			name:  "binary data",
+			input: "data:application/octet-stream;base64,AAECAwQFBgcICQoLDA0ODw==",
+			wantData: []byte{
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+			},
 			wantMIME: "application/octet-stream",
 			wantErr:  false,
 		},
@@ -135,8 +152,13 @@ func TestParseDataURI(t *testing.T) {
 				if err == nil {
 					t.Fatalf("expected error but got none")
 				}
-				if tt.errMessage != "" && !strings.Contains(err.Error(), tt.errMessage) {
-					t.Fatalf("expected error %q, got %q", tt.errMessage, err.Error())
+				if tt.errMessage != "" &&
+					!strings.Contains(err.Error(), tt.errMessage) {
+					t.Fatalf(
+						"expected error %q, got %q",
+						tt.errMessage,
+						err.Error(),
+					)
 				}
 				return
 			}
@@ -163,7 +185,10 @@ func TestGenerateMultimodalEmbeddings_WrongModel(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for wrong model")
 	}
-	if !strings.Contains(err.Error(), "does not support multimodal embeddings") {
+	if !strings.Contains(
+		err.Error(),
+		"does not support multimodal embeddings",
+	) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -174,15 +199,21 @@ func TestGenerateMultimodalEmbeddings_MissingMimeType(t *testing.T) {
 			model: model.GeminiEmbeddingModels[model.GeminiEmbedding2],
 		},
 	}
-	_, err := c.GenerateMultimodalEmbeddings(context.Background(), []embeddings.MultimodalInput{
-		{Content: []embeddings.MultimodalContent{
-			{ContentData: []byte{0x89, 0x50, 0x4e, 0x47}},
-		}},
-	})
+	_, err := c.GenerateMultimodalEmbeddings(
+		context.Background(),
+		[]embeddings.MultimodalInput{
+			{Content: []embeddings.MultimodalContent{
+				{ContentData: []byte{0x89, 0x50, 0x4e, 0x47}},
+			}},
+		},
+	)
 	if err == nil {
 		t.Fatal("expected error for missing MimeType")
 	}
-	if !strings.Contains(err.Error(), "MimeType required when ContentData is set") {
+	if !strings.Contains(
+		err.Error(),
+		"MimeType required when ContentData is set",
+	) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -193,15 +224,21 @@ func TestGenerateMultimodalEmbeddings_EmptyImageBase64(t *testing.T) {
 			model: model.GeminiEmbeddingModels[model.GeminiEmbedding2],
 		},
 	}
-	_, err := c.GenerateMultimodalEmbeddings(context.Background(), []embeddings.MultimodalInput{
-		{Content: []embeddings.MultimodalContent{
-			{Type: "image_base64"},
-		}},
-	})
+	_, err := c.GenerateMultimodalEmbeddings(
+		context.Background(),
+		[]embeddings.MultimodalInput{
+			{Content: []embeddings.MultimodalContent{
+				{Type: "image_base64"},
+			}},
+		},
+	)
 	if err == nil {
 		t.Fatal("expected error for empty ImageBase64")
 	}
-	if !strings.Contains(err.Error(), "image_base64 part has no ContentData or ImageBase64") {
+	if !strings.Contains(
+		err.Error(),
+		"image_base64 part has no ContentData or ImageBase64",
+	) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -212,15 +249,21 @@ func TestGenerateMultimodalEmbeddings_ImageBase64NoMime(t *testing.T) {
 			model: model.GeminiEmbeddingModels[model.GeminiEmbedding2],
 		},
 	}
-	_, err := c.GenerateMultimodalEmbeddings(context.Background(), []embeddings.MultimodalInput{
-		{Content: []embeddings.MultimodalContent{
-			{Type: "image_base64", ImageBase64: "aGVsbG8="},
-		}},
-	})
+	_, err := c.GenerateMultimodalEmbeddings(
+		context.Background(),
+		[]embeddings.MultimodalInput{
+			{Content: []embeddings.MultimodalContent{
+				{Type: "image_base64", ImageBase64: "aGVsbG8="},
+			}},
+		},
+	)
 	if err == nil {
 		t.Fatal("expected error for missing MimeType on image_base64")
 	}
-	if !strings.Contains(err.Error(), "MimeType is required for image_base64 content") {
+	if !strings.Contains(
+		err.Error(),
+		"MimeType is required for image_base64 content",
+	) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -231,11 +274,18 @@ func TestGenerateMultimodalEmbeddings_InvalidImageBase64(t *testing.T) {
 			model: model.GeminiEmbeddingModels[model.GeminiEmbedding2],
 		},
 	}
-	_, err := c.GenerateMultimodalEmbeddings(context.Background(), []embeddings.MultimodalInput{
-		{Content: []embeddings.MultimodalContent{
-			{Type: "image_base64", ImageBase64: "!!!invalid!!!", MimeType: "image/png"},
-		}},
-	})
+	_, err := c.GenerateMultimodalEmbeddings(
+		context.Background(),
+		[]embeddings.MultimodalInput{
+			{Content: []embeddings.MultimodalContent{
+				{
+					Type:        "image_base64",
+					ImageBase64: "!!!invalid!!!",
+					MimeType:    "image/png",
+				},
+			}},
+		},
+	)
 	if err == nil {
 		t.Fatal("expected error for invalid base64")
 	}
@@ -250,11 +300,14 @@ func TestGenerateMultimodalEmbeddings_EmptyImageURL(t *testing.T) {
 			model: model.GeminiEmbeddingModels[model.GeminiEmbedding2],
 		},
 	}
-	_, err := c.GenerateMultimodalEmbeddings(context.Background(), []embeddings.MultimodalInput{
-		{Content: []embeddings.MultimodalContent{
-			{Type: "image_url"},
-		}},
-	})
+	_, err := c.GenerateMultimodalEmbeddings(
+		context.Background(),
+		[]embeddings.MultimodalInput{
+			{Content: []embeddings.MultimodalContent{
+				{Type: "image_url"},
+			}},
+		},
+	)
 	if err == nil {
 		t.Fatal("expected error for empty ImageURL")
 	}
@@ -269,11 +322,14 @@ func TestGenerateMultimodalEmbeddings_InvalidImageURL(t *testing.T) {
 			model: model.GeminiEmbeddingModels[model.GeminiEmbedding2],
 		},
 	}
-	_, err := c.GenerateMultimodalEmbeddings(context.Background(), []embeddings.MultimodalInput{
-		{Content: []embeddings.MultimodalContent{
-			{Type: "image_url", ImageURL: "https://example.com/image.jpg"},
-		}},
-	})
+	_, err := c.GenerateMultimodalEmbeddings(
+		context.Background(),
+		[]embeddings.MultimodalInput{
+			{Content: []embeddings.MultimodalContent{
+				{Type: "image_url", ImageURL: "https://example.com/image.jpg"},
+			}},
+		},
+	)
 	if err == nil {
 		t.Fatal("expected error for unsupported image URL")
 	}
@@ -288,11 +344,14 @@ func TestGenerateMultimodalEmbeddings_UnsupportedContentType(t *testing.T) {
 			model: model.GeminiEmbeddingModels[model.GeminiEmbedding2],
 		},
 	}
-	_, err := c.GenerateMultimodalEmbeddings(context.Background(), []embeddings.MultimodalInput{
-		{Content: []embeddings.MultimodalContent{
-			{Type: "video"},
-		}},
-	})
+	_, err := c.GenerateMultimodalEmbeddings(
+		context.Background(),
+		[]embeddings.MultimodalInput{
+			{Content: []embeddings.MultimodalContent{
+				{Type: "video"},
+			}},
+		},
+	)
 	if err == nil {
 		t.Fatal("expected error for unsupported content type")
 	}
@@ -334,14 +393,18 @@ func TestGenerateMultimodalEmbeddings_Integration(t *testing.T) {
 		WithDimensions(768),
 	)
 
-	resp, err := c.GenerateMultimodalEmbeddings(context.Background(), []embeddings.MultimodalInput{
-		{
-			Content: []embeddings.MultimodalContent{
-				{ContentData: imgBytes, MimeType: "image/jpeg"},
-				{Type: "text", Text: "a cute black dog"},
+	resp, err := c.GenerateMultimodalEmbeddings(
+		context.Background(),
+		[]embeddings.MultimodalInput{
+			{
+				Content: []embeddings.MultimodalContent{
+					{ContentData: imgBytes, MimeType: "image/jpeg"},
+					{Type: "text", Text: "a cute black dog"},
+				},
 			},
 		},
-	}, "RETRIEVAL_DOCUMENT")
+		"RETRIEVAL_DOCUMENT",
+	)
 	if err != nil {
 		t.Fatalf("generating multimodal embedding: %v", err)
 	}

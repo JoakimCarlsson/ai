@@ -416,20 +416,18 @@ func (c *Client) preparedParams(
 	pb.ApplyInt64Seed(c.options.seed,
 		func(s *int64) { params.Seed = openaisdk.Int(*s) })
 
-	if c.options.model.CanReason {
+	if c.options.maxTokens > 0 {
 		params.MaxCompletionTokens = openaisdk.Int(c.options.maxTokens)
-		if c.options.reasoningEffort != nil {
-			switch *c.options.reasoningEffort {
-			case ReasoningEffortLow:
-				params.ReasoningEffort = shared.ReasoningEffortLow
-			case ReasoningEffortMedium:
-				params.ReasoningEffort = shared.ReasoningEffortMedium
-			case ReasoningEffortHigh:
-				params.ReasoningEffort = shared.ReasoningEffortHigh
-			}
+	}
+	if c.options.model.CanReason && c.options.reasoningEffort != nil {
+		switch *c.options.reasoningEffort {
+		case ReasoningEffortLow:
+			params.ReasoningEffort = shared.ReasoningEffortLow
+		case ReasoningEffortMedium:
+			params.ReasoningEffort = shared.ReasoningEffortMedium
+		case ReasoningEffortHigh:
+			params.ReasoningEffort = shared.ReasoningEffortHigh
 		}
-	} else {
-		params.MaxTokens = openaisdk.Int(c.options.maxTokens)
 	}
 
 	return params
