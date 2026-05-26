@@ -20,7 +20,9 @@ func main() {
 	}
 	embedder := geminiembed.NewEmbedding(
 		geminiembed.WithAPIKey(apiKey),
-		geminiembed.WithModel(model.GeminiEmbeddingModels[model.GeminiEmbedding2]),
+		geminiembed.WithModel(
+			model.GeminiEmbeddingModels[model.GeminiEmbedding2],
+		),
 		geminiembed.WithDimensions(1536),
 	)
 
@@ -30,19 +32,27 @@ func main() {
 		os.Exit(1)
 	}
 
-	resp, err := embedder.GenerateMultimodalEmbeddings(ctx, []embeddings.MultimodalInput{
-		{
-			Content: []embeddings.MultimodalContent{
-				{ContentData: imgBytes, MimeType: "image/png"},
-				{Type: "text", Text: "a cute black dog"},
+	resp, err := embedder.GenerateMultimodalEmbeddings(
+		ctx,
+		[]embeddings.MultimodalInput{
+			{
+				Content: []embeddings.MultimodalContent{
+					{ContentData: imgBytes, MimeType: "image/png"},
+					{Type: "text", Text: "a cute black dog"},
+				},
 			},
 		},
-	}, "RETRIEVAL_DOCUMENT")
+		"RETRIEVAL_DOCUMENT",
+	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "generating multimodal embedding: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("got %d embeddings, dim=%d\n", len(resp.Embeddings), len(resp.Embeddings[0]))
+	fmt.Printf(
+		"got %d embeddings, dim=%d\n",
+		len(resp.Embeddings),
+		len(resp.Embeddings[0]),
+	)
 
 }

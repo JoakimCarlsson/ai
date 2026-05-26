@@ -79,7 +79,7 @@ client := llmazure.NewLLM(
     llmazure.WithAPIKey("your-key"),
     llmazure.WithEndpoint("https://your-resource.openai.azure.com"),
     llmazure.WithAPIVersion("2024-02-15-preview"),
-    llmazure.WithModel(model.AzureModels[model.AzureGPT4o]),
+    llmazure.WithDeployment("gpt-4o"),
 )
 ```
 

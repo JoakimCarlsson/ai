@@ -214,7 +214,9 @@ func parseDataURI(raw string) ([]byte, string, error) {
 
 		encoding, data, found := strings.Cut(remainder, ",")
 		if !found {
-			return nil, "", fmt.Errorf("malformed data URI: missing comma after encoding")
+			return nil, "", fmt.Errorf(
+				"malformed data URI: missing comma after encoding",
+			)
 		}
 
 		if encoding != "base64" {
@@ -306,7 +308,10 @@ func (c *Client) GenerateMultimodalEmbeddings(
 					}
 					data, parsedMime, err := parseDataURI(mc.ImageBase64)
 					if err != nil {
-						return nil, fmt.Errorf("gemini multimodal embeddings: decode image_base64: %w", err)
+						return nil, fmt.Errorf(
+							"gemini multimodal embeddings: decode image_base64: %w",
+							err,
+						)
 					}
 					mimeType := mc.MimeType
 					if mimeType == "" {
@@ -370,7 +375,12 @@ func (c *Client) GenerateMultimodalEmbeddings(
 			config = &genai.EmbedContentConfig{OutputDimensionality: &dim}
 		}
 
-		result, err := c.client.Models.EmbedContent(ctx, c.options.model.APIModel, contents, config)
+		result, err := c.client.Models.EmbedContent(
+			ctx,
+			c.options.model.APIModel,
+			contents,
+			config,
+		)
 		if err != nil {
 			return nil, fmt.Errorf("gemini multimodal embeddings: %w", err)
 		}
@@ -389,7 +399,8 @@ func (c *Client) GenerateMultimodalEmbeddings(
 	default:
 		return nil, fmt.Errorf(
 			"%s (%s) does not support multimodal embeddings; use gemini-embedding-2",
-			c.options.model.Name, c.options.model.ID,
+			c.options.model.Name,
+			c.options.model.ID,
 		)
 	}
 }

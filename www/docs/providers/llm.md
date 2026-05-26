@@ -231,7 +231,7 @@ client := llmazure.NewLLM(
     llmazure.WithAPIKey(os.Getenv("AZURE_OPENAI_KEY")),
     llmazure.WithEndpoint("https://my-resource.openai.azure.com"),
     llmazure.WithAPIVersion("2024-02-01"),
-    llmazure.WithModel(model.OpenAIModels[model.GPT4o]),
+    llmazure.WithDeployment("gpt-4o"),
 )
 ```
 
