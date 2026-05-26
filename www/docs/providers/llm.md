@@ -230,8 +230,7 @@ import llmazure "github.com/joakimcarlsson/ai/llm/azure"
 client := llmazure.NewLLM(
     llmazure.WithAPIKey(os.Getenv("AZURE_OPENAI_KEY")),
     llmazure.WithEndpoint("https://my-resource.openai.azure.com"),
-    llmazure.WithAPIVersion("2024-02-01"),
-    llmazure.WithDeployment("gpt-4o"),
+    llmazure.WithDeployment("my-chat-deployment"),
 )
 ```
 
