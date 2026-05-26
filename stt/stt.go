@@ -56,9 +56,10 @@ type Segment struct {
 
 // Word represents a single word with its timing information.
 type Word struct {
-	Word  string
-	Start float64
-	End   float64
+	Word    string
+	Start   float64
+	End     float64
+	Speaker string
 }
 
 // Response contains the transcription result with optional segments, words, and usage data.
@@ -81,6 +82,7 @@ type StreamResult struct {
 	IsFinal    bool
 	WordCount  int
 	Words      []Word
+	Speaker    string
 	Error      error
 }
 
