@@ -26,9 +26,9 @@ func main() {
 		geminiembed.WithDimensions(1536),
 	)
 
-	imgBytes, err := os.ReadFile("black-dog.png")
+	imgBytes, err := os.ReadFile("black-dog.jpg")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "reading black-dog.png: %v\n", err)
+		fmt.Fprintf(os.Stderr, "reading black-dog.jpg: %v\n", err)
 		os.Exit(1)
 	}
 
