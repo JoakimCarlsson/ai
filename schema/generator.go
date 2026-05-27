@@ -15,6 +15,12 @@ import (
 //   - required: explicitly mark as required or not (e.g., `required:"true"` or `required:"false"`)
 //
 // Returns the properties map and list of required field names.
+//
+// OpenAI strict structured-output requires every property in `properties` to
+// appear in `required` and every nested object to set `additionalProperties:
+// false`. Optional fields (pointer types or `,omitempty` JSON tags) are
+// represented by making their type nullable (e.g. ["string", "null"]) rather
+// than by omission from `required`.
 func GenerateSchema(v any) (map[string]any, []string) {
 	t := reflect.TypeOf(v)
 	if t.Kind() == reflect.Pointer {
@@ -43,8 +49,17 @@ func GenerateSchema(v any) (map[string]any, []string) {
 			}
 		}
 
+		optional := field.Type.Kind() == reflect.Pointer ||
+			strings.Contains(field.Tag.Get("json"), "omitempty") ||
+			field.Tag.Get("required") == "false"
+
 		prop := make(map[string]any)
-		prop["type"] = goTypeToJSONType(field.Type)
+		baseType := goTypeToJSONType(field.Type)
+		if optional {
+			prop["type"] = []string{baseType, "null"}
+		} else {
+			prop["type"] = baseType
+		}
 
 		if desc := field.Tag.Get("desc"); desc != "" {
 			prop["description"] = desc
@@ -54,17 +69,24 @@ func GenerateSchema(v any) (map[string]any, []string) {
 			prop["enum"] = strings.Split(enum, ",")
 		}
 
-		if field.Type.Kind() == reflect.Struct &&
-			field.Type != reflect.TypeOf(struct{}{}) {
+		structType := field.Type
+		if structType.Kind() == reflect.Pointer {
+			structType = structType.Elem()
+		}
+		if structType.Kind() == reflect.Struct &&
+			structType != reflect.TypeOf(struct{}{}) {
 			nested, nestedReq := GenerateSchema(
-				reflect.New(field.Type).Elem().Interface(),
+				reflect.New(structType).Elem().Interface(),
 			)
 			if nested != nil {
-				prop["type"] = "object"
-				prop["properties"] = nested
-				if len(nestedReq) > 0 {
-					prop["required"] = nestedReq
+				if optional {
+					prop["type"] = []string{"object", "null"}
+				} else {
+					prop["type"] = "object"
 				}
+				prop["properties"] = nested
+				prop["additionalProperties"] = false
+				prop["required"] = nestedReq
 			}
 		}
 
@@ -78,23 +100,15 @@ func GenerateSchema(v any) (map[string]any, []string) {
 				if nested != nil {
 					items["type"] = "object"
 					items["properties"] = nested
-					if len(nestedReq) > 0 {
-						items["required"] = nestedReq
-					}
+					items["additionalProperties"] = false
+					items["required"] = nestedReq
 				}
 			}
 			prop["items"] = items
 		}
 
 		properties[name] = prop
-
-		if field.Tag.Get("required") == "true" {
-			required = append(required, name)
-		} else if field.Type.Kind() != reflect.Pointer && !strings.Contains(field.Tag.Get("json"), "omitempty") {
-			if field.Tag.Get("required") != "false" {
-				required = append(required, name)
-			}
-		}
+		required = append(required, name)
 	}
 
 	return properties, required

@@ -20,16 +20,18 @@ import (
 
 // Options configures the Azure OpenAI LLM client.
 type Options struct {
-	apiKey        string
-	deployment    string
-	maxTokens     int64
-	temperature   *float64
-	topP          *float64
-	topK          *int64
-	stopSequences []string
-	timeout       *time.Duration
-	endpoint      string
-	apiVersion    string
+	apiKey                string
+	deployment            string
+	maxTokens             int64
+	temperature           *float64
+	topP                  *float64
+	topK                  *int64
+	stopSequences         []string
+	timeout               *time.Duration
+	endpoint              string
+	apiVersion            string
+	canReason             *bool
+	supportsStructuredOut *bool
 }
 
 // Option configures Options.
@@ -99,6 +101,22 @@ func WithAPIVersion(apiVersion string) Option {
 	return func(o *Options) { o.apiVersion = apiVersion }
 }
 
+// WithReasoning declares whether the deployed model supports reasoning
+// semantics. When true the chat-completions request emits
+// max_completion_tokens instead of max_tokens — required by gpt-5.x,
+// o-series, and most newer Azure Foundry deployments. Use this when the
+// deployment name does not match an entry in [model.AzureModels].
+func WithReasoning(canReason bool) Option {
+	return func(o *Options) { o.canReason = &canReason }
+}
+
+// WithStructuredOutput declares whether the deployed model supports the
+// chat-completions response_format JSON-schema constraint. Use this when
+// the deployment name does not match an entry in [model.AzureModels].
+func WithStructuredOutput(supportsStructuredOutput bool) Option {
+	return func(o *Options) { o.supportsStructuredOut = &supportsStructuredOutput }
+}
+
 // Client implements [llm.LLM] against Azure OpenAI by delegating request handling
 // to [llm/openai].Client constructed with Azure-specific SDK options.
 type Client struct {
@@ -112,7 +130,7 @@ func NewLLM(opts ...Option) llm.LLM {
 		o(&options)
 	}
 
-	resolvedModel := resolveDeployment(options.deployment)
+	resolvedModel := modelFromOptions(options)
 
 	openaiOpts := []llmopenai.Option{
 		llmopenai.WithModel(resolvedModel),
@@ -196,6 +214,10 @@ func NewLLM(opts ...Option) llm.LLM {
 // requests route correctly; metadata is filled in from [model.AzureModels] by
 // exact APIModel match, then by substring fallback (so a deployment named
 // "gpt-4.1-nano-prod" inherits metadata from the "gpt-4.1-nano" entry).
+//
+// Azure Foundry deployment names are opaque — callers whose deployment
+// doesn't match any registry entry should declare capabilities explicitly
+// via [WithReasoning] and [WithStructuredOutput].
 func resolveDeployment(deployment string) model.Model {
 	if deployment == "" {
 		return model.Model{}
@@ -212,6 +234,19 @@ func resolveDeployment(deployment string) model.Model {
 		APIModel: deployment,
 		Provider: model.ProviderAzure,
 	}
+}
+
+// modelFromOptions resolves the deployment and applies any explicit
+// capability overrides from [WithReasoning] / [WithStructuredOutput].
+func modelFromOptions(o Options) model.Model {
+	m := resolveDeployment(o.deployment)
+	if o.canReason != nil {
+		m.CanReason = *o.canReason
+	}
+	if o.supportsStructuredOut != nil {
+		m.SupportsStructuredOut = *o.supportsStructuredOut
+	}
+	return m
 }
 
 func findAzureModel(deployment string, exact bool) (model.Model, bool) {
@@ -241,7 +276,7 @@ func findAzureModel(deployment string, exact bool) (model.Model, bool) {
 // through the option-func ladder.
 func buildOpenAIOptions(o Options) llmopenai.Options {
 	var dst llmopenai.Options
-	llmopenai.WithModel(resolveDeployment(o.deployment))(&dst)
+	llmopenai.WithModel(modelFromOptions(o))(&dst)
 	llmopenai.WithMaxTokens(o.maxTokens)(&dst)
 	if o.temperature != nil {
 		llmopenai.WithTemperature(*o.temperature)(&dst)
