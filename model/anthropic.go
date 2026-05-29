@@ -17,6 +17,7 @@ const (
 	Claude46Opus   ID = "claude-4.6-opus"
 	Claude46Sonnet ID = "claude-4.6-sonnet"
 	Claude47Opus   ID = "claude-4.7-opus"
+	Claude48Opus   ID = "claude-4.8-opus"
 )
 
 // AnthropicModels maps Anthropic model IDs to their configurations.
@@ -201,6 +202,21 @@ var AnthropicModels = map[ID]Model{
 		Name:                  "Claude 4.7 Opus",
 		Provider:              ProviderAnthropic,
 		APIModel:              "claude-opus-4-7",
+		CostPer1MIn:           5.0,
+		CostPer1MInCached:     6.25,
+		CostPer1MOutCached:    0.50,
+		CostPer1MOut:          25.0,
+		ContextWindow:         1000000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	Claude48Opus: {
+		ID:                    Claude48Opus,
+		Name:                  "Claude 4.8 Opus",
+		Provider:              ProviderAnthropic,
+		APIModel:              "claude-opus-4-8",
 		CostPer1MIn:           5.0,
 		CostPer1MInCached:     6.25,
 		CostPer1MOutCached:    0.50,
