@@ -10,7 +10,7 @@ require (
 	github.com/joakimcarlsson/ai/schema v0.1.0
 	github.com/joakimcarlsson/ai/tool v0.1.0
 	github.com/joakimcarlsson/ai/types v0.1.0
-	github.com/openai/openai-go/v3 v3.35.0
+	github.com/openai/openai-go/v3 v3.37.0
 )
 
 require (

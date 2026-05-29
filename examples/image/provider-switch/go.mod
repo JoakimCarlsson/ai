@@ -3,11 +3,11 @@ module github.com/joakimcarlsson/ai/examples/image/provider-switch
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/image v0.0.0-00010101000000-000000000000
+	github.com/joakimcarlsson/ai/image v0.1.0
 	github.com/joakimcarlsson/ai/image/gemini v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/image/openai v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/image/xai v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/model v0.0.0-00010101000000-000000000000
+	github.com/joakimcarlsson/ai/model v0.2.0
 )
 
 require (
@@ -25,9 +25,9 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.0.0-00010101000000-000000000000 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.1.0 // indirect
 	github.com/openai/openai-go v1.12.0 // indirect
-	github.com/tidwall/gjson v1.14.4 // indirect
+	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
@@ -49,7 +49,7 @@ require (
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
-	google.golang.org/genai v1.55.0 // indirect
+	google.golang.org/genai v1.58.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260401024825-9d38bb4040a9 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9 // indirect
 	google.golang.org/grpc v1.80.0 // indirect
@@ -58,7 +58,6 @@ require (
 
 replace (
 	github.com/joakimcarlsson/ai/agent => ../../../agent
-	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/batch => ../../../batch
 	github.com/joakimcarlsson/ai/batch/concurrent => ../../../batch/concurrent
 	github.com/joakimcarlsson/ai/embeddings => ../../../embeddings
@@ -76,6 +75,7 @@ replace (
 	github.com/joakimcarlsson/ai/llm/anthropic => ../../../llm/anthropic
 	github.com/joakimcarlsson/ai/llm/gemini => ../../../llm/gemini
 	github.com/joakimcarlsson/ai/llm/openai => ../../../llm/openai
+	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
 	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt

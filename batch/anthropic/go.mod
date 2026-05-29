@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/batch/anthropic
 go 1.25.0
 
 require (
-	github.com/anthropics/anthropic-sdk-go v1.38.0
+	github.com/anthropics/anthropic-sdk-go v1.46.0
 	github.com/joakimcarlsson/ai/batch v0.1.0
 	github.com/joakimcarlsson/ai/llm v0.1.0
 	github.com/joakimcarlsson/ai/message v0.1.0
@@ -30,6 +30,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.6.0 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
+	github.com/standard-webhooks/standard-webhooks/libraries v0.0.1 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
