@@ -279,8 +279,12 @@ func (c *compoundClient) preparedParams(
 		params.TopP = openaisdk.Float(*c.options.topP)
 	}
 	if len(c.options.stopSequences) > 0 {
+		stops := c.options.stopSequences
+		if len(stops) > 4 {
+			stops = stops[:4]
+		}
 		params.Stop = openaisdk.ChatCompletionNewParamsStopUnion{
-			OfString: openaisdk.String(c.options.stopSequences[0]),
+			OfStringArray: stops,
 		}
 	}
 	return params

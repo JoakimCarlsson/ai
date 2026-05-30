@@ -84,7 +84,10 @@ func WithTemperature(
 // WithTopP sets nucleus sampling probability mass.
 func WithTopP(p float64) Option { return func(o *Options) { o.topP = &p } }
 
-// WithTopK limits token selection to the top K candidates.
+// WithTopK limits token selection to the top K candidates. OpenAI and Azure
+// reject top_k, so it is sent only when a custom base URL targets an
+// OpenAI-compatible provider that accepts it (Together, OpenRouter, Fireworks,
+// ...); otherwise it has no effect. See requestOptions.
 func WithTopK(k int64) Option { return func(o *Options) { o.topK = &k } }
 
 // WithStopSequences sets text sequences that halt generation.
@@ -396,7 +399,7 @@ func (c *Client) preparedParams(
 	pb := llm.NewParameterBuilder(
 		c.options.temperature,
 		c.options.topP,
-		c.options.topK,
+		nil,
 	)
 	pb.ApplyFloat64Temperature(
 		func(t *float64) { params.Temperature = openaisdk.Float(*t) },
@@ -404,8 +407,12 @@ func (c *Client) preparedParams(
 	pb.ApplyFloat64TopP(func(p *float64) { params.TopP = openaisdk.Float(*p) })
 
 	if len(c.options.stopSequences) > 0 {
+		stops := c.options.stopSequences
+		if len(stops) > 4 {
+			stops = stops[:4]
+		}
 		params.Stop = openaisdk.ChatCompletionNewParamsStopUnion{
-			OfString: openaisdk.String(c.options.stopSequences[0]),
+			OfStringArray: stops,
 		}
 	}
 
@@ -433,6 +440,22 @@ func (c *Client) preparedParams(
 	return params
 }
 
+// requestOptions returns per-call SDK request options derived from Options.
+//
+// The OpenAI Go SDK has no native top_k field on ChatCompletionNewParams. When
+// WithTopK is set, the value is injected directly into the request body, but
+// only on the OpenAI-compatible path (when a custom base URL is configured):
+// OpenAI's and Azure's own APIs reject top_k as an unrecognized argument
+// (HTTP 400), whereas compatible providers that accept it — Together,
+// OpenRouter, Fireworks, ... — honor it. Without a custom base URL the target
+// is OpenAI/Azure proper, so top_k is omitted rather than triggering a 400.
+func (c *Client) requestOptions() []option.RequestOption {
+	if c.options.topK == nil || c.options.baseURL == "" {
+		return nil
+	}
+	return []option.RequestOption{option.WithJSONSet("top_k", *c.options.topK)}
+}
+
 // SendMessages sends a conversation and returns the complete response.
 func (c *Client) SendMessages(
 	ctx context.Context,
@@ -451,7 +474,10 @@ func (c *Client) SendMessages(
 		ctx,
 		RetryConfig(),
 		func() (*llm.Response, error) {
-			openaiResponse, err := c.client.Chat.Completions.New(ctx, params)
+			openaiResponse, err := c.client.Chat.Completions.New(
+				ctx,
+				params,
+				c.requestOptions()...)
 			if err != nil {
 				return nil, wrapError(err)
 			}
@@ -516,7 +542,10 @@ func (c *Client) runStream(
 	eventChan chan<- llm.Event,
 	structured bool,
 ) error {
-	openaiStream := c.client.Chat.Completions.NewStreaming(ctx, params)
+	openaiStream := c.client.Chat.Completions.NewStreaming(
+		ctx,
+		params,
+		c.requestOptions()...)
 
 	acc := openaisdk.ChatCompletionAccumulator{}
 	currentContent := ""
@@ -656,7 +685,10 @@ func (c *Client) SendMessagesWithStructuredOutput(
 		ctx,
 		RetryConfig(),
 		func() (*llm.Response, error) {
-			openaiResponse, err := c.client.Chat.Completions.New(ctx, params)
+			openaiResponse, err := c.client.Chat.Completions.New(
+				ctx,
+				params,
+				c.requestOptions()...)
 			if err != nil {
 				return nil, wrapError(err)
 			}
