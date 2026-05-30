@@ -40,3 +40,24 @@ func TestCompoundPreparedParamsStopSequencesArray(t *testing.T) {
 		}
 	}
 }
+
+// TestCompoundPreparedParamsStopSequencesCappedAtFour verifies the Groq stop
+// limit of 4 is enforced, matching OpenAI.
+func TestCompoundPreparedParamsStopSequencesCappedAtFour(t *testing.T) {
+	c := &compoundClient{options: CompoundOptions{
+		stopSequences: []string{"1", "2", "3", "4", "5", "6"},
+	}}
+
+	params := c.preparedParams(
+		[]openaisdk.ChatCompletionMessageParamUnion{},
+		nil,
+	)
+
+	if len(params.Stop.OfStringArray) != 4 {
+		t.Fatalf(
+			"expected stop sequences capped at 4, got %d: %v",
+			len(params.Stop.OfStringArray),
+			params.Stop.OfStringArray,
+		)
+	}
+}

@@ -399,8 +399,6 @@ func (c *Client) preparedParams(
 	pb := llm.NewParameterBuilder(
 		c.options.temperature,
 		c.options.topP,
-		// top_k has no native field on ChatCompletionNewParams; it is injected
-		// into the request body by requestOptions instead.
 		nil,
 	)
 	pb.ApplyFloat64Temperature(
@@ -409,7 +407,6 @@ func (c *Client) preparedParams(
 	pb.ApplyFloat64TopP(func(p *float64) { params.TopP = openaisdk.Float(*p) })
 
 	if len(c.options.stopSequences) > 0 {
-		// The OpenAI API accepts up to 4 stop sequences as an array.
 		stops := c.options.stopSequences
 		if len(stops) > 4 {
 			stops = stops[:4]
