@@ -52,6 +52,8 @@ type Options struct {
 	presencePenalty   *float64
 	seed              *int64
 	parallelToolCalls *bool
+	extraBodyFields   map[string]any
+	metadataFields    map[string]string
 }
 
 // Option configures Options.
@@ -144,6 +146,35 @@ func WithSeed(seed int64) Option { return func(o *Options) { o.seed = &seed } }
 // WithParallelToolCalls toggles whether OpenAI returns multiple tool calls in a single response.
 func WithParallelToolCalls(enabled bool) Option {
 	return func(o *Options) { o.parallelToolCalls = &enabled }
+}
+
+// WithRequestJSONField injects an arbitrary top-level field into the request
+// body via the SDK's WithJSONSet. It is the shared mechanism OpenAI-compatible
+// providers (OpenRouter, Perplexity, ...) use to express vendor features that
+// are absent from the OpenAI wire schema, such as a provider routing object or
+// search filters. Like WithTopK, injected fields are only meaningful when a
+// custom base URL targets a provider that accepts them.
+func WithRequestJSONField(key string, value any) Option {
+	return func(o *Options) {
+		if o.extraBodyFields == nil {
+			o.extraBodyFields = make(map[string]any)
+		}
+		o.extraBodyFields[key] = value
+	}
+}
+
+// WithResponseMetadataField surfaces a top-level response field into
+// [llm.Response].ProviderMetadata. responseField is read from the completion's
+// JSON extra fields (fields the OpenAI SDK does not model natively, such as
+// Perplexity's citations) and stored under metaKey, which callers should
+// namespace per provider (e.g. "perplexity.citations").
+func WithResponseMetadataField(responseField, metaKey string) Option {
+	return func(o *Options) {
+		if o.metadataFields == nil {
+			o.metadataFields = make(map[string]string)
+		}
+		o.metadataFields[responseField] = metaKey
+	}
 }
 
 // RetryConfig provides retry settings tuned for OpenAI API behavior.
@@ -450,10 +481,14 @@ func (c *Client) preparedParams(
 // OpenRouter, Fireworks, ... — honor it. Without a custom base URL the target
 // is OpenAI/Azure proper, so top_k is omitted rather than triggering a 400.
 func (c *Client) requestOptions() []option.RequestOption {
-	if c.options.topK == nil || c.options.baseURL == "" {
-		return nil
+	var opts []option.RequestOption
+	if c.options.topK != nil && c.options.baseURL != "" {
+		opts = append(opts, option.WithJSONSet("top_k", *c.options.topK))
 	}
-	return []option.RequestOption{option.WithJSONSet("top_k", *c.options.topK)}
+	for k, v := range c.options.extraBodyFields {
+		opts = append(opts, option.WithJSONSet(k, v))
+	}
+	return opts
 }
 
 // SendMessages sends a conversation and returns the complete response.
@@ -498,10 +533,11 @@ func (c *Client) SendMessages(
 			}
 
 			return &llm.Response{
-				Content:      content,
-				ToolCalls:    toolCalls,
-				Usage:        c.usage(*openaiResponse),
-				FinishReason: finishReason,
+				Content:          content,
+				ToolCalls:        toolCalls,
+				Usage:            c.usage(*openaiResponse),
+				FinishReason:     finishReason,
+				ProviderMetadata: c.providerMetadata(*openaiResponse),
 			}, nil
 		},
 	)
@@ -596,10 +632,11 @@ func (c *Client) runStream(
 		}
 
 		resp := &llm.Response{
-			Content:      currentContent,
-			ToolCalls:    toolCalls,
-			Usage:        c.usage(acc.ChatCompletion),
-			FinishReason: finishReason,
+			Content:          currentContent,
+			ToolCalls:        toolCalls,
+			Usage:            c.usage(acc.ChatCompletion),
+			FinishReason:     finishReason,
+			ProviderMetadata: c.providerMetadata(acc.ChatCompletion),
 		}
 		if structured {
 			resp.StructuredOutput = &currentContent
@@ -632,6 +669,11 @@ func (c *Client) toolCalls(
 
 func (c *Client) usage(completion openaisdk.ChatCompletion) llm.TokenUsage {
 	cachedTokens := completion.Usage.PromptTokensDetails.CachedTokens
+	if cachedTokens == 0 {
+		// DeepSeek reports cache hits as a top-level usage field rather than in
+		// prompt_tokens_details; the SDK captures it as an extra field.
+		cachedTokens = extraUsageInt(completion.Usage, "prompt_cache_hit_tokens")
+	}
 	inputTokens := completion.Usage.PromptTokens - cachedTokens
 
 	return llm.TokenUsage{
@@ -639,7 +681,58 @@ func (c *Client) usage(completion openaisdk.ChatCompletion) llm.TokenUsage {
 		OutputTokens:        completion.Usage.CompletionTokens,
 		CacheCreationTokens: 0,
 		CacheReadTokens:     cachedTokens,
+		ReasoningTokens:     completion.Usage.CompletionTokensDetails.ReasoningTokens,
 	}
+}
+
+// extraUsageInt reads an integer usage field the OpenAI SDK does not model
+// natively from the completion usage's JSON extra fields. The SDK reserves
+// respjson.Field.Valid for modeled fields, so extra fields are read via Raw.
+func extraUsageInt(usage openaisdk.CompletionUsage, key string) int64 {
+	field, ok := usage.JSON.ExtraFields[key]
+	if !ok {
+		return 0
+	}
+	raw := field.Raw()
+	if raw == "" || raw == "null" {
+		return 0
+	}
+	var n int64
+	if json.Unmarshal([]byte(raw), &n) != nil {
+		return 0
+	}
+	return n
+}
+
+// providerMetadata extracts the configured top-level response fields (set via
+// WithResponseMetadataField) from the completion's JSON extra fields into a
+// ProviderMetadata map. Returns nil when nothing is configured or present.
+func (c *Client) providerMetadata(
+	completion openaisdk.ChatCompletion,
+) map[string]any {
+	if len(c.options.metadataFields) == 0 {
+		return nil
+	}
+	var meta map[string]any
+	for field, key := range c.options.metadataFields {
+		f, ok := completion.JSON.ExtraFields[field]
+		if !ok {
+			continue
+		}
+		raw := f.Raw()
+		if raw == "" || raw == "null" {
+			continue
+		}
+		var value any
+		if json.Unmarshal([]byte(raw), &value) != nil {
+			continue
+		}
+		if meta == nil {
+			meta = make(map[string]any)
+		}
+		meta[key] = value
+	}
+	return meta
 }
 
 func (c *Client) responseFormatForSchema(
@@ -715,6 +808,7 @@ func (c *Client) SendMessagesWithStructuredOutput(
 				FinishReason:               finishReason,
 				StructuredOutput:           &content,
 				UsedNativeStructuredOutput: true,
+				ProviderMetadata:           c.providerMetadata(*openaiResponse),
 			}, nil
 		},
 	)
