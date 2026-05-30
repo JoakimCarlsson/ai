@@ -672,7 +672,10 @@ func (c *Client) usage(completion openaisdk.ChatCompletion) llm.TokenUsage {
 	if cachedTokens == 0 {
 		// DeepSeek reports cache hits as a top-level usage field rather than in
 		// prompt_tokens_details; the SDK captures it as an extra field.
-		cachedTokens = extraUsageInt(completion.Usage, "prompt_cache_hit_tokens")
+		cachedTokens = extraUsageInt(
+			completion.Usage,
+			"prompt_cache_hit_tokens",
+		)
 	}
 	inputTokens := completion.Usage.PromptTokens - cachedTokens
 

@@ -147,17 +147,24 @@ func TestWireTopKAndStop(t *testing.T) {
 // top-level fields (objects and arrays) into the request body.
 func TestWireRequestJSONField(t *testing.T) {
 	var body map[string]any
-	srv := newCompletionServer(t, &body, `{"id":"x","object":"chat.completion",`+
-		`"choices":[{"index":0,"message":{"role":"assistant","content":"hi"},`+
-		`"finish_reason":"stop"}],`+
-		`"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}`)
+	srv := newCompletionServer(
+		t,
+		&body,
+		`{"id":"x","object":"chat.completion",`+
+			`"choices":[{"index":0,"message":{"role":"assistant","content":"hi"},`+
+			`"finish_reason":"stop"}],`+
+			`"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}`,
+	)
 	defer srv.Close()
 
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(model.Model{APIModel: "x"}),
-		WithRequestJSONField("provider", map[string]any{"allow_fallbacks": false}),
+		WithRequestJSONField(
+			"provider",
+			map[string]any{"allow_fallbacks": false},
+		),
 		WithRequestJSONField("models", []string{"a", "b"}),
 	)
 
