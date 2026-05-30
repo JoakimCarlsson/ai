@@ -18,7 +18,7 @@ import (
 // and ReasoningTokens (from completion_tokens_details).
 func TestCacheHitTokens(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
+		func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = io.WriteString(w, `{"id":"x","object":"chat.completion",`+
 				`"choices":[{"index":0,"message":{"role":"assistant",`+
