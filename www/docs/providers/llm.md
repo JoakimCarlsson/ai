@@ -93,6 +93,14 @@ llmopenai.WithStopSequences("STOP", "END")
 llmopenai.WithTimeout(30 * time.Second)
 ```
 
+!!! note "`WithTopK` on the OpenAI client"
+    OpenAI's and Azure's own APIs reject `top_k` (HTTP 400), so `llmopenai.WithTopK`
+    is sent only when a custom base URL points at an OpenAI-compatible provider that
+    accepts it (Together, OpenRouter, Fireworks, ...); against OpenAI or Azure proper
+    it has no effect. Native providers (Anthropic, Gemini, Bedrock) honor `WithTopK`
+    directly. `WithStopSequences` sends every sequence provided (the OpenAI client
+    caps at the API's limit of 4).
+
 ## Vendor-specific options
 
 OpenAI:
@@ -243,6 +251,12 @@ client := llmbedrock.NewLLM(
     llmbedrock.WithMaxTokens(2000),
 )
 ```
+
+Prompt caching is on by default on Bedrock: the underlying Anthropic client's
+`cache_control` breakpoints reach Bedrock and populate `CacheReadTokens` /
+`CacheCreationTokens` in the response usage. Pass `llmbedrock.WithDisableCache()`
+to opt out. (Newer Claude models require at least 4096 cached tokens per
+checkpoint before a cache hit is recorded.)
 
 ```go
 import llmvertex "github.com/joakimcarlsson/ai/llm/vertexai"
