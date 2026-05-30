@@ -101,6 +101,10 @@ type TokenUsage struct {
 	OutputTokens        int64
 	CacheCreationTokens int64
 	CacheReadTokens     int64
+	// ReasoningTokens counts tokens spent on internal reasoning/thinking, as
+	// reported by providers that surface it (OpenAI o-series, Gemini, DeepSeek).
+	// These are billed within OutputTokens, not in addition to them.
+	ReasoningTokens int64
 }
 
 // Add accumulates token counts from another TokenUsage into this one.
@@ -109,6 +113,7 @@ func (u *TokenUsage) Add(other TokenUsage) {
 	u.OutputTokens += other.OutputTokens
 	u.CacheCreationTokens += other.CacheCreationTokens
 	u.CacheReadTokens += other.CacheReadTokens
+	u.ReasoningTokens += other.ReasoningTokens
 }
 
 // Response represents the complete response from an LLM provider.

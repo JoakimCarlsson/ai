@@ -47,6 +47,7 @@ type Options struct {
 	presencePenalty  *float64
 	seed             *int64
 	thinkingLevel    *ThinkingLevel
+	thinkingBudget   *int32
 	builtinTools     []*genai.Tool
 }
 
@@ -120,6 +121,17 @@ func WithSeed(seed int64) Option { return func(o *Options) { o.seed = &seed } }
 // WithThinkingLevel sets the thinking level for Gemini models that support reasoning.
 func WithThinkingLevel(level ThinkingLevel) Option {
 	return func(o *Options) { o.thinkingLevel = &level }
+}
+
+// WithThinkingBudget sets the Gemini 2.5 thinking budget in tokens via
+// thinkingConfig.thinkingBudget: -1 lets the model decide dynamically, 0
+// disables thinking, and a positive value caps the reasoning tokens. It applies
+// only to models that can reason and can be combined with WithThinkingLevel.
+func WithThinkingBudget(tokens int) Option {
+	return func(o *Options) {
+		b := int32(tokens)
+		o.thinkingBudget = &b
+	}
 }
 
 // WithGoogleSearch enables Gemini's built-in Google Search grounding tool.
@@ -326,19 +338,27 @@ func (c *Client) finishReason(reason genai.FinishReason) message.FinishReason {
 }
 
 func (c *Client) applyThinkingConfig(config *genai.GenerateContentConfig) {
-	if c.options.thinkingLevel == nil || !c.options.model.CanReason {
+	if !c.options.model.CanReason {
+		return
+	}
+	if c.options.thinkingLevel == nil && c.options.thinkingBudget == nil {
 		return
 	}
 	tc := &genai.ThinkingConfig{IncludeThoughts: true}
-	switch *c.options.thinkingLevel {
-	case ThinkingLevelMinimal:
-		tc.ThinkingLevel = genai.ThinkingLevelMinimal
-	case ThinkingLevelLow:
-		tc.ThinkingLevel = genai.ThinkingLevelLow
-	case ThinkingLevelMedium:
-		tc.ThinkingLevel = genai.ThinkingLevelMedium
-	case ThinkingLevelHigh:
-		tc.ThinkingLevel = genai.ThinkingLevelHigh
+	if c.options.thinkingLevel != nil {
+		switch *c.options.thinkingLevel {
+		case ThinkingLevelMinimal:
+			tc.ThinkingLevel = genai.ThinkingLevelMinimal
+		case ThinkingLevelLow:
+			tc.ThinkingLevel = genai.ThinkingLevelLow
+		case ThinkingLevelMedium:
+			tc.ThinkingLevel = genai.ThinkingLevelMedium
+		case ThinkingLevelHigh:
+			tc.ThinkingLevel = genai.ThinkingLevelHigh
+		}
+	}
+	if c.options.thinkingBudget != nil {
+		tc.ThinkingBudget = c.options.thinkingBudget
 	}
 	config.ThinkingConfig = tc
 }
@@ -795,6 +815,7 @@ func (c *Client) usage(resp *genai.GenerateContentResponse) llm.TokenUsage {
 		OutputTokens:        int64(resp.UsageMetadata.CandidatesTokenCount),
 		CacheCreationTokens: 0,
 		CacheReadTokens:     int64(resp.UsageMetadata.CachedContentTokenCount),
+		ReasoningTokens:     int64(resp.UsageMetadata.ThoughtsTokenCount),
 	}
 }
 

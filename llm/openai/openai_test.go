@@ -142,3 +142,132 @@ func TestWireTopKAndStop(t *testing.T) {
 		}
 	}
 }
+
+// TestWireRequestJSONField confirms WithRequestJSONField injects arbitrary
+// top-level fields (objects and arrays) into the request body.
+func TestWireRequestJSONField(t *testing.T) {
+	var body map[string]any
+	srv := newCompletionServer(
+		t,
+		&body,
+		`{"id":"x","object":"chat.completion",`+
+			`"choices":[{"index":0,"message":{"role":"assistant","content":"hi"},`+
+			`"finish_reason":"stop"}],`+
+			`"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}`,
+	)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "x"}),
+		WithRequestJSONField(
+			"provider",
+			map[string]any{"allow_fallbacks": false},
+		),
+		WithRequestJSONField("models", []string{"a", "b"}),
+	)
+
+	if _, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil); err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	provider, ok := body["provider"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected provider object, got %v (%T)",
+			body["provider"], body["provider"])
+	}
+	if provider["allow_fallbacks"] != false {
+		t.Errorf("provider.allow_fallbacks = %v, want false",
+			provider["allow_fallbacks"])
+	}
+	models, ok := body["models"].([]any)
+	if !ok || len(models) != 2 || models[0] != "a" || models[1] != "b" {
+		t.Errorf("models = %v, want [a b]", body["models"])
+	}
+}
+
+// TestResponseMetadataField confirms WithResponseMetadataField surfaces a
+// top-level response field into ProviderMetadata under the namespaced key.
+func TestResponseMetadataField(t *testing.T) {
+	srv := newCompletionServer(t, nil, `{"id":"x","object":"chat.completion",`+
+		`"choices":[{"index":0,"message":{"role":"assistant","content":"hi"},`+
+		`"finish_reason":"stop"}],`+
+		`"citations":["https://a.test","https://b.test"],`+
+		`"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}`)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "x"}),
+		WithResponseMetadataField("citations", "perplexity.citations"),
+	)
+
+	resp, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil)
+	if err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	cites, ok := resp.ProviderMetadata["perplexity.citations"].([]any)
+	if !ok || len(cites) != 2 || cites[0] != "https://a.test" {
+		t.Fatalf("expected citations in metadata, got %v",
+			resp.ProviderMetadata)
+	}
+}
+
+// TestUsageReasoningAndDeepSeekCache verifies that reasoning_tokens and
+// DeepSeek's top-level prompt_cache_hit_tokens (an SDK extra field) are mapped.
+func TestUsageReasoningAndDeepSeekCache(t *testing.T) {
+	srv := newCompletionServer(t, nil, `{"id":"x","object":"chat.completion",`+
+		`"choices":[{"index":0,"message":{"role":"assistant","content":"hi"},`+
+		`"finish_reason":"stop"}],`+
+		`"usage":{"prompt_tokens":100,"completion_tokens":40,"total_tokens":140,`+
+		`"prompt_cache_hit_tokens":80,"prompt_cache_miss_tokens":20,`+
+		`"completion_tokens_details":{"reasoning_tokens":12}}}`)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "deepseek-chat"}),
+	)
+
+	resp, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil)
+	if err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	if resp.Usage.CacheReadTokens != 80 {
+		t.Errorf("CacheReadTokens = %d, want 80", resp.Usage.CacheReadTokens)
+	}
+	if resp.Usage.InputTokens != 20 {
+		t.Errorf("InputTokens = %d, want 20 (prompt - cache hit)",
+			resp.Usage.InputTokens)
+	}
+	if resp.Usage.ReasoningTokens != 12 {
+		t.Errorf("ReasoningTokens = %d, want 12", resp.Usage.ReasoningTokens)
+	}
+}
+
+// newCompletionServer returns a test server that captures the request body into
+// capture (when non-nil) and replies with the given chat-completion JSON.
+func newCompletionServer(
+	t *testing.T,
+	capture *map[string]any,
+	response string,
+) *httptest.Server {
+	t.Helper()
+	return httptest.NewServer(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			if capture != nil {
+				raw, _ := io.ReadAll(r.Body)
+				_ = json.Unmarshal(raw, capture)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = io.WriteString(w, response)
+		}))
+}

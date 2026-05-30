@@ -28,3 +28,29 @@ func NewLLM(opts ...Option) llm.LLM {
 	return llmopenai.NewLLM(
 		append([]Option{llmopenai.WithBaseURL(DefaultBaseURL)}, opts...)...)
 }
+
+// WithProviderRouting sets OpenRouter's provider routing object. order lists
+// provider slugs to try in preference order; allowFallbacks controls whether
+// OpenRouter may fall back to providers outside that list when they are
+// unavailable. See https://openrouter.ai/docs/features/provider-routing.
+func WithProviderRouting(order []string, allowFallbacks bool) Option {
+	provider := map[string]any{"allow_fallbacks": allowFallbacks}
+	if len(order) > 0 {
+		provider["order"] = order
+	}
+	return llmopenai.WithRequestJSONField("provider", provider)
+}
+
+// WithModelFallbacks sets OpenRouter's models fallback array. When the primary
+// model (set via [llmopenai.WithModel]) errors or is unavailable, OpenRouter
+// automatically retries the next model in this list. See
+// https://openrouter.ai/docs/features/model-routing.
+func WithModelFallbacks(models ...string) Option {
+	return llmopenai.WithRequestJSONField("models", models)
+}
+
+// WithTopK limits token sampling to the top K candidates. Re-exported from
+// [llmopenai.WithTopK]; OpenRouter honors top_k for providers that support it.
+func WithTopK(k int64) Option {
+	return llmopenai.WithTopK(k)
+}

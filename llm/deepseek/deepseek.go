@@ -3,6 +3,11 @@
 // This is a thin wrapper over [llm/openai] fixed to DeepSeek's chat-completions
 // endpoint. DeepSeek's reasoning_content streaming field is surfaced through
 // the openai package's existing thinking-delta event handling.
+//
+// DeepSeek reports cache usage as top-level usage fields rather than in
+// prompt_tokens_details; the openai client reads prompt_cache_hit_tokens into
+// [llm.TokenUsage].CacheReadTokens and completion_tokens_details.reasoning_tokens
+// into [llm.TokenUsage].ReasoningTokens, so no DeepSeek-specific wiring is needed.
 package deepseek
 
 import (
