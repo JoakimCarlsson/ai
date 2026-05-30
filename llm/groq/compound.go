@@ -280,7 +280,7 @@ func (c *compoundClient) preparedParams(
 	}
 	if len(c.options.stopSequences) > 0 {
 		params.Stop = openaisdk.ChatCompletionNewParamsStopUnion{
-			OfString: openaisdk.String(c.options.stopSequences[0]),
+			OfStringArray: c.options.stopSequences,
 		}
 	}
 	return params

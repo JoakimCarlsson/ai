@@ -33,6 +33,7 @@ type Options struct {
 	topK          *int64
 	stopSequences []string
 	timeout       *time.Duration
+	disableCache  bool
 }
 
 // Option configures Options.
@@ -81,6 +82,11 @@ func WithTimeout(
 ) Option {
 	return func(o *Options) { o.timeout = &timeout }
 }
+
+// WithDisableCache disables Anthropic prompt caching. Caching is enabled by
+// default; when enabled, cache_control breakpoints emitted by the underlying
+// Anthropic client reach Bedrock and produce cacheRead/cacheWrite token usage.
+func WithDisableCache() Option { return func(o *Options) { o.disableCache = true } }
 
 // Client implements [llm.LLM] against AWS Bedrock by delegating to a child
 // vendor client (Anthropic for Claude on Bedrock).
@@ -138,7 +144,9 @@ func newAnthropicChild(options Options) llm.LLM {
 		llmanthropic.WithModel(options.model),
 		llmanthropic.WithMaxTokens(options.maxTokens),
 		llmanthropic.WithBedrock(true),
-		llmanthropic.WithDisableCache(),
+	}
+	if options.disableCache {
+		anthOpts = append(anthOpts, llmanthropic.WithDisableCache())
 	}
 	if options.apiKey != "" {
 		anthOpts = append(anthOpts, llmanthropic.WithAPIKey(options.apiKey))
