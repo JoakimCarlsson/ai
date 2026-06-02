@@ -268,6 +268,9 @@ func (c *Client) convertMessages(
 						Name: toolCall.Name,
 						Args: args,
 					},
+					// Replay the captured thought signature so Gemini 3 accepts
+					// the follow-up turn (see ToolCall.ThoughtSignature).
+					ThoughtSignature: toolCall.ThoughtSignature,
 				})
 			}
 			if len(parts) > 0 {
@@ -286,8 +289,14 @@ func (c *Client) convertMessages(
 						},
 					},
 				}}
+				// Gemini rejects Role != ("user"|"model"): sending "function"
+				// yields `400 INVALID_ARGUMENT: Role must be user or model, but
+				// got function`, which kills the chat loop on the first tool turn
+				// (observed in overtura's datasource setup-agent, 2026-05-27).
+				// Function responses are sent with role="user" — Google's model
+				// treats tool output as coming from the user side.
 				geminiMessages = append(geminiMessages, &genai.Content{
-					Role: "function", Parts: parts,
+					Role: "user", Parts: parts,
 				})
 			}
 		}
@@ -453,11 +462,12 @@ func (c *Client) SendMessages(
 						id := "call_" + uuid.New().String()
 						args, _ := json.Marshal(part.FunctionCall.Args)
 						toolCalls = append(toolCalls, message.ToolCall{
-							ID:       id,
-							Name:     part.FunctionCall.Name,
-							Input:    string(args),
-							Type:     "function",
-							Finished: true,
+							ID:               id,
+							Name:             part.FunctionCall.Name,
+							Input:            string(args),
+							Type:             "function",
+							Finished:         true,
+							ThoughtSignature: part.ThoughtSignature,
 						})
 						continue
 					}
@@ -544,10 +554,11 @@ func (c *Client) SendMessagesWithStructuredOutput(
 					if part.FunctionCall != nil {
 						input, _ := json.Marshal(part.FunctionCall.Args)
 						toolCalls = append(toolCalls, message.ToolCall{
-							ID:    part.FunctionCall.Name,
-							Name:  part.FunctionCall.Name,
-							Input: string(input),
-							Type:  "function",
+							ID:               part.FunctionCall.Name,
+							Name:             part.FunctionCall.Name,
+							Input:            string(input),
+							Type:             "function",
+							ThoughtSignature: part.ThoughtSignature,
 						})
 						continue
 					}
@@ -667,11 +678,12 @@ func (c *Client) streamInternal(
 							id := "call_" + uuid.New().String()
 							args, _ := json.Marshal(part.FunctionCall.Args)
 							newCall := message.ToolCall{
-								ID:       id,
-								Name:     part.FunctionCall.Name,
-								Input:    string(args),
-								Type:     "function",
-								Finished: true,
+								ID:               id,
+								Name:             part.FunctionCall.Name,
+								Input:            string(args),
+								Type:             "function",
+								Finished:         true,
+								ThoughtSignature: part.ThoughtSignature,
 							}
 
 							isNew := true
