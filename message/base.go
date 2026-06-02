@@ -74,6 +74,12 @@ type ToolCall struct {
 	Type string `json:"type"`
 	// Finished indicates whether the tool call has completed execution.
 	Finished bool `json:"finished"`
+	// ThoughtSignature carries the provider's opaque signature for the reasoning
+	// that produced this tool call (Gemini 3 thinking models). It must be captured
+	// from the response and replayed on the next request's matching function-call
+	// part, or Gemini rejects the follow-up turn. Empty for providers/models that
+	// don't emit one.
+	ThoughtSignature []byte `json:"thought_signature,omitempty"`
 }
 
 func (ToolCall) isPart() {}
