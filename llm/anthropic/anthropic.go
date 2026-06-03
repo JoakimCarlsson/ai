@@ -50,6 +50,7 @@ type Options struct {
 	useBedrock      bool
 	disableCache    bool
 	reasoningEffort *ReasoningEffort
+	toolChoice      *llm.ToolChoice
 	builtinTools    []anthropicsdk.ToolUnionParam
 }
 
@@ -111,6 +112,14 @@ func WithDisableCache() Option { return func(o *Options) { o.disableCache = true
 // WithReasoningEffort sets the reasoning/thinking effort level.
 func WithReasoningEffort(effort ReasoningEffort) Option {
 	return func(o *Options) { o.reasoningEffort = &effort }
+}
+
+// WithToolChoice controls whether and which tool the model may call. It maps to
+// Anthropic's tool_choice field: {"type":"auto"} / {"type":"none"} /
+// {"type":"any"} / {"type":"tool","name":...}. The field is emitted only when
+// tools are sent.
+func WithToolChoice(choice llm.ToolChoice) Option {
+	return func(o *Options) { o.toolChoice = &choice }
 }
 
 // WebSearchConfig configures the Anthropic server-side web_search tool.
@@ -368,6 +377,27 @@ func (c *Client) convertTools(
 	return append(out, c.options.builtinTools...)
 }
 
+// toolChoiceParam maps a vendor-neutral [llm.ToolChoice] to Anthropic's
+// tool_choice union: {"type":"auto"} / {"type":"none"} / {"type":"any"} for the
+// required case, or {"type":"tool","name":...} for [llm.ToolChoiceSpecific].
+func toolChoiceParam(choice llm.ToolChoice) anthropicsdk.ToolChoiceUnionParam {
+	switch choice.Mode {
+	case llm.ToolChoiceNone:
+		none := anthropicsdk.NewToolChoiceNoneParam()
+		return anthropicsdk.ToolChoiceUnionParam{OfNone: &none}
+	case llm.ToolChoiceRequired:
+		return anthropicsdk.ToolChoiceUnionParam{
+			OfAny: &anthropicsdk.ToolChoiceAnyParam{},
+		}
+	case llm.ToolChoiceSpecific:
+		return anthropicsdk.ToolChoiceParamOfTool(choice.Name)
+	default:
+		return anthropicsdk.ToolChoiceUnionParam{
+			OfAuto: &anthropicsdk.ToolChoiceAutoParam{},
+		}
+	}
+}
+
 func (c *Client) finishReason(reason string) message.FinishReason {
 	switch reason {
 	case "end_turn":
@@ -464,6 +494,10 @@ func (c *Client) preparedMessages(
 		params.StopSequences = c.options.stopSequences
 	}
 
+	if c.options.toolChoice != nil && len(tools) > 0 {
+		params.ToolChoice = toolChoiceParam(*c.options.toolChoice)
+	}
+
 	if len(systemMessages) > 0 {
 		systemBlocks := make([]anthropicsdk.TextBlockParam, len(systemMessages))
 		for i, sysMsg := range systemMessages {
@@ -481,12 +515,33 @@ func (c *Client) preparedMessages(
 	return params
 }
 
+// validateToolChoice rejects a malformed tool choice before a request is sent.
+func (c *Client) validateToolChoice() error {
+	if c.options.toolChoice == nil {
+		return nil
+	}
+	return c.options.toolChoice.Validate()
+}
+
+// errorEvent returns a closed channel carrying a single error event, used to
+// surface pre-flight failures (such as an invalid tool choice) on the streaming
+// API where the method signature has no error return.
+func errorEvent(err error) <-chan llm.Event {
+	eventChan := make(chan llm.Event, 1)
+	eventChan <- llm.Event{Type: types.EventError, Error: err}
+	close(eventChan)
+	return eventChan
+}
+
 // SendMessages sends a conversation and returns the complete response.
 func (c *Client) SendMessages(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
 ) (*llm.Response, error) {
+	if err := c.validateToolChoice(); err != nil {
+		return nil, err
+	}
 	anthropicMessages, systemMessages := c.convertMessages(messages)
 	preparedMessages := c.preparedMessages(
 		anthropicMessages, c.convertTools(tools), systemMessages,
@@ -527,6 +582,9 @@ func (c *Client) StreamResponse(
 	messages []message.Message,
 	tools []tool.BaseTool,
 ) <-chan llm.Event {
+	if err := c.validateToolChoice(); err != nil {
+		return errorEvent(err)
+	}
 	anthropicMessages, systemMessages := c.convertMessages(messages)
 	preparedMessages := c.preparedMessages(
 		anthropicMessages, c.convertTools(tools), systemMessages,
@@ -724,6 +782,9 @@ func (c *Client) SendMessagesWithStructuredOutput(
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
 ) (*llm.Response, error) {
+	if err := c.validateToolChoice(); err != nil {
+		return nil, err
+	}
 	anthropicMessages, systemMessages := c.convertMessages(messages)
 	preparedMessages := c.preparedMessages(
 		anthropicMessages, c.convertTools(tools), systemMessages,
@@ -768,6 +829,9 @@ func (c *Client) StreamResponseWithStructuredOutput(
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
 ) <-chan llm.Event {
+	if err := c.validateToolChoice(); err != nil {
+		return errorEvent(err)
+	}
 	anthropicMessages, systemMessages := c.convertMessages(messages)
 	preparedMessages := c.preparedMessages(
 		anthropicMessages, c.convertTools(tools), systemMessages,

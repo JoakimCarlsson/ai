@@ -117,12 +117,20 @@ func newLLM() (llm.LLM, string) {
 			llmanthropic.WithAPIKey(requiredEnv("ANTHROPIC_API_KEY")),
 			llmanthropic.WithModel(model.AnthropicModels[model.Claude45Haiku]),
 			llmanthropic.WithMaxTokens(512),
+			// Force a tool call on the first turn instead of letting the model
+			// answer from prior knowledge.
+			llmanthropic.WithToolChoice(
+				llm.ToolChoice{Mode: llm.ToolChoiceRequired},
+			),
 		), provider
 	case "gemini":
 		return llmgemini.NewLLM(
 			llmgemini.WithAPIKey(requiredEnv("GEMINI_API_KEY")),
 			llmgemini.WithModel(model.GeminiModels[model.Gemini25FlashLite]),
 			llmgemini.WithMaxTokens(512),
+			llmgemini.WithToolChoice(
+				llm.ToolChoice{Mode: llm.ToolChoiceRequired},
+			),
 		), provider
 	case "openai":
 		return llmopenai.NewLLM(
@@ -130,6 +138,9 @@ func newLLM() (llm.LLM, string) {
 			llmopenai.WithModel(model.OpenAIModels[model.GPT54Nano]),
 			llmopenai.WithMaxTokens(512),
 			llmopenai.WithParallelToolCalls(false),
+			llmopenai.WithToolChoice(
+				llm.ToolChoice{Mode: llm.ToolChoiceRequired},
+			),
 		), provider
 	default:
 		log.Fatalf(

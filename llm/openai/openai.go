@@ -52,6 +52,7 @@ type Options struct {
 	presencePenalty   *float64
 	seed              *int64
 	parallelToolCalls *bool
+	toolChoice        *llm.ToolChoice
 	extraBodyFields   map[string]any
 	metadataFields    map[string]string
 }
@@ -146,6 +147,13 @@ func WithSeed(seed int64) Option { return func(o *Options) { o.seed = &seed } }
 // WithParallelToolCalls toggles whether OpenAI returns multiple tool calls in a single response.
 func WithParallelToolCalls(enabled bool) Option {
 	return func(o *Options) { o.parallelToolCalls = &enabled }
+}
+
+// WithToolChoice controls whether and which tool the model may call. It maps to
+// OpenAI's tool_choice field: auto / none / required, or a named-function choice
+// for [llm.ToolChoiceSpecific]. The field is emitted only when tools are sent.
+func WithToolChoice(choice llm.ToolChoice) Option {
+	return func(o *Options) { o.toolChoice = &choice }
 }
 
 // WithRequestJSONField injects an arbitrary top-level field into the request
@@ -400,6 +408,36 @@ func (c *Client) convertTools(
 	return out
 }
 
+// toolChoiceParam maps a vendor-neutral [llm.ToolChoice] to OpenAI's
+// tool_choice union: the "auto"/"none"/"required" string forms, or a named
+// function-tool choice for [llm.ToolChoiceSpecific].
+func toolChoiceParam(
+	choice llm.ToolChoice,
+) openaisdk.ChatCompletionToolChoiceOptionUnionParam {
+	switch choice.Mode {
+	case llm.ToolChoiceNone:
+		return openaisdk.ChatCompletionToolChoiceOptionUnionParam{
+			OfAuto: openaisdk.String("none"),
+		}
+	case llm.ToolChoiceRequired:
+		return openaisdk.ChatCompletionToolChoiceOptionUnionParam{
+			OfAuto: openaisdk.String("required"),
+		}
+	case llm.ToolChoiceSpecific:
+		return openaisdk.ChatCompletionToolChoiceOptionUnionParam{
+			OfFunctionToolChoice: &openaisdk.ChatCompletionNamedToolChoiceParam{
+				Function: openaisdk.ChatCompletionNamedToolChoiceFunctionParam{
+					Name: choice.Name,
+				},
+			},
+		}
+	default:
+		return openaisdk.ChatCompletionToolChoiceOptionUnionParam{
+			OfAuto: openaisdk.String("auto"),
+		}
+	}
+}
+
 func (c *Client) finishReason(reason string) message.FinishReason {
 	switch reason {
 	case "stop":
@@ -425,6 +463,10 @@ func (c *Client) preparedParams(
 
 	if c.options.parallelToolCalls != nil {
 		params.ParallelToolCalls = openaisdk.Bool(*c.options.parallelToolCalls)
+	}
+
+	if c.options.toolChoice != nil && len(tools) > 0 {
+		params.ToolChoice = toolChoiceParam(*c.options.toolChoice)
 	}
 
 	pb := llm.NewParameterBuilder(
@@ -491,12 +533,23 @@ func (c *Client) requestOptions() []option.RequestOption {
 	return opts
 }
 
+// validateToolChoice rejects a malformed tool choice before a request is sent.
+func (c *Client) validateToolChoice() error {
+	if c.options.toolChoice == nil {
+		return nil
+	}
+	return c.options.toolChoice.Validate()
+}
+
 // SendMessages sends a conversation and returns the complete response.
 func (c *Client) SendMessages(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
 ) (*llm.Response, error) {
+	if err := c.validateToolChoice(); err != nil {
+		return nil, err
+	}
 	params := c.preparedParams(
 		c.convertMessages(messages),
 		c.convertTools(tools),
@@ -549,6 +602,9 @@ func (c *Client) StreamResponse(
 	messages []message.Message,
 	tools []tool.BaseTool,
 ) <-chan llm.Event {
+	if err := c.validateToolChoice(); err != nil {
+		return errorEvent(err)
+	}
 	params := c.preparedParams(
 		c.convertMessages(messages),
 		c.convertTools(tools),
@@ -569,6 +625,16 @@ func (c *Client) StreamResponse(
 		}, eventChan)
 	}()
 
+	return eventChan
+}
+
+// errorEvent returns a closed channel carrying a single error event, used to
+// surface pre-flight failures (such as an invalid tool choice) on the streaming
+// API where the method signature has no error return.
+func errorEvent(err error) <-chan llm.Event {
+	eventChan := make(chan llm.Event, 1)
+	eventChan <- llm.Event{Type: types.EventError, Error: err}
+	close(eventChan)
 	return eventChan
 }
 
@@ -768,6 +834,9 @@ func (c *Client) SendMessagesWithStructuredOutput(
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
 ) (*llm.Response, error) {
+	if err := c.validateToolChoice(); err != nil {
+		return nil, err
+	}
 	params := c.preparedParams(
 		c.convertMessages(messages),
 		c.convertTools(tools),
@@ -824,6 +893,9 @@ func (c *Client) StreamResponseWithStructuredOutput(
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
 ) <-chan llm.Event {
+	if err := c.validateToolChoice(); err != nil {
+		return errorEvent(err)
+	}
 	params := c.preparedParams(
 		c.convertMessages(messages),
 		c.convertTools(tools),

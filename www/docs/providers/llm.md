@@ -91,7 +91,18 @@ llmopenai.WithTopP(0.9)
 llmopenai.WithTopK(40)
 llmopenai.WithStopSequences("STOP", "END")
 llmopenai.WithTimeout(30 * time.Second)
+llmopenai.WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceRequired})
 ```
+
+!!! note "`WithToolChoice`"
+    `WithToolChoice` is shared by the OpenAI, Anthropic, and Gemini modules
+    (OpenAI-compatible providers inherit it through `llm/openai`). It takes the
+    vendor-neutral `llm.ToolChoice` type: `Mode` is `ToolChoiceAuto` (default),
+    `ToolChoiceNone`, `ToolChoiceRequired`, or `ToolChoiceSpecific` with a `Name`.
+    It maps to each provider's native field (`tool_choice` for OpenAI/Anthropic,
+    `toolConfig.functionCallingConfig` for Gemini) and is emitted only when tools
+    are supplied. `ToolChoiceSpecific` with an empty `Name` is rejected before the
+    request is sent.
 
 !!! note "`WithTopK` on the OpenAI client"
     OpenAI's and Azure's own APIs reject `top_k` (HTTP 400), so `llmopenai.WithTopK`
