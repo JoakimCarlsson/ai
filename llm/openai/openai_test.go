@@ -3,14 +3,138 @@ package openai
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/tool"
 )
+
+// stubTool is a no-op BaseTool used to populate the request's tools slice so
+// tool-choice assertions have something to attach to.
+type stubTool struct{ name string }
+
+func (s stubTool) Info() tool.Info {
+	return tool.Info{Name: s.name, Description: "d", Parameters: map[string]any{}}
+}
+
+func (s stubTool) Run(context.Context, tool.Call) (tool.Response, error) {
+	return tool.Response{}, nil
+}
+
+const completionOK = `{"id":"x","object":"chat.completion",` +
+	`"choices":[{"index":0,"message":{"role":"assistant","content":"hi"},` +
+	`"finish_reason":"stop"}],` +
+	`"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}`
+
+// TestWireToolChoiceRequired confirms a Required choice serializes to the
+// "required" string form when tools are present.
+func TestWireToolChoiceRequired(t *testing.T) {
+	var body map[string]any
+	srv := newCompletionServer(t, &body, completionOK)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceRequired}),
+	)
+
+	if _, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")},
+		[]tool.BaseTool{stubTool{name: "get_weather"}}); err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	if got, _ := body["tool_choice"].(string); got != "required" {
+		t.Errorf("tool_choice = %v, want %q", body["tool_choice"], "required")
+	}
+}
+
+// TestWireToolChoiceSpecific confirms a Specific choice serializes to the
+// named-function object form naming the tool.
+func TestWireToolChoiceSpecific(t *testing.T) {
+	var body map[string]any
+	srv := newCompletionServer(t, &body, completionOK)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithToolChoice(llm.ToolChoice{
+			Mode: llm.ToolChoiceSpecific,
+			Name: "get_weather",
+		}),
+	)
+
+	if _, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")},
+		[]tool.BaseTool{stubTool{name: "get_weather"}}); err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	tc, ok := body["tool_choice"].(map[string]any)
+	if !ok {
+		t.Fatalf("tool_choice = %v (%T), want object",
+			body["tool_choice"], body["tool_choice"])
+	}
+	if tc["type"] != "function" {
+		t.Errorf("tool_choice.type = %v, want function", tc["type"])
+	}
+	fn, ok := tc["function"].(map[string]any)
+	if !ok || fn["name"] != "get_weather" {
+		t.Errorf("tool_choice.function = %v, want name=get_weather", tc["function"])
+	}
+}
+
+// TestWireToolChoiceOmittedWithoutTools confirms no tool_choice field is emitted
+// when the tools slice is empty.
+func TestWireToolChoiceOmittedWithoutTools(t *testing.T) {
+	var body map[string]any
+	srv := newCompletionServer(t, &body, completionOK)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceRequired}),
+	)
+
+	if _, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil); err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	if _, present := body["tool_choice"]; present {
+		t.Errorf("tool_choice should be omitted with no tools, got %v",
+			body["tool_choice"])
+	}
+}
+
+// TestToolChoiceSpecificEmptyNameRejected confirms a Specific choice with no
+// name is rejected before any request is sent.
+func TestToolChoiceSpecificEmptyNameRejected(t *testing.T) {
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceSpecific}),
+	)
+
+	_, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")},
+		[]tool.BaseTool{stubTool{name: "get_weather"}})
+	if !errors.Is(err, llm.ErrToolChoiceNameRequired) {
+		t.Fatalf("expected ErrToolChoiceNameRequired, got %v", err)
+	}
+}
 
 // TestPreparedParamsStopSequencesArray verifies that all provided stop
 // sequences are sent as an array (OfStringArray), not just the first one.

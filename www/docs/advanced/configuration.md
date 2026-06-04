@@ -13,6 +13,7 @@ options.
 
 ```go
 import (
+    "github.com/joakimcarlsson/ai/llm"
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
     "github.com/joakimcarlsson/ai/model"
 )
@@ -33,8 +34,16 @@ client := llmopenai.NewLLM(
     llmopenai.WithPresencePenalty(0.3),
     llmopenai.WithSeed(42),
     llmopenai.WithParallelToolCalls(false),
+    llmopenai.WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceRequired}),
 )
 ```
+
+`WithToolChoice` controls whether and which tool the model may call. It takes
+the shared `llm.ToolChoice` type — `Mode` is one of `ToolChoiceAuto` (default),
+`ToolChoiceNone`, `ToolChoiceRequired`, or `ToolChoiceSpecific` (which also sets
+`Name`). The field is only emitted when tools are supplied, and is available on
+the OpenAI, Anthropic, and Gemini modules (OpenAI-compatible providers inherit
+it through `llm/openai`).
 
 ### Anthropic
 
@@ -50,6 +59,7 @@ client := llmanthropic.NewLLM(
     llmanthropic.WithBedrock(true),
     llmanthropic.WithDisableCache(),
     llmanthropic.WithReasoningEffort(llmanthropic.ReasoningEffortMedium),
+    llmanthropic.WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceRequired}),
 )
 ```
 
@@ -67,6 +77,7 @@ client := llmgemini.NewLLM(
     llmgemini.WithPresencePenalty(0.3),
     llmgemini.WithSeed(42),
     llmgemini.WithThinkingLevel(llmgemini.ThinkingLevelHigh),
+    llmgemini.WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceRequired}),
 )
 ```
 

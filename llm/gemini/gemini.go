@@ -48,6 +48,7 @@ type Options struct {
 	seed             *int64
 	thinkingLevel    *ThinkingLevel
 	thinkingBudget   *int32
+	toolChoice       *llm.ToolChoice
 	builtinTools     []*genai.Tool
 }
 
@@ -132,6 +133,14 @@ func WithThinkingBudget(tokens int) Option {
 		b := int32(tokens)
 		o.thinkingBudget = &b
 	}
+}
+
+// WithToolChoice controls whether and which tool the model may call. It maps to
+// Gemini's toolConfig.functionCallingConfig.mode (AUTO / NONE / ANY), with
+// allowedFunctionNames set to the named tool for [llm.ToolChoiceSpecific]. The
+// config is emitted only when tools are sent.
+func WithToolChoice(choice llm.ToolChoice) Option {
+	return func(o *Options) { o.toolChoice = &choice }
 }
 
 // WithGoogleSearch enables Gemini's built-in Google Search grounding tool.
@@ -407,9 +416,39 @@ func (c *Client) buildConfig(
 
 	if len(tools) > 0 || len(c.options.builtinTools) > 0 {
 		config.Tools = c.convertTools(tools)
+		if c.options.toolChoice != nil {
+			config.ToolConfig = toolConfigParam(*c.options.toolChoice)
+		}
 	}
 
 	return config
+}
+
+// toolConfigParam maps a vendor-neutral [llm.ToolChoice] to Gemini's
+// toolConfig.functionCallingConfig: mode AUTO / NONE / ANY, with
+// allowedFunctionNames naming the tool for [llm.ToolChoiceSpecific].
+func toolConfigParam(choice llm.ToolChoice) *genai.ToolConfig {
+	fc := &genai.FunctionCallingConfig{}
+	switch choice.Mode {
+	case llm.ToolChoiceNone:
+		fc.Mode = genai.FunctionCallingConfigModeNone
+	case llm.ToolChoiceRequired:
+		fc.Mode = genai.FunctionCallingConfigModeAny
+	case llm.ToolChoiceSpecific:
+		fc.Mode = genai.FunctionCallingConfigModeAny
+		fc.AllowedFunctionNames = []string{choice.Name}
+	default:
+		fc.Mode = genai.FunctionCallingConfigModeAuto
+	}
+	return &genai.ToolConfig{FunctionCallingConfig: fc}
+}
+
+// validateToolChoice rejects a malformed tool choice before a request is sent.
+func (c *Client) validateToolChoice() error {
+	if c.options.toolChoice == nil {
+		return nil
+	}
+	return c.options.toolChoice.Validate()
 }
 
 // SendMessages sends a conversation and returns the complete response.
@@ -418,6 +457,9 @@ func (c *Client) SendMessages(
 	messages []message.Message,
 	tools []tool.BaseTool,
 ) (*llm.Response, error) {
+	if err := c.validateToolChoice(); err != nil {
+		return nil, err
+	}
 	geminiMessages, systemMessages := c.convertMessages(messages)
 
 	ctx, cancel := llm.ApplyTimeout(ctx, c.options.timeout)
@@ -509,6 +551,9 @@ func (c *Client) SendMessagesWithStructuredOutput(
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
 ) (*llm.Response, error) {
+	if err := c.validateToolChoice(); err != nil {
+		return nil, err
+	}
 	geminiMessages, systemMessages := c.convertMessages(messages)
 
 	ctx, cancel := llm.ApplyTimeout(ctx, c.options.timeout)
@@ -605,6 +650,12 @@ func (c *Client) streamInternal(
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
 ) <-chan llm.Event {
+	if err := c.validateToolChoice(); err != nil {
+		eventChan := make(chan llm.Event, 1)
+		eventChan <- llm.Event{Type: types.EventError, Error: err}
+		close(eventChan)
+		return eventChan
+	}
 	geminiMessages, systemMessages := c.convertMessages(messages)
 
 	ctx, cancel := llm.ApplyTimeout(ctx, c.options.timeout)

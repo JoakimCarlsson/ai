@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
 	"sync"
 
@@ -74,7 +75,7 @@ func (p *mcpClientPool) getClient(
 	case MCPStdio:
 		cmd := exec.Command(config.Command, config.Args...)
 		if len(config.Env) > 0 {
-			cmd.Env = config.Env
+			cmd.Env = append(os.Environ(), config.Env...)
 		}
 		transport = &mcp.CommandTransport{Command: cmd}
 	case MCPSse:
