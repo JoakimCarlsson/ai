@@ -11,7 +11,7 @@ require (
 	github.com/joakimcarlsson/ai/session v0.1.0
 	github.com/joakimcarlsson/ai/stt v0.1.0
 	github.com/joakimcarlsson/ai/tokens v0.1.0
-	github.com/joakimcarlsson/ai/tool v0.1.0
+	github.com/joakimcarlsson/ai/tool v0.1.1
 	github.com/joakimcarlsson/ai/tts v0.1.0
 	github.com/joakimcarlsson/ai/types v0.1.0
 	golang.org/x/sync v0.20.0

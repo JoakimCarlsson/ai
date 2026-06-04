@@ -9,7 +9,7 @@ require (
 	github.com/joakimcarlsson/ai/prompt v0.1.0
 	github.com/joakimcarlsson/ai/session v0.1.0
 	github.com/joakimcarlsson/ai/tokens v0.1.0
-	github.com/joakimcarlsson/ai/tool v0.1.0
+	github.com/joakimcarlsson/ai/tool v0.1.1
 	github.com/joakimcarlsson/ai/tracing v0.1.0
 	github.com/joakimcarlsson/ai/types v0.1.0
 )

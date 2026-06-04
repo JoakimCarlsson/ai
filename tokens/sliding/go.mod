@@ -10,7 +10,7 @@ require (
 require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/joakimcarlsson/ai/model v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/tool v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/tool v0.1.1 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.6.0 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
