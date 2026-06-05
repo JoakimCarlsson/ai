@@ -6,6 +6,7 @@ import (
 
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/prompt"
+	"github.com/joakimcarlsson/ai/rag"
 	"github.com/joakimcarlsson/ai/tokens"
 )
 
@@ -112,6 +113,15 @@ func (a *Agent) buildMessages(
 				memoryContext += "- " + m.Content + "\n"
 			}
 			systemPrompt = systemPrompt + "\n\nRelevant memories about this user:\n" + memoryContext
+		}
+	}
+
+	if a.kb != nil {
+		hits, err := a.kb.Retrieve(ctx, userMessage, 5)
+		if err == nil && len(hits) > 0 {
+			systemPrompt = systemPrompt +
+				"\n\nRelevant context from the knowledge base:\n" +
+				rag.FormatHits(hits)
 		}
 	}
 

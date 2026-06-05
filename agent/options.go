@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/joakimcarlsson/ai/memory"
+	"github.com/joakimcarlsson/ai/rag"
 	"github.com/joakimcarlsson/ai/session"
 	"github.com/joakimcarlsson/ai/tokens"
 	"github.com/joakimcarlsson/ai/tool"
@@ -72,6 +73,23 @@ func WithMemory(
 		if cfg.LLM != nil {
 			a.memoryLLM = cfg.LLM
 		}
+	}
+}
+
+// WithKnowledgeBase attaches a rag.KnowledgeBase to the agent for
+// retrieval-augmented grounding. Before each Chat call, the agent
+// retrieves the top-5 chunks matching the user message and prepends
+// them to the resolved system prompt as a "Relevant context from the
+// knowledge base" segment.
+//
+// Pair with rag.SearchTool when you want the LLM to dig deeper than
+// the auto-injection by issuing explicit follow-up searches:
+//
+//	agent.WithKnowledgeBase(kb),
+//	agent.WithTools(rag.SearchTool(kb)),
+func WithKnowledgeBase(kb rag.KnowledgeBase) Option {
+	return func(a *Agent) {
+		a.kb = kb
 	}
 }
 

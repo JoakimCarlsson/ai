@@ -38,6 +38,7 @@ When you call `Chat()`, the agent:
 | `WithTools(tools...)` | Adds tools the agent can use | none |
 | `WithSession(id, store)` | Enables conversation persistence | none |
 | `WithMemory(id, store, opts...)` | Enables long-term memory | none |
+| `WithKnowledgeBase(kb)` | Retrieval-augmented grounding from a `rag.KnowledgeBase`; see [RAG](../rag/overview.md) | none |
 | `WithMaxIterations(n)` | Max tool execution loops | 10 |
 | `WithAutoExecute(bool)` | Auto-execute tool calls | true |
 | `WithContextStrategy(strategy, maxTokens)` | Context window management | none |

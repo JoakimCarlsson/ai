@@ -5,6 +5,7 @@ import (
 
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/memory"
+	"github.com/joakimcarlsson/ai/rag"
 	"github.com/joakimcarlsson/ai/session"
 	"github.com/joakimcarlsson/ai/stt"
 	"github.com/joakimcarlsson/ai/tokens"
@@ -36,6 +37,7 @@ type Agent struct {
 	autoExtract       bool
 	autoDedup         bool
 	memoryLLM         llm.LLM
+	kb                rag.KnowledgeBase
 }
 
 // toolsForContext returns the union of static tools, toolset-resolved

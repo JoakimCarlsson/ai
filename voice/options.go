@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/joakimcarlsson/ai/memory"
+	"github.com/joakimcarlsson/ai/rag"
 	"github.com/joakimcarlsson/ai/session"
 	"github.com/joakimcarlsson/ai/tokens"
 	"github.com/joakimcarlsson/ai/tool"
@@ -188,6 +189,26 @@ func WithMemory(
 		if cfg.LLM != nil {
 			v.memoryLLM = cfg.LLM
 		}
+	}
+}
+
+// WithKnowledgeBase attaches a rag.KnowledgeBase to the voice agent
+// for retrieval-augmented grounding. Mirrors agent.WithKnowledgeBase.
+//
+// On the first LLM iteration of each user turn, the runner retrieves
+// the top-5 chunks matching the most recent user message and prepends
+// them as a transient system message before the LLM call. The result
+// is cached on the per-turn turnState so subsequent tool-call
+// iterations of the same turn do not re-search.
+//
+// Pair with rag.SearchTool to expose retrieval as an explicit tool the
+// LLM can call mid-turn:
+//
+//	voice.WithKnowledgeBase(kb),
+//	voice.WithTools(rag.SearchTool(kb)),
+func WithKnowledgeBase(kb rag.KnowledgeBase) Option {
+	return func(v *Agent) {
+		v.kb = kb
 	}
 }
 
