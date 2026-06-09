@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/agent
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/llm v0.1.0
+	github.com/joakimcarlsson/ai/llm v0.3.0
 	github.com/joakimcarlsson/ai/memory v0.1.0
 	github.com/joakimcarlsson/ai/message v0.1.0
 	github.com/joakimcarlsson/ai/prompt v0.1.0
