@@ -198,6 +198,10 @@ func wrapError(err error) error {
 }
 
 // Client implements [llm.LLM] against the Google Gemini API.
+//
+// The genai SDK does not expose the underlying HTTP response, so
+// [llm.Response.RequestID] and [llm.Response.ResponseHeaders] are left empty
+// for this provider.
 type Client struct {
 	options Options
 	client  *genai.Client

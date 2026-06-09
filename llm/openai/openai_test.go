@@ -377,6 +377,46 @@ func TestUsageReasoningAndDeepSeekCache(t *testing.T) {
 	}
 }
 
+// TestResponseRequestIDAndHeaders confirms the provider request id and the
+// allowlisted rate-limit header are surfaced on the response, while a
+// non-allowlisted header (here, an auth echo) is dropped.
+func TestResponseRequestIDAndHeaders(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("x-request-id", "req_test_123")
+			w.Header().Set("x-ratelimit-remaining-requests", "42")
+			w.Header().Set("authorization", "Bearer leak")
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = io.WriteString(w, completionOK)
+		}))
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+	)
+
+	resp, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil)
+	if err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	if resp.RequestID != "req_test_123" {
+		t.Errorf("RequestID = %q, want %q", resp.RequestID, "req_test_123")
+	}
+	if got := resp.ResponseHeaders.Get("x-ratelimit-remaining-requests"); got != "42" {
+		t.Errorf("x-ratelimit-remaining-requests = %q, want %q", got, "42")
+	}
+	if got := resp.ResponseHeaders.Get("x-request-id"); got != "req_test_123" {
+		t.Errorf("x-request-id header = %q, want %q", got, "req_test_123")
+	}
+	if got := resp.ResponseHeaders.Get("authorization"); got != "" {
+		t.Errorf("authorization should not be retained, got %q", got)
+	}
+}
+
 // newCompletionServer returns a test server that captures the request body into
 // capture (when non-nil) and replies with the given chat-completion JSON.
 func newCompletionServer(

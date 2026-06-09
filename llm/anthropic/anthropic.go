@@ -11,6 +11,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net/http"
 	"strings"
 	"time"
 
@@ -554,16 +555,18 @@ func (c *Client) SendMessages(
 		ctx,
 		RetryConfig(),
 		func() (*llm.Response, error) {
+			var raw *http.Response
 			anthropicResponse, err := c.client.Messages.New(
 				ctx,
 				preparedMessages,
+				option.WithResponseInto(&raw),
 			)
 			if err != nil {
 				return nil, wrapError(err)
 			}
 
 			content, meta := c.extractContent(*anthropicResponse)
-			return &llm.Response{
+			resp := &llm.Response{
 				Content:   content,
 				ToolCalls: c.toolCalls(*anthropicResponse),
 				Usage:     c.usage(*anthropicResponse),
@@ -571,9 +574,21 @@ func (c *Client) SendMessages(
 					string(anthropicResponse.StopReason),
 				),
 				ProviderMetadata: meta,
-			}, nil
+			}
+			applyResponseHeaders(resp, raw)
+			return resp, nil
 		},
 	)
+}
+
+// applyResponseHeaders lifts the provider request id and selected response
+// headers from a captured raw HTTP response onto resp. It is a no-op when the
+// response was not captured (raw is nil).
+func applyResponseHeaders(resp *llm.Response, raw *http.Response) {
+	if resp == nil || raw == nil {
+		return
+	}
+	resp.RequestID, resp.ResponseHeaders = llm.SelectResponseHeaders(raw.Header)
 }
 
 // StreamResponse sends a conversation and returns a channel of streaming events.
@@ -609,7 +624,10 @@ func (c *Client) runStream(
 	eventChan chan<- llm.Event,
 	structured bool,
 ) error {
-	anthropicStream := c.client.Messages.NewStreaming(ctx, preparedMessages)
+	var raw *http.Response
+	anthropicStream := c.client.Messages.NewStreaming(
+		ctx, preparedMessages, option.WithResponseInto(&raw),
+	)
 	accumulatedMessage := anthropicsdk.Message{}
 
 	currentBlockType := ""
@@ -689,6 +707,7 @@ func (c *Client) runStream(
 				FinishReason:     c.finishReason(string(accumulatedMessage.StopReason)),
 				ProviderMetadata: meta,
 			}
+			applyResponseHeaders(resp, raw)
 			if structured {
 				resp.StructuredOutput = &content
 				resp.UsedNativeStructuredOutput = true
@@ -798,16 +817,18 @@ func (c *Client) SendMessagesWithStructuredOutput(
 		ctx,
 		RetryConfig(),
 		func() (*llm.Response, error) {
+			var raw *http.Response
 			anthropicResponse, err := c.client.Messages.New(
 				ctx,
 				preparedMessages,
+				option.WithResponseInto(&raw),
 			)
 			if err != nil {
 				return nil, wrapError(err)
 			}
 
 			content, meta := c.extractContent(*anthropicResponse)
-			return &llm.Response{
+			resp := &llm.Response{
 				Content:   content,
 				ToolCalls: c.toolCalls(*anthropicResponse),
 				Usage:     c.usage(*anthropicResponse),
@@ -817,7 +838,9 @@ func (c *Client) SendMessagesWithStructuredOutput(
 				StructuredOutput:           &content,
 				UsedNativeStructuredOutput: true,
 				ProviderMetadata:           meta,
-			}, nil
+			}
+			applyResponseHeaders(resp, raw)
+			return resp, nil
 		},
 	)
 }
