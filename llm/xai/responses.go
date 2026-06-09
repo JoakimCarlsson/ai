@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net/http"
 	"strings"
 	"time"
 
@@ -76,6 +77,7 @@ type ResponsesOptions struct {
 	extraHeaders    map[string]string
 	reasoningEffort *ReasoningEffort
 	builtinTools    []map[string]any
+	httpClient      *http.Client
 }
 
 // ReasoningEffort controls reasoning depth for xAI reasoning models.
@@ -134,6 +136,17 @@ func WithResponsesExtraHeaders(h map[string]string) ResponsesOption {
 // Note: xAI's grok-4 ignores this parameter.
 func WithResponsesReasoningEffort(e ReasoningEffort) ResponsesOption {
 	return func(o *ResponsesOptions) { o.reasoningEffort = &e }
+}
+
+// WithResponsesHTTPClient injects a custom *http.Client, threaded into the
+// OpenAI SDK via option.WithHTTPClient. Use it for outbound proxies, custom TLS
+// (private CAs, mTLS), connection-pool tuning, or transport-level
+// instrumentation. A nil client is a no-op, leaving the SDK default client in
+// place. The per-request context timeout from WithResponsesTimeout still
+// applies on top of the injected client's transport: the two compose and the
+// shorter deadline wins.
+func WithResponsesHTTPClient(c *http.Client) ResponsesOption {
+	return func(o *ResponsesOptions) { o.httpClient = c }
 }
 
 // WithWebSearch enables the web_search built-in tool.
@@ -234,6 +247,12 @@ func NewResponsesLLM(opts ...ResponsesOption) llm.LLM {
 	}
 	for k, v := range options.extraHeaders {
 		clientOpts = append(clientOpts, option.WithHeader(k, v))
+	}
+	if options.httpClient != nil {
+		clientOpts = append(
+			clientOpts,
+			option.WithHTTPClient(options.httpClient),
+		)
 	}
 
 	return llm.WithTracing(&xaiResponsesClient{

@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/joakimcarlsson/ai/llm"
@@ -123,5 +126,60 @@ func TestToolChoiceSpecificEmptyNameRejected(t *testing.T) {
 		[]tool.BaseTool{stubTool{name: "get_weather"}})
 	if !errors.Is(err, llm.ErrToolChoiceNameRequired) {
 		t.Fatalf("expected ErrToolChoiceNameRequired, got %v", err)
+	}
+}
+
+const messageOK = `{"id":"msg_1","type":"message","role":"assistant",` +
+	`"model":"claude","content":[{"type":"text","text":"hi"}],` +
+	`"stop_reason":"end_turn","usage":{"input_tokens":1,"output_tokens":1}}`
+
+// redirectRT rewrites every request to point at the test server's host before
+// delegating to the wrapped transport, and counts the requests it handled. The
+// Anthropic SDK exposes no base-URL option here, so redirecting at the transport
+// is how a test reaches a local httptest server through an injected client.
+type redirectRT struct {
+	base http.RoundTripper
+	host string
+	n    *int
+}
+
+func (c redirectRT) RoundTrip(r *http.Request) (*http.Response, error) {
+	*c.n++
+	r.URL.Scheme = "http"
+	r.URL.Host = c.host
+	return c.base.RoundTrip(r)
+}
+
+// TestWithHTTPClientTransportUsed confirms a client injected via WithHTTPClient
+// handles outgoing requests: the wrapped transport's counter increments, proving
+// the SDK default client was replaced.
+func TestWithHTTPClientTransportUsed(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(
+		func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = io.WriteString(w, messageOK)
+		}))
+	defer srv.Close()
+
+	var n int
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithModel(model.Model{APIModel: "claude"}),
+		WithHTTPClient(&http.Client{
+			Transport: redirectRT{
+				base: http.DefaultTransport,
+				host: srv.Listener.Addr().String(),
+				n:    &n,
+			},
+		}),
+	)
+
+	if _, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil); err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	if n == 0 {
+		t.Error("injected transport was not used for the request")
 	}
 }

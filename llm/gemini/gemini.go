@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -50,6 +51,7 @@ type Options struct {
 	thinkingBudget   *int32
 	toolChoice       *llm.ToolChoice
 	builtinTools     []*genai.Tool
+	httpClient       *http.Client
 }
 
 // Option configures Options.
@@ -97,6 +99,16 @@ func WithTimeout(
 	timeout time.Duration,
 ) Option {
 	return func(o *Options) { o.timeout = &timeout }
+}
+
+// WithHTTPClient injects a custom *http.Client, set on the genai ClientConfig's
+// HTTPClient field. Use it for outbound proxies, custom TLS (private CAs, mTLS),
+// connection-pool tuning, or transport-level instrumentation. A nil client is a
+// no-op, leaving the SDK default client in place. The per-request context
+// timeout from WithTimeout still applies on top of the injected client's
+// transport: the two compose and the shorter deadline wins.
+func WithHTTPClient(c *http.Client) Option {
+	return func(o *Options) { o.httpClient = c }
 }
 
 // WithDisableCache disables response caching.
@@ -214,10 +226,14 @@ func NewLLM(opts ...Option) llm.LLM {
 		o(&options)
 	}
 
-	client, _ := genai.NewClient(context.Background(), &genai.ClientConfig{
+	cfg := &genai.ClientConfig{
 		APIKey:  options.apiKey,
 		Backend: genai.BackendGeminiAPI,
-	})
+	}
+	if options.httpClient != nil {
+		cfg.HTTPClient = options.httpClient
+	}
+	client, _ := genai.NewClient(context.Background(), cfg)
 
 	return llm.WithTracing(
 		&Client{options: options, client: client},

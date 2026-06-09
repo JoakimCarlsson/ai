@@ -389,7 +389,7 @@ func TestUsageReasoningAndDeepSeekCache(t *testing.T) {
 // non-allowlisted header (here, an auth echo) is dropped.
 func TestResponseRequestIDAndHeaders(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
+		func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("x-request-id", "req_test_123")
 			w.Header().Set("x-ratelimit-remaining-requests", "42")
 			w.Header().Set("authorization", "Bearer leak")
@@ -423,6 +423,46 @@ func TestResponseRequestIDAndHeaders(t *testing.T) {
 	}
 	if got := resp.ResponseHeaders.Get("authorization"); got != "" {
 		t.Errorf("authorization should not be retained, got %q", got)
+	}
+}
+
+// countingRT is an http.RoundTripper that increments a counter on every request
+// before delegating to the wrapped transport, used to prove an injected client's
+// transport actually handled the outgoing request.
+type countingRT struct {
+	http.RoundTripper
+	n *int
+}
+
+func (c countingRT) RoundTrip(r *http.Request) (*http.Response, error) {
+	*c.n++
+	return c.RoundTripper.RoundTrip(r)
+}
+
+// TestWithHTTPClientTransportUsed confirms a client injected via WithHTTPClient
+// handles outgoing requests: the wrapped transport's counter increments, proving
+// the SDK default client was replaced.
+func TestWithHTTPClientTransportUsed(t *testing.T) {
+	srv := newCompletionServer(t, nil, completionOK)
+	defer srv.Close()
+
+	var n int
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithHTTPClient(&http.Client{
+			Transport: countingRT{RoundTripper: http.DefaultTransport, n: &n},
+		}),
+	)
+
+	if _, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil); err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	if n == 0 {
+		t.Error("injected transport was not used for the request")
 	}
 }
 

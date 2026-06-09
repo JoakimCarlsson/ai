@@ -5,6 +5,7 @@ package vertexai
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"time"
 
@@ -26,6 +27,7 @@ type Options struct {
 	thinkingLevel *llmgemini.ThinkingLevel
 	project       string
 	location      string
+	httpClient    *http.Client
 }
 
 // Option configures Options.
@@ -73,6 +75,16 @@ func WithThinkingLevel(level llmgemini.ThinkingLevel) Option {
 	return func(o *Options) { o.thinkingLevel = &level }
 }
 
+// WithHTTPClient injects a custom *http.Client, set on the genai ClientConfig's
+// HTTPClient field. Use it for outbound proxies, custom TLS (private CAs, mTLS),
+// connection-pool tuning, or transport-level instrumentation. A nil client is a
+// no-op, leaving the SDK default client in place. The per-request context
+// timeout from WithTimeout still applies on top of the injected client's
+// transport: the two compose and the shorter deadline wins.
+func WithHTTPClient(c *http.Client) Option {
+	return func(o *Options) { o.httpClient = c }
+}
+
 // WithProject sets the GCP project ID. Defaults to $VERTEXAI_PROJECT.
 func WithProject(
 	project string,
@@ -109,11 +121,15 @@ func NewLLM(opts ...Option) llm.LLM {
 		location = os.Getenv("VERTEXAI_LOCATION")
 	}
 
-	client, err := genai.NewClient(context.Background(), &genai.ClientConfig{
+	cfg := &genai.ClientConfig{
 		Project:  project,
 		Location: location,
 		Backend:  genai.BackendVertexAI,
-	})
+	}
+	if options.httpClient != nil {
+		cfg.HTTPClient = options.httpClient
+	}
+	client, err := genai.NewClient(context.Background(), cfg)
 	if err != nil {
 		// Match the previous nil-on-error behavior; tracing wrapper handles nil safely
 		// because Model() panics only on use, which mirrors the original code path.
