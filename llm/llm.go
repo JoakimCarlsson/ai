@@ -118,6 +118,32 @@ func (u *TokenUsage) Add(other TokenUsage) {
 	u.ReasoningTokens += other.ReasoningTokens
 }
 
+// TokenTopLogProb is one of the most likely alternative tokens at a given
+// position, paired with its log probability.
+type TokenTopLogProb struct {
+	Token   string
+	LogProb float64
+}
+
+// TokenLogProb carries the log-probability information for a single output
+// token. Top holds the most likely alternative tokens at that position (the
+// requested top_logprobs), empty when none were requested.
+type TokenLogProb struct {
+	Token   string
+	LogProb float64
+	Top     []TokenTopLogProb
+}
+
+// Choice is one completion among several returned when more than one was
+// requested (see llm/openai.WithN). Each choice carries its own content, finish
+// reason, tool calls, and per-token log probabilities.
+type Choice struct {
+	Content      string
+	FinishReason message.FinishReason
+	ToolCalls    []message.ToolCall
+	LogProbs     []TokenLogProb
+}
+
 // Response represents the complete response from an LLM provider.
 type Response struct {
 	Content                    string
@@ -129,6 +155,16 @@ type Response struct {
 	// ProviderMetadata carries provider-specific structured data from
 	// server-side built-in tools. Keys are namespaced per provider.
 	ProviderMetadata map[string]any
+	// LogProbs holds per-token log probabilities for the primary choice when
+	// log probabilities were requested (llm/openai.WithLogprobs); nil
+	// otherwise. Only OpenAI and OpenAI-compatible providers populate it.
+	LogProbs []TokenLogProb
+	// Choices holds every completion when more than one was requested
+	// (llm/openai.WithN). The top-level Content / FinishReason / ToolCalls /
+	// LogProbs mirror Choices[0]. Empty when a single choice was returned, so
+	// callers use the top-level fields then. Only OpenAI and OpenAI-compatible
+	// providers populate it.
+	Choices []Choice
 	// ProviderResponseID is the provider-assigned identifier for this response
 	// (e.g. the OpenAI Responses API `response.id`). Empty for providers that do
 	// not expose one. Callers can feed it back as the previous-response id to

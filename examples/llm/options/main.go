@@ -29,6 +29,25 @@ func main() {
 	}
 
 	fmt.Printf("[%s] %s\n", provider, resp.Content)
+
+	// LogProbs is populated by OpenAI (and OpenAI-compatible providers) when
+	// WithLogprobs was set; nil otherwise. Print the first few tokens with
+	// their log probabilities to show the surface.
+	if len(resp.LogProbs) > 0 {
+		fmt.Println("\nper-token log probabilities (first 5):")
+		for _, tok := range resp.LogProbs[:min(5, len(resp.LogProbs))] {
+			fmt.Printf("  %-12q logprob=%.4f\n", tok.Token, tok.LogProb)
+		}
+	}
+
+	// Choices holds every completion when WithN(>1) was used; it stays empty
+	// for a single completion, where the top-level fields above suffice.
+	if len(resp.Choices) > 1 {
+		fmt.Printf("\n%d choices returned:\n", len(resp.Choices))
+		for i, choice := range resp.Choices {
+			fmt.Printf("  [%d] %s\n", i, choice.Content)
+		}
+	}
 }
 
 func newLLM() (llm.LLM, string) {
@@ -64,6 +83,12 @@ func newLLM() (llm.LLM, string) {
 			llmopenai.WithTopP(0.9),
 			llmopenai.WithStopSequences("\n\n"),
 			llmopenai.WithSeed(42),
+			// Per-token log probabilities (top 3 alternatives per position)
+			// surface on resp.LogProbs below. WithN(k) and
+			// WithLogitBias(map[string]int{...}) are the other OpenAI-only
+			// sampling knobs; WithN populates resp.Choices with every
+			// completion.
+			llmopenai.WithLogprobs(3),
 			llmopenai.WithTimeout(timeout),
 		), provider
 	default:

@@ -57,6 +57,9 @@ type Options struct {
 	extraBodyFields   map[string]any
 	metadataFields    map[string]string
 	httpClient        *http.Client
+	logitBias         map[string]int
+	topLogprobs       *int
+	n                 *int64
 }
 
 // Option configures Options.
@@ -155,6 +158,35 @@ func WithPresencePenalty(
 
 // WithSeed sets a random seed for deterministic generation.
 func WithSeed(seed int64) Option { return func(o *Options) { o.seed = &seed } }
+
+// WithLogitBias biases the likelihood of specific tokens. The map keys are
+// token IDs in the model's tokenizer (OpenAI's wire shape), and the values are
+// biases from -100 to 100 added to the token logits before sampling: -100 bans
+// a token, 100 forces it. Emitted as logit_bias only when set. OpenAI-only —
+// Gemini and Anthropic do not support it and never receive the field.
+func WithLogitBias(bias map[string]int) Option {
+	return func(o *Options) { o.logitBias = bias }
+}
+
+// WithLogprobs requests per-token log probabilities for the response. It sets
+// logprobs:true and top_logprobs:topLogprobs on the request, asking the model
+// to return up to topLogprobs most-likely alternatives at each position. The
+// result is surfaced on [llm.Response].LogProbs (and on each
+// [llm.Response].Choices entry when WithN is used). OpenAI-only — Gemini and
+// Anthropic do not support it and never receive the field.
+func WithLogprobs(topLogprobs int) Option {
+	return func(o *Options) { o.topLogprobs = &topLogprobs }
+}
+
+// WithN requests n completions for a single prompt, emitted as n on the
+// request. All completions are surfaced on [llm.Response].Choices, while the
+// top-level Content / FinishReason / ToolCalls / LogProbs mirror the first
+// choice. Streaming with n > 1 is not supported. OpenAI-only — Gemini's
+// candidateCount and other providers are out of scope; they never receive the
+// field.
+func WithN(n int) Option {
+	return func(o *Options) { v := int64(n); o.n = &v }
+}
 
 // WithParallelToolCalls toggles whether OpenAI returns multiple tool calls in a single response.
 func WithParallelToolCalls(enabled bool) Option {
@@ -514,6 +546,21 @@ func (c *Client) preparedParams(
 	pb.ApplyInt64Seed(c.options.seed,
 		func(s *int64) { params.Seed = openaisdk.Int(*s) })
 
+	if len(c.options.logitBias) > 0 {
+		bias := make(map[string]int64, len(c.options.logitBias))
+		for token, b := range c.options.logitBias {
+			bias[token] = int64(b)
+		}
+		params.LogitBias = bias
+	}
+	if c.options.topLogprobs != nil {
+		params.Logprobs = openaisdk.Bool(true)
+		params.TopLogprobs = openaisdk.Int(int64(*c.options.topLogprobs))
+	}
+	if c.options.n != nil {
+		params.N = openaisdk.Int(*c.options.n)
+	}
+
 	if c.options.maxTokens > 0 {
 		params.MaxCompletionTokens = openaisdk.Int(c.options.maxTokens)
 	}
@@ -619,6 +666,8 @@ func (c *Client) SendMessages(
 				Usage:            c.usage(*openaiResponse),
 				FinishReason:     finishReason,
 				ProviderMetadata: c.providerMetadata(*openaiResponse),
+				LogProbs:         logProbsForChoice(openaiResponse.Choices[0]),
+				Choices:          c.buildChoices(*openaiResponse),
 			}
 			applyResponseHeaders(resp, raw)
 			return resp, nil
@@ -759,20 +808,81 @@ func (c *Client) runStream(
 func (c *Client) toolCalls(
 	completion openaisdk.ChatCompletion,
 ) []message.ToolCall {
+	if len(completion.Choices) == 0 {
+		return nil
+	}
+	return c.toolCallsForChoice(completion.Choices[0])
+}
+
+// toolCallsForChoice extracts the tool calls from a single completion choice.
+func (c *Client) toolCallsForChoice(
+	choice openaisdk.ChatCompletionChoice,
+) []message.ToolCall {
 	var toolCalls []message.ToolCall
-	if len(completion.Choices) > 0 &&
-		len(completion.Choices[0].Message.ToolCalls) > 0 {
-		for _, call := range completion.Choices[0].Message.ToolCalls {
-			toolCalls = append(toolCalls, message.ToolCall{
-				ID:       call.ID,
-				Name:     call.Function.Name,
-				Input:    call.Function.Arguments,
-				Type:     "function",
-				Finished: true,
-			})
-		}
+	for _, call := range choice.Message.ToolCalls {
+		toolCalls = append(toolCalls, message.ToolCall{
+			ID:       call.ID,
+			Name:     call.Function.Name,
+			Input:    call.Function.Arguments,
+			Type:     "function",
+			Finished: true,
+		})
 	}
 	return toolCalls
+}
+
+// logProbsForChoice maps a choice's logprobs.content block to the
+// vendor-neutral [llm.TokenLogProb] slice. Returns nil when the choice carries
+// no token log probabilities (the option was not requested).
+func logProbsForChoice(
+	choice openaisdk.ChatCompletionChoice,
+) []llm.TokenLogProb {
+	content := choice.Logprobs.Content
+	if len(content) == 0 {
+		return nil
+	}
+	out := make([]llm.TokenLogProb, len(content))
+	for i, tok := range content {
+		lp := llm.TokenLogProb{Token: tok.Token, LogProb: tok.Logprob}
+		if len(tok.TopLogprobs) > 0 {
+			lp.Top = make([]llm.TokenTopLogProb, len(tok.TopLogprobs))
+			for j, alt := range tok.TopLogprobs {
+				lp.Top[j] = llm.TokenTopLogProb{
+					Token:   alt.Token,
+					LogProb: alt.Logprob,
+				}
+			}
+		}
+		out[i] = lp
+	}
+	return out
+}
+
+// buildChoices converts every completion choice into an [llm.Choice]. It
+// returns nil for a single-choice completion (callers rely on the top-level
+// Response fields then); the slice is populated only when n > 1 produced
+// multiple choices.
+func (c *Client) buildChoices(
+	completion openaisdk.ChatCompletion,
+) []llm.Choice {
+	if len(completion.Choices) <= 1 {
+		return nil
+	}
+	choices := make([]llm.Choice, len(completion.Choices))
+	for i, ch := range completion.Choices {
+		toolCalls := c.toolCallsForChoice(ch)
+		finishReason := c.finishReason(string(ch.FinishReason))
+		if len(toolCalls) > 0 {
+			finishReason = message.FinishReasonToolUse
+		}
+		choices[i] = llm.Choice{
+			Content:      ch.Message.Content,
+			FinishReason: finishReason,
+			ToolCalls:    toolCalls,
+			LogProbs:     logProbsForChoice(ch),
+		}
+	}
+	return choices
 }
 
 func (c *Client) usage(completion openaisdk.ChatCompletion) llm.TokenUsage {
@@ -924,6 +1034,8 @@ func (c *Client) SendMessagesWithStructuredOutput(
 				StructuredOutput:           &content,
 				UsedNativeStructuredOutput: true,
 				ProviderMetadata:           c.providerMetadata(*openaiResponse),
+				LogProbs:                   logProbsForChoice(openaiResponse.Choices[0]),
+				Choices:                    c.buildChoices(*openaiResponse),
 			}
 			applyResponseHeaders(resp, raw)
 			return resp, nil
