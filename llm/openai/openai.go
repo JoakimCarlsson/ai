@@ -56,6 +56,7 @@ type Options struct {
 	toolChoice        *llm.ToolChoice
 	extraBodyFields   map[string]any
 	metadataFields    map[string]string
+	httpClient        *http.Client
 }
 
 // Option configures Options.
@@ -118,6 +119,16 @@ func WithBaseURL(
 // WithExtraHeaders adds custom HTTP headers to API requests.
 func WithExtraHeaders(headers map[string]string) Option {
 	return func(o *Options) { o.extraHeaders = headers }
+}
+
+// WithHTTPClient injects a custom *http.Client, threaded into the OpenAI SDK
+// via option.WithHTTPClient. Use it for outbound proxies, custom TLS (private
+// CAs, mTLS), connection-pool tuning, or transport-level instrumentation. A nil
+// client is a no-op, leaving the SDK default client in place. The per-request
+// context timeout from WithTimeout still applies on top of the injected client's
+// transport: the two compose and the shorter deadline wins.
+func WithHTTPClient(c *http.Client) Option {
+	return func(o *Options) { o.httpClient = c }
 }
 
 // WithDisableCache disables response caching for OpenAI requests.
@@ -246,6 +257,12 @@ func NewLLM(opts ...Option) llm.LLM {
 	}
 	for k, v := range options.extraHeaders {
 		clientOpts = append(clientOpts, option.WithHeader(k, v))
+	}
+	if options.httpClient != nil {
+		clientOpts = append(
+			clientOpts,
+			option.WithHTTPClient(options.httpClient),
+		)
 	}
 
 	return llm.WithTracing(&Client{

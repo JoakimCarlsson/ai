@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"time"
 
 	"github.com/joakimcarlsson/ai/llm"
@@ -45,6 +46,7 @@ type CompoundOptions struct {
 	baseURL       string
 	extraHeaders  map[string]string
 	builtinTools  []map[string]any
+	httpClient    *http.Client
 }
 
 // CompoundOption configures [CompoundOptions].
@@ -93,6 +95,17 @@ func WithCompoundBaseURL(u string) CompoundOption {
 // WithCompoundExtraHeaders adds custom HTTP headers to API requests.
 func WithCompoundExtraHeaders(h map[string]string) CompoundOption {
 	return func(o *CompoundOptions) { o.extraHeaders = h }
+}
+
+// WithCompoundHTTPClient injects a custom *http.Client, threaded into the
+// OpenAI SDK via option.WithHTTPClient. Use it for outbound proxies, custom TLS
+// (private CAs, mTLS), connection-pool tuning, or transport-level
+// instrumentation. A nil client is a no-op, leaving the SDK default client in
+// place. The per-request context timeout from WithCompoundTimeout still applies
+// on top of the injected client's transport: the two compose and the shorter
+// deadline wins.
+func WithCompoundHTTPClient(c *http.Client) CompoundOption {
+	return func(o *CompoundOptions) { o.httpClient = c }
 }
 
 // WithBrowserSearch enables Groq's browser_search built-in tool. Requires a
@@ -167,6 +180,12 @@ func NewCompoundLLM(opts ...CompoundOption) llm.LLM {
 	}
 	for k, v := range options.extraHeaders {
 		clientOpts = append(clientOpts, option.WithHeader(k, v))
+	}
+	if options.httpClient != nil {
+		clientOpts = append(
+			clientOpts,
+			option.WithHTTPClient(options.httpClient),
+		)
 	}
 
 	return llm.WithTracing(&compoundClient{

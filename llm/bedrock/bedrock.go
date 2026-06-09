@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -34,6 +35,7 @@ type Options struct {
 	stopSequences []string
 	timeout       *time.Duration
 	disableCache  bool
+	httpClient    *http.Client
 }
 
 // Option configures Options.
@@ -81,6 +83,18 @@ func WithTimeout(
 	timeout time.Duration,
 ) Option {
 	return func(o *Options) { o.timeout = &timeout }
+}
+
+// WithHTTPClient injects a custom *http.Client, passed through to the
+// underlying Anthropic-on-Bedrock client. Use it for outbound proxies, custom
+// TLS (private CAs, mTLS), connection-pool tuning, or transport-level
+// instrumentation. It composes with Bedrock's AWS SigV4 signing, which the SDK
+// applies as request middleware on top of the injected client's transport. A
+// nil client is a no-op, leaving the SDK default client in place. The
+// per-request context timeout from WithTimeout still applies on top of the
+// injected client's transport: the two compose and the shorter deadline wins.
+func WithHTTPClient(c *http.Client) Option {
+	return func(o *Options) { o.httpClient = c }
 }
 
 // WithDisableCache disables Anthropic prompt caching. Caching is enabled by
@@ -171,6 +185,12 @@ func newAnthropicChild(options Options) llm.LLM {
 	}
 	if options.timeout != nil {
 		anthOpts = append(anthOpts, llmanthropic.WithTimeout(*options.timeout))
+	}
+	if options.httpClient != nil {
+		anthOpts = append(
+			anthOpts,
+			llmanthropic.WithHTTPClient(options.httpClient),
+		)
 	}
 	return llmanthropic.NewLLM(anthOpts...)
 }

@@ -53,6 +53,7 @@ type Options struct {
 	reasoningEffort *ReasoningEffort
 	toolChoice      *llm.ToolChoice
 	builtinTools    []anthropicsdk.ToolUnionParam
+	httpClient      *http.Client
 }
 
 // Option configures Options.
@@ -105,6 +106,16 @@ func WithTimeout(
 // WithBedrock configures the client to talk to Anthropic models hosted on AWS Bedrock.
 func WithBedrock(useBedrock bool) Option {
 	return func(o *Options) { o.useBedrock = useBedrock }
+}
+
+// WithHTTPClient injects a custom *http.Client, threaded into the Anthropic SDK
+// via option.WithHTTPClient. Use it for outbound proxies, custom TLS (private
+// CAs, mTLS), connection-pool tuning, or transport-level instrumentation. A nil
+// client is a no-op, leaving the SDK default client in place. The per-request
+// context timeout from WithTimeout still applies on top of the injected client's
+// transport: the two compose and the shorter deadline wins.
+func WithHTTPClient(c *http.Client) Option {
+	return func(o *Options) { o.httpClient = c }
 }
 
 // WithDisableCache disables prompt caching for Anthropic requests.
@@ -234,6 +245,12 @@ func NewLLM(opts ...Option) llm.LLM {
 		clientOpts = append(
 			clientOpts,
 			bedrock.WithLoadDefaultConfig(context.Background()),
+		)
+	}
+	if options.httpClient != nil {
+		clientOpts = append(
+			clientOpts,
+			option.WithHTTPClient(options.httpClient),
 		)
 	}
 

@@ -6,6 +6,7 @@
 package azure
 
 import (
+	"net/http"
 	"strings"
 	"time"
 
@@ -32,6 +33,7 @@ type Options struct {
 	apiVersion            string
 	canReason             *bool
 	supportsStructuredOut *bool
+	httpClient            *http.Client
 }
 
 // Option configures Options.
@@ -110,6 +112,17 @@ func WithReasoning(canReason bool) Option {
 	return func(o *Options) { o.canReason = &canReason }
 }
 
+// WithHTTPClient injects a custom *http.Client, threaded into the OpenAI SDK
+// (and the Azure-auth SDK path) via option.WithHTTPClient. Use it for outbound
+// proxies, custom TLS (private CAs, mTLS), connection-pool tuning, or
+// transport-level instrumentation. A nil client is a no-op, leaving the SDK
+// default client in place. The per-request context timeout from WithTimeout
+// still applies on top of the injected client's transport: the two compose and
+// the shorter deadline wins.
+func WithHTTPClient(c *http.Client) Option {
+	return func(o *Options) { o.httpClient = c }
+}
+
 // WithStructuredOutput declares whether the deployed model supports the
 // chat-completions response_format JSON-schema constraint. Use this when
 // the deployment name does not match an entry in [model.AzureModels].
@@ -157,6 +170,12 @@ func NewLLM(opts ...Option) llm.LLM {
 	if options.timeout != nil {
 		openaiOpts = append(openaiOpts, llmopenai.WithTimeout(*options.timeout))
 	}
+	if options.httpClient != nil {
+		openaiOpts = append(
+			openaiOpts,
+			llmopenai.WithHTTPClient(options.httpClient),
+		)
+	}
 
 	// If Azure-specific endpoint+apiVersion aren't set, fall through to plain OpenAI.
 	if options.endpoint == "" || options.apiVersion == "" {
@@ -189,6 +208,9 @@ func NewLLM(opts ...Option) llm.LLM {
 
 	reqOpts := []option.RequestOption{
 		azure.WithEndpoint(options.endpoint, options.apiVersion),
+	}
+	if options.httpClient != nil {
+		reqOpts = append(reqOpts, option.WithHTTPClient(options.httpClient))
 	}
 	if options.apiKey != "" {
 		reqOpts = append(reqOpts, azure.WithAPIKey(options.apiKey))
