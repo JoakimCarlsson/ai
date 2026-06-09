@@ -124,7 +124,32 @@ llmopenai.WithFrequencyPenalty(0.5)
 llmopenai.WithPresencePenalty(0.5)
 llmopenai.WithSeed(42)
 llmopenai.WithParallelToolCalls(false)
+llmopenai.WithLogitBias(map[string]int{"1212": 5, "50256": -100})  // bias/ban tokens by id
+llmopenai.WithLogprobs(3)                                          // logprobs:true + top_logprobs:3
+llmopenai.WithN(3)                                                 // n completions per request
 ```
+
+!!! note "Sampling knobs that change the response shape"
+    `WithLogitBias`, `WithLogprobs`, and `WithN` live on the OpenAI client and so
+    also cover every OpenAI-compatible provider (Groq, OpenRouter, xAI, Together,
+    Fireworks, DeepSeek, Mistral, Ollama). They are emitted only when set, and
+    are **OpenAI-only**: Anthropic supports none of them, and Gemini's
+    `candidateCount` (the `n` equivalent) is out of scope — those providers never
+    receive the fields.
+
+    - `WithLogitBias` maps token IDs (tokenizer ids, OpenAI's wire shape) to a
+      bias from -100 (ban) to 100 (force).
+    - `WithLogprobs(n)` requests per-token log probabilities with up to `n`
+      alternatives per position; the result lands on `Response.LogProbs`
+      (`[]llm.TokenLogProb`), nil when not requested.
+    - `WithN(n)` requests `n` completions; all land on `Response.Choices`
+      (`[]llm.Choice`). The top-level `Content` / `FinishReason` / `ToolCalls` /
+      `LogProbs` mirror choice 0, so single-completion callers are unaffected
+      (`Choices` is empty when `n` is unset or `1`). Streaming with `n > 1` is not
+      supported — use the non-streaming `SendMessages` path.
+
+    `logit_bias` is rejected by reasoning-tier models (the gpt-5 family) with an
+    HTTP 400; use a classic chat model such as `gpt-4o-mini` when you need it.
 
 Anthropic:
 

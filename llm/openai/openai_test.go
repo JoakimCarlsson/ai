@@ -466,6 +466,303 @@ func TestWithHTTPClientTransportUsed(t *testing.T) {
 	}
 }
 
+// TestWireLogitBias confirms WithLogitBias emits logit_bias as a token-id ->
+// bias object, and that it is omitted when the option is unset.
+func TestWireLogitBias(t *testing.T) {
+	var body map[string]any
+	srv := newCompletionServer(t, &body, completionOK)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithLogitBias(map[string]int{"50256": -100, "1212": 5}),
+	)
+
+	if _, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil); err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	bias, ok := body["logit_bias"].(map[string]any)
+	if !ok {
+		t.Fatalf("logit_bias = %v (%T), want object",
+			body["logit_bias"], body["logit_bias"])
+	}
+	if got, _ := bias["50256"].(float64); int(got) != -100 {
+		t.Errorf("logit_bias[50256] = %v, want -100", bias["50256"])
+	}
+	if got, _ := bias["1212"].(float64); int(got) != 5 {
+		t.Errorf("logit_bias[1212] = %v, want 5", bias["1212"])
+	}
+}
+
+// TestWireLogitBiasOmitted confirms logit_bias is absent when WithLogitBias is
+// not set.
+func TestWireLogitBiasOmitted(t *testing.T) {
+	var body map[string]any
+	srv := newCompletionServer(t, &body, completionOK)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+	)
+
+	if _, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil); err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	if _, present := body["logit_bias"]; present {
+		t.Errorf("logit_bias should be omitted when unset, got %v",
+			body["logit_bias"])
+	}
+}
+
+// TestWireLogprobs confirms WithLogprobs sets logprobs:true and top_logprobs:N
+// on the request body, and that both are omitted when the option is unset.
+func TestWireLogprobs(t *testing.T) {
+	var body map[string]any
+	srv := newCompletionServer(t, &body, completionOK)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithLogprobs(5),
+	)
+
+	if _, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil); err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	if got, _ := body["logprobs"].(bool); !got {
+		t.Errorf("logprobs = %v, want true", body["logprobs"])
+	}
+	if got, _ := body["top_logprobs"].(float64); int(got) != 5 {
+		t.Errorf("top_logprobs = %v, want 5", body["top_logprobs"])
+	}
+}
+
+// TestWireLogprobsOmitted confirms logprobs/top_logprobs are absent when
+// WithLogprobs is not set.
+func TestWireLogprobsOmitted(t *testing.T) {
+	var body map[string]any
+	srv := newCompletionServer(t, &body, completionOK)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+	)
+
+	if _, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil); err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	if _, present := body["logprobs"]; present {
+		t.Errorf("logprobs should be omitted when unset, got %v",
+			body["logprobs"])
+	}
+	if _, present := body["top_logprobs"]; present {
+		t.Errorf("top_logprobs should be omitted when unset, got %v",
+			body["top_logprobs"])
+	}
+}
+
+// TestResponseLogProbs confirms a completion carrying a logprobs.content block
+// is mapped onto Response.LogProbs, including the top_logprobs alternatives.
+func TestResponseLogProbs(t *testing.T) {
+	const resp = `{"id":"x","object":"chat.completion","choices":[{"index":0,` +
+		`"message":{"role":"assistant","content":"hi"},"finish_reason":"stop",` +
+		`"logprobs":{"content":[` +
+		`{"token":"hi","logprob":-0.5,"top_logprobs":[` +
+		`{"token":"hi","logprob":-0.5},{"token":"yo","logprob":-1.2}]},` +
+		`{"token":"!","logprob":-0.1,"top_logprobs":[]}]}}],` +
+		`"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}`
+
+	srv := newCompletionServer(t, nil, resp)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithLogprobs(2),
+	)
+
+	out, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil)
+	if err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	if len(out.LogProbs) != 2 {
+		t.Fatalf("len(LogProbs) = %d, want 2", len(out.LogProbs))
+	}
+	first := out.LogProbs[0]
+	if first.Token != "hi" || first.LogProb != -0.5 {
+		t.Errorf("LogProbs[0] = %+v, want token=hi logprob=-0.5", first)
+	}
+	if len(first.Top) != 2 {
+		t.Fatalf("len(LogProbs[0].Top) = %d, want 2", len(first.Top))
+	}
+	if first.Top[1].Token != "yo" || first.Top[1].LogProb != -1.2 {
+		t.Errorf("LogProbs[0].Top[1] = %+v, want token=yo logprob=-1.2",
+			first.Top[1])
+	}
+}
+
+// TestResponseLogProbsNilWhenAbsent confirms Response.LogProbs is nil when the
+// completion carries no logprobs block.
+func TestResponseLogProbsNilWhenAbsent(t *testing.T) {
+	srv := newCompletionServer(t, nil, completionOK)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+	)
+
+	out, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil)
+	if err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	if out.LogProbs != nil {
+		t.Errorf("LogProbs = %v, want nil", out.LogProbs)
+	}
+}
+
+// TestWireN confirms WithN emits n on the request body, and that it is omitted
+// when the option is unset.
+func TestWireN(t *testing.T) {
+	var body map[string]any
+	srv := newCompletionServer(t, &body, completionOK)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithN(3),
+	)
+
+	if _, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil); err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	if got, _ := body["n"].(float64); int(got) != 3 {
+		t.Errorf("n = %v, want 3", body["n"])
+	}
+}
+
+// TestWireNOmitted confirms n is absent when WithN is not set.
+func TestWireNOmitted(t *testing.T) {
+	var body map[string]any
+	srv := newCompletionServer(t, &body, completionOK)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+	)
+
+	if _, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil); err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	if _, present := body["n"]; present {
+		t.Errorf("n should be omitted when unset, got %v", body["n"])
+	}
+}
+
+// TestResponseChoices confirms a completion with multiple choices populates
+// Response.Choices, with the top-level fields mirroring choice 0.
+func TestResponseChoices(t *testing.T) {
+	const resp = `{"id":"x","object":"chat.completion","choices":[` +
+		`{"index":0,"message":{"role":"assistant","content":"first"},` +
+		`"finish_reason":"stop"},` +
+		`{"index":1,"message":{"role":"assistant","content":"second"},` +
+		`"finish_reason":"length"},` +
+		`{"index":2,"message":{"role":"assistant","content":"third"},` +
+		`"finish_reason":"stop"}],` +
+		`"usage":{"prompt_tokens":1,"completion_tokens":3,"total_tokens":4}}`
+
+	srv := newCompletionServer(t, nil, resp)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithN(3),
+	)
+
+	out, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil)
+	if err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	if len(out.Choices) != 3 {
+		t.Fatalf("len(Choices) = %d, want 3", len(out.Choices))
+	}
+	if out.Content != out.Choices[0].Content || out.Content != "first" {
+		t.Errorf("Content = %q, want choice 0 %q", out.Content,
+			out.Choices[0].Content)
+	}
+	if out.FinishReason != out.Choices[0].FinishReason {
+		t.Errorf("FinishReason = %q, want choice 0 %q", out.FinishReason,
+			out.Choices[0].FinishReason)
+	}
+	if out.Choices[1].Content != "second" {
+		t.Errorf("Choices[1].Content = %q, want second", out.Choices[1].Content)
+	}
+	if out.Choices[1].FinishReason != message.FinishReasonMaxTokens {
+		t.Errorf("Choices[1].FinishReason = %q, want max-tokens",
+			out.Choices[1].FinishReason)
+	}
+}
+
+// TestResponseChoicesEmptyForSingleChoice confirms Response.Choices stays empty
+// for a single-choice completion so callers use the top-level fields.
+func TestResponseChoicesEmptyForSingleChoice(t *testing.T) {
+	srv := newCompletionServer(t, nil, completionOK)
+	defer srv.Close()
+
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+	)
+
+	out, err := client.SendMessages(context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil)
+	if err != nil {
+		t.Fatalf("SendMessages: %v", err)
+	}
+
+	if len(out.Choices) != 0 {
+		t.Errorf("Choices = %v, want empty for a single choice", out.Choices)
+	}
+	if out.Content != "hi" {
+		t.Errorf("Content = %q, want hi", out.Content)
+	}
+}
+
 // newCompletionServer returns a test server that captures the request body into
 // capture (when non-nil) and replies with the given chat-completion JSON.
 func newCompletionServer(

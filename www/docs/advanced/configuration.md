@@ -35,8 +35,20 @@ client := llmopenai.NewLLM(
     llmopenai.WithSeed(42),
     llmopenai.WithParallelToolCalls(false),
     llmopenai.WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceRequired}),
+    llmopenai.WithLogitBias(map[string]int{"50256": -100}),
+    llmopenai.WithLogprobs(3),
+    llmopenai.WithN(3),
 )
 ```
+
+`WithLogitBias`, `WithLogprobs`, and `WithN` are OpenAI-only sampling knobs
+(inherited by every OpenAI-compatible provider) and are emitted only when set.
+`WithLogitBias` biases or bans tokens by tokenizer id (-100 to 100).
+`WithLogprobs(n)` surfaces per-token log probabilities with up to `n`
+alternatives on `Response.LogProbs`. `WithN(n)` requests `n` completions on
+`Response.Choices`, with the top-level fields mirroring choice 0 (streaming with
+`n > 1` is unsupported). `logit_bias` is rejected by reasoning-tier models (the
+gpt-5 family); use a classic chat model such as `gpt-4o-mini` for it.
 
 `WithToolChoice` controls whether and which tool the model may call. It takes
 the shared `llm.ToolChoice` type — `Mode` is one of `ToolChoiceAuto` (default),
