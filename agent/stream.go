@@ -526,18 +526,21 @@ func (a *Agent) runLoopStream(
 			}
 
 			var finishReason message.FinishReason
+			var providerResponseID string
 			if finalResponse != nil {
 				finishReason = finalResponse.FinishReason
+				providerResponseID = finalResponse.ProviderResponseID
 			}
 
 			chatResp := &ChatResponse{
-				Content:        fullContent,
-				ToolCalls:      toolCalls,
-				Usage:          totalUsage,
-				FinishReason:   finishReason,
-				TotalToolCalls: totalToolCalls,
-				TotalDuration:  time.Since(startTime),
-				TotalTurns:     turns,
+				Content:            fullContent,
+				ToolCalls:          toolCalls,
+				Usage:              totalUsage,
+				FinishReason:       finishReason,
+				ProviderResponseID: providerResponseID,
+				TotalToolCalls:     totalToolCalls,
+				TotalDuration:      time.Since(startTime),
+				TotalTurns:         turns,
 			}
 			if activeAgent != a {
 				chatResp.AgentName = findAgentName(a, activeAgent)

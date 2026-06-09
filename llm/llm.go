@@ -127,6 +127,11 @@ type Response struct {
 	// ProviderMetadata carries provider-specific structured data from
 	// server-side built-in tools. Keys are namespaced per provider.
 	ProviderMetadata map[string]any
+	// ProviderResponseID is the provider-assigned identifier for this response
+	// (e.g. the OpenAI Responses API `response.id`). Empty for providers that do
+	// not expose one. Callers can feed it back as the previous-response id to
+	// chain server-side conversation state (prompt-cache continuity).
+	ProviderResponseID string
 }
 
 // Event represents a single event in a streaming LLM response.
