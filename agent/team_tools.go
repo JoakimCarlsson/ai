@@ -65,7 +65,10 @@ func (t *spawnTeammateTool) Run(
 	} else {
 		prompt := input.SystemPrompt
 		if prompt == "" {
-			prompt = fmt.Sprintf("You are a teammate named %q. Complete the assigned task and communicate with your team using send_message and read_messages.", input.Name)
+			prompt = fmt.Sprintf(
+				"You are a teammate named %q. Complete the assigned task and communicate with your team using send_message and read_messages.",
+				input.Name,
+			)
 		}
 		teammate = New(t.leadAgent.llm,
 			WithSystemPrompt(prompt),

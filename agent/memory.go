@@ -64,11 +64,21 @@ func (a *Agent) storeWithDedup(
 	for _, decision := range result.Decisions {
 		switch decision.Event {
 		case memory.DedupEventAdd:
-			if err := a.memory.Store(ctx, a.memoryID, decision.Text, metadata); err != nil {
+			if err := a.memory.Store(
+				ctx,
+				a.memoryID,
+				decision.Text,
+				metadata,
+			); err != nil {
 				return err
 			}
 		case memory.DedupEventUpdate:
-			if err := a.memory.Update(ctx, decision.MemoryID, decision.Text, metadata); err != nil {
+			if err := a.memory.Update(
+				ctx,
+				decision.MemoryID,
+				decision.Text,
+				metadata,
+			); err != nil {
 				return err
 			}
 		case memory.DedupEventDelete:

@@ -369,7 +369,13 @@ func streamLLMAndSpeak(
 	}
 
 	if len(toolCalls) == 0 && strings.TrimSpace(text) != "" {
-		if err := speakOneShot(ctx, v.tts, strings.TrimSpace(text), emit, ttsAudio); err != nil {
+		if err := speakOneShot(
+			ctx,
+			v.tts,
+			strings.TrimSpace(text),
+			emit,
+			ttsAudio,
+		); err != nil {
 			return text, toolCalls, err
 		}
 	}

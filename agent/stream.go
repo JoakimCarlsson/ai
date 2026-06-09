@@ -299,7 +299,10 @@ func (a *Agent) ContinueStream(
 		}
 		messages = append(messages, toolMsg)
 
-		if err := a.session.AddMessages(ctx, []message.Message{toolMsg}); err != nil {
+		if err := a.session.AddMessages(
+			ctx,
+			[]message.Message{toolMsg},
+		); err != nil {
 			tracing.SetError(span, err)
 			eventChan <- ChatEvent{Type: types.EventError, Error: err}
 			return
@@ -600,7 +603,10 @@ func (a *Agent) runLoopStream(
 			)
 		}
 
-		if handoff := detectHandoff(toolCalls, activeAgent.handoffs); handoff != nil {
+		if handoff := detectHandoff(
+			toolCalls,
+			activeAgent.handoffs,
+		); handoff != nil {
 			eventChan <- ChatEvent{
 				Type:      types.EventHandoff,
 				AgentName: handoff.Name,

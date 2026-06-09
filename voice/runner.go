@@ -355,7 +355,10 @@ func loadInitialHistory(
 		return nil, 0, nil
 	}
 	sysMsg := message.NewSystemMessage(v.systemPrompt)
-	if err := v.session.AddMessages(ctx, []message.Message{sysMsg}); err != nil {
+	if err := v.session.AddMessages(
+		ctx,
+		[]message.Message{sysMsg},
+	); err != nil {
 		return nil, 0, err
 	}
 	return []message.Message{sysMsg}, 1, nil

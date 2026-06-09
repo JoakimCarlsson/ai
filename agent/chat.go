@@ -242,7 +242,10 @@ func (a *Agent) Continue(
 	}
 	messages = append(messages, toolMsg)
 
-	if err := a.session.AddMessages(ctx, []message.Message{toolMsg}); err != nil {
+	if err := a.session.AddMessages(
+		ctx,
+		[]message.Message{toolMsg},
+	); err != nil {
 		return nil, err
 	}
 
@@ -384,7 +387,10 @@ func (a *Agent) runLoop(
 				}
 				if resp.Content != "" ||
 					len(resp.ToolCalls) > 0 && !activeAgent.autoExecute {
-					if err := activeAgent.session.AddMessages(ctx, []message.Message{assistantMsg}); err != nil {
+					if err := activeAgent.session.AddMessages(
+						ctx,
+						[]message.Message{assistantMsg},
+					); err != nil {
 						return nil, err
 					}
 				}
@@ -438,12 +444,18 @@ func (a *Agent) runLoop(
 		messages = append(messages, toolMsg)
 
 		if activeAgent.session != nil {
-			if err := activeAgent.session.AddMessages(ctx, []message.Message{assistantMsg, toolMsg}); err != nil {
+			if err := activeAgent.session.AddMessages(
+				ctx,
+				[]message.Message{assistantMsg, toolMsg},
+			); err != nil {
 				return nil, err
 			}
 		}
 
-		if handoff := detectHandoff(resp.ToolCalls, activeAgent.handoffs); handoff != nil {
+		if handoff := detectHandoff(
+			resp.ToolCalls,
+			activeAgent.handoffs,
+		); handoff != nil {
 			activeAgent = handoff.Agent
 			messages, err = rebuildMessagesForHandoff(
 				ctx,

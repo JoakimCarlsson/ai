@@ -133,7 +133,10 @@ func (s *sqliteSession) GetMessages(
 			) sub ORDER BY id ASC`, table)
 		args = []any{s.id, *limit}
 	} else {
-		query = fmt.Sprintf("SELECT parts FROM %s WHERE session_id = ? ORDER BY id ASC", table)
+		query = fmt.Sprintf(
+			"SELECT parts FROM %s WHERE session_id = ? ORDER BY id ASC",
+			table,
+		)
 		args = []any{s.id}
 	}
 

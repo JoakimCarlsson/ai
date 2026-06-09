@@ -17,7 +17,11 @@ import (
 type stubTool struct{ name string }
 
 func (s stubTool) Info() tool.Info {
-	return tool.Info{Name: s.name, Description: "d", Parameters: map[string]any{}}
+	return tool.Info{
+		Name:        s.name,
+		Description: "d",
+		Parameters:  map[string]any{},
+	}
 }
 
 func (s stubTool) Run(context.Context, tool.Call) (tool.Response, error) {
@@ -32,7 +36,10 @@ func clientWith(opts ...Option) *Client {
 	return &Client{options: o}
 }
 
-func functionCallingConfig(t *testing.T, cfg *genai.GenerateContentConfig) *genai.FunctionCallingConfig {
+func functionCallingConfig(
+	t *testing.T,
+	cfg *genai.GenerateContentConfig,
+) *genai.FunctionCallingConfig {
 	t.Helper()
 	if cfg.ToolConfig == nil || cfg.ToolConfig.FunctionCallingConfig == nil {
 		t.Fatal("expected toolConfig.functionCallingConfig to be set")
@@ -51,7 +58,10 @@ func TestToolChoiceRequired(t *testing.T) {
 		t.Errorf("mode = %q, want ANY", fc.Mode)
 	}
 	if len(fc.AllowedFunctionNames) != 0 {
-		t.Errorf("AllowedFunctionNames = %v, want empty", fc.AllowedFunctionNames)
+		t.Errorf(
+			"AllowedFunctionNames = %v, want empty",
+			fc.AllowedFunctionNames,
+		)
 	}
 }
 
@@ -61,7 +71,10 @@ func TestToolChoiceNone(t *testing.T) {
 		WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceNone}),
 	).buildConfig(nil, []tool.BaseTool{stubTool{name: "get_weather"}})
 
-	if fc := functionCallingConfig(t, cfg); fc.Mode != genai.FunctionCallingConfigModeNone {
+	if fc := functionCallingConfig(
+		t,
+		cfg,
+	); fc.Mode != genai.FunctionCallingConfigModeNone {
 		t.Errorf("mode = %q, want NONE", fc.Mode)
 	}
 }
@@ -80,7 +93,8 @@ func TestToolChoiceSpecific(t *testing.T) {
 	if fc.Mode != genai.FunctionCallingConfigModeAny {
 		t.Errorf("mode = %q, want ANY", fc.Mode)
 	}
-	if len(fc.AllowedFunctionNames) != 1 || fc.AllowedFunctionNames[0] != "get_weather" {
+	if len(fc.AllowedFunctionNames) != 1 ||
+		fc.AllowedFunctionNames[0] != "get_weather" {
 		t.Errorf("AllowedFunctionNames = %v, want [get_weather]",
 			fc.AllowedFunctionNames)
 	}

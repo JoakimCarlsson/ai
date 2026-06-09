@@ -26,6 +26,8 @@ package llm
 
 import (
 	"context"
+	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -132,6 +134,45 @@ type Response struct {
 	// not expose one. Callers can feed it back as the previous-response id to
 	// chain server-side conversation state (prompt-cache continuity).
 	ProviderResponseID string
+	// RequestID is the provider request id (the x-request-id / request-id
+	// response header) — the first thing provider support asks for when
+	// debugging a bad response. Empty when the provider does not supply one
+	// (e.g. Gemini).
+	RequestID string
+	// ResponseHeaders holds a small allowlist of debugging-relevant response
+	// headers (request id, rate-limit, retry-after) copied from the provider's
+	// HTTP response. Only those headers are retained — never the full set — to
+	// avoid leaking auth-echo headers. Nil when unavailable.
+	ResponseHeaders http.Header
+}
+
+// SelectResponseHeaders extracts the provider request id and a small allowlist
+// of debugging-relevant headers (request id, rate-limit, retry-after) from an
+// HTTP response header set. Vendor packages call it after a successful request
+// to populate [Response.RequestID] and [Response.ResponseHeaders]. Only the
+// allowlisted headers are copied, so callers never surface auth-echo headers.
+// Both results are empty/nil when h carries none of them.
+func SelectResponseHeaders(
+	h http.Header,
+) (requestID string, selected http.Header) {
+	if len(h) == 0 {
+		return "", nil
+	}
+	requestID = h.Get("X-Request-Id")
+	if requestID == "" {
+		requestID = h.Get("Request-Id")
+	}
+	for key, values := range h {
+		lower := strings.ToLower(key)
+		if lower == "x-request-id" || lower == "request-id" ||
+			lower == "retry-after" || strings.Contains(lower, "ratelimit") {
+			if selected == nil {
+				selected = make(http.Header)
+			}
+			selected[key] = append([]string(nil), values...)
+		}
+	}
+	return requestID, selected
 }
 
 // Event represents a single event in a streaming LLM response.

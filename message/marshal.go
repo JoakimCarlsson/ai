@@ -85,7 +85,11 @@ func MarshalMessages(messages []BaseMessage) ([]byte, error) {
 			msgType = "multimodal"
 			data, err = json.Marshal(m)
 		default:
-			return nil, fmt.Errorf("unknown message type at index %d: %T", i, msg)
+			return nil, fmt.Errorf(
+				"unknown message type at index %d: %T",
+				i,
+				msg,
+			)
 		}
 
 		if err != nil {

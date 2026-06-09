@@ -252,7 +252,13 @@ func (p *Processor) processBatch(
 	}
 
 	if job.OutputFileID != "" {
-		if err := p.parseOutputFile(ctx, job.OutputFileID, endpoint, results, idxMap); err != nil {
+		if err := p.parseOutputFile(
+			ctx,
+			job.OutputFileID,
+			endpoint,
+			results,
+			idxMap,
+		); err != nil {
 			return fmt.Errorf("failed to parse output file: %w", err)
 		}
 	}

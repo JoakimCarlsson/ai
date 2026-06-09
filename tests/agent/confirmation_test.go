@@ -190,7 +190,11 @@ func TestConfirmation_RequestFromWithinTool(t *testing.T) {
 	inToolTool := &simpleTool{
 		name: "risky",
 		run: func(ctx context.Context, _ tool.Call) (tool.Response, error) {
-			if err := tool.RequestConfirmation(ctx, "about to do something risky", map[string]string{"action": "delete"}); err != nil {
+			if err := tool.RequestConfirmation(
+				ctx,
+				"about to do something risky",
+				map[string]string{"action": "delete"},
+			); err != nil {
 				return tool.Response{}, err
 			}
 			return tool.NewTextResponse("proceeded"), nil
@@ -237,7 +241,11 @@ func TestConfirmation_RequestFromWithinTool_Rejected(t *testing.T) {
 	inToolTool := &simpleTool{
 		name: "risky",
 		run: func(ctx context.Context, _ tool.Call) (tool.Response, error) {
-			if err := tool.RequestConfirmation(ctx, "risky op", nil); err != nil {
+			if err := tool.RequestConfirmation(
+				ctx,
+				"risky op",
+				nil,
+			); err != nil {
 				return tool.Response{}, err
 			}
 			return tool.NewTextResponse("should not reach"), nil
@@ -548,7 +556,11 @@ func TestConfirmation_RequestFromWithinTool_NoProvider(t *testing.T) {
 	inToolTool := &simpleTool{
 		name: "risky",
 		run: func(ctx context.Context, _ tool.Call) (tool.Response, error) {
-			if err := tool.RequestConfirmation(ctx, "risky op", nil); err != nil {
+			if err := tool.RequestConfirmation(
+				ctx,
+				"risky op",
+				nil,
+			); err != nil {
 				return tool.Response{}, err
 			}
 			executed = true

@@ -148,13 +148,23 @@ func (p *Processor) Process(
 	}
 
 	if len(chatRequests) > 0 {
-		if err := p.processChatBatch(ctx, chatRequests, results, chatIdxMap); err != nil {
+		if err := p.processChatBatch(
+			ctx,
+			chatRequests,
+			results,
+			chatIdxMap,
+		); err != nil {
 			return nil, fmt.Errorf("batch: gemini chat batch failed: %w", err)
 		}
 	}
 
 	if len(embedRequests) > 0 {
-		if err := p.processEmbeddingBatch(ctx, embedRequests, results, embedIdxMap); err != nil {
+		if err := p.processEmbeddingBatch(
+			ctx,
+			embedRequests,
+			results,
+			embedIdxMap,
+		); err != nil {
 			return nil, fmt.Errorf(
 				"batch: gemini embedding batch failed: %w",
 				err,
@@ -469,7 +479,10 @@ func convertMessagesToGemini(
 		case message.Tool:
 			for _, tr := range msg.ToolResults() {
 				var respData map[string]any
-				if err := json.Unmarshal([]byte(tr.Content), &respData); err != nil {
+				if err := json.Unmarshal(
+					[]byte(tr.Content),
+					&respData,
+				); err != nil {
 					respData = map[string]any{"result": tr.Content}
 				}
 				contents = append(contents, &genai.Content{

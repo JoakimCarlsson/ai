@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net/http"
 	"strings"
 	"time"
 
@@ -497,19 +498,24 @@ func (c *responsesClient) SendMessages(
 		ctx,
 		RetryConfig(),
 		func() (*llm.Response, error) {
-			resp, err := c.client.Responses.New(ctx, params)
+			var raw *http.Response
+			resp, err := c.client.Responses.New(
+				ctx, params, option.WithResponseInto(&raw),
+			)
 			if err != nil {
 				return nil, wrapError(err)
 			}
 			content, toolCalls, meta := c.extractOutput(resp)
-			return &llm.Response{
+			out := &llm.Response{
 				Content:            content,
 				ToolCalls:          toolCalls,
 				Usage:              c.usage(resp),
 				FinishReason:       c.finishReason(resp),
 				ProviderMetadata:   meta,
 				ProviderResponseID: resp.ID,
-			}, nil
+			}
+			applyResponseHeaders(out, raw)
+			return out, nil
 		},
 	)
 }
@@ -534,12 +540,15 @@ func (c *responsesClient) SendMessagesWithStructuredOutput(
 		ctx,
 		RetryConfig(),
 		func() (*llm.Response, error) {
-			resp, err := c.client.Responses.New(ctx, params)
+			var raw *http.Response
+			resp, err := c.client.Responses.New(
+				ctx, params, option.WithResponseInto(&raw),
+			)
 			if err != nil {
 				return nil, wrapError(err)
 			}
 			content, toolCalls, meta := c.extractOutput(resp)
-			return &llm.Response{
+			out := &llm.Response{
 				Content:                    content,
 				ToolCalls:                  toolCalls,
 				Usage:                      c.usage(resp),
@@ -548,7 +557,9 @@ func (c *responsesClient) SendMessagesWithStructuredOutput(
 				UsedNativeStructuredOutput: true,
 				ProviderMetadata:           meta,
 				ProviderResponseID:         resp.ID,
-			}, nil
+			}
+			applyResponseHeaders(out, raw)
+			return out, nil
 		},
 	)
 }
@@ -615,7 +626,10 @@ func (c *responsesClient) runStream(
 		defer cancel()
 
 		llm.ExecuteStreamWithRetry(ctx, RetryConfig(), func() error {
-			stream := c.client.Responses.NewStreaming(ctx, params)
+			var raw *http.Response
+			stream := c.client.Responses.NewStreaming(
+				ctx, params, option.WithResponseInto(&raw),
+			)
 			var content strings.Builder
 			var citations []map[string]any
 			pendingCalls := map[string]*streamingFunctionCall{}
@@ -668,7 +682,9 @@ func (c *responsesClient) runStream(
 					}
 
 				case "response.output_text.annotation.added":
-					if cit, ok := urlCitationFromAnnotation(event.Annotation); ok {
+					if cit, ok := urlCitationFromAnnotation(
+						event.Annotation,
+					); ok {
 						citations = append(citations, cit)
 					}
 
@@ -703,6 +719,7 @@ func (c *responsesClient) runStream(
 						ProviderMetadata:   meta,
 						ProviderResponseID: event.Response.ID,
 					}
+					applyResponseHeaders(finalResp, raw)
 					if structured {
 						finalResp.StructuredOutput = &contentStr
 						finalResp.UsedNativeStructuredOutput = true

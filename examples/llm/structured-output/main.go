@@ -54,7 +54,10 @@ func main() {
 	}
 
 	var summary taskSummary
-	if err := json.Unmarshal([]byte(*resp.StructuredOutput), &summary); err != nil {
+	if err := json.Unmarshal(
+		[]byte(*resp.StructuredOutput),
+		&summary,
+	); err != nil {
 		log.Fatal(err)
 	}
 

@@ -17,7 +17,11 @@ import (
 type stubTool struct{ name string }
 
 func (s stubTool) Info() tool.Info {
-	return tool.Info{Name: s.name, Description: "d", Parameters: map[string]any{}}
+	return tool.Info{
+		Name:        s.name,
+		Description: "d",
+		Parameters:  map[string]any{},
+	}
 }
 
 func (s stubTool) Run(context.Context, tool.Call) (tool.Response, error) {
@@ -34,7 +38,11 @@ func optsFrom(opts ...Option) Options {
 
 // toolChoiceBody builds a request for the given options and one tool, then
 // returns the marshaled request body as a generic map for wire assertions.
-func toolChoiceBody(t *testing.T, tools []tool.BaseTool, opts ...Option) map[string]any {
+func toolChoiceBody(
+	t *testing.T,
+	tools []tool.BaseTool,
+	opts ...Option,
+) map[string]any {
 	t.Helper()
 	c := &Client{options: optsFrom(opts...)}
 	params := c.preparedMessages(nil, c.convertTools(tools), nil)

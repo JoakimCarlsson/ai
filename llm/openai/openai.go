@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"time"
 
 	"github.com/joakimcarlsson/ai/llm"
@@ -533,6 +534,15 @@ func (c *Client) requestOptions() []option.RequestOption {
 	return opts
 }
 
+// requestOptionsInto returns the per-call request options plus a hook that
+// copies the raw [*http.Response] into raw, so the request id and selected
+// response headers can be lifted onto [llm.Response] after the call.
+func (c *Client) requestOptionsInto(
+	raw **http.Response,
+) []option.RequestOption {
+	return append(c.requestOptions(), option.WithResponseInto(raw))
+}
+
 // validateToolChoice rejects a malformed tool choice before a request is sent.
 func (c *Client) validateToolChoice() error {
 	if c.options.toolChoice == nil {
@@ -562,10 +572,11 @@ func (c *Client) SendMessages(
 		ctx,
 		RetryConfig(),
 		func() (*llm.Response, error) {
+			var raw *http.Response
 			openaiResponse, err := c.client.Chat.Completions.New(
 				ctx,
 				params,
-				c.requestOptions()...)
+				c.requestOptionsInto(&raw)...)
 			if err != nil {
 				return nil, wrapError(err)
 			}
@@ -585,15 +596,27 @@ func (c *Client) SendMessages(
 				finishReason = message.FinishReasonToolUse
 			}
 
-			return &llm.Response{
+			resp := &llm.Response{
 				Content:          content,
 				ToolCalls:        toolCalls,
 				Usage:            c.usage(*openaiResponse),
 				FinishReason:     finishReason,
 				ProviderMetadata: c.providerMetadata(*openaiResponse),
-			}, nil
+			}
+			applyResponseHeaders(resp, raw)
+			return resp, nil
 		},
 	)
+}
+
+// applyResponseHeaders lifts the provider request id and selected response
+// headers from a captured raw HTTP response onto resp. It is a no-op when the
+// response was not captured (raw is nil).
+func applyResponseHeaders(resp *llm.Response, raw *http.Response) {
+	if resp == nil || raw == nil {
+		return
+	}
+	resp.RequestID, resp.ResponseHeaders = llm.SelectResponseHeaders(raw.Header)
 }
 
 // StreamResponse sends a conversation and returns a channel of streaming events.
@@ -644,10 +667,11 @@ func (c *Client) runStream(
 	eventChan chan<- llm.Event,
 	structured bool,
 ) error {
+	var raw *http.Response
 	openaiStream := c.client.Chat.Completions.NewStreaming(
 		ctx,
 		params,
-		c.requestOptions()...)
+		c.requestOptionsInto(&raw)...)
 
 	acc := openaisdk.ChatCompletionAccumulator{}
 	currentContent := ""
@@ -704,6 +728,7 @@ func (c *Client) runStream(
 			FinishReason:     finishReason,
 			ProviderMetadata: c.providerMetadata(acc.ChatCompletion),
 		}
+		applyResponseHeaders(resp, raw)
 		if structured {
 			resp.StructuredOutput = &currentContent
 			resp.UsedNativeStructuredOutput = true
@@ -850,10 +875,11 @@ func (c *Client) SendMessagesWithStructuredOutput(
 		ctx,
 		RetryConfig(),
 		func() (*llm.Response, error) {
+			var raw *http.Response
 			openaiResponse, err := c.client.Chat.Completions.New(
 				ctx,
 				params,
-				c.requestOptions()...)
+				c.requestOptionsInto(&raw)...)
 			if err != nil {
 				return nil, wrapError(err)
 			}
@@ -873,7 +899,7 @@ func (c *Client) SendMessagesWithStructuredOutput(
 				finishReason = message.FinishReasonToolUse
 			}
 
-			return &llm.Response{
+			resp := &llm.Response{
 				Content:                    content,
 				ToolCalls:                  toolCalls,
 				Usage:                      c.usage(*openaiResponse),
@@ -881,7 +907,9 @@ func (c *Client) SendMessagesWithStructuredOutput(
 				StructuredOutput:           &content,
 				UsedNativeStructuredOutput: true,
 				ProviderMetadata:           c.providerMetadata(*openaiResponse),
-			}, nil
+			}
+			applyResponseHeaders(resp, raw)
+			return resp, nil
 		},
 	)
 }
