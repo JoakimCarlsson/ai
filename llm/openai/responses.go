@@ -503,11 +503,12 @@ func (c *responsesClient) SendMessages(
 			}
 			content, toolCalls, meta := c.extractOutput(resp)
 			return &llm.Response{
-				Content:          content,
-				ToolCalls:        toolCalls,
-				Usage:            c.usage(resp),
-				FinishReason:     c.finishReason(resp),
-				ProviderMetadata: meta,
+				Content:            content,
+				ToolCalls:          toolCalls,
+				Usage:              c.usage(resp),
+				FinishReason:       c.finishReason(resp),
+				ProviderMetadata:   meta,
+				ProviderResponseID: resp.ID,
 			}, nil
 		},
 	)
@@ -546,6 +547,7 @@ func (c *responsesClient) SendMessagesWithStructuredOutput(
 				StructuredOutput:           &content,
 				UsedNativeStructuredOutput: true,
 				ProviderMetadata:           meta,
+				ProviderResponseID:         resp.ID,
 			}, nil
 		},
 	)
@@ -694,11 +696,12 @@ func (c *responsesClient) runStream(
 						meta = map[string]any{"openai.url_citations": citations}
 					}
 					finalResp := &llm.Response{
-						Content:          contentStr,
-						ToolCalls:        toolCalls,
-						Usage:            c.usage(&event.Response),
-						FinishReason:     c.finishReason(&event.Response),
-						ProviderMetadata: meta,
+						Content:            contentStr,
+						ToolCalls:          toolCalls,
+						Usage:              c.usage(&event.Response),
+						FinishReason:       c.finishReason(&event.Response),
+						ProviderMetadata:   meta,
+						ProviderResponseID: event.Response.ID,
 					}
 					if structured {
 						finalResp.StructuredOutput = &contentStr

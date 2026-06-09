@@ -395,13 +395,14 @@ func (a *Agent) runLoop(
 			}
 
 			chatResp := &ChatResponse{
-				Content:        resp.Content,
-				ToolCalls:      resp.ToolCalls,
-				Usage:          totalUsage,
-				FinishReason:   resp.FinishReason,
-				TotalToolCalls: totalToolCalls,
-				TotalDuration:  time.Since(startTime),
-				TotalTurns:     turns,
+				Content:            resp.Content,
+				ToolCalls:          resp.ToolCalls,
+				Usage:              totalUsage,
+				FinishReason:       resp.FinishReason,
+				ProviderResponseID: resp.ProviderResponseID,
+				TotalToolCalls:     totalToolCalls,
+				TotalDuration:      time.Since(startTime),
+				TotalTurns:         turns,
 			}
 			if activeAgent != a {
 				chatResp.AgentName = findAgentName(a, activeAgent)

@@ -23,6 +23,11 @@ type ChatResponse struct {
 	Usage llm.TokenUsage
 	// FinishReason indicates why the agent stopped (end_turn, max_tokens, tool_use, etc.).
 	FinishReason message.FinishReason
+	// ProviderResponseID is the provider-assigned id of the final LLM call in the
+	// agent loop (e.g. OpenAI Responses `response.id`). Callers can feed it back
+	// as the previous-response id to chain server-side state; empty for providers
+	// that don't expose one.
+	ProviderResponseID string
 	// AgentName is the name of the agent that produced this response, set when a handoff occurred.
 	AgentName string
 	// TotalToolCalls is the total number of tool invocations across all iterations.
