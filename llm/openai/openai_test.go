@@ -389,7 +389,7 @@ func TestUsageReasoningAndDeepSeekCache(t *testing.T) {
 // non-allowlisted header (here, an auth echo) is dropped.
 func TestResponseRequestIDAndHeaders(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
+		func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("x-request-id", "req_test_123")
 			w.Header().Set("x-ratelimit-remaining-requests", "42")
 			w.Header().Set("authorization", "Bearer leak")
