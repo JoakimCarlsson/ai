@@ -245,11 +245,17 @@ func (c *Client) Transcribe(
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 
-	if err := writer.WriteField("model_id", c.options.model.APIModel); err != nil {
+	if err := writer.WriteField(
+		"model_id",
+		c.options.model.APIModel,
+	); err != nil {
 		return nil, fmt.Errorf("failed to write model_id field: %w", err)
 	}
 	if opts.Language != "" {
-		if err := writer.WriteField("language_code", opts.Language); err != nil {
+		if err := writer.WriteField(
+			"language_code",
+			opts.Language,
+		); err != nil {
 			return nil, fmt.Errorf(
 				"failed to write language_code field: %w",
 				err,
@@ -262,7 +268,10 @@ func (c *Client) Transcribe(
 		}
 	}
 	if c.options.numSpeakers != nil {
-		if err := writer.WriteField("num_speakers", fmt.Sprintf("%d", *c.options.numSpeakers)); err != nil {
+		if err := writer.WriteField(
+			"num_speakers",
+			fmt.Sprintf("%d", *c.options.numSpeakers),
+		); err != nil {
 			return nil, fmt.Errorf(
 				"failed to write num_speakers field: %w",
 				err,
@@ -274,7 +283,10 @@ func (c *Client) Transcribe(
 	if c.options.timestampGranularity != "" {
 		granularity = c.options.timestampGranularity
 	}
-	if err := writer.WriteField("timestamps_granularity", granularity); err != nil {
+	if err := writer.WriteField(
+		"timestamps_granularity",
+		granularity,
+	); err != nil {
 		return nil, fmt.Errorf("failed to write timestamps field: %w", err)
 	}
 

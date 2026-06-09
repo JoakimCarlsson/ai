@@ -312,7 +312,9 @@ func (c *Client) generateStandard(
 	}
 
 	charCount := int64(0)
-	if charCountStr := resp.Header.Get("x-character-count"); charCountStr != "" {
+	if charCountStr := resp.Header.Get(
+		"x-character-count",
+	); charCountStr != "" {
 		if count, err := strconv.ParseInt(charCountStr, 10, 64); err == nil {
 			charCount = count
 		}

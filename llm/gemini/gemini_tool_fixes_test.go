@@ -12,7 +12,9 @@ import (
 func TestGemini_ToolResultRoleIsUser(t *testing.T) {
 	c := &Client{}
 	toolMsg := message.NewMessage(message.Tool, nil)
-	toolMsg.AddToolResult(message.ToolResult{ToolCallID: "1", Name: "search", Content: "result"})
+	toolMsg.AddToolResult(
+		message.ToolResult{ToolCallID: "1", Name: "search", Content: "result"},
+	)
 
 	contents, _ := c.convertMessages([]message.Message{toolMsg})
 	if len(contents) == 0 {
@@ -47,7 +49,11 @@ func TestGemini_ThoughtSignatureReplay(t *testing.T) {
 			if p.FunctionCall != nil {
 				found = true
 				if !bytes.Equal(p.ThoughtSignature, sig) {
-					t.Errorf("replayed ThoughtSignature = %q, want %q", p.ThoughtSignature, sig)
+					t.Errorf(
+						"replayed ThoughtSignature = %q, want %q",
+						p.ThoughtSignature,
+						sig,
+					)
 				}
 			}
 		}
@@ -62,13 +68,18 @@ func TestGemini_ThoughtSignatureReplay(t *testing.T) {
 func TestGemini_NoThoughtSignatureIsClean(t *testing.T) {
 	c := &Client{}
 	asst := message.NewAssistantMessage()
-	asst.AppendToolCalls([]message.ToolCall{{Name: "search", Input: "{}", Type: "function"}})
+	asst.AppendToolCalls(
+		[]message.ToolCall{{Name: "search", Input: "{}", Type: "function"}},
+	)
 
 	contents, _ := c.convertMessages([]message.Message{asst})
 	for _, ct := range contents {
 		for _, p := range ct.Parts {
 			if p.FunctionCall != nil && len(p.ThoughtSignature) != 0 {
-				t.Errorf("expected empty ThoughtSignature, got %q", p.ThoughtSignature)
+				t.Errorf(
+					"expected empty ThoughtSignature, got %q",
+					p.ThoughtSignature,
+				)
 			}
 		}
 	}

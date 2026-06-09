@@ -515,7 +515,10 @@ func runWriter(
 			<-done
 			return
 		case <-keepalive.C:
-			if err := send(websocket.TextMessage, []byte(`{"type":"KeepAlive"}`)); err != nil {
+			if err := send(
+				websocket.TextMessage,
+				[]byte(`{"type":"KeepAlive"}`),
+			); err != nil {
 				out <- stt.StreamResult{Error: err}
 				_ = conn.Close()
 				<-done

@@ -213,7 +213,10 @@ func scanEntries(rows *sql.Rows) ([]memory.Entry, error) {
 		entry.CreatedAt = createdAt
 
 		if metadataJSON.Valid && metadataJSON.String != "" {
-			if err := json.Unmarshal([]byte(metadataJSON.String), &entry.Metadata); err != nil {
+			if err := json.Unmarshal(
+				[]byte(metadataJSON.String),
+				&entry.Metadata,
+			); err != nil {
 				return nil, err
 			}
 		}

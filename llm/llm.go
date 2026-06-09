@@ -152,7 +152,9 @@ type Response struct {
 // to populate [Response.RequestID] and [Response.ResponseHeaders]. Only the
 // allowlisted headers are copied, so callers never surface auth-echo headers.
 // Both results are empty/nil when h carries none of them.
-func SelectResponseHeaders(h http.Header) (requestID string, selected http.Header) {
+func SelectResponseHeaders(
+	h http.Header,
+) (requestID string, selected http.Header) {
 	if len(h) == 0 {
 		return "", nil
 	}

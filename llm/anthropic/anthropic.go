@@ -311,7 +311,10 @@ func (c *Client) convertMessages(
 
 			for _, toolCall := range msg.ToolCalls() {
 				var inputMap map[string]any
-				if err := json.Unmarshal([]byte(toolCall.Input), &inputMap); err != nil {
+				if err := json.Unmarshal(
+					[]byte(toolCall.Input),
+					&inputMap,
+				); err != nil {
 					continue
 				}
 				blocks = append(blocks, anthropicsdk.NewToolUseBlock(
@@ -701,10 +704,12 @@ func (c *Client) runStream(
 		case anthropicsdk.MessageStopEvent:
 			content, meta := c.extractContent(accumulatedMessage)
 			resp := &llm.Response{
-				Content:          content,
-				ToolCalls:        c.toolCalls(accumulatedMessage),
-				Usage:            c.usage(accumulatedMessage),
-				FinishReason:     c.finishReason(string(accumulatedMessage.StopReason)),
+				Content:   content,
+				ToolCalls: c.toolCalls(accumulatedMessage),
+				Usage:     c.usage(accumulatedMessage),
+				FinishReason: c.finishReason(
+					string(accumulatedMessage.StopReason),
+				),
 				ProviderMetadata: meta,
 			}
 			applyResponseHeaders(resp, raw)

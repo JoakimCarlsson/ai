@@ -51,7 +51,10 @@ func (ev *EmbeddingVector) UnmarshalJSON(data []byte) error {
 				if f, ok := val.(float64); ok {
 					ev.Float32[i] = float32(f)
 				} else {
-					return fmt.Errorf("mixed types in float embedding at index %d", i)
+					return fmt.Errorf(
+						"mixed types in float embedding at index %d",
+						i,
+					)
 				}
 			}
 			ev.DataType = "float32"
@@ -61,7 +64,10 @@ func (ev *EmbeddingVector) UnmarshalJSON(data []byte) error {
 				if f, ok := val.(float32); ok {
 					ev.Float32[i] = f
 				} else {
-					return fmt.Errorf("mixed types in float32 embedding at index %d", i)
+					return fmt.Errorf(
+						"mixed types in float32 embedding at index %d",
+						i,
+					)
 				}
 			}
 			ev.DataType = "float32"

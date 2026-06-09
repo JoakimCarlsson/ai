@@ -148,7 +148,11 @@ func (t *completeBoardTaskTool) Run(
 		}
 	}
 
-	if err := tm.TaskBoard.Complete(input.TaskID, assignee, input.Result); err != nil {
+	if err := tm.TaskBoard.Complete(
+		input.TaskID,
+		assignee,
+		input.Result,
+	); err != nil {
 		return tool.NewTextErrorResponse(
 			fmt.Sprintf("failed to complete task: %s", err.Error()),
 		), nil

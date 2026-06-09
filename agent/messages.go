@@ -130,7 +130,10 @@ func (a *Agent) buildMessages(
 		messages = append(messages, sysMsg)
 
 		if a.session != nil && len(sessionMessages) == 0 {
-			if err := a.session.AddMessages(ctx, []message.Message{sysMsg}); err != nil {
+			if err := a.session.AddMessages(
+				ctx,
+				[]message.Message{sysMsg},
+			); err != nil {
 				return nil, err
 			}
 		}
@@ -143,7 +146,10 @@ func (a *Agent) buildMessages(
 	messages = append(messages, userMsg)
 
 	if a.session != nil {
-		if err := a.session.AddMessages(ctx, []message.Message{userMsg}); err != nil {
+		if err := a.session.AddMessages(
+			ctx,
+			[]message.Message{userMsg},
+		); err != nil {
 			return nil, err
 		}
 	}
@@ -178,7 +184,10 @@ func (a *Agent) buildMessages(
 
 		if result.SessionUpdate != nil && a.session != nil &&
 			len(result.SessionUpdate.AddMessages) > 0 {
-			if err := a.session.AddMessages(ctx, result.SessionUpdate.AddMessages); err != nil {
+			if err := a.session.AddMessages(
+				ctx,
+				result.SessionUpdate.AddMessages,
+			); err != nil {
 				return nil, fmt.Errorf("failed to save session update: %w", err)
 			}
 		}
@@ -243,7 +252,10 @@ func (a *Agent) buildContinueMessages(
 
 		if result.SessionUpdate != nil && a.session != nil &&
 			len(result.SessionUpdate.AddMessages) > 0 {
-			if err := a.session.AddMessages(ctx, result.SessionUpdate.AddMessages); err != nil {
+			if err := a.session.AddMessages(
+				ctx,
+				result.SessionUpdate.AddMessages,
+			); err != nil {
 				return nil, fmt.Errorf("failed to save session update: %w", err)
 			}
 		}

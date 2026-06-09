@@ -58,7 +58,10 @@ func (ft *funcTool) Run(
 	if ft.paramType != nil {
 		paramPtr := reflect.New(ft.paramType)
 		if call.Input != "" {
-			if err := json.Unmarshal([]byte(call.Input), paramPtr.Interface()); err != nil {
+			if err := json.Unmarshal(
+				[]byte(call.Input),
+				paramPtr.Interface(),
+			); err != nil {
 				return tool.NewTextErrorResponse(
 					"invalid input: " + err.Error(),
 				), nil

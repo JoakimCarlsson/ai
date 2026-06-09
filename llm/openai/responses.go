@@ -682,7 +682,9 @@ func (c *responsesClient) runStream(
 					}
 
 				case "response.output_text.annotation.added":
-					if cit, ok := urlCitationFromAnnotation(event.Annotation); ok {
+					if cit, ok := urlCitationFromAnnotation(
+						event.Annotation,
+					); ok {
 						citations = append(citations, cit)
 					}
 

@@ -20,7 +20,11 @@ import (
 type stubTool struct{ name string }
 
 func (s stubTool) Info() tool.Info {
-	return tool.Info{Name: s.name, Description: "d", Parameters: map[string]any{}}
+	return tool.Info{
+		Name:        s.name,
+		Description: "d",
+		Parameters:  map[string]any{},
+	}
 }
 
 func (s stubTool) Run(context.Context, tool.Call) (tool.Response, error) {
@@ -90,7 +94,10 @@ func TestWireToolChoiceSpecific(t *testing.T) {
 	}
 	fn, ok := tc["function"].(map[string]any)
 	if !ok || fn["name"] != "get_weather" {
-		t.Errorf("tool_choice.function = %v, want name=get_weather", tc["function"])
+		t.Errorf(
+			"tool_choice.function = %v, want name=get_weather",
+			tc["function"],
+		)
 	}
 }
 
@@ -406,7 +413,9 @@ func TestResponseRequestIDAndHeaders(t *testing.T) {
 	if resp.RequestID != "req_test_123" {
 		t.Errorf("RequestID = %q, want %q", resp.RequestID, "req_test_123")
 	}
-	if got := resp.ResponseHeaders.Get("x-ratelimit-remaining-requests"); got != "42" {
+	if got := resp.ResponseHeaders.Get(
+		"x-ratelimit-remaining-requests",
+	); got != "42" {
 		t.Errorf("x-ratelimit-remaining-requests = %q, want %q", got, "42")
 	}
 	if got := resp.ResponseHeaders.Get("x-request-id"); got != "req_test_123" {

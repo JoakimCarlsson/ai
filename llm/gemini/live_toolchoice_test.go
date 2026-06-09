@@ -20,7 +20,10 @@ func (liveWeatherTool) Info() tool.Info {
 		Name:        "get_weather",
 		Description: "Get the current weather for a city.",
 		Parameters: map[string]any{
-			"city": map[string]any{"type": "string", "description": "City name"},
+			"city": map[string]any{
+				"type":        "string",
+				"description": "City name",
+			},
 		},
 		Required: []string{"city"},
 	}
@@ -60,7 +63,11 @@ func TestLiveGeminiRequired(t *testing.T) {
 	if len(resp.ToolCalls) == 0 {
 		t.Fatalf("Required: expected a tool call, got content=%q", resp.Content)
 	}
-	t.Logf("Required: tool calls=%d first=%s", len(resp.ToolCalls), resp.ToolCalls[0].Name)
+	t.Logf(
+		"Required: tool calls=%d first=%s",
+		len(resp.ToolCalls),
+		resp.ToolCalls[0].Name,
+	)
 }
 
 func TestLiveGeminiNone(t *testing.T) {

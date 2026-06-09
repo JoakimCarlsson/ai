@@ -66,7 +66,10 @@ func main() {
 	}
 
 	var report bugReport
-	if err := json.Unmarshal([]byte(*finalResp.StructuredOutput), &report); err != nil {
+	if err := json.Unmarshal(
+		[]byte(*finalResp.StructuredOutput),
+		&report,
+	); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("[%s] parsed: %+v\n", provider, report)

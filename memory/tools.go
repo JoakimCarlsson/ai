@@ -235,7 +235,12 @@ func (t *replaceMemoryTool) Run(
 		metadata["category"] = input.Category
 	}
 
-	if err := t.store.Update(ctx, input.MemoryID, input.Fact, metadata); err != nil {
+	if err := t.store.Update(
+		ctx,
+		input.MemoryID,
+		input.Fact,
+		metadata,
+	); err != nil {
 		return tool.NewTextErrorResponse(
 			"failed to replace memory: " + err.Error(),
 		), nil
