@@ -776,7 +776,9 @@ func (c *Client) runStream(
 	err := openaiStream.Err()
 	if err == nil || errors.Is(err, io.EOF) {
 		if len(acc.Choices) == 0 {
-			eventChan <- llm.Event{Type: types.EventError, Error: errors.New("no response choices in stream")}
+			// Return without emitting: ExecuteStreamWithRetry owns error
+			// emission. Emitting here too would send the consumer the same
+			// error twice.
 			return errors.New("no response choices in stream")
 		}
 		finishReason := c.finishReason(string(acc.Choices[0].FinishReason))
