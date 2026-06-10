@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/llm/bedrock
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/llm v0.1.0
+	github.com/joakimcarlsson/ai/llm v0.4.0
 	github.com/joakimcarlsson/ai/llm/anthropic v0.2.2
 	github.com/joakimcarlsson/ai/message v0.1.0
 	github.com/joakimcarlsson/ai/model v0.3.0
