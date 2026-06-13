@@ -110,10 +110,21 @@ func (s *pgSession) GetMessages(
 	ctx context.Context,
 	limit *int,
 ) ([]message.Message, error) {
+	// Find the created_at of the most recent summary
+	var lastSummaryAt int64
+	err := s.db.QueryRowContext(ctx, `
+		SELECT COALESCE(MAX(created_at), 0)
+		FROM messages
+		WHERE session_id = $1 AND role = $2
+	`, s.id, string(message.Summary)).Scan(&lastSummaryAt)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+
 	query := `
 		SELECT parts
 		FROM messages
-		WHERE session_id = $1
+		WHERE session_id = $1 AND created_at >= $2
 		ORDER BY created_at ASC
 	`
 	if limit != nil {
@@ -121,14 +132,14 @@ func (s *pgSession) GetMessages(
 			SELECT parts FROM (
 				SELECT parts, created_at
 				FROM messages
-				WHERE session_id = $1
+				WHERE session_id = $1 AND created_at >= $2
 				ORDER BY created_at DESC
 				LIMIT %d
 			) sub ORDER BY created_at ASC
 		`, *limit)
 	}
 
-	rows, err := s.db.QueryContext(ctx, query, s.id)
+	rows, err := s.db.QueryContext(ctx, query, s.id, lastSummaryAt)
 	if err != nil {
 		return nil, err
 	}
@@ -176,6 +187,21 @@ func (s *pgSession) AddMessages(
 		}
 	}
 	return nil
+}
+
+func (s *pgSession) Compact(
+	ctx context.Context,
+	summary message.Message,
+	keep []message.Message,
+) error {
+	// For database stores, we append the summary and the messages to keep
+	// with fresh timestamps to ensure they are at the end of the history.
+	// We use the Summary role to indicate a baseline.
+	summary.Role = message.Summary
+	if err := s.AddMessages(ctx, []message.Message{summary}); err != nil {
+		return err
+	}
+	return s.AddMessages(ctx, keep)
 }
 
 func (s *pgSession) PopMessage(ctx context.Context) (*message.Message, error) {

@@ -104,6 +104,18 @@ func (s *fileSession) AddMessages(
 	return s.saveMessages(existing)
 }
 
+func (s *fileSession) Compact(
+	_ context.Context,
+	summary message.Message,
+	keep []message.Message,
+) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	messages := append([]message.Message{summary}, keep...)
+	return s.saveMessages(messages)
+}
+
 func (s *fileSession) SetMessages(
 	_ context.Context,
 	msgs []message.Message,

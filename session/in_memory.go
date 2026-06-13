@@ -88,6 +88,18 @@ func (s *memorySession) AddMessages(
 	return nil
 }
 
+func (s *memorySession) Compact(
+	_ context.Context,
+	summary message.Message,
+	keep []message.Message,
+) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.messages = append([]message.Message{summary}, keep...)
+	return nil
+}
+
 func (s *memorySession) SetMessages(
 	_ context.Context,
 	msgs []message.Message,

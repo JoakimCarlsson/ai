@@ -182,13 +182,23 @@ func (a *Agent) buildMessages(
 
 		messages = result.Messages
 
-		if result.SessionUpdate != nil && a.session != nil &&
-			len(result.SessionUpdate.AddMessages) > 0 {
-			if err := a.session.AddMessages(
-				ctx,
-				result.SessionUpdate.AddMessages,
-			); err != nil {
-				return nil, fmt.Errorf("failed to save session update: %w", err)
+		if result.SessionUpdate != nil && a.session != nil {
+			if len(result.SessionUpdate.AddMessages) > 0 {
+				if err := a.session.AddMessages(
+					ctx,
+					result.SessionUpdate.AddMessages,
+				); err != nil {
+					return nil, fmt.Errorf("failed to save session update: %w", err)
+				}
+			}
+			if result.SessionUpdate.Compact != nil {
+				if err := a.session.Compact(
+					ctx,
+					result.SessionUpdate.Compact.Summary,
+					result.SessionUpdate.Compact.Keep,
+				); err != nil {
+					return nil, fmt.Errorf("failed to compact session: %w", err)
+				}
 			}
 		}
 	}
@@ -250,13 +260,23 @@ func (a *Agent) buildContinueMessages(
 
 		messages = result.Messages
 
-		if result.SessionUpdate != nil && a.session != nil &&
-			len(result.SessionUpdate.AddMessages) > 0 {
-			if err := a.session.AddMessages(
-				ctx,
-				result.SessionUpdate.AddMessages,
-			); err != nil {
-				return nil, fmt.Errorf("failed to save session update: %w", err)
+		if result.SessionUpdate != nil && a.session != nil {
+			if len(result.SessionUpdate.AddMessages) > 0 {
+				if err := a.session.AddMessages(
+					ctx,
+					result.SessionUpdate.AddMessages,
+				); err != nil {
+					return nil, fmt.Errorf("failed to save session update: %w", err)
+				}
+			}
+			if result.SessionUpdate.Compact != nil {
+				if err := a.session.Compact(
+					ctx,
+					result.SessionUpdate.Compact.Summary,
+					result.SessionUpdate.Compact.Keep,
+				); err != nil {
+					return nil, fmt.Errorf("failed to compact session: %w", err)
+				}
 			}
 		}
 	}

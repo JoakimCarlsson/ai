@@ -27,6 +27,17 @@ type SessionUpdate struct {
 	// AddMessages appends messages to the session.
 	// The full conversation history is preserved for auditing.
 	AddMessages []message.Message
+	// Compact replaces the session history with a summary and a set of messages to keep.
+	// Used by summarization strategies to prevent history bloat.
+	Compact *CompactUpdate
+}
+
+// CompactUpdate contains the data needed to compact a session.
+type CompactUpdate struct {
+	// Summary is the new summary of the conversation.
+	Summary message.Message
+	// Keep is the list of recent messages to retain alongside the summary.
+	Keep []message.Message
 }
 
 // StrategyInput contains all data needed for context management.

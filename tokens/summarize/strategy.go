@@ -98,7 +98,10 @@ func (s *summarizeStrategy) Fit(
 	return &tokens.StrategyResult{
 		Messages: llmMessages,
 		SessionUpdate: &tokens.SessionUpdate{
-			AddMessages: []message.Message{summaryMsgForSession},
+			Compact: &tokens.CompactUpdate{
+				Summary: summaryMsgForSession,
+				Keep:    toKeep,
+			},
 		},
 	}, nil
 }
