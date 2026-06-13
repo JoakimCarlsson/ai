@@ -128,15 +128,6 @@ func (a *Agent) buildMessages(
 		sysMsg := message.NewSystemMessage(systemPrompt)
 		sysMsg.Model = a.llm.Model().ID
 		messages = append(messages, sysMsg)
-
-		if a.session != nil && len(sessionMessages) == 0 {
-			if err := a.session.AddMessages(
-				ctx,
-				[]message.Message{sysMsg},
-			); err != nil {
-				return nil, err
-			}
-		}
 	}
 
 	messages = append(messages, sessionMessages...)
