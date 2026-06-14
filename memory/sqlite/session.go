@@ -55,6 +55,10 @@ func SessionStore(
 		messagesTable,
 	)
 
+	if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys = ON"); err != nil {
+		return nil, fmt.Errorf("failed to enable foreign keys: %w", err)
+	}
+
 	if _, err := db.ExecContext(ctx, createSessionsSQL); err != nil {
 		return nil, fmt.Errorf("failed to create sessions table: %w", err)
 	}

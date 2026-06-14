@@ -15,7 +15,9 @@ use (
 	./memory
 	./memory/pgvector
 	./memory/postgres
+	./memory/postgres/tests
 	./memory/sqlite
+	./memory/sqlite/tests
 
 	./message
 
