@@ -139,6 +139,17 @@ func (s *sqliteSession) GetMessages(
 ) ([]message.Message, error) {
 	table := s.prefix + "messages"
 
+	// Find the ID of the most recent summary
+	var lastSummaryID int64
+	err := s.db.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT COALESCE(MAX(id), 0)
+		FROM %s
+		WHERE session_id = ? AND role = ?
+	`, table), s.id, string(message.Summary)).Scan(&lastSummaryID)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+
 	var query string
 	var args []any
 
@@ -146,15 +157,15 @@ func (s *sqliteSession) GetMessages(
 		query = fmt.Sprintf(`
 			SELECT parts FROM (
 				SELECT parts, id FROM %s
-				WHERE session_id = ? ORDER BY id DESC LIMIT ?
+				WHERE session_id = ? AND id >= ? ORDER BY id DESC LIMIT ?
 			) sub ORDER BY id ASC`, table)
-		args = []any{s.id, *limit}
+		args = []any{s.id, lastSummaryID, *limit}
 	} else {
 		query = fmt.Sprintf(
-			"SELECT parts FROM %s WHERE session_id = ? ORDER BY id ASC",
+			"SELECT parts FROM %s WHERE session_id = ? AND id >= ? ORDER BY id ASC",
 			table,
 		)
-		args = []any{s.id}
+		args = []any{s.id, lastSummaryID}
 	}
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
@@ -208,6 +219,21 @@ func (s *sqliteSession) AddMessages(
 		}
 	}
 	return nil
+}
+
+func (s *sqliteSession) Compact(
+	ctx context.Context,
+	summary message.Message,
+	keep []message.Message,
+) error {
+	// For database stores, we append the summary and the messages to keep
+	// with fresh timestamps to ensure they are at the end of the history.
+	// We use the Summary role to indicate a baseline.
+	summary.Role = message.Summary
+	if err := s.AddMessages(ctx, []message.Message{summary}); err != nil {
+		return err
+	}
+	return s.AddMessages(ctx, keep)
 }
 
 func (s *sqliteSession) PopMessage(
