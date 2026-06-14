@@ -55,10 +55,6 @@ func SessionStore(
 		messagesTable,
 	)
 
-	if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys = ON"); err != nil {
-		return nil, fmt.Errorf("failed to enable foreign keys: %w", err)
-	}
-
 	if _, err := db.ExecContext(ctx, createSessionsSQL); err != nil {
 		return nil, fmt.Errorf("failed to create sessions table: %w", err)
 	}
@@ -105,9 +101,26 @@ func (s *sessionStore) Load(
 }
 
 func (s *sessionStore) Delete(ctx context.Context, id string) error {
-	query := fmt.Sprintf("DELETE FROM %ssessions WHERE id = ?", s.prefix)
-	_, err := s.db.ExecContext(ctx, query, id)
-	return err
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	deleteMessages := fmt.Sprintf(
+		"DELETE FROM %smessages WHERE session_id = ?",
+		s.prefix,
+	)
+	if _, err := tx.ExecContext(ctx, deleteMessages, id); err != nil {
+		return err
+	}
+
+	deleteSession := fmt.Sprintf("DELETE FROM %ssessions WHERE id = ?", s.prefix)
+	if _, err := tx.ExecContext(ctx, deleteSession, id); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 type sqliteSession struct {

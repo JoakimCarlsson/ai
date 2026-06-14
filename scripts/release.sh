@@ -51,8 +51,8 @@ discover_modules() {
 	find . -name 'go.mod' -not -path './.git/*' -not -path './examples/*' -print0 |
 		xargs -0 -n1 dirname |
 		sed 's|^\./||' |
-		grep -v '^\.$' |
-		grep -v '/tests$' || true
+		{ grep -v '^\.$' || true; } |
+		{ grep -v '/tests$' || true; }
 }
 
 # module_path — print "github.com/joakimcarlsson/ai/<dir>" for a module dir.
