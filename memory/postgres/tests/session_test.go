@@ -1,9 +1,11 @@
 package postgres_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -203,7 +205,6 @@ func TestPostgresSession_GetMessagesWithLimit(t *testing.T) {
 			message.NewUserMessage(fmt.Sprintf("msg %d", i)),
 		})
 		require.NoError(t, err)
-		// Small sleep to ensure created_at ordering if the DB resolution is low
 		time.Sleep(2 * time.Millisecond)
 	}
 
@@ -400,7 +401,6 @@ func TestPostgresSession_PersistsAcrossLoads(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// A fresh store against the same database must see the message.
 	store2 := newStore(t)
 	loaded, err := store2.Load(ctx, id)
 	require.NoError(t, err)
@@ -428,7 +428,6 @@ func TestPostgresStore_DeleteRemovesSessionMessages(t *testing.T) {
 	err = store.Delete(ctx, id)
 	require.NoError(t, err)
 
-	// Recreate the same session ID and verify no old messages remain.
 	s, err = store.Create(ctx, id)
 	require.NoError(t, err)
 
@@ -642,4 +641,217 @@ func TestPostgresSession_ConcurrentAddMessages(t *testing.T) {
 	got, err := s.GetMessages(ctx, nil)
 	require.NoError(t, err)
 	assert.Len(t, got, writers*perWriter)
+}
+
+func TestPostgresSession_GetMessagesNegativeLimit(t *testing.T) {
+	ctx := context.Background()
+	store := newStore(t)
+
+	s, err := store.Create(ctx, sessionID(t))
+	require.NoError(t, err)
+
+	require.NoError(t, s.AddMessages(ctx, []message.Message{
+		message.NewUserMessage("a"),
+	}))
+
+	limit := -1
+	_, err = s.GetMessages(ctx, &limit)
+	require.Error(t, err, "Postgres rejects a negative LIMIT")
+}
+
+func TestPostgresSession_CreatedAtRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	store := newStore(t)
+
+	s, err := store.Create(ctx, sessionID(t))
+	require.NoError(t, err)
+
+	msg := message.NewUserMessage("hello")
+	msg.CreatedAt = 1_700_000_000_000_000_000
+	require.NoError(t, s.AddMessages(ctx, []message.Message{msg}))
+
+	got, err := s.GetMessages(ctx, nil)
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+	assert.Equal(t, int64(1_700_000_000_000_000_000), got[0].CreatedAt)
+}
+
+func TestPostgresSession_LargeContentRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	store := newStore(t)
+
+	s, err := store.Create(ctx, sessionID(t))
+	require.NoError(t, err)
+
+	large := strings.Repeat("lorem ipsum ", 100_000)
+	require.NoError(t, s.AddMessages(ctx, []message.Message{
+		message.NewUserMessage(large),
+	}))
+
+	got, err := s.GetMessages(ctx, nil)
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+	assert.Equal(t, large, got[0].Content().Text)
+}
+
+func TestPostgresSession_MultipleToolCallsInOneMessage(t *testing.T) {
+	ctx := context.Background()
+	store := newStore(t)
+
+	s, err := store.Create(ctx, sessionID(t))
+	require.NoError(t, err)
+
+	msg := message.NewMessage(message.Assistant, []message.ContentPart{
+		message.TextContent{Text: "running tools"},
+		message.ToolCall{ID: "tc_1", Name: "search", Input: `{"q":"a"}`},
+		message.ToolCall{ID: "tc_2", Name: "lookup", Input: `{"id":2}`},
+	})
+	require.NoError(t, s.AddMessages(ctx, []message.Message{msg}))
+
+	got, err := s.GetMessages(ctx, nil)
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+
+	calls := got[0].ToolCalls()
+	require.Len(t, calls, 2)
+	assert.Equal(t, "search", calls[0].Name)
+	assert.Equal(t, "tc_2", calls[1].ID)
+	assert.Equal(t, "running tools", got[0].Content().Text)
+}
+
+func TestPostgresSession_ImageURLRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	store := newStore(t)
+
+	s, err := store.Create(ctx, sessionID(t))
+	require.NoError(t, err)
+
+	msg := message.NewMessage(message.User, []message.ContentPart{
+		message.TextContent{Text: "look"},
+		message.ImageURLContent{URL: "https://example.com/cat.png", Detail: "high"},
+	})
+	require.NoError(t, s.AddMessages(ctx, []message.Message{msg}))
+
+	got, err := s.GetMessages(ctx, nil)
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+
+	images := got[0].ImageURLContent()
+	require.Len(t, images, 1)
+	assert.Equal(t, "https://example.com/cat.png", images[0].URL)
+	assert.Equal(t, "high", images[0].Detail)
+}
+
+func TestPostgresSession_BinaryContentRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	store := newStore(t)
+
+	s, err := store.Create(ctx, sessionID(t))
+	require.NoError(t, err)
+
+	data := []byte{0x00, 0x01, 0x02, 0xff, 0xfe}
+	msg := message.NewMessage(message.User, []message.ContentPart{
+		message.BinaryContent{MIMEType: "application/octet-stream", Data: data},
+	})
+	require.NoError(t, s.AddMessages(ctx, []message.Message{msg}))
+
+	got, err := s.GetMessages(ctx, nil)
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+
+	bin := got[0].BinaryContent()
+	require.Len(t, bin, 1)
+	assert.Equal(t, "application/octet-stream", bin[0].MIMEType)
+	assert.True(t, bytes.Equal(data, bin[0].Data))
+}
+
+func TestPostgresSession_SummaryRoleRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	store := newStore(t)
+
+	s, err := store.Create(ctx, sessionID(t))
+	require.NoError(t, err)
+
+	require.NoError(t, s.AddMessages(ctx, []message.Message{
+		message.NewSummaryMessage("conversation summary"),
+	}))
+
+	got, err := s.GetMessages(ctx, nil)
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+	assert.Equal(t, message.Summary, got[0].Role)
+	assert.Equal(t, "conversation summary", got[0].Content().Text)
+}
+
+func TestPostgresSession_EmptySessionID(t *testing.T) {
+	ctx := context.Background()
+	store := newStore(t)
+
+	s, err := store.Create(ctx, "")
+	require.NoError(t, err)
+	assert.Equal(t, "", s.ID())
+
+	exists, err := store.Exists(ctx, "")
+	require.NoError(t, err)
+	assert.True(t, exists)
+
+	require.NoError(t, s.AddMessages(ctx, []message.Message{
+		message.NewUserMessage("empty id"),
+	}))
+	got, err := s.GetMessages(ctx, nil)
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+
+	require.NoError(t, store.Delete(ctx, ""))
+}
+
+func TestPostgresStore_ManySessions(t *testing.T) {
+	ctx := context.Background()
+	store := newStore(t)
+
+	const n = 50
+	prefix := sessionID(t)
+	for i := range n {
+		id := fmt.Sprintf("%s-%d", prefix, i)
+		s, err := store.Create(ctx, id)
+		require.NoError(t, err)
+		require.NoError(t, s.AddMessages(ctx, []message.Message{
+			message.NewUserMessage(fmt.Sprintf("hello %d", i)),
+		}))
+	}
+
+	for i := range n {
+		id := fmt.Sprintf("%s-%d", prefix, i)
+		exists, err := store.Exists(ctx, id)
+		require.NoError(t, err)
+		assert.True(t, exists)
+
+		s, err := store.Load(ctx, id)
+		require.NoError(t, err)
+		got, err := s.GetMessages(ctx, nil)
+		require.NoError(t, err)
+		require.Len(t, got, 1)
+		assert.Equal(t, fmt.Sprintf("hello %d", i), got[0].Content().Text)
+	}
+}
+
+func TestPostgresSession_ContextCancellation(t *testing.T) {
+	store := newStore(t)
+
+	s, err := store.Create(context.Background(), sessionID(t))
+	require.NoError(t, err)
+
+	canceled, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err = s.AddMessages(canceled, []message.Message{
+		message.NewUserMessage("nope"),
+	})
+	require.Error(t, err)
+
+	_, err = s.GetMessages(canceled, nil)
+	require.Error(t, err)
+
+	_, err = s.PopMessage(canceled)
+	require.Error(t, err)
 }
