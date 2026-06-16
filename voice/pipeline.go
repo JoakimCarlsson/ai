@@ -120,6 +120,20 @@ func streamLLMAndSpeak(
 		}
 	}
 
+	if state != nil && v.kb != nil {
+		if !state.kbSearched.Load() {
+			state.kbSearched.Store(true)
+			recallCtx := v.recallKBContext(ctx, lastUserText(*history), 5)
+			if recallCtx != "" {
+				state.kbContext.Store(&recallCtx)
+			}
+		}
+		if p := state.kbContext.Load(); p != nil && *p != "" {
+			kbMsg := message.NewSystemMessage(*p)
+			llmMessages = append([]message.Message{kbMsg}, llmMessages...)
+		}
+	}
+
 	llmTools := v.toolsForContext(ctx)
 	if len(v.hooks) > 0 {
 		hookRes, err := runPreModelCall(ctx, v.hooks, ModelCallContext{

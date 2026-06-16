@@ -8,6 +8,7 @@ import (
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/memory"
 	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/rag"
 )
 
 // getMemoryLLM returns the LLM used for memory extraction and dedup. Uses
@@ -132,6 +133,26 @@ func (v *Agent) recallMemoriesContext(
 		b.WriteString("\n")
 	}
 	return b.String()
+}
+
+// recallKBContext searches the configured knowledge base for the
+// top-N chunks matching query and returns them as a single
+// system-message-shaped string ready to be prepended to the LLM
+// message list. Returns "" when no KB is configured or no chunks
+// match.
+func (v *Agent) recallKBContext(
+	ctx context.Context,
+	query string,
+	limit int,
+) string {
+	if v.kb == nil || strings.TrimSpace(query) == "" {
+		return ""
+	}
+	hits, err := v.kb.Retrieve(ctx, query, limit)
+	if err != nil || len(hits) == 0 {
+		return ""
+	}
+	return "Relevant context from the knowledge base:\n" + rag.FormatHits(hits)
 }
 
 // lastUserText returns the text of the most recent message.User in

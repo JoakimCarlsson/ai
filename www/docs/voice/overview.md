@@ -74,6 +74,7 @@ if err := conv.Wait(); err != nil {
 | `WithHooks(hooks...)` | Synchronous interception points (mutate / deny / observe) at user-message commit, LLM call, tool use, lifecycle | disabled |
 | `WithHandoffs(configs...)` | Register `transfer_to_<Name>` tools that swap the active agent mid-conversation | disabled |
 | `WithMemory(id, store, opts...)` | Long-term cross-conversation recall + (optional) automatic fact extraction | disabled |
+| `WithKnowledgeBase(kb)` | Retrieval-augmented grounding from a `rag.KnowledgeBase`; top-5 chunks injected as a transient system message per turn | disabled |
 
 Sample rate, channel count, voice, and TTS output format are configured on the STT and TTS clients you pass to `voice.New`. The voice package does not redeclare them.
 

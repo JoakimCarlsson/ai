@@ -276,6 +276,8 @@ func (c *Conversation) run(
 				}
 				state.memorySearched.Store(false)
 				state.memoryContext.Store(nil)
+				state.kbSearched.Store(false)
+				state.kbContext.Store(nil)
 				if activeAgent.autoExtract && activeAgent.session != nil &&
 					activeAgent.memory != nil && activeAgent.memoryID != "" {
 					ag := activeAgent

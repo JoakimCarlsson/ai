@@ -53,6 +53,15 @@ type turnState struct {
 	// turn. Read by streamLLMAndSpeak to prepend a transient system
 	// message before the LLM call.
 	memoryContext atomic.Pointer[string]
+
+	// kbSearched marks whether the per-turn knowledge-base recall has
+	// already run. Mirrors memorySearched for KB retrieval.
+	kbSearched atomic.Bool
+
+	// kbContext caches the formatted KB recall string for the current
+	// turn. Read by streamLLMAndSpeak to prepend a transient system
+	// message before the LLM call.
+	kbContext atomic.Pointer[string]
 }
 
 // setSpoken stores text as the current spoken-so-far value.
