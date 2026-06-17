@@ -45,10 +45,11 @@ func TestAgent_PersistenceWithPopCount(t *testing.T) {
 	a := agent.New(newMockLLM(mockResponse{Content: "Mock response"}),
 		agent.WithSession("test-session", store),
 		agent.WithContextStrategy(&mockStrategy{
-			popCount: 1, // Remove "Msg 2"
+			popCount: 2,
 			addMessages: []message.Message{
 				message.NewSummaryMessage("Summary of 1 and Resp 1"),
 				message.NewUserMessage("Msg 2 re-anchored"),
+				message.NewUserMessage("Msg 3 re-anchored"),
 			},
 		}, 10000),
 	)
@@ -66,10 +67,10 @@ func TestAgent_PersistenceWithPopCount(t *testing.T) {
 	// Expected messages:
 	// 0: Msg 1
 	// 1: Resp 1
-	// (Msg 2 was popped)
+	// (Msg 2 and Msg 3 were popped)
 	// 2: Summary of 1 and Resp 1
 	// 3: Msg 2 re-anchored
-	// 4: Msg 3 (the current user message)
+	// 4: Msg 3 re-anchored
 	// 5: Mock response (from assistant)
 
 	if len(msgs) != 6 {
@@ -87,9 +88,9 @@ func TestAgent_PersistenceWithPopCount(t *testing.T) {
 				msgs[3].Content().Text,
 			)
 		}
-		if msgs[4].Content().Text != "Msg 3" {
+		if msgs[4].Content().Text != "Msg 3 re-anchored" {
 			t.Errorf(
-				"expected msg 4 to be 'Msg 3', got %s",
+				"expected msg 4 to be 'Msg 3 re-anchored', got %s",
 				msgs[4].Content().Text,
 			)
 		}
