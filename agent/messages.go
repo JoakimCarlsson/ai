@@ -115,6 +115,9 @@ func (a *Agent) buildMessages(
 		}
 	}
 
+	userMsg := message.NewUserMessage(userMessage)
+	userMsg.Model = a.llm.Model().ID
+
 	var sessionMessages []message.Message
 	if a.session != nil {
 		var err error
@@ -130,21 +133,11 @@ func (a *Agent) buildMessages(
 		messages = append(messages, sysMsg)
 	}
 
+	// 1. Fully construct the logical state of the conversation (History + New Msg)
 	messages = append(messages, sessionMessages...)
-
-	userMsg := message.NewUserMessage(userMessage)
-	userMsg.Model = a.llm.Model().ID
 	messages = append(messages, userMsg)
 
-	if a.session != nil {
-		if err := a.session.AddMessages(
-			ctx,
-			[]message.Message{userMsg},
-		); err != nil {
-			return nil, err
-		}
-	}
-
+	// 2. Evaluate Strategy
 	if a.contextStrategy != nil {
 		counter, err := tokens.NewCounter()
 		if err != nil {
@@ -171,16 +164,80 @@ func (a *Agent) buildMessages(
 			return nil, fmt.Errorf("context strategy failed: %w", err)
 		}
 
-		messages = result.Messages
+		// 3. Apply Persistence Updates
+		if a.session != nil {
+			if result.SessionUpdate != nil {
+				// The Strategy evaluated [History..., UserMsg].
+				// Its PopCount represents the number of messages to remove from that array.
+				// However, UserMsg is not physically in the Session Store yet.
+				// We must adjust the PopCount to determine how many physical session messages to pop.
 
-		if result.SessionUpdate != nil && a.session != nil &&
-			len(result.SessionUpdate.AddMessages) > 0 {
-			if err := a.session.AddMessages(
-				ctx,
-				result.SessionUpdate.AddMessages,
-			); err != nil {
-				return nil, fmt.Errorf("failed to save session update: %w", err)
+				popCount := result.SessionUpdate.PopCount
+				userMsgIncludedInKeep := false
+
+				if len(result.SessionUpdate.AddMessages) > 0 {
+					lastAdded := result.SessionUpdate.AddMessages[len(result.SessionUpdate.AddMessages)-1]
+					if lastAdded.CreatedAt == userMsg.CreatedAt &&
+						lastAdded.Role == userMsg.Role {
+						userMsgIncludedInKeep = true
+					}
+				}
+
+				if userMsgIncludedInKeep {
+					// The strategy 'popped' UserMsg logically as part of PopCount,
+					// but since it's not in the DB, we shouldn't pop a DB row for it.
+					popCount--
+				}
+
+				for i := 0; i < popCount; i++ {
+					if _, err := a.session.PopMessage(ctx); err != nil {
+						return nil, fmt.Errorf("failed to pop message: %w", err)
+					}
+				}
+
+				if len(result.SessionUpdate.AddMessages) > 0 {
+					if err := a.session.AddMessages(
+						ctx,
+						result.SessionUpdate.AddMessages,
+					); err != nil {
+						return nil, fmt.Errorf(
+							"failed to save session update: %w",
+							err,
+						)
+					}
+				}
+
+				// If userMsg wasn't included in the strategy's update (e.g. truncated),
+				// we still need to persist it normally as the latest action.
+				// But wait, if it was included in AddMessages, userMsgIncludedInKeep is true, we don't save it again.
+				// If it wasn't, we DO save it.
+				if !userMsgIncludedInKeep {
+					if err := a.session.AddMessages(
+						ctx,
+						[]message.Message{userMsg},
+					); err != nil {
+						return nil, err
+					}
+				}
+
+			} else {
+				// No session update needed from strategy, just add the new user message.
+				if err := a.session.AddMessages(
+					ctx,
+					[]message.Message{userMsg},
+				); err != nil {
+					return nil, err
+				}
 			}
+		}
+
+		messages = result.Messages
+	} else if a.session != nil {
+		if err := a.session.AddMessages(
+			ctx,
+			[]message.Message{userMsg},
+		); err != nil {
+			return nil, err
 		}
 	}
 
@@ -239,17 +296,27 @@ func (a *Agent) buildContinueMessages(
 			return nil, fmt.Errorf("context strategy failed: %w", err)
 		}
 
-		messages = result.Messages
+		if result.SessionUpdate != nil && a.session != nil {
+			for i := 0; i < result.SessionUpdate.PopCount; i++ {
+				if _, err := a.session.PopMessage(ctx); err != nil {
+					return nil, fmt.Errorf("failed to pop message: %w", err)
+				}
+			}
 
-		if result.SessionUpdate != nil && a.session != nil &&
-			len(result.SessionUpdate.AddMessages) > 0 {
-			if err := a.session.AddMessages(
-				ctx,
-				result.SessionUpdate.AddMessages,
-			); err != nil {
-				return nil, fmt.Errorf("failed to save session update: %w", err)
+			if len(result.SessionUpdate.AddMessages) > 0 {
+				if err := a.session.AddMessages(
+					ctx,
+					result.SessionUpdate.AddMessages,
+				); err != nil {
+					return nil, fmt.Errorf(
+						"failed to save session update: %w",
+						err,
+					)
+				}
 			}
 		}
+
+		messages = result.Messages
 	}
 
 	return messages, nil

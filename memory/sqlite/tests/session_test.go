@@ -860,7 +860,10 @@ func TestSQLiteSession_ImageURLRoundTrip(t *testing.T) {
 
 	msg := message.NewMessage(message.User, []message.ContentPart{
 		message.TextContent{Text: "look"},
-		message.ImageURLContent{URL: "https://example.com/cat.png", Detail: "high"},
+		message.ImageURLContent{
+			URL:    "https://example.com/cat.png",
+			Detail: "high",
+		},
 	})
 	require.NoError(t, s.AddMessages(ctx, []message.Message{msg}))
 
