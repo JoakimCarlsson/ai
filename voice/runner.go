@@ -237,6 +237,7 @@ func (c *Conversation) run(
 					turnCtx,
 					activeAgent,
 					&history,
+					&sessionPersisted,
 					emit,
 					ttsAudio,
 					state,

@@ -205,6 +205,79 @@ func TestContextStrategy_SessionUpdatePersisted(t *testing.T) {
 	}
 }
 
+// applySessionUpdate honors SessionUpdate.PopCount: messages already persisted
+// to the session store are popped (so the next flush does not duplicate the
+// retained tail) and sessionPersisted is rewound to match. Mirrors the agent
+// buildMessages fix (#199).
+func TestApplySessionUpdate_PopCountRewindsStore(t *testing.T) {
+	ctx := context.Background()
+	store := session.MemoryStore()
+	sess, err := store.Create(ctx, "sess-pop")
+	if err != nil {
+		t.Fatalf("create session: %v", err)
+	}
+
+	u1 := message.NewUserMessage("u1")
+	a1 := message.NewMessage(
+		message.Assistant,
+		[]message.ContentPart{message.TextContent{Text: "a1"}},
+	)
+	u2 := message.NewUserMessage("u2")
+	if err := sess.AddMessages(ctx, []message.Message{u1, a1, u2}); err != nil {
+		t.Fatalf("seed messages: %v", err)
+	}
+
+	v := &Agent{session: sess}
+	history := []message.Message{u1, a1, u2}
+	sessionPersisted := len(history)
+
+	summary := message.NewMessage(
+		message.Summary,
+		[]message.ContentPart{message.TextContent{Text: "summary"}},
+	)
+	update := &tokens.SessionUpdate{
+		PopCount:    2,
+		AddMessages: []message.Message{summary, u2},
+	}
+
+	if err := applySessionUpdate(
+		ctx, v, &history, &sessionPersisted, update,
+	); err != nil {
+		t.Fatalf("applySessionUpdate: %v", err)
+	}
+
+	if sessionPersisted != 1 {
+		t.Fatalf("expected sessionPersisted rewound to 1, got %d", sessionPersisted)
+	}
+	if stored, _ := sess.GetMessages(ctx, nil); len(stored) != 1 {
+		t.Fatalf("expected 1 message left in store after pop, got %d", len(stored))
+	}
+	if len(history) != 3 || history[1].Role != message.Summary {
+		t.Fatalf("expected history [u1, summary, u2], got %+v", history)
+	}
+
+	if err := sess.AddMessages(ctx, history[sessionPersisted:]); err != nil {
+		t.Fatalf("flush: %v", err)
+	}
+	final, _ := sess.GetMessages(ctx, nil)
+	if len(final) != 3 {
+		t.Fatalf(
+			"expected 3 messages after flush (no duplication), got %d: %+v",
+			len(final),
+			final,
+		)
+	}
+	summaries := 0
+	for _, m := range final {
+		if m.Role == message.Summary {
+			summaries++
+		}
+	}
+	if summaries != 1 {
+		t.Fatalf("expected exactly 1 summary after flush, got %d", summaries)
+	}
+}
+
 // When no strategy is configured, history is passed through to the LLM
 // untouched (regression check for the no-op path).
 func TestContextStrategy_NoStrategyPassesThrough(t *testing.T) {
