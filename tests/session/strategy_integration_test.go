@@ -24,12 +24,12 @@ func runSummarizeStrategyTest(t *testing.T, store session.Store) {
 	const sessionID = "strategy-test"
 	summarizer := &bugMockSummarizer{}
 	// Keep only the most recent message so a summary triggers quickly.
-	strat := summarize.Strategy(summarizer, summarize.KeepRecent(1))
+	strategy := summarize.Strategy(summarizer, summarize.KeepRecent(1))
 
 	a := agent.New(
 		&mockAgentLLM{t: t},
 		agent.WithSession(sessionID, store),
-		agent.WithContextStrategy(strat, 100),
+		agent.WithContextStrategy(strategy, 100),
 	)
 
 	// Chat until the active context exceeds the limit and a summary is produced.
@@ -92,7 +92,7 @@ func runSummarizeStrategyTest(t *testing.T, store session.Store) {
 	reloaded := agent.New(
 		&mockAgentLLM{t: t},
 		agent.WithSession(sessionID, store),
-		agent.WithContextStrategy(strat, 100),
+		agent.WithContextStrategy(strategy, 100),
 	)
 	if _, err := reloaded.Chat(ctx, "Short follow-up"); err != nil {
 		t.Fatalf("follow-up chat failed: %v", err)

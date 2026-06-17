@@ -22,9 +22,9 @@ type bugMockSummarizer struct {
 }
 
 func (m *bugMockSummarizer) SendMessages(
-	ctx context.Context,
+	_ context.Context,
 	msgs []message.Message,
-	tools []tool.BaseTool,
+	_ []tool.BaseTool,
 ) (*llm.Response, error) {
 	m.callCount++
 	m.lastMsgs = msgs
@@ -34,27 +34,27 @@ func (m *bugMockSummarizer) SendMessages(
 }
 
 func (m *bugMockSummarizer) SendMessagesWithStructuredOutput(
-	ctx context.Context,
-	msgs []message.Message,
-	tools []tool.BaseTool,
-	outputSchema *schema.StructuredOutputInfo,
+	_ context.Context,
+	_ []message.Message,
+	_ []tool.BaseTool,
+	_ *schema.StructuredOutputInfo,
 ) (*llm.Response, error) {
 	return nil, nil
 }
 
 func (m *bugMockSummarizer) StreamResponse(
-	ctx context.Context,
-	msgs []message.Message,
-	tools []tool.BaseTool,
+	_ context.Context,
+	_ []message.Message,
+	_ []tool.BaseTool,
 ) <-chan llm.Event {
 	return nil
 }
 
 func (m *bugMockSummarizer) StreamResponseWithStructuredOutput(
-	ctx context.Context,
-	msgs []message.Message,
-	tools []tool.BaseTool,
-	outputSchema *schema.StructuredOutputInfo,
+	_ context.Context,
+	_ []message.Message,
+	_ []tool.BaseTool,
+	_ *schema.StructuredOutputInfo,
 ) <-chan llm.Event {
 	return nil
 }
@@ -73,9 +73,9 @@ type mockAgentLLM struct {
 }
 
 func (m *mockAgentLLM) SendMessages(
-	ctx context.Context,
+	_ context.Context,
 	msgs []message.Message,
-	tools []tool.BaseTool,
+	_ []tool.BaseTool,
 ) (*llm.Response, error) {
 	m.t.Logf("--> mockAgentLLM called with %d messages", len(msgs))
 	return &llm.Response{
@@ -84,27 +84,27 @@ func (m *mockAgentLLM) SendMessages(
 }
 
 func (m *mockAgentLLM) SendMessagesWithStructuredOutput(
-	ctx context.Context,
-	msgs []message.Message,
-	tools []tool.BaseTool,
-	outputSchema *schema.StructuredOutputInfo,
+	_ context.Context,
+	_ []message.Message,
+	_ []tool.BaseTool,
+	_ *schema.StructuredOutputInfo,
 ) (*llm.Response, error) {
 	return nil, nil
 }
 
 func (m *mockAgentLLM) StreamResponse(
-	ctx context.Context,
-	msgs []message.Message,
-	tools []tool.BaseTool,
+	_ context.Context,
+	_ []message.Message,
+	_ []tool.BaseTool,
 ) <-chan llm.Event {
 	return nil
 }
 
 func (m *mockAgentLLM) StreamResponseWithStructuredOutput(
-	ctx context.Context,
-	msgs []message.Message,
-	tools []tool.BaseTool,
-	outputSchema *schema.StructuredOutputInfo,
+	_ context.Context,
+	_ []message.Message,
+	_ []tool.BaseTool,
+	_ *schema.StructuredOutputInfo,
 ) <-chan llm.Event {
 	return nil
 }
@@ -123,12 +123,12 @@ func TestSummarizeStrategy_ReproductionBug(t *testing.T) {
 
 	summarizer := &bugMockSummarizer{}
 	// Keep 1 most recent message pair.
-	strat := summarize.Strategy(summarizer, summarize.KeepRecent(1))
+	strategy := summarize.Strategy(summarizer, summarize.KeepRecent(1))
 
 	a := agent.New(
 		&mockAgentLLM{t: t},
 		agent.WithSession("bug-test2", store),
-		agent.WithContextStrategy(strat, 100),
+		agent.WithContextStrategy(strategy, 100),
 	)
 
 	// Chat until we trigger a summary

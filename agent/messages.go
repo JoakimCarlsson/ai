@@ -172,7 +172,7 @@ func (a *Agent) buildMessages(
 		}
 
 		if result.SessionUpdate != nil && a.session != nil {
-			for i := 0; i < result.SessionUpdate.PopCount; i++ {
+			for range result.SessionUpdate.PopCount {
 				if _, err := a.session.PopMessage(ctx); err != nil {
 					return nil, fmt.Errorf("failed to pop message: %w", err)
 				}
@@ -250,7 +250,7 @@ func (a *Agent) buildContinueMessages(
 		}
 
 		if result.SessionUpdate != nil && a.session != nil {
-			for i := 0; i < result.SessionUpdate.PopCount; i++ {
+			for range result.SessionUpdate.PopCount {
 				if _, err := a.session.PopMessage(ctx); err != nil {
 					return nil, fmt.Errorf("failed to pop message: %w", err)
 				}

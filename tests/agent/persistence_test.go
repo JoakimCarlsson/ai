@@ -16,7 +16,7 @@ type mockStrategy struct {
 }
 
 func (s *mockStrategy) Fit(
-	ctx context.Context,
+	_ context.Context,
 	input tokens.StrategyInput,
 ) (*tokens.StrategyResult, error) {
 	return &tokens.StrategyResult{

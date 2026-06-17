@@ -46,13 +46,14 @@ func (s *summarizeStrategy) Fit(
 	}
 
 	for i, msg := range input.Messages {
-		if msg.Role == message.System {
+		switch {
+		case msg.Role == message.System:
 			activeMessages = append(activeMessages, msg)
-		} else if lastSummaryIdx != -1 {
+		case lastSummaryIdx != -1:
 			if i >= lastSummaryIdx {
 				activeMessages = append(activeMessages, msg)
 			}
-		} else if msg.Role != message.Summary {
+		case msg.Role != message.Summary:
 			activeMessages = append(activeMessages, msg)
 		}
 	}
