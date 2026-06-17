@@ -28,7 +28,10 @@ func (s *stubStreamLLM) SendMessages(
 }
 
 func (s *stubStreamLLM) SendMessagesWithStructuredOutput(
-	context.Context, []message.Message, []tool.BaseTool, *schema.StructuredOutputInfo,
+	context.Context,
+	[]message.Message,
+	[]tool.BaseTool,
+	*schema.StructuredOutputInfo,
 ) (*Response, error) {
 	return nil, errors.New("not implemented")
 }
@@ -51,7 +54,10 @@ func (s *stubStreamLLM) StreamResponse(
 }
 
 func (s *stubStreamLLM) StreamResponseWithStructuredOutput(
-	context.Context, []message.Message, []tool.BaseTool, *schema.StructuredOutputInfo,
+	context.Context,
+	[]message.Message,
+	[]tool.BaseTool,
+	*schema.StructuredOutputInfo,
 ) <-chan Event {
 	return s.stream()
 }
@@ -122,7 +128,9 @@ func TestStreamResponseAbandonedConsumerReleasesForwarder(t *testing.T) {
 
 // TestStreamStructuredOutputAbandonedConsumerReleasesForwarder covers the
 // structured-output forwarder variant with the same abandonment pattern.
-func TestStreamStructuredOutputAbandonedConsumerReleasesForwarder(t *testing.T) {
+func TestStreamStructuredOutputAbandonedConsumerReleasesForwarder(
+	t *testing.T,
+) {
 	baseline := runtime.NumGoroutine()
 
 	ctx, cancel := context.WithCancel(context.Background())

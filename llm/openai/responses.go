@@ -264,7 +264,10 @@ func NewResponsesLLM(opts ...ResponsesOption) llm.LLM {
 		clientOpts = append(clientOpts, option.WithHeader(k, v))
 	}
 	if options.httpClient != nil {
-		clientOpts = append(clientOpts, option.WithHTTPClient(options.httpClient))
+		clientOpts = append(
+			clientOpts,
+			option.WithHTTPClient(options.httpClient),
+		)
 	}
 
 	return llm.WithTracing(&responsesClient{

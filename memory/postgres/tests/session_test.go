@@ -62,7 +62,10 @@ func TestMain(m *testing.M) {
 // newStore returns a session store backed by the shared container.
 func newStore(t *testing.T, opts ...postgres.Option) session.Store {
 	t.Helper()
-	store, err := postgres.SessionStore(context.Background(), sharedConnStr, opts...)
+	store, err := postgres.SessionStore(
+		context.Background(),
+		sharedConnStr,
+		opts...)
 	require.NoError(t, err)
 	return store
 }
@@ -582,7 +585,12 @@ func TestPostgresSession_WithIDGenerator(t *testing.T) {
 		message.NewUserMessage("b"),
 	}))
 
-	assert.Equal(t, 2, counter, "id generator should be called once per message")
+	assert.Equal(
+		t,
+		2,
+		counter,
+		"id generator should be called once per message",
+	)
 
 	got, err := s.GetMessages(ctx, nil)
 	require.NoError(t, err)
@@ -602,7 +610,11 @@ func TestPostgresSession_DuplicateIDGeneratorFails(t *testing.T) {
 		message.NewUserMessage("a"),
 		message.NewUserMessage("b"),
 	})
-	require.Error(t, err, "a colliding message id should violate the primary key")
+	require.Error(
+		t,
+		err,
+		"a colliding message id should violate the primary key",
+	)
 }
 
 func TestPostgresSession_ConcurrentAddMessages(t *testing.T) {
@@ -728,7 +740,10 @@ func TestPostgresSession_ImageURLRoundTrip(t *testing.T) {
 
 	msg := message.NewMessage(message.User, []message.ContentPart{
 		message.TextContent{Text: "look"},
-		message.ImageURLContent{URL: "https://example.com/cat.png", Detail: "high"},
+		message.ImageURLContent{
+			URL:    "https://example.com/cat.png",
+			Detail: "high",
+		},
 	})
 	require.NoError(t, s.AddMessages(ctx, []message.Message{msg}))
 

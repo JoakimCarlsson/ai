@@ -1036,8 +1036,10 @@ func (c *Client) SendMessagesWithStructuredOutput(
 				StructuredOutput:           &content,
 				UsedNativeStructuredOutput: true,
 				ProviderMetadata:           c.providerMetadata(*openaiResponse),
-				LogProbs:                   logProbsForChoice(openaiResponse.Choices[0]),
-				Choices:                    c.buildChoices(*openaiResponse),
+				LogProbs: logProbsForChoice(
+					openaiResponse.Choices[0],
+				),
+				Choices: c.buildChoices(*openaiResponse),
 			}
 			applyResponseHeaders(resp, raw)
 			return resp, nil

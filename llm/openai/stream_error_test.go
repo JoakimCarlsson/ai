@@ -21,8 +21,10 @@ func TestStreamNoChoicesEmitsSingleError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(
 		func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "text/event-stream")
-			_, _ = io.WriteString(w,
-				"data: {\"id\":\"x\",\"object\":\"chat.completion.chunk\",\"choices\":[]}\n\n")
+			_, _ = io.WriteString(
+				w,
+				"data: {\"id\":\"x\",\"object\":\"chat.completion.chunk\",\"choices\":[]}\n\n",
+			)
 			_, _ = io.WriteString(w, "data: [DONE]\n\n")
 		}))
 	defer srv.Close()
