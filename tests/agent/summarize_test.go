@@ -37,14 +37,14 @@ func TestAgent_SummarizeStrategy(t *testing.T) {
 	store := session.MemoryStore()
 
 	// Create a strategy with a low "KeepRecent"
-	strat := summarize.Strategy(summarizerLLM, summarize.KeepRecent(1))
+	strategy := summarize.Strategy(summarizerLLM, summarize.KeepRecent(1))
 
 	a := agent.New(mockAgentLLM,
 		agent.WithSession("test-session", store),
 		agent.WithSystemPrompt("You are a test assistant."),
 		// Force summary by setting a very low limit.
 		// Token count for "Message 1" + system prompt + overhead will easily exceed 20.
-		agent.WithContextStrategy(strat, 20),
+		agent.WithContextStrategy(strategy, 20),
 	)
 
 	// 2. First turn.
