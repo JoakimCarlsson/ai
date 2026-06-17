@@ -602,7 +602,7 @@ func applySessionUpdate(
 	if update.PopCount > 0 {
 		newLen := max(len(*history)-update.PopCount, 0)
 		if v.session != nil && newLen < *sessionPersisted {
-			for i := 0; i < *sessionPersisted-newLen; i++ {
+			for range *sessionPersisted - newLen {
 				if _, err := v.session.PopMessage(ctx); err != nil {
 					return fmt.Errorf("pop session message: %w", err)
 				}
