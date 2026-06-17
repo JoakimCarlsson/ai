@@ -115,7 +115,10 @@ func (s *sessionStore) Delete(ctx context.Context, id string) error {
 		return err
 	}
 
-	deleteSession := fmt.Sprintf("DELETE FROM %ssessions WHERE id = ?", s.prefix)
+	deleteSession := fmt.Sprintf(
+		"DELETE FROM %ssessions WHERE id = ?",
+		s.prefix,
+	)
 	if _, err := tx.ExecContext(ctx, deleteSession, id); err != nil {
 		return err
 	}

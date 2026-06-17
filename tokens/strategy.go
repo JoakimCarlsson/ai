@@ -24,6 +24,9 @@ type StrategyResult struct {
 
 // SessionUpdate contains messages to persist to the session.
 type SessionUpdate struct {
+	// PopCount indicates how many messages to remove from the end of the
+	// session before applying AddMessages.
+	PopCount int
 	// AddMessages appends messages to the session.
 	// The full conversation history is preserved for auditing.
 	AddMessages []message.Message

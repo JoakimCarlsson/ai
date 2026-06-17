@@ -35,8 +35,31 @@ func (s *summarizeStrategy) Fit(
 	ctx context.Context,
 	input tokens.StrategyInput,
 ) (*tokens.StrategyResult, error) {
+	// 1. Identify active context (System messages + messages since last summary)
+	activeMessages := make([]message.Message, 0, len(input.Messages))
+	lastSummaryIdx := -1
+	for i := len(input.Messages) - 1; i >= 0; i-- {
+		if input.Messages[i].Role == message.Summary {
+			lastSummaryIdx = i
+			break
+		}
+	}
+
+	for i, msg := range input.Messages {
+		if msg.Role == message.System {
+			activeMessages = append(activeMessages, msg)
+		} else if lastSummaryIdx != -1 {
+			if i >= lastSummaryIdx {
+				activeMessages = append(activeMessages, msg)
+			}
+		} else if msg.Role != message.Summary {
+			activeMessages = append(activeMessages, msg)
+		}
+	}
+
+	// 2. Check if active context fits
 	count, err := input.Counter.CountTokens(ctx, tokens.CountOptions{
-		Messages:     input.Messages,
+		Messages:     activeMessages,
 		SystemPrompt: input.SystemPrompt,
 		Tools:        input.Tools,
 	})
@@ -46,42 +69,49 @@ func (s *summarizeStrategy) Fit(
 
 	if count.TotalTokens <= input.MaxTokens {
 		return &tokens.StrategyResult{
-			Messages:      convertSummaryToUser(input.Messages),
+			Messages:      convertSummaryToUser(activeMessages),
 			SessionUpdate: nil,
 		}, nil
 	}
 
-	var systemMsgs, summaryMsgs, convMsgs []message.Message
-	for _, msg := range input.Messages {
+	// 3. Needs summary. Identify what to summarize within the active context.
+	var systemMsgs []message.Message
+	var lastSummary *message.Message
+	var convMsgs []message.Message
+
+	for i := range activeMessages {
+		msg := &activeMessages[i]
 		switch msg.Role {
 		case message.System:
-			systemMsgs = append(systemMsgs, msg)
+			systemMsgs = append(systemMsgs, *msg)
 		case message.Summary:
-			summaryMsgs = append(summaryMsgs, msg)
+			lastSummary = msg
 		default:
-			convMsgs = append(convMsgs, msg)
+			convMsgs = append(convMsgs, *msg)
 		}
 	}
 
 	splitPoint := len(convMsgs) - s.config.KeepRecent
 	if splitPoint <= 0 {
+		// Cannot summarize further without violating KeepRecent
 		return &tokens.StrategyResult{
-			Messages:      convertSummaryToUser(input.Messages),
+			Messages:      convertSummaryToUser(activeMessages),
 			SessionUpdate: nil,
 		}, nil
 	}
 
-	toSummarize := convMsgs[:splitPoint]
-	toKeep := convMsgs[splitPoint:]
-
-	if len(summaryMsgs) > 0 {
-		toSummarize = append(summaryMsgs, toSummarize...)
+	toSummarize := make([]message.Message, 0, splitPoint+1)
+	if lastSummary != nil {
+		toSummarize = append(toSummarize, *lastSummary)
 	}
+	toSummarize = append(toSummarize, convMsgs[:splitPoint]...)
+	toKeep := convMsgs[splitPoint:]
 
 	summary, err := s.generateSummary(ctx, toSummarize)
 	if err != nil {
+		// Fallback: return what we have if summary fails
 		return &tokens.StrategyResult{
-			Messages:      convertSummaryToUser(input.Messages),
+			Messages:      convertSummaryToUser(activeMessages),
 			SessionUpdate: nil,
 		}, nil
 	}
@@ -95,10 +125,15 @@ func (s *summarizeStrategy) Fit(
 	llmMessages = append(llmMessages, summaryMsgForLLM)
 	llmMessages = append(llmMessages, toKeep...)
 
+	sessionUpdateMsgs := make([]message.Message, 0, len(toKeep)+1)
+	sessionUpdateMsgs = append(sessionUpdateMsgs, summaryMsgForSession)
+	sessionUpdateMsgs = append(sessionUpdateMsgs, toKeep...)
+
 	return &tokens.StrategyResult{
 		Messages: llmMessages,
 		SessionUpdate: &tokens.SessionUpdate{
-			AddMessages: []message.Message{summaryMsgForSession},
+			PopCount:    len(toKeep),
+			AddMessages: sessionUpdateMsgs,
 		},
 	}, nil
 }
