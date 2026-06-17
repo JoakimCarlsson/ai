@@ -26,6 +26,7 @@ func runAssistantTurn(
 	ctx context.Context,
 	v *Agent,
 	history *[]message.Message,
+	sessionPersisted *int,
 	emit func(Event),
 	ttsAudio chan<- []byte,
 	state *turnState,
@@ -37,6 +38,7 @@ func runAssistantTurn(
 			ctx,
 			active,
 			history,
+			sessionPersisted,
 			emit,
 			ttsAudio,
 			state,
@@ -95,13 +97,14 @@ func streamLLMAndSpeak(
 	ctx context.Context,
 	v *Agent,
 	history *[]message.Message,
+	sessionPersisted *int,
 	emit func(Event),
 	ttsAudio chan<- []byte,
 	state *turnState,
 ) (string, []message.ToolCall, error) {
 	stp, supportsStreaming := v.tts.(tts.StreamingTextProvider)
 
-	llmMessages, err := applyContextStrategy(ctx, v, history)
+	llmMessages, err := applyContextStrategy(ctx, v, history, sessionPersisted)
 	if err != nil {
 		return "", nil, err
 	}
@@ -546,6 +549,7 @@ func applyContextStrategy(
 	ctx context.Context,
 	v *Agent,
 	history *[]message.Message,
+	sessionPersisted *int,
 ) ([]message.Message, error) {
 	if v.contextStrategy == nil {
 		return *history, nil
@@ -571,11 +575,46 @@ func applyContextStrategy(
 	if result == nil {
 		return *history, nil
 	}
-	if result.SessionUpdate != nil &&
-		len(result.SessionUpdate.AddMessages) > 0 {
-		*history = append(*history, result.SessionUpdate.AddMessages...)
+	if result.SessionUpdate != nil {
+		if err := applySessionUpdate(
+			ctx, v, history, sessionPersisted, result.SessionUpdate,
+		); err != nil {
+			return nil, err
+		}
 	}
 	return result.Messages, nil
+}
+
+// applySessionUpdate folds a strategy SessionUpdate into the live history and
+// the persisted session. PopCount messages are dropped from the end of the
+// in-flight history; any of those already written to the session store are
+// popped from it as well and sessionPersisted is rewound to match, so the
+// store does not retain the messages the summary replaces. AddMessages (the
+// summary plus the retained tail) are then appended and persisted on the next
+// turn-boundary flush. Mirrors the agent buildMessages handling (#199).
+func applySessionUpdate(
+	ctx context.Context,
+	v *Agent,
+	history *[]message.Message,
+	sessionPersisted *int,
+	update *tokens.SessionUpdate,
+) error {
+	if update.PopCount > 0 {
+		newLen := max(len(*history)-update.PopCount, 0)
+		if v.session != nil && newLen < *sessionPersisted {
+			for range *sessionPersisted - newLen {
+				if _, err := v.session.PopMessage(ctx); err != nil {
+					return fmt.Errorf("pop session message: %w", err)
+				}
+			}
+			*sessionPersisted = newLen
+		}
+		*history = (*history)[:newLen]
+	}
+	if len(update.AddMessages) > 0 {
+		*history = append(*history, update.AddMessages...)
+	}
+	return nil
 }
 
 func resolveMaxTokens(v *Agent) int64 {
