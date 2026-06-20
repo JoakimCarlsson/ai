@@ -1,6 +1,6 @@
 module github.com/joakimcarlsson/ai/memory/sqlite/tests
 
-go 1.25
+go 1.25.0
 
 replace github.com/joakimcarlsson/ai/memory/sqlite => ../
 
