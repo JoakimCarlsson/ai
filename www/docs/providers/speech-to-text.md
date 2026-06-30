@@ -28,6 +28,19 @@ fmt.Println(resp.Text)
 Deepgram, AssemblyAI, Google Cloud Speech, ElevenLabs Scribe follow the same
 shape via their respective vendor packages.
 
+Berget AI (EU-hosted, OpenAI-compatible Whisper; pricing in EUR) is the same
+shape via `stt/berget`, with Swedish (`BergetKBWhisperLarge`) and Norwegian
+(`BergetNBWhisperLarge`) fine-tunes alongside `BergetFasterWhisperLargeV3`:
+
+```go
+import sttberget "github.com/joakimcarlsson/ai/stt/berget"
+
+client := sttberget.NewSpeechToText(
+    sttberget.WithAPIKey(os.Getenv("BERGET_API_KEY")),
+    sttberget.WithModel(model.BergetTranscriptionModels[model.BergetKBWhisperLarge]),
+)
+```
+
 ## Translation (OpenAI only)
 
 ```go

@@ -508,15 +508,18 @@ func (c *Client) preparedParams(
 	params := openaisdk.ChatCompletionNewParams{
 		Model:    openaisdk.ChatModel(c.options.model.APIModel),
 		Messages: messages,
-		Tools:    tools,
 	}
 
-	if c.options.parallelToolCalls != nil {
-		params.ParallelToolCalls = openaisdk.Bool(*c.options.parallelToolCalls)
-	}
+	if len(tools) > 0 {
+		params.Tools = tools
 
-	if c.options.toolChoice != nil && len(tools) > 0 {
-		params.ToolChoice = toolChoiceParam(*c.options.toolChoice)
+		if c.options.parallelToolCalls != nil {
+			params.ParallelToolCalls = openaisdk.Bool(*c.options.parallelToolCalls)
+		}
+
+		if c.options.toolChoice != nil {
+			params.ToolChoice = toolChoiceParam(*c.options.toolChoice)
+		}
 	}
 
 	pb := llm.NewParameterBuilder(

@@ -322,6 +322,29 @@ they can expose vendor-specific built-in tools on top of the OpenAI-compatible
 surface. Use the thin `NewLLM` constructor in each for plain chat, or the
 dedicated `NewCompoundLLM` / `NewResponsesLLM` for built-in tools.
 
+Berget AI (Swedish, EU-hosted; open-weight models) ships as `llm/berget`, a
+thin wrapper pinned to `https://api.berget.ai/v1`. Pricing in the `model`
+catalog is in EUR (`BergetModels`, `BergetEmbeddingModels`,
+`BergetRerankerModels`, `BergetTranscriptionModels`):
+
+Like the other OpenAI-compatible wrappers, `llm/berget` aliases `Option` but
+does not re-export the option constructors; pass the standard ones from
+`llm/openai`:
+
+```go
+import (
+    llmberget "github.com/joakimcarlsson/ai/llm/berget"
+    llmopenai "github.com/joakimcarlsson/ai/llm/openai"
+    "github.com/joakimcarlsson/ai/model"
+)
+
+client := llmberget.NewLLM(
+    llmopenai.WithAPIKey(os.Getenv("BERGET_API_KEY")),
+    llmopenai.WithModel(model.BergetModels[model.BergetGPTOSS120B]),
+    llmopenai.WithMaxTokens(1000),
+)
+```
+
 For a managed registry of these, see [BYOM](../advanced/byom.md).
 
 ## Tracing
