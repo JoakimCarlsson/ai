@@ -45,6 +45,24 @@ reranker := rrcohere.NewReranker(
 resp, err := reranker.Rerank(ctx, query, documents)
 ```
 
+## Berget AI
+
+EU-hosted, Cohere/Jina-compatible `/v1/rerank` (e.g. BGE Reranker v2 m3);
+pricing in EUR.
+
+```go
+import rrberget "github.com/joakimcarlsson/ai/rerankers/berget"
+
+reranker := rrberget.NewReranker(
+    rrberget.WithAPIKey(os.Getenv("BERGET_API_KEY")),
+    rrberget.WithModel(model.BergetRerankerModels[model.BergetBGERerankerV2M3]),
+    rrberget.WithTopK(5),
+    rrberget.WithReturnDocuments(true),
+)
+
+resp, err := reranker.Rerank(ctx, query, documents)
+```
+
 ## Vendor-specific options
 
 Voyage:
