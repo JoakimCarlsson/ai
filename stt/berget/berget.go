@@ -13,6 +13,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -126,13 +127,20 @@ func (c *Client) Transcribe(
 	return c.post(ctx, "/audio/transcriptions", audioFile, options...)
 }
 
-// Translate converts audio to English text regardless of the source language.
+// ErrTranslationNotSupported is returned by [Client.Translate]: Berget does
+// not expose an /v1/audio/translations endpoint (it returns 404).
+var ErrTranslationNotSupported = errors.New(
+	"berget: translation is not supported (no /v1/audio/translations endpoint)",
+)
+
+// Translate is not supported by Berget and always returns
+// [ErrTranslationNotSupported]. Berget serves only /v1/audio/transcriptions.
 func (c *Client) Translate(
-	ctx context.Context,
-	audioFile []byte,
-	options ...stt.Option,
+	_ context.Context,
+	_ []byte,
+	_ ...stt.Option,
 ) (*stt.Response, error) {
-	return c.post(ctx, "/audio/translations", audioFile, options...)
+	return nil, ErrTranslationNotSupported
 }
 
 func (c *Client) post(

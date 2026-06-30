@@ -54,12 +54,19 @@ Gemini, Mistral, Bedrock follow the same shape — `embeddings/gemini`,
 
 Berget AI (EU-hosted, OpenAI-compatible; pricing in EUR):
 
+`embeddings/berget` aliases `Option` but does not re-export the option
+constructors; pass the standard ones from `embeddings/openai`:
+
 ```go
-import embberget "github.com/joakimcarlsson/ai/embeddings/berget"
+import (
+    embberget "github.com/joakimcarlsson/ai/embeddings/berget"
+    embopenai "github.com/joakimcarlsson/ai/embeddings/openai"
+    "github.com/joakimcarlsson/ai/model"
+)
 
 embedder := embberget.NewEmbedding(
-    embberget.WithAPIKey(os.Getenv("BERGET_API_KEY")),
-    embberget.WithModel(model.BergetEmbeddingModels[model.BergetE5Large]),
+    embopenai.WithAPIKey(os.Getenv("BERGET_API_KEY")),
+    embopenai.WithModel(model.BergetEmbeddingModels[model.BergetE5Large]),
 )
 ```
 
