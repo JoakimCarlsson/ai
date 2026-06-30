@@ -52,6 +52,17 @@ embedder := embcohere.NewEmbedding(
 Gemini, Mistral, Bedrock follow the same shape — `embeddings/gemini`,
 `embeddings/mistral`, `embeddings/bedrock`.
 
+Berget AI (EU-hosted, OpenAI-compatible; pricing in EUR):
+
+```go
+import embberget "github.com/joakimcarlsson/ai/embeddings/berget"
+
+embedder := embberget.NewEmbedding(
+    embberget.WithAPIKey(os.Getenv("BERGET_API_KEY")),
+    embberget.WithModel(model.BergetEmbeddingModels[model.BergetE5Large]),
+)
+```
+
 ## Multimodal embeddings (Voyage)
 
 ```go

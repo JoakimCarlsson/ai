@@ -63,6 +63,7 @@ Each carries exactly one vendor SDK.
 | `embeddings/gemini` | `google.golang.org/genai` |
 | `embeddings/mistral` | `net/http` |
 | `embeddings/bedrock` | `aws-sdk-go-v2` Bedrock Runtime |
+| `embeddings/berget` | `openai-go` (thin wrapper over `embeddings/openai`) |
 
 ### TTS
 
@@ -83,6 +84,7 @@ Each carries exactly one vendor SDK.
 | `stt/deepgram` | `deepgram-go-sdk` |
 | `stt/assemblyai` | `assemblyai-go-sdk` |
 | `stt/google` | `cloud.google.com/go/speech` |
+| `stt/berget` | `openai-go` (thin wrapper over `stt/openai`) |
 
 ### Image generation
 

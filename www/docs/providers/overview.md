@@ -35,6 +35,7 @@ model id via `openai.WithModel` even without an entry in the `model` package.
 | `llm/fireworks` | Fireworks AI | `https://api.fireworks.ai/inference/v1` |
 | `llm/together` | Together AI | `https://api.together.xyz/v1` |
 | `llm/ollama` | Ollama (local) | `http://localhost:11434/v1` |
+| `llm/berget` | Berget AI (EU-hosted, EUR pricing) | `https://api.berget.ai/v1` |
 
 For any other OpenAI-compatible endpoint, use `llm/openai` directly with
 `WithBaseURL(...)`. See [BYOM](../advanced/byom.md).
@@ -51,6 +52,7 @@ Each native embedding vendor is its own sub-module under `embeddings/`:
 | `embeddings/gemini` | Google Gemini | ✅ | ❌ | ❌ |
 | `embeddings/mistral` | Mistral | ✅ | ❌ | ❌ |
 | `embeddings/bedrock` | AWS Bedrock (Titan + Cohere) | ✅ | ❌ | ❌ |
+| `embeddings/berget` | Berget AI (multilingual E5) | ✅ | ❌ | ❌ |
 
 ## Reranker Providers
 
@@ -94,6 +96,7 @@ Under `stt/`:
 | `stt/assemblyai` | AssemblyAI v3 Universal-Streaming | ✅ | ❌ | ✅ |
 | `stt/google` | Google Cloud Speech | ❌ | ❌ | ✅ |
 | `stt/elevenlabs` | ElevenLabs Scribe v2 Realtime | ✅ | ❌ | ✅ |
+| `stt/berget` | Berget AI (Whisper: Swedish/Norwegian/v3) | ❌ | ✅ | ✅ |
 
 ## Fill-in-the-Middle (FIM) Providers
 
