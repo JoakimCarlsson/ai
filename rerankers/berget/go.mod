@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/rerankers/berget
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/model v0.1.0
+	github.com/joakimcarlsson/ai/model v0.4.0
 	github.com/joakimcarlsson/ai/rerankers v0.1.0
 )
 

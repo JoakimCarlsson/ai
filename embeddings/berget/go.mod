@@ -14,7 +14,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
-	github.com/joakimcarlsson/ai/model v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/model v0.4.0 // indirect
 	github.com/joakimcarlsson/ai/tracing v0.1.0 // indirect
 	github.com/openai/openai-go v1.12.0 // indirect
 	github.com/tidwall/gjson v1.19.0 // indirect
