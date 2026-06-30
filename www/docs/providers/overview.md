@@ -62,6 +62,7 @@ Each native reranker vendor under `rerankers/`:
 |---|---|
 | `rerankers/voyage` | Voyage AI |
 | `rerankers/cohere` | Cohere |
+| `rerankers/berget` | Berget AI (EU-hosted, EUR pricing) |
 
 ## Image Generation Providers
 

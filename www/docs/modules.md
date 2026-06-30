@@ -99,6 +99,7 @@ Each carries exactly one vendor SDK.
 |---|---|
 | `rerankers/voyage` | `net/http` |
 | `rerankers/cohere` | `net/http` |
+| `rerankers/berget` | `net/http` |
 
 ### Fill-in-the-middle
 
