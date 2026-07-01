@@ -6,7 +6,7 @@ require (
 	github.com/anthropics/anthropic-sdk-go v1.51.0
 	github.com/joakimcarlsson/ai/llm v0.4.0
 	github.com/joakimcarlsson/ai/message v0.1.0
-	github.com/joakimcarlsson/ai/model v0.3.0
+	github.com/joakimcarlsson/ai/model v0.5.0
 	github.com/joakimcarlsson/ai/schema v0.1.0
 	github.com/joakimcarlsson/ai/tool v0.1.1
 	github.com/joakimcarlsson/ai/types v0.1.0
