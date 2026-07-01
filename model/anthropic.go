@@ -18,6 +18,8 @@ const (
 	Claude46Sonnet ID = "claude-4.6-sonnet"
 	Claude47Opus   ID = "claude-4.7-opus"
 	Claude48Opus   ID = "claude-4.8-opus"
+	Claude5Sonnet  ID = "claude-5-sonnet"
+	Claude5Fable   ID = "claude-5-fable"
 )
 
 // AnthropicModels maps Anthropic model IDs to their configurations.
@@ -221,6 +223,36 @@ var AnthropicModels = map[ID]Model{
 		CostPer1MInCached:     6.25,
 		CostPer1MOutCached:    0.50,
 		CostPer1MOut:          25.0,
+		ContextWindow:         1000000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	Claude5Sonnet: {
+		ID:                    Claude5Sonnet,
+		Name:                  "Claude Sonnet 5",
+		Provider:              ProviderAnthropic,
+		APIModel:              "claude-sonnet-5",
+		CostPer1MIn:           3.0,
+		CostPer1MInCached:     3.75,
+		CostPer1MOutCached:    0.30,
+		CostPer1MOut:          15.0,
+		ContextWindow:         1000000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	Claude5Fable: {
+		ID:                    Claude5Fable,
+		Name:                  "Claude Fable 5",
+		Provider:              ProviderAnthropic,
+		APIModel:              "claude-fable-5",
+		CostPer1MIn:           10.0,
+		CostPer1MInCached:     12.5,
+		CostPer1MOutCached:    1.0,
+		CostPer1MOut:          50.0,
 		ContextWindow:         1000000,
 		DefaultMaxTokens:      128000,
 		CanReason:             true,
