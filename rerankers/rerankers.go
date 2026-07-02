@@ -25,12 +25,68 @@
 package rerankers
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tracing"
 )
+
+// PostJSON sends reqBody as JSON to url with bearer authentication and decodes
+// a 200 response into out. It is the shared HTTP transport for vendor Reranker
+// implementations, which differ only in their request/response shapes.
+func PostJSON(
+	ctx context.Context,
+	httpClient *http.Client,
+	url, apiKey string,
+	reqBody, out any,
+) error {
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return fmt.Errorf("failed to marshal reranker request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		url,
+		bytes.NewReader(jsonBody),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create reranker request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to make reranker request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read reranker response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf(
+			"reranker API request failed with status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
+	}
+
+	if err := json.Unmarshal(body, out); err != nil {
+		return fmt.Errorf("failed to unmarshal reranker response: %w", err)
+	}
+	return nil
+}
 
 // RerankerUsage tracks the resource consumption for reranking operations.
 type RerankerUsage struct {
