@@ -3,8 +3,8 @@ module github.com/joakimcarlsson/ai/embeddings/berget
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/embeddings v0.2.1
-	github.com/joakimcarlsson/ai/embeddings/openai v0.1.2
+	github.com/joakimcarlsson/ai/embeddings v0.2.2
+	github.com/joakimcarlsson/ai/embeddings/openai v0.1.3
 )
 
 require (

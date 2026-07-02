@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/joakimcarlsson/ai/agent v0.3.3
-	github.com/joakimcarlsson/ai/fim v0.1.1
+	github.com/joakimcarlsson/ai/fim v0.2.0
 	github.com/joakimcarlsson/ai/llm v0.4.1
 	github.com/joakimcarlsson/ai/memory v0.2.2
 	github.com/joakimcarlsson/ai/message v0.2.0

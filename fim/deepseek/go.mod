@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/fim/deepseek
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/fim v0.1.1
+	github.com/joakimcarlsson/ai/fim v0.2.0
 	github.com/joakimcarlsson/ai/model v0.5.0
 )
 

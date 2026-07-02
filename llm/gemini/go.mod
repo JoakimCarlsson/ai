@@ -4,8 +4,8 @@ go 1.25.8
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/joakimcarlsson/ai/llm v0.4.1
-	github.com/joakimcarlsson/ai/message v0.2.0
+	github.com/joakimcarlsson/ai/llm v0.4.2
+	github.com/joakimcarlsson/ai/message v0.3.0
 	github.com/joakimcarlsson/ai/model v0.5.0
 	github.com/joakimcarlsson/ai/schema v0.2.0
 	github.com/joakimcarlsson/ai/tool v0.1.2
