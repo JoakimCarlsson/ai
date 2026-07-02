@@ -38,34 +38,6 @@ msg.AddImageURL("https://example.com/after.jpg", "")
 response, err := client.SendMessages(ctx, []message.Message{msg}, nil)
 ```
 
-## MultiModalMessage
-
-For full control, build messages with the `MultiModalMessage` type directly:
-
-```go
-msg := message.NewUserMultiModalMessage([]message.MultiModalContent{
-    message.NewTextContent("What's in this image?"),
-    message.NewImageURLContent("https://example.com/photo.jpg", "high"),
-})
-
-// Or with attachments
-msg := message.NewUserMultiModalMessageWithAttachments(
-    "Describe these files.",
-    []message.Attachment{
-        {MIMEType: "image/png", Data: pngData},
-        {MIMEType: "image/jpeg", Data: jpegData},
-    },
-)
-```
-
-## Content Types
-
-| Type | Constructor | Description |
-|------|-------------|-------------|
-| `text` | `NewTextContent(text)` | Text content |
-| `image_url` | `NewImageURLContent(url, detail)` | Image from URL |
-| `binary` | `NewBinaryContent(mimeType, data)` | Raw binary data (base64-encoded for the provider) |
-
 ## Supported Formats
 
 Most providers accept JPEG, PNG, GIF, and WebP. Check your provider's documentation for size limits.

@@ -2,14 +2,10 @@
 package mistral
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/joakimcarlsson/ai/fim"
@@ -229,33 +225,14 @@ func (c *Client) Complete(
 	ctx context.Context,
 	req fim.Request,
 ) (*fim.Response, error) {
-	body, err := json.Marshal(c.buildRequest(req, false))
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	httpReq, err := http.NewRequestWithContext(
-		ctx, http.MethodPost, defaultBaseURL, bytes.NewReader(body),
+	resp, err := fim.Post(
+		ctx, c.httpClient, defaultBaseURL, c.options.apiKey, "mistral",
+		c.buildRequest(req, false), false,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+c.options.apiKey)
-
-	resp, err := c.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
+		return nil, err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf(
-			"mistral fim api error (status %d): %s",
-			resp.StatusCode, string(bodyBytes),
-		)
-	}
 
 	var fimResp response
 	if err := json.NewDecoder(resp.Body).Decode(&fimResp); err != nil {
@@ -286,106 +263,37 @@ func (c *Client) CompleteStream(
 	go func() {
 		defer close(eventChan)
 
-		body, err := json.Marshal(c.buildRequest(req, true))
-		if err != nil {
-			eventChan <- fim.Event{Type: fim.EventError, Error: fmt.Errorf("failed to marshal request: %w", err)}
-			return
-		}
-
-		httpReq, err := http.NewRequestWithContext(
-			ctx, http.MethodPost, defaultBaseURL, bytes.NewReader(body),
+		resp, err := fim.Post(
+			ctx, c.httpClient, defaultBaseURL, c.options.apiKey, "mistral",
+			c.buildRequest(req, true), true,
 		)
 		if err != nil {
-			eventChan <- fim.Event{Type: fim.EventError, Error: fmt.Errorf("failed to create request: %w", err)}
-			return
-		}
-		httpReq.Header.Set("Content-Type", "application/json")
-		httpReq.Header.Set("Authorization", "Bearer "+c.options.apiKey)
-		httpReq.Header.Set("Accept", "text/event-stream")
-
-		resp, err := c.httpClient.Do(httpReq)
-		if err != nil {
-			eventChan <- fim.Event{Type: fim.EventError, Error: fmt.Errorf("failed to send request: %w", err)}
+			eventChan <- fim.Event{Type: fim.EventError, Error: err}
 			return
 		}
 		defer resp.Body.Close()
 
-		if resp.StatusCode != http.StatusOK {
-			bodyBytes, _ := io.ReadAll(resp.Body)
-			eventChan <- fim.Event{Type: fim.EventError, Error: fmt.Errorf("mistral fim api error (status %d): %s", resp.StatusCode, string(bodyBytes))}
-			return
-		}
-
-		reader := bufio.NewReader(resp.Body)
-		var currentContent strings.Builder
-		var finalUsage fim.Usage
-		var finalFinishReason fim.FinishReason
-
-		for {
-			line, err := reader.ReadBytes('\n')
-			if err != nil {
-				if err == io.EOF {
-					eventChan <- fim.Event{
-						Type: fim.EventComplete,
-						Response: &fim.Response{
-							Content:      currentContent.String(),
-							Usage:        finalUsage,
-							FinishReason: finalFinishReason,
-						},
-					}
-					return
-				}
-				eventChan <- fim.Event{Type: fim.EventError, Error: fmt.Errorf("error reading stream: %w", err)}
-				return
-			}
-
-			line = bytes.TrimSpace(line)
-			if len(line) == 0 {
-				continue
-			}
-
-			if !bytes.HasPrefix(line, []byte("data: ")) {
-				continue
-			}
-
-			data := bytes.TrimPrefix(line, []byte("data: "))
-			if bytes.Equal(data, []byte("[DONE]")) {
-				eventChan <- fim.Event{
-					Type: fim.EventComplete,
-					Response: &fim.Response{
-						Content:      currentContent.String(),
-						Usage:        finalUsage,
-						FinishReason: finalFinishReason,
-					},
-				}
-				return
-			}
-
+		fim.StreamSSE(resp.Body, func(data []byte) (fim.StreamChunk, bool) {
 			var sr streamResponse
 			if err := json.Unmarshal(data, &sr); err != nil {
-				continue
+				return fim.StreamChunk{}, false
 			}
-
+			var chunk fim.StreamChunk
 			for _, ch := range sr.Choices {
-				if ch.Delta.Content != "" {
-					currentContent.WriteString(ch.Delta.Content)
-					eventChan <- fim.Event{
-						Type:    fim.EventContentDelta,
-						Content: ch.Delta.Content,
-					}
-				}
+				chunk.Delta += ch.Delta.Content
 				if ch.FinishReason != nil {
-					finalFinishReason = mapFinishReason(*ch.FinishReason)
+					fr := mapFinishReason(*ch.FinishReason)
+					chunk.FinishReason = &fr
 				}
 			}
-
 			if sr.Usage != nil {
-				finalUsage = fim.Usage{
+				chunk.Usage = &fim.Usage{
 					InputTokens:  sr.Usage.PromptTokens,
 					OutputTokens: sr.Usage.CompletionTokens,
 				}
 			}
-		}
+			return chunk, true
+		}, eventChan)
 	}()
 
 	return eventChan

@@ -509,29 +509,3 @@ func TestJSON_PreservesCreatedAt(t *testing.T) {
 		)
 	}
 }
-
-func TestSource_String(t *testing.T) {
-	s := message.Source{Type: "api", ID: "123"}
-	if s.String() != "api:123" {
-		t.Errorf("expected 'api:123', got %q", s.String())
-	}
-
-	s2 := message.Source{Type: "api"}
-	if s2.String() != "api" {
-		t.Errorf("expected 'api', got %q", s2.String())
-	}
-}
-
-func TestNewSource_GeneratesID(t *testing.T) {
-	s := message.NewSource("test", "")
-	if s.ID == "" {
-		t.Error("expected generated ID")
-	}
-}
-
-func TestNewSource_UsesProvidedID(t *testing.T) {
-	s := message.NewSource("test", "custom")
-	if s.ID != "custom" {
-		t.Errorf("expected 'custom', got %q", s.ID)
-	}
-}

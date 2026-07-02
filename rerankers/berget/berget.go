@@ -8,11 +8,7 @@
 package berget
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
 	"time"
 
@@ -148,45 +144,16 @@ func (c *Client) Rerank(
 		ReturnDocuments: c.options.returnDocs,
 	}
 
-	jsonBody, err := json.Marshal(reqBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal reranker request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(
-		ctx,
-		"POST",
-		c.baseURL+"/rerank",
-		bytes.NewBuffer(jsonBody),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create reranker request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.options.apiKey)
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make reranker request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read reranker response body: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(
-			"reranker API request failed with status %d: %s",
-			resp.StatusCode,
-			string(body),
-		)
-	}
-
 	var bergetResp response
-	if err := json.Unmarshal(body, &bergetResp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal reranker response: %w", err)
+	if err := rerankers.PostJSON(
+		ctx,
+		c.httpClient,
+		c.baseURL+"/rerank",
+		c.options.apiKey,
+		reqBody,
+		&bergetResp,
+	); err != nil {
+		return nil, err
 	}
 
 	results := make([]rerankers.RerankerResult, len(bergetResp.Results))

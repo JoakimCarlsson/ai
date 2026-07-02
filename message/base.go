@@ -13,7 +13,6 @@ package message
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/joakimcarlsson/ai/model"
@@ -267,11 +266,6 @@ func (m *Message) AppendContent(delta string) {
 	}
 }
 
-// AppendReasoningContent adds reasoning text content to the message.
-// This is currently a placeholder for future reasoning content support.
-func (m *Message) AppendReasoningContent(_ string) {
-}
-
 // SetToolCalls replaces all message parts with the provided tool calls.
 func (m *Message) SetToolCalls(tc []ToolCall) {
 	m.Parts = []ContentPart{}
@@ -298,11 +292,6 @@ func (m *Message) SetToolResults(tr []ToolResult) {
 	for _, result := range tr {
 		m.Parts = append(m.Parts, result)
 	}
-}
-
-// AddFinish adds a finish reason to the message.
-// This is currently a placeholder for future finish reason support.
-func (m *Message) AddFinish(_ FinishReason) {
 }
 
 // AddImageURL adds an image URL content part to the message.
@@ -414,120 +403,4 @@ func (m *Message) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
-}
-
-// BaseMessage defines the interface for advanced message implementations
-// with metadata, source tracking, and extended functionality.
-type BaseMessage interface {
-	// GetSource returns the source identifier for this message.
-	GetSource() string
-	// GetCreatedAt returns the creation timestamp of the message.
-	GetCreatedAt() time.Time
-	// GetContent returns the message content as a generic interface.
-	GetContent() interface{}
-	// GetMetadata returns the metadata map for this message.
-	GetMetadata() map[string]interface{}
-	// SetMetadata sets a metadata key-value pair for this message.
-	SetMetadata(key string, value interface{})
-	// GetRole returns the role of the message sender.
-	GetRole() Role
-	// GetModel returns the model ID associated with this message.
-	GetModel() model.ID
-	// SetModel sets the model ID for this message.
-	SetModel(modelID model.ID)
-}
-
-// Source identifies where a message came from using a category string and optional instance ID.
-type Source struct {
-	// Type indicates the category or provider of the message source.
-	Type string `json:"type"`
-	// ID is a unique identifier within the source type.
-	ID string `json:"id"`
-}
-
-// String returns a string representation of the message source.
-func (ms Source) String() string {
-	if ms.ID != "" {
-		return ms.Type + ":" + ms.ID
-	}
-	return ms.Type
-}
-
-// generateMessageID creates a unique message identifier based on the current timestamp.
-func generateMessageID() string {
-	return fmt.Sprintf("%d", time.Now().UnixNano())
-}
-
-// NewSource creates a message source with type and ID, generating ID if empty.
-func NewSource(sourceType, id string) Source {
-	if id == "" {
-		id = generateMessageID()
-	}
-	return Source{Type: sourceType, ID: id}
-}
-
-// baseMessage provides a concrete implementation of the BaseMessage interface
-// with source tracking, metadata, and timestamps.
-type baseMessage struct {
-	// Source identifies where this message originated.
-	Source Source `json:"source"`
-	// CreatedAt is the timestamp when this message was created.
-	CreatedAt time.Time `json:"created_at"`
-	// Metadata contains additional key-value data associated with the message.
-	Metadata map[string]interface{} `json:"metadata"`
-	// Role indicates the sender's role in the conversation.
-	Role Role `json:"role"`
-	// Model specifies which AI model is associated with this message.
-	Model model.ID `json:"model"`
-}
-
-// GetSource returns the string representation of the message source.
-func (bm *baseMessage) GetSource() string {
-	return bm.Source.String()
-}
-
-// GetCreatedAt returns the creation timestamp of the message.
-func (bm *baseMessage) GetCreatedAt() time.Time {
-	return bm.CreatedAt
-}
-
-// GetMetadata returns the metadata map, initializing it if necessary.
-func (bm *baseMessage) GetMetadata() map[string]interface{} {
-	if bm.Metadata == nil {
-		bm.Metadata = make(map[string]interface{})
-	}
-	return bm.Metadata
-}
-
-// SetMetadata sets a metadata key-value pair, initializing the map if necessary.
-func (bm *baseMessage) SetMetadata(key string, value interface{}) {
-	if bm.Metadata == nil {
-		bm.Metadata = make(map[string]interface{})
-	}
-	bm.Metadata[key] = value
-}
-
-// GetRole returns the role of the message sender.
-func (bm *baseMessage) GetRole() Role {
-	return bm.Role
-}
-
-// GetModel returns the model ID associated with this message.
-func (bm *baseMessage) GetModel() model.ID {
-	return bm.Model
-}
-
-// SetModel sets the model ID for this message.
-func (bm *baseMessage) SetModel(modelID model.ID) {
-	bm.Model = modelID
-}
-
-// newBaseMessage creates a new base message with the specified source and role.
-func newBaseMessage(source Source, role Role) baseMessage {
-	return baseMessage{
-		Source:    source,
-		CreatedAt: time.Now(),
-		Metadata:  make(map[string]interface{}),
-		Role:      role,
-	}
 }
