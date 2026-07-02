@@ -27,6 +27,7 @@ package batch
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	"github.com/joakimcarlsson/ai/embeddings"
 	"github.com/joakimcarlsson/ai/llm"
@@ -116,7 +117,7 @@ type Event struct {
 func AssignIDs(requests []Request) {
 	for i := range requests {
 		if requests[i].ID == "" {
-			requests[i].ID = "req_" + itoa(i)
+			requests[i].ID = "req_" + strconv.Itoa(i)
 		}
 	}
 }
@@ -134,27 +135,4 @@ func SplitByType(requests []Request) (chat, embed []Request) {
 		}
 	}
 	return
-}
-
-// itoa is a tiny std-lib-free integer-to-string for AssignIDs.
-func itoa(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	neg := n < 0
-	if neg {
-		n = -n
-	}
-	var buf [20]byte
-	pos := len(buf)
-	for n > 0 {
-		pos--
-		buf[pos] = byte('0' + n%10)
-		n /= 10
-	}
-	if neg {
-		pos--
-		buf[pos] = '-'
-	}
-	return string(buf[pos:])
 }

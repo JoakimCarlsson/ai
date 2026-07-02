@@ -70,10 +70,7 @@ for event := range stream {
 imageData, _ := os.ReadFile("image.png")
 
 msg := message.NewUserMessage("What's in this image?")
-msg.AddAttachment(message.Attachment{
-    MIMEType: "image/png",
-    Data:     imageData,
-})
+msg.AddBinary("image/png", imageData)
 
 response, err := client.SendMessages(ctx, []message.Message{msg}, nil)
 ```
