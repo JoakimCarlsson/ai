@@ -9,9 +9,9 @@ import (
 
 	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tts"
-	openaisdk "github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
-	"github.com/openai/openai-go/packages/param"
+	openaisdk "github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
+	"github.com/openai/openai-go/v3/packages/param"
 )
 
 // Options configures the OpenAI TTS client.
@@ -132,7 +132,7 @@ func (c *Client) GenerateAudio(
 	params := openaisdk.AudioSpeechNewParams{
 		Input: text,
 		Model: openaisdk.SpeechModel(c.options.model.APIModel),
-		Voice: openaisdk.AudioSpeechNewParamsVoice(voice),
+		Voice: openaisdk.AudioSpeechNewParamsVoiceUnion{OfString: param.NewOpt(voice)},
 	}
 
 	outputFormat := c.options.outputFormat

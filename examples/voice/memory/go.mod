@@ -34,7 +34,6 @@ require (
 	github.com/joakimcarlsson/ai/tts v0.2.0 // indirect
 	github.com/joakimcarlsson/ai/types v0.1.0 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.6.1 // indirect
-	github.com/openai/openai-go v1.12.0 // indirect
 	github.com/openai/openai-go/v3 v3.41.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect

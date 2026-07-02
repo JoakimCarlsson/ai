@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/joakimcarlsson/ai/image v0.1.0
 	github.com/joakimcarlsson/ai/model v0.1.0
-	github.com/openai/openai-go v1.12.0
+	github.com/openai/openai-go/v3 v3.41.0
 )
 
 require (
