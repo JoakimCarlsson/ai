@@ -3,8 +3,8 @@ module github.com/joakimcarlsson/ai/tokens/truncate
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/message v0.2.0
-	github.com/joakimcarlsson/ai/tokens v0.2.1
+	github.com/joakimcarlsson/ai/message v0.3.0
+	github.com/joakimcarlsson/ai/tokens v0.2.2
 )
 
 require (

@@ -4,9 +4,9 @@ go 1.25.0
 
 require (
 	github.com/anthropics/anthropic-sdk-go v1.51.0
-	github.com/joakimcarlsson/ai/batch v0.1.2
-	github.com/joakimcarlsson/ai/llm v0.4.1
-	github.com/joakimcarlsson/ai/message v0.2.0
+	github.com/joakimcarlsson/ai/batch v0.1.3
+	github.com/joakimcarlsson/ai/llm v0.4.2
+	github.com/joakimcarlsson/ai/message v0.3.0
 	github.com/joakimcarlsson/ai/model v0.5.0
 	github.com/joakimcarlsson/ai/tool v0.1.2
 )
@@ -22,7 +22,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
 	github.com/invopop/jsonschema v0.14.0 // indirect
-	github.com/joakimcarlsson/ai/embeddings v0.2.1 // indirect
+	github.com/joakimcarlsson/ai/embeddings v0.2.2 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.0 // indirect
 	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
 	github.com/joakimcarlsson/ai/types v0.1.0 // indirect

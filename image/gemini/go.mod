@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/image/gemini
 go 1.25.8
 
 require (
-	github.com/joakimcarlsson/ai/image v0.1.1
+	github.com/joakimcarlsson/ai/image v0.1.2
 	github.com/joakimcarlsson/ai/model v0.5.0
 	google.golang.org/genai v1.61.0
 )

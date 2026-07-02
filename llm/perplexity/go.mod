@@ -3,9 +3,9 @@ module github.com/joakimcarlsson/ai/llm/perplexity
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/llm v0.4.1
-	github.com/joakimcarlsson/ai/llm/openai v0.4.2
-	github.com/joakimcarlsson/ai/message v0.2.0
+	github.com/joakimcarlsson/ai/llm v0.4.2
+	github.com/joakimcarlsson/ai/llm/openai v0.4.3
+	github.com/joakimcarlsson/ai/message v0.3.0
 	github.com/joakimcarlsson/ai/model v0.5.0
 )
 
