@@ -18,8 +18,8 @@ import (
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tool"
-	openaisdk "github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
+	openaisdk "github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
 )
 
 // Options configures the OpenAI batch processor.

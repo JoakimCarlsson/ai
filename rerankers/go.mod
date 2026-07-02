@@ -3,8 +3,8 @@ module github.com/joakimcarlsson/ai/rerankers
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/model v0.1.0
-	github.com/joakimcarlsson/ai/tracing v0.1.0
+	github.com/joakimcarlsson/ai/model v0.5.0
+	github.com/joakimcarlsson/ai/tracing v0.1.1
 )
 
 require (

@@ -9,8 +9,8 @@ import (
 
 	"github.com/joakimcarlsson/ai/image"
 	"github.com/joakimcarlsson/ai/model"
-	openaisdk "github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
+	openaisdk "github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
 )
 
 // Size enumerates the image-dimension presets accepted by gpt-image-1.5 and

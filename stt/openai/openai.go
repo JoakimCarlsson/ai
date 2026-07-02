@@ -12,8 +12,8 @@ import (
 
 	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/stt"
-	openaisdk "github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
+	openaisdk "github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
 )
 
 // Options configures the OpenAI speech-to-text client.
@@ -261,7 +261,7 @@ type verboseTranscription struct {
 }
 
 func (c *Client) convertResponse(
-	response *openaisdk.Transcription,
+	response *openaisdk.AudioTranscriptionNewResponseUnion,
 ) *stt.Response {
 	result := &stt.Response{
 		Text:  response.Text,
