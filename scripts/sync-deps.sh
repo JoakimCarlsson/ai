@@ -74,6 +74,7 @@ while IFS= read -r mod; do
 		want="$(latest_version "$dep_dir")"
 		[[ -z "$want" ]] && continue      # dep not tagged yet; nothing to sync to
 		[[ "$have" == "$want" ]] && continue
+		[[ "$(printf '%s\n%s\n' "$have" "$want" | sort -V | tail -n1)" == "$have" ]] && continue
 		drift=$((drift + 1))
 		echo "DRIFT  $mod: $path  $have -> $want"
 		if [[ "$check_only" == false ]]; then
