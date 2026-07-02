@@ -170,6 +170,17 @@ jobs:
           done
           [ "$fails" -eq 0 ] || exit 1
 
+  deps-drift:
+    name: Intra-repo version drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check require lines match latest module tags
+        run: scripts/sync-deps.sh --check
+
   release-tag:
     name: Validate release tag
     runs-on: ubuntu-latest

@@ -2,9 +2,9 @@ module github.com/joakimcarlsson/ai/session
 
 go 1.25.0
 
-require github.com/joakimcarlsson/ai/message v0.1.0
+require github.com/joakimcarlsson/ai/message v0.2.0
 
-require github.com/joakimcarlsson/ai/model v0.1.0 // indirect
+require github.com/joakimcarlsson/ai/model v0.5.0 // indirect
 
 replace (
 	github.com/joakimcarlsson/ai/message => ../message

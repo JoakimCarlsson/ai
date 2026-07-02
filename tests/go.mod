@@ -3,21 +3,21 @@ module github.com/joakimcarlsson/ai/tests
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/agent v0.1.0
-	github.com/joakimcarlsson/ai/fim v0.1.0
-	github.com/joakimcarlsson/ai/llm v0.3.0
-	github.com/joakimcarlsson/ai/memory v0.1.0
-	github.com/joakimcarlsson/ai/message v0.1.0
-	github.com/joakimcarlsson/ai/model v0.1.0
+	github.com/joakimcarlsson/ai/agent v0.3.3
+	github.com/joakimcarlsson/ai/fim v0.1.1
+	github.com/joakimcarlsson/ai/llm v0.4.1
+	github.com/joakimcarlsson/ai/memory v0.2.2
+	github.com/joakimcarlsson/ai/message v0.2.0
+	github.com/joakimcarlsson/ai/model v0.5.0
 	github.com/joakimcarlsson/ai/prompt v0.1.0
-	github.com/joakimcarlsson/ai/schema v0.1.0
+	github.com/joakimcarlsson/ai/schema v0.2.0
 	github.com/joakimcarlsson/ai/session v0.1.0
-	github.com/joakimcarlsson/ai/stt v0.1.0
-	github.com/joakimcarlsson/ai/tokens v0.2.0
-	github.com/joakimcarlsson/ai/tokens/summarize v0.1.2
-	github.com/joakimcarlsson/ai/tool v0.1.1
-	github.com/joakimcarlsson/ai/tracing v0.1.0
-	github.com/joakimcarlsson/ai/tts v0.2.0
+	github.com/joakimcarlsson/ai/stt v0.2.1
+	github.com/joakimcarlsson/ai/tokens v0.2.1
+	github.com/joakimcarlsson/ai/tokens/summarize v0.1.3
+	github.com/joakimcarlsson/ai/tool v0.1.2
+	github.com/joakimcarlsson/ai/tracing v0.1.1
+	github.com/joakimcarlsson/ai/tts v0.2.1
 	github.com/joakimcarlsson/ai/types v0.1.0
 	github.com/joakimcarlsson/ai/voice v0.0.0-00010101000000-000000000000
 	go.opentelemetry.io/otel v1.44.0
@@ -35,7 +35,7 @@ require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
-	github.com/joakimcarlsson/ai/embeddings v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/embeddings v0.2.1 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.6.1 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
