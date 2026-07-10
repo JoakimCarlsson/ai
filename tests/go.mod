@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/tests
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/agent v0.3.4
+	github.com/joakimcarlsson/ai/agent v0.3.5
 	github.com/joakimcarlsson/ai/fim v0.2.1
 	github.com/joakimcarlsson/ai/llm v0.4.3
 	github.com/joakimcarlsson/ai/memory v0.2.4
