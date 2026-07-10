@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.25
 	github.com/aws/aws-sdk-go-v2/service/bedrockruntime v1.54.0
-	github.com/joakimcarlsson/ai/embeddings v0.2.2
+	github.com/joakimcarlsson/ai/embeddings v0.2.3
 	github.com/joakimcarlsson/ai/model v0.6.0
 )
 

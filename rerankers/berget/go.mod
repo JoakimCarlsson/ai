@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/joakimcarlsson/ai/model v0.6.0
-	github.com/joakimcarlsson/ai/rerankers v0.2.0
+	github.com/joakimcarlsson/ai/rerankers v0.2.1
 )
 
 require (

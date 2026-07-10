@@ -6,7 +6,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.0
 	github.com/joakimcarlsson/ai/llm v0.4.2
 	github.com/joakimcarlsson/ai/llm/openai v0.4.3
-	github.com/joakimcarlsson/ai/message v0.3.0
+	github.com/joakimcarlsson/ai/message v0.3.1
 	github.com/joakimcarlsson/ai/model v0.6.0
 	github.com/openai/openai-go/v3 v3.41.0
 )

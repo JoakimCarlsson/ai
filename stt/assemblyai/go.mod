@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/joakimcarlsson/ai/model v0.6.0
-	github.com/joakimcarlsson/ai/stt v0.2.2
+	github.com/joakimcarlsson/ai/stt v0.2.3
 )
 
 require (
