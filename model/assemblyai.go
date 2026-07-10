@@ -30,7 +30,7 @@ var AssemblyAITranscriptionModels = map[ID]TranscriptionModel{
 		Name:          "AssemblyAI Best",
 		Provider:      ProviderAssemblyAI,
 		APIModel:      "best",
-		CostPer1MIn:   0.0062,
+		CostPer1MIn:   0.0035,
 		MaxFileSizeMB: 5000,
 		SupportedFormats: []string{
 			"mp3", "mp4", "wav", "flac",
@@ -50,7 +50,7 @@ var AssemblyAITranscriptionModels = map[ID]TranscriptionModel{
 		Name:          "AssemblyAI Nano",
 		Provider:      ProviderAssemblyAI,
 		APIModel:      "nano",
-		CostPer1MIn:   0.0020,
+		CostPer1MIn:   0.0025,
 		MaxFileSizeMB: 5000,
 		SupportedFormats: []string{
 			"mp3", "mp4", "wav", "flac",

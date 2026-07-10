@@ -43,8 +43,7 @@ const (
 	Imagen4Fast  ID = "imagen-4.0-fast"
 
 	// imbeddings
-	GeminiTextEmbedding004 ID = "text-embedding-004"
-	GeminiEmbedding2       ID = "gemini-embedding-2"
+	GeminiEmbedding2 ID = "gemini-embedding-2"
 
 	// NanoBanana2 is an alias for Gemini31FlashImagePreview
 	NanoBanana2 ID = Gemini31FlashImagePreview
@@ -481,17 +480,6 @@ var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 
 // GeminiEmbeddingModels maps Gemini embedding model IDs to their configurations.
 var GeminiEmbeddingModels = map[ID]EmbeddingModel{
-	GeminiTextEmbedding004: {
-		ID:                  GeminiTextEmbedding004,
-		Name:                "Gemini Text Embedding 004",
-		Provider:            ProviderGemini,
-		APIModel:            "text-embedding-004",
-		CostPer1MTokens:     0.15,
-		MaxInputTokens:      2048,
-		EmbeddingDims:       768,
-		SupportedDimensions: []int{768, 512, 256},
-		MaxBatchSize:        100,
-	},
 	GeminiEmbedding2: {
 		ID:              GeminiEmbedding2,
 		Name:            "Gemini Embedding 2",

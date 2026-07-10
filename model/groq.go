@@ -4,36 +4,16 @@ package model
 const (
 	ProviderGROQ Provider = "groq"
 
-	QWENQwq ID = "qwen-qwq"
-
-	Llama4Scout               ID = "meta-llama/llama-4-scout-17b-16e-instruct"
-	Llama4Maverick            ID = "meta-llama/llama-4-maverick-17b-128e-instruct"
-	Llama3_3_70BVersatile     ID = "llama-3.3-70b-versatile"
-	DeepseekR1DistillLlama70b ID = "deepseek-r1-distill-llama-70b"
-	GPTOss120B                ID = "openai/gpt-oss-120b"
-	GPTOss20B                 ID = "openai/gpt-oss-20b"
-	Qwen3_32BGroq             ID = "qwen/qwen3-32b"
-	KimiK2                    ID = "moonshotai/kimi-k2-instruct-0905"
+	Llama4Scout           ID = "meta-llama/llama-4-scout-17b-16e-instruct"
+	Llama3_3_70BVersatile ID = "llama-3.3-70b-versatile"
+	GPTOss120B            ID = "openai/gpt-oss-120b"
+	GPTOss20B             ID = "openai/gpt-oss-20b"
+	Qwen3_32BGroq         ID = "qwen/qwen3-32b"
+	KimiK2                ID = "moonshotai/kimi-k2-instruct-0905"
 )
 
 // GroqModels maps Groq model IDs to their configurations.
 var GroqModels = map[ID]Model{
-	QWENQwq: {
-		ID:                    QWENQwq,
-		Name:                  "Qwen Qwq",
-		Provider:              ProviderGROQ,
-		APIModel:              "qwen-qwq-32b",
-		CostPer1MIn:           0.29,
-		CostPer1MInCached:     0.275,
-		CostPer1MOutCached:    0.0,
-		CostPer1MOut:          0.39,
-		ContextWindow:         128_000,
-		DefaultMaxTokens:      50000,
-		CanReason:             false,
-		SupportsAttachments:   false,
-		SupportsStructuredOut: false,
-	},
-
 	Llama4Scout: {
 		ID:                    Llama4Scout,
 		Name:                  "Llama4Scout",
@@ -43,20 +23,6 @@ var GroqModels = map[ID]Model{
 		CostPer1MInCached:     0,
 		CostPer1MOutCached:    0,
 		CostPer1MOut:          0.34,
-		ContextWindow:         128_000,
-		SupportsAttachments:   true,
-		SupportsStructuredOut: true,
-	},
-
-	Llama4Maverick: {
-		ID:                    Llama4Maverick,
-		Name:                  "Llama4Maverick",
-		Provider:              ProviderGROQ,
-		APIModel:              "meta-llama/llama-4-maverick-17b-128e-instruct",
-		CostPer1MIn:           0.20,
-		CostPer1MInCached:     0,
-		CostPer1MOutCached:    0,
-		CostPer1MOut:          0.20,
 		ContextWindow:         128_000,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
@@ -76,20 +42,6 @@ var GroqModels = map[ID]Model{
 		SupportsStructuredOut: false,
 	},
 
-	DeepseekR1DistillLlama70b: {
-		ID:                    DeepseekR1DistillLlama70b,
-		Name:                  "DeepseekR1DistillLlama70b",
-		Provider:              ProviderGROQ,
-		APIModel:              "deepseek-r1-distill-llama-70b",
-		CostPer1MIn:           0.75,
-		CostPer1MInCached:     0,
-		CostPer1MOutCached:    0,
-		CostPer1MOut:          0.99,
-		ContextWindow:         128_000,
-		CanReason:             true,
-		SupportsAttachments:   false,
-		SupportsStructuredOut: false,
-	},
 	GPTOss120B: {
 		ID:                    GPTOss120B,
 		Name:                  "GPT-OSS 120B",

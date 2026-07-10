@@ -178,7 +178,12 @@ func TestParseDataURI(t *testing.T) {
 func TestGenerateMultimodalEmbeddings_WrongModel(t *testing.T) {
 	c := &Client{
 		options: Options{
-			model: model.GeminiEmbeddingModels[model.GeminiTextEmbedding004],
+			model: model.EmbeddingModel{
+				ID:       "text-embedding-004",
+				Name:     "Gemini Text Embedding 004",
+				Provider: model.ProviderGemini,
+				APIModel: "text-embedding-004",
+			},
 		},
 	}
 	_, err := c.GenerateMultimodalEmbeddings(context.Background(), nil)
