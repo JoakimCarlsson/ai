@@ -4,10 +4,7 @@ package model
 const (
 	ProviderAnthropic Provider = "anthropic"
 
-	Claude35Sonnet ID = "claude-3.5-sonnet"
 	Claude3Haiku   ID = "claude-3-haiku"
-	Claude35Haiku  ID = "claude-3.5-haiku"
-	Claude3Opus    ID = "claude-3-opus"
 	Claude4Opus    ID = "claude-4-opus"
 	Claude41Opus   ID = "claude-4.1-opus"
 	Claude4Sonnet  ID = "claude-4-sonnet"
@@ -24,20 +21,6 @@ const (
 
 // AnthropicModels maps Anthropic model IDs to their configurations.
 var AnthropicModels = map[ID]Model{
-	Claude35Sonnet: {
-		ID:                    Claude35Sonnet,
-		Name:                  "Claude 3.5 Sonnet",
-		Provider:              ProviderAnthropic,
-		APIModel:              "claude-3-5-sonnet-latest",
-		CostPer1MIn:           3.0,
-		CostPer1MInCached:     3.75,
-		CostPer1MOutCached:    0.30,
-		CostPer1MOut:          15.0,
-		ContextWindow:         200000,
-		DefaultMaxTokens:      5000,
-		SupportsAttachments:   true,
-		SupportsStructuredOut: false,
-	},
 	Claude3Haiku: {
 		ID:                    Claude3Haiku,
 		Name:                  "Claude 3 Haiku",
@@ -47,34 +30,6 @@ var AnthropicModels = map[ID]Model{
 		CostPer1MInCached:     0.30,
 		CostPer1MOutCached:    0.03,
 		CostPer1MOut:          1.25,
-		ContextWindow:         200000,
-		DefaultMaxTokens:      4096,
-		SupportsAttachments:   true,
-		SupportsStructuredOut: false,
-	},
-	Claude35Haiku: {
-		ID:                    Claude35Haiku,
-		Name:                  "Claude 3.5 Haiku",
-		Provider:              ProviderAnthropic,
-		APIModel:              "claude-3-5-haiku-latest",
-		CostPer1MIn:           0.80,
-		CostPer1MInCached:     1.0,
-		CostPer1MOutCached:    0.08,
-		CostPer1MOut:          4.0,
-		ContextWindow:         200000,
-		DefaultMaxTokens:      4096,
-		SupportsAttachments:   true,
-		SupportsStructuredOut: false,
-	},
-	Claude3Opus: {
-		ID:                    Claude3Opus,
-		Name:                  "Claude 3 Opus",
-		Provider:              ProviderAnthropic,
-		APIModel:              "claude-3-opus-latest",
-		CostPer1MIn:           15.0,
-		CostPer1MInCached:     18.75,
-		CostPer1MOutCached:    1.50,
-		CostPer1MOut:          75.0,
 		ContextWindow:         200000,
 		DefaultMaxTokens:      4096,
 		SupportsAttachments:   true,

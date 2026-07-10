@@ -37,6 +37,9 @@ const (
 	GPT54Nano          ID = "gpt-5.4-nano"
 	GPT54Pro           ID = "gpt-5.4-pro"
 	GPT55              ID = "gpt-5.5"
+	GPT56Sol           ID = "gpt-5.6-sol"
+	GPT56Terra         ID = "gpt-5.6-terra"
+	GPT56Luna          ID = "gpt-5.6-luna"
 	GPT53ChatLatest    ID = "gpt-5.3-chat-latest"
 	O3DeepResearch     ID = "o3-deep-research"
 	O4MiniDeepResearch ID = "o4-mini-deep-research"
@@ -534,6 +537,51 @@ var OpenAIModels = map[ID]Model{
 		CostPer1MInCached:     0.50,
 		CostPer1MOutCached:    0.0,
 		CostPer1MOut:          30.00,
+		ContextWindow:         1_050_000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	GPT56Sol: {
+		ID:                    GPT56Sol,
+		Name:                  "GPT-5.6 Sol",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5.6-sol",
+		CostPer1MIn:           5.00,
+		CostPer1MInCached:     0.50,
+		CostPer1MOutCached:    0.0,
+		CostPer1MOut:          30.00,
+		ContextWindow:         1_050_000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	GPT56Terra: {
+		ID:                    GPT56Terra,
+		Name:                  "GPT-5.6 Terra",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5.6-terra",
+		CostPer1MIn:           2.50,
+		CostPer1MInCached:     0.25,
+		CostPer1MOutCached:    0.0,
+		CostPer1MOut:          15.00,
+		ContextWindow:         1_050_000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	GPT56Luna: {
+		ID:                    GPT56Luna,
+		Name:                  "GPT-5.6 Luna",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5.6-luna",
+		CostPer1MIn:           1.00,
+		CostPer1MInCached:     0.10,
+		CostPer1MOutCached:    0.0,
+		CostPer1MOut:          6.00,
 		ContextWindow:         1_050_000,
 		DefaultMaxTokens:      128000,
 		CanReason:             true,

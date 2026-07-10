@@ -11,7 +11,6 @@ const (
 	OpenRouterGPT4oMini         ID = "openrouter.gpt-4o-mini"
 	OpenRouterO1                ID = "openrouter.o1"
 	OpenRouterO1Pro             ID = "openrouter.o1-pro"
-	OpenRouterO1Mini            ID = "openrouter.o1-mini"
 	OpenRouterO3                ID = "openrouter.o3"
 	OpenRouterO3Pro             ID = "openrouter.o3-pro"
 	OpenRouterO3Mini            ID = "openrouter.o3-mini"
@@ -24,10 +23,7 @@ const (
 	OpenRouterGemini25Flash     ID = "openrouter.gemini-2.5-flash"
 	OpenRouterGemini25FlashLite ID = "openrouter.gemini-2.5-flash-lite"
 	OpenRouterGemini25          ID = "openrouter.gemini-2.5"
-	OpenRouterClaude35Sonnet    ID = "openrouter.claude-3.5-sonnet"
 	OpenRouterClaude3Haiku      ID = "openrouter.claude-3-haiku"
-	OpenRouterClaude35Haiku     ID = "openrouter.claude-3.5-haiku"
-	OpenRouterClaude3Opus       ID = "openrouter.claude-3-opus"
 	OpenRouterClaude45Opus      ID = "openrouter.claude-4.5-opus"
 	OpenRouterClaude46Opus      ID = "openrouter.claude-4.6-opus"
 	OpenRouterClaude46Sonnet    ID = "openrouter.claude-4.6-sonnet"
@@ -37,13 +33,8 @@ const (
 	OpenRouterGPT52Codex        ID = "openrouter.gpt-5.2-codex"
 	OpenRouterMistralLarge3     ID = "openrouter.mistral-large-3"
 	OpenRouterMistralMedium3    ID = "openrouter.mistral-medium-3"
-	OpenRouterMixtral8x7B       ID = "openrouter.mixtral-8x7b"
-	OpenRouterMistral7B         ID = "openrouter.mistral-7b"
-	OpenRouterMagistralMedium12 ID = "openrouter.magistral-medium-1.2"
-	OpenRouterMagistralSmall12  ID = "openrouter.magistral-small-1.2"
 	OpenRouterLlama4Maverick    ID = "openrouter.llama-4-maverick"
 	OpenRouterLlama4Scout       ID = "openrouter.llama-4-scout"
-	OpenRouterLlama31405B       ID = "openrouter.llama-3.1-405b"
 	OpenRouterLlama3170B        ID = "openrouter.llama-3.1-70b"
 	OpenRouterLlama318B         ID = "openrouter.llama-3.1-8b"
 	OpenRouterDeepSeekV32       ID = "openrouter.deepseek-v3.2"
@@ -57,11 +48,13 @@ const (
 	OpenRouterCommandR          ID = "openrouter.command-r"
 	OpenRouterSonar             ID = "openrouter.sonar"
 	OpenRouterSonarPro          ID = "openrouter.sonar-pro"
-	OpenRouterSonarReasoning    ID = "openrouter.sonar-reasoning"
 	OpenRouterSonarReasoningPro ID = "openrouter.sonar-reasoning-pro"
 	OpenRouterSonarDeepResearch ID = "openrouter.sonar-deep-research"
 	OpenRouterGPTOss20b         ID = "openrouter.gpt-oss-20b"
 	OpenRouterGPTOss120b        ID = "openrouter.gpt-oss-120b"
+	OpenRouterGrok45            ID = "openrouter.grok-4.5"
+	OpenRouterGrok43            ID = "openrouter.grok-4.3"
+	OpenRouterGemini35Flash     ID = "openrouter.gemini-3.5-flash"
 )
 
 // OpenRouterModels maps OpenRouter model IDs to their configurations.
@@ -157,20 +150,6 @@ var OpenRouterModels = map[ID]Model{
 		DefaultMaxTokens:      OpenAIModels[O1Pro].DefaultMaxTokens,
 		CanReason:             OpenAIModels[O1Pro].CanReason,
 		SupportsStructuredOut: OpenAIModels[O1Pro].SupportsStructuredOut,
-	},
-	OpenRouterO1Mini: {
-		ID:                    OpenRouterO1Mini,
-		Name:                  "OpenRouter – o1 mini",
-		Provider:              ProviderOpenRouter,
-		APIModel:              "openai/o1-mini",
-		CostPer1MIn:           OpenAIModels[O1Mini].CostPer1MIn,
-		CostPer1MInCached:     OpenAIModels[O1Mini].CostPer1MInCached,
-		CostPer1MOut:          OpenAIModels[O1Mini].CostPer1MOut,
-		CostPer1MOutCached:    OpenAIModels[O1Mini].CostPer1MOutCached,
-		ContextWindow:         OpenAIModels[O1Mini].ContextWindow,
-		DefaultMaxTokens:      OpenAIModels[O1Mini].DefaultMaxTokens,
-		CanReason:             OpenAIModels[O1Mini].CanReason,
-		SupportsStructuredOut: OpenAIModels[O1Mini].SupportsStructuredOut,
 	},
 	OpenRouterO3: {
 		ID:                    OpenRouterO3,
@@ -337,19 +316,6 @@ var OpenRouterModels = map[ID]Model{
 		DefaultMaxTokens:      GeminiModels[Gemini25FlashLite].DefaultMaxTokens,
 		SupportsStructuredOut: GeminiModels[Gemini25FlashLite].SupportsStructuredOut,
 	},
-	OpenRouterClaude35Sonnet: {
-		ID:                    OpenRouterClaude35Sonnet,
-		Name:                  "OpenRouter – Claude 3.5 Sonnet",
-		Provider:              ProviderOpenRouter,
-		APIModel:              "anthropic/claude-3.5-sonnet",
-		CostPer1MIn:           AnthropicModels[Claude35Sonnet].CostPer1MIn,
-		CostPer1MInCached:     AnthropicModels[Claude35Sonnet].CostPer1MInCached,
-		CostPer1MOut:          AnthropicModels[Claude35Sonnet].CostPer1MOut,
-		CostPer1MOutCached:    AnthropicModels[Claude35Sonnet].CostPer1MOutCached,
-		ContextWindow:         AnthropicModels[Claude35Sonnet].ContextWindow,
-		DefaultMaxTokens:      AnthropicModels[Claude35Sonnet].DefaultMaxTokens,
-		SupportsStructuredOut: false,
-	},
 	OpenRouterClaude3Haiku: {
 		ID:                    OpenRouterClaude3Haiku,
 		Name:                  "OpenRouter – Claude 3 Haiku",
@@ -361,32 +327,6 @@ var OpenRouterModels = map[ID]Model{
 		CostPer1MOutCached:    AnthropicModels[Claude3Haiku].CostPer1MOutCached,
 		ContextWindow:         AnthropicModels[Claude3Haiku].ContextWindow,
 		DefaultMaxTokens:      AnthropicModels[Claude3Haiku].DefaultMaxTokens,
-		SupportsStructuredOut: false,
-	},
-	OpenRouterClaude35Haiku: {
-		ID:                    OpenRouterClaude35Haiku,
-		Name:                  "OpenRouter – Claude 3.5 Haiku",
-		Provider:              ProviderOpenRouter,
-		APIModel:              "anthropic/claude-3.5-haiku",
-		CostPer1MIn:           AnthropicModels[Claude35Haiku].CostPer1MIn,
-		CostPer1MInCached:     AnthropicModels[Claude35Haiku].CostPer1MInCached,
-		CostPer1MOut:          AnthropicModels[Claude35Haiku].CostPer1MOut,
-		CostPer1MOutCached:    AnthropicModels[Claude35Haiku].CostPer1MOutCached,
-		ContextWindow:         AnthropicModels[Claude35Haiku].ContextWindow,
-		DefaultMaxTokens:      AnthropicModels[Claude35Haiku].DefaultMaxTokens,
-		SupportsStructuredOut: false,
-	},
-	OpenRouterClaude3Opus: {
-		ID:                    OpenRouterClaude3Opus,
-		Name:                  "OpenRouter – Claude 3 Opus",
-		Provider:              ProviderOpenRouter,
-		APIModel:              "anthropic/claude-3-opus",
-		CostPer1MIn:           AnthropicModels[Claude3Opus].CostPer1MIn,
-		CostPer1MInCached:     AnthropicModels[Claude3Opus].CostPer1MInCached,
-		CostPer1MOut:          AnthropicModels[Claude3Opus].CostPer1MOut,
-		CostPer1MOutCached:    AnthropicModels[Claude3Opus].CostPer1MOutCached,
-		ContextWindow:         AnthropicModels[Claude3Opus].ContextWindow,
-		DefaultMaxTokens:      AnthropicModels[Claude3Opus].DefaultMaxTokens,
 		SupportsStructuredOut: false,
 	},
 	OpenRouterClaude45Opus: {
@@ -513,60 +453,6 @@ var OpenRouterModels = map[ID]Model{
 		DefaultMaxTokens:      MistralModels[MistralMedium3].DefaultMaxTokens,
 		SupportsStructuredOut: MistralModels[MistralMedium3].SupportsStructuredOut,
 	},
-	OpenRouterMixtral8x7B: {
-		ID:                    OpenRouterMixtral8x7B,
-		Name:                  "OpenRouter – Mixtral 8x7B Instruct",
-		Provider:              ProviderOpenRouter,
-		APIModel:              "mistralai/mixtral-8x7b-instruct",
-		CostPer1MIn:           MistralModels[Mixtral8x7B].CostPer1MIn,
-		CostPer1MInCached:     MistralModels[Mixtral8x7B].CostPer1MInCached,
-		CostPer1MOut:          MistralModels[Mixtral8x7B].CostPer1MOut,
-		CostPer1MOutCached:    MistralModels[Mixtral8x7B].CostPer1MOutCached,
-		ContextWindow:         MistralModels[Mixtral8x7B].ContextWindow,
-		DefaultMaxTokens:      MistralModels[Mixtral8x7B].DefaultMaxTokens,
-		SupportsStructuredOut: MistralModels[Mixtral8x7B].SupportsStructuredOut,
-	},
-	OpenRouterMistral7B: {
-		ID:                    OpenRouterMistral7B,
-		Name:                  "OpenRouter – Mistral 7B Instruct",
-		Provider:              ProviderOpenRouter,
-		APIModel:              "mistralai/mistral-7b-instruct",
-		CostPer1MIn:           MistralModels[Mistral7B].CostPer1MIn,
-		CostPer1MInCached:     MistralModels[Mistral7B].CostPer1MInCached,
-		CostPer1MOut:          MistralModels[Mistral7B].CostPer1MOut,
-		CostPer1MOutCached:    MistralModels[Mistral7B].CostPer1MOutCached,
-		ContextWindow:         MistralModels[Mistral7B].ContextWindow,
-		DefaultMaxTokens:      MistralModels[Mistral7B].DefaultMaxTokens,
-		SupportsStructuredOut: MistralModels[Mistral7B].SupportsStructuredOut,
-	},
-	OpenRouterMagistralMedium12: {
-		ID:                    OpenRouterMagistralMedium12,
-		Name:                  "OpenRouter – Magistral Medium 1.2",
-		Provider:              ProviderOpenRouter,
-		APIModel:              "mistralai/magistral-medium-2509",
-		CostPer1MIn:           MistralModels[MagistralMedium12].CostPer1MIn,
-		CostPer1MInCached:     MistralModels[MagistralMedium12].CostPer1MInCached,
-		CostPer1MOut:          MistralModels[MagistralMedium12].CostPer1MOut,
-		CostPer1MOutCached:    MistralModels[MagistralMedium12].CostPer1MOutCached,
-		ContextWindow:         MistralModels[MagistralMedium12].ContextWindow,
-		DefaultMaxTokens:      MistralModels[MagistralMedium12].DefaultMaxTokens,
-		CanReason:             MistralModels[MagistralMedium12].CanReason,
-		SupportsStructuredOut: MistralModels[MagistralMedium12].SupportsStructuredOut,
-	},
-	OpenRouterMagistralSmall12: {
-		ID:                    OpenRouterMagistralSmall12,
-		Name:                  "OpenRouter – Magistral Small 1.2",
-		Provider:              ProviderOpenRouter,
-		APIModel:              "mistralai/magistral-small-2509",
-		CostPer1MIn:           MistralModels[MagistralSmall12].CostPer1MIn,
-		CostPer1MInCached:     MistralModels[MagistralSmall12].CostPer1MInCached,
-		CostPer1MOut:          MistralModels[MagistralSmall12].CostPer1MOut,
-		CostPer1MOutCached:    MistralModels[MagistralSmall12].CostPer1MOutCached,
-		ContextWindow:         MistralModels[MagistralSmall12].ContextWindow,
-		DefaultMaxTokens:      MistralModels[MagistralSmall12].DefaultMaxTokens,
-		CanReason:             MistralModels[MagistralSmall12].CanReason,
-		SupportsStructuredOut: MistralModels[MagistralSmall12].SupportsStructuredOut,
-	},
 	OpenRouterLlama4Maverick: {
 		ID:                    OpenRouterLlama4Maverick,
 		Name:                  "OpenRouter – Llama 4 Maverick",
@@ -592,19 +478,6 @@ var OpenRouterModels = map[ID]Model{
 		ContextWindow:         MetaModels[MetaLlama4Scout].ContextWindow,
 		DefaultMaxTokens:      MetaModels[MetaLlama4Scout].DefaultMaxTokens,
 		SupportsStructuredOut: MetaModels[MetaLlama4Scout].SupportsStructuredOut,
-	},
-	OpenRouterLlama31405B: {
-		ID:                    OpenRouterLlama31405B,
-		Name:                  "OpenRouter – Llama 3.1 405B",
-		Provider:              ProviderOpenRouter,
-		APIModel:              "meta-llama/Meta-Llama-3.1-405B-Instruct",
-		CostPer1MIn:           MetaModels[MetaLlama31405B].CostPer1MIn,
-		CostPer1MInCached:     MetaModels[MetaLlama31405B].CostPer1MInCached,
-		CostPer1MOut:          MetaModels[MetaLlama31405B].CostPer1MOut,
-		CostPer1MOutCached:    MetaModels[MetaLlama31405B].CostPer1MOutCached,
-		ContextWindow:         MetaModels[MetaLlama31405B].ContextWindow,
-		DefaultMaxTokens:      MetaModels[MetaLlama31405B].DefaultMaxTokens,
-		SupportsStructuredOut: MetaModels[MetaLlama31405B].SupportsStructuredOut,
 	},
 	OpenRouterLlama3170B: {
 		ID:                    OpenRouterLlama3170B,
@@ -781,20 +654,6 @@ var OpenRouterModels = map[ID]Model{
 		CanReason:             PerplexityModels[SonarPro].CanReason,
 		SupportsStructuredOut: PerplexityModels[SonarPro].SupportsStructuredOut,
 	},
-	OpenRouterSonarReasoning: {
-		ID:                    OpenRouterSonarReasoning,
-		Name:                  "OpenRouter – Sonar Reasoning",
-		Provider:              ProviderOpenRouter,
-		APIModel:              "perplexity/sonar-reasoning",
-		CostPer1MIn:           PerplexityModels[SonarReasoning].CostPer1MIn,
-		CostPer1MInCached:     PerplexityModels[SonarReasoning].CostPer1MInCached,
-		CostPer1MOut:          PerplexityModels[SonarReasoning].CostPer1MOut,
-		CostPer1MOutCached:    PerplexityModels[SonarReasoning].CostPer1MOutCached,
-		ContextWindow:         PerplexityModels[SonarReasoning].ContextWindow,
-		DefaultMaxTokens:      PerplexityModels[SonarReasoning].DefaultMaxTokens,
-		CanReason:             PerplexityModels[SonarReasoning].CanReason,
-		SupportsStructuredOut: PerplexityModels[SonarReasoning].SupportsStructuredOut,
-	},
 	OpenRouterSonarReasoningPro: {
 		ID:                    OpenRouterSonarReasoningPro,
 		Name:                  "OpenRouter – Sonar Reasoning Pro",
@@ -828,9 +687,9 @@ var OpenRouterModels = map[ID]Model{
 		Name:                  "OpenRouter – GPT-OSS 20B",
 		Provider:              ProviderOpenRouter,
 		APIModel:              "openai/gpt-oss-20b",
-		CostPer1MIn:           0.03,
+		CostPer1MIn:           0.029,
 		CostPer1MInCached:     0.0,
-		CostPer1MOut:          0.10,
+		CostPer1MOut:          0.14,
 		CostPer1MOutCached:    0.0,
 		ContextWindow:         131_072,
 		DefaultMaxTokens:      131072,
@@ -842,13 +701,58 @@ var OpenRouterModels = map[ID]Model{
 		Name:                  "OpenRouter – GPT-OSS 120B",
 		Provider:              ProviderOpenRouter,
 		APIModel:              "openai/gpt-oss-120b",
-		CostPer1MIn:           0.039,
+		CostPer1MIn:           0.036,
 		CostPer1MInCached:     0.0,
-		CostPer1MOut:          0.10,
+		CostPer1MOut:          0.18,
 		CostPer1MOutCached:    0.0,
 		ContextWindow:         131_072,
 		DefaultMaxTokens:      131072,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+	},
+	OpenRouterGrok45: {
+		ID:                    OpenRouterGrok45,
+		Name:                  "OpenRouter – Grok 4.5",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "x-ai/grok-4.5",
+		CostPer1MIn:           2.0,
+		CostPer1MInCached:     0.5,
+		CostPer1MOut:          6.0,
+		CostPer1MOutCached:    0,
+		ContextWindow:         500_000,
+		DefaultMaxTokens:      32_000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	OpenRouterGrok43: {
+		ID:                    OpenRouterGrok43,
+		Name:                  "OpenRouter – Grok 4.3",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "x-ai/grok-4.3",
+		CostPer1MIn:           XAIModels[XAIGrok43].CostPer1MIn,
+		CostPer1MInCached:     XAIModels[XAIGrok43].CostPer1MInCached,
+		CostPer1MOut:          XAIModels[XAIGrok43].CostPer1MOut,
+		CostPer1MOutCached:    XAIModels[XAIGrok43].CostPer1MOutCached,
+		ContextWindow:         XAIModels[XAIGrok43].ContextWindow,
+		DefaultMaxTokens:      XAIModels[XAIGrok43].DefaultMaxTokens,
+		CanReason:             XAIModels[XAIGrok43].CanReason,
+		SupportsAttachments:   XAIModels[XAIGrok43].SupportsAttachments,
+		SupportsStructuredOut: XAIModels[XAIGrok43].SupportsStructuredOut,
+	},
+	OpenRouterGemini35Flash: {
+		ID:                    OpenRouterGemini35Flash,
+		Name:                  "OpenRouter – Gemini 3.5 Flash",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "google/gemini-3.5-flash",
+		CostPer1MIn:           GeminiModels[Gemini35Flash].CostPer1MIn,
+		CostPer1MInCached:     GeminiModels[Gemini35Flash].CostPer1MInCached,
+		CostPer1MOut:          GeminiModels[Gemini35Flash].CostPer1MOut,
+		CostPer1MOutCached:    GeminiModels[Gemini35Flash].CostPer1MOutCached,
+		ContextWindow:         GeminiModels[Gemini35Flash].ContextWindow,
+		DefaultMaxTokens:      GeminiModels[Gemini35Flash].DefaultMaxTokens,
+		CanReason:             GeminiModels[Gemini35Flash].CanReason,
+		SupportsAttachments:   GeminiModels[Gemini35Flash].SupportsAttachments,
+		SupportsStructuredOut: GeminiModels[Gemini35Flash].SupportsStructuredOut,
 	},
 }

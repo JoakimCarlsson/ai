@@ -16,8 +16,9 @@ const (
 
 // ElevenLabs speech-to-text (Scribe) model IDs.
 const (
-	ElevenLabsScribeV1 ID = "scribe_v1"
-	ElevenLabsScribeV2 ID = "scribe_v2"
+	ElevenLabsScribeV1         ID = "scribe_v1"
+	ElevenLabsScribeV2         ID = "scribe_v2"
+	ElevenLabsScribeV2Realtime ID = "scribe_v2_realtime"
 )
 
 // ElevenLabsAudioModels maps ElevenLabs speech model IDs to audio
@@ -165,6 +166,26 @@ var ElevenLabsTranscriptionModels = map[ID]TranscriptionModel{
 			"mp3", "mp4", "wav", "flac",
 			"ogg", "webm", "m4a", "aac",
 			"aiff", "opus",
+			"pcm_8000", "pcm_16000", "pcm_22050",
+			"pcm_24000", "pcm_44100", "pcm_48000",
+			"ulaw_8000",
+		},
+		SupportsTimestamps:     true,
+		SupportsWordTimestamps: true,
+		SupportsDiarization:    true,
+		SupportsTranslation:    false,
+		SupportsStreaming:      true,
+		SupportedResponseFormats: []string{
+			"json", "text", "srt",
+		},
+	},
+	ElevenLabsScribeV2Realtime: {
+		ID:          ElevenLabsScribeV2Realtime,
+		Name:        "ElevenLabs Scribe v2 Realtime",
+		Provider:    ProviderElevenLabs,
+		APIModel:    "scribe_v2_realtime",
+		CostPer1MIn: 0.0065,
+		SupportedFormats: []string{
 			"pcm_8000", "pcm_16000", "pcm_22050",
 			"pcm_24000", "pcm_44100", "pcm_48000",
 			"ulaw_8000",

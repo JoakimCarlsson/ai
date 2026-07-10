@@ -4,9 +4,11 @@ package model
 const (
 	ProviderBedrock Provider = "bedrock"
 
-	BedrockTitanEmbedV2     ID = "amazon.titan-embed-text-v2:0"
-	BedrockCohereEmbedEn    ID = "cohere.embed-english-v3"
-	BedrockCohereEmbedMulti ID = "cohere.embed-multilingual-v3"
+	BedrockTitanEmbedV2      ID = "amazon.titan-embed-text-v2:0"
+	BedrockTitanEmbedImageG1 ID = "amazon.titan-embed-image-v1"
+	BedrockCohereEmbedEn     ID = "cohere.embed-english-v3"
+	BedrockCohereEmbedMulti  ID = "cohere.embed-multilingual-v3"
+	BedrockCohereEmbedV4     ID = "cohere.embed-v4:0"
 )
 
 // BedrockEmbeddingModels maps Bedrock embedding model IDs to their configurations.
@@ -43,5 +45,31 @@ var BedrockEmbeddingModels = map[ID]EmbeddingModel{
 		MaxInputTokens:  512,
 		EmbeddingDims:   1024,
 		MaxBatchSize:    96,
+	},
+	BedrockTitanEmbedImageG1: {
+		ID:              BedrockTitanEmbedImageG1,
+		Name:            "Amazon Titan Multimodal Embeddings G1",
+		Provider:        ProviderBedrock,
+		APIModel:        "amazon.titan-embed-image-v1",
+		CostPer1MTokens: 0.80,
+		MaxInputTokens:  256,
+		EmbeddingDims:   1024,
+		SupportedDimensions: []int{
+			256, 384, 1024,
+		},
+		MaxBatchSize: 1,
+	},
+	BedrockCohereEmbedV4: {
+		ID:              BedrockCohereEmbedV4,
+		Name:            "Cohere Embed v4 (Bedrock)",
+		Provider:        ProviderBedrock,
+		APIModel:        "cohere.embed-v4:0",
+		CostPer1MTokens: 0.12,
+		MaxInputTokens:  128000,
+		EmbeddingDims:   1536,
+		SupportedDimensions: []int{
+			256, 512, 1024, 1536,
+		},
+		MaxBatchSize: 96,
 	},
 }
