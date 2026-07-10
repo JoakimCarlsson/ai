@@ -19,6 +19,8 @@ const (
 	XAIGrok420NonReasoning    ID = "grok-4.20-0309-non-reasoning"
 	XAIGrok420MultiAgent      ID = "grok-4.20-multi-agent-0309"
 	XAIGrok43                 ID = "grok-4.3"
+	XAIGrok45                 ID = "grok-4.5"
+	XAIGrokBuild01            ID = "grok-build-0.1"
 	XAIGrok2Image             ID = "grok-2-image-1212"
 	XAIGrokImagineImage       ID = "grok-imagine-image"
 	XAIGrokImagineImagePro    ID = "grok-imagine-image-pro"
@@ -223,6 +225,42 @@ var XAIModels = map[ID]Model{
 		CostPer1MOutCached:    0,
 		ContextWindow:         1_000_000,
 		DefaultMaxTokens:      32_000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	// Pricing source: https://docs.x.ai/developers/models/grok-4.5. Fetched: 2026-07-10.
+	// Flagship general-intelligence model; supports reasoning and non-reasoning
+	// modes. Tiered pricing applies above a 200k-token prompt threshold; the
+	// rate below is the base (<=200k) tier.
+	XAIGrok45: {
+		ID:                    XAIGrok45,
+		Name:                  "Grok 4.5",
+		Provider:              ProviderXAI,
+		APIModel:              "grok-4.5",
+		CostPer1MIn:           2.0,
+		CostPer1MInCached:     0.50,
+		CostPer1MOut:          6.0,
+		CostPer1MOutCached:    0,
+		ContextWindow:         500_000,
+		DefaultMaxTokens:      32_000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	// Pricing source: https://docs.x.ai/developers/models/grok-build-0.1. Fetched: 2026-07-10.
+	// Fast coding model for agentic software-engineering workflows.
+	XAIGrokBuild01: {
+		ID:                    XAIGrokBuild01,
+		Name:                  "Grok Build 0.1",
+		Provider:              ProviderXAI,
+		APIModel:              "grok-build-0.1",
+		CostPer1MIn:           1.0,
+		CostPer1MInCached:     0.20,
+		CostPer1MOut:          2.0,
+		CostPer1MOutCached:    0,
+		ContextWindow:         256_000,
+		DefaultMaxTokens:      20_000,
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,

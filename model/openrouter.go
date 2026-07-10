@@ -52,6 +52,9 @@ const (
 	OpenRouterSonarDeepResearch ID = "openrouter.sonar-deep-research"
 	OpenRouterGPTOss20b         ID = "openrouter.gpt-oss-20b"
 	OpenRouterGPTOss120b        ID = "openrouter.gpt-oss-120b"
+	OpenRouterGrok45            ID = "openrouter.grok-4.5"
+	OpenRouterGrok43            ID = "openrouter.grok-4.3"
+	OpenRouterGemini35Flash     ID = "openrouter.gemini-3.5-flash"
 )
 
 // OpenRouterModels maps OpenRouter model IDs to their configurations.
@@ -706,5 +709,50 @@ var OpenRouterModels = map[ID]Model{
 		DefaultMaxTokens:      131072,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+	},
+	OpenRouterGrok45: {
+		ID:                    OpenRouterGrok45,
+		Name:                  "OpenRouter – Grok 4.5",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "x-ai/grok-4.5",
+		CostPer1MIn:           2.0,
+		CostPer1MInCached:     0.5,
+		CostPer1MOut:          6.0,
+		CostPer1MOutCached:    0,
+		ContextWindow:         500_000,
+		DefaultMaxTokens:      32_000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	OpenRouterGrok43: {
+		ID:                    OpenRouterGrok43,
+		Name:                  "OpenRouter – Grok 4.3",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "x-ai/grok-4.3",
+		CostPer1MIn:           XAIModels[XAIGrok43].CostPer1MIn,
+		CostPer1MInCached:     XAIModels[XAIGrok43].CostPer1MInCached,
+		CostPer1MOut:          XAIModels[XAIGrok43].CostPer1MOut,
+		CostPer1MOutCached:    XAIModels[XAIGrok43].CostPer1MOutCached,
+		ContextWindow:         XAIModels[XAIGrok43].ContextWindow,
+		DefaultMaxTokens:      XAIModels[XAIGrok43].DefaultMaxTokens,
+		CanReason:             XAIModels[XAIGrok43].CanReason,
+		SupportsAttachments:   XAIModels[XAIGrok43].SupportsAttachments,
+		SupportsStructuredOut: XAIModels[XAIGrok43].SupportsStructuredOut,
+	},
+	OpenRouterGemini35Flash: {
+		ID:                    OpenRouterGemini35Flash,
+		Name:                  "OpenRouter – Gemini 3.5 Flash",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "google/gemini-3.5-flash",
+		CostPer1MIn:           GeminiModels[Gemini35Flash].CostPer1MIn,
+		CostPer1MInCached:     GeminiModels[Gemini35Flash].CostPer1MInCached,
+		CostPer1MOut:          GeminiModels[Gemini35Flash].CostPer1MOut,
+		CostPer1MOutCached:    GeminiModels[Gemini35Flash].CostPer1MOutCached,
+		ContextWindow:         GeminiModels[Gemini35Flash].ContextWindow,
+		DefaultMaxTokens:      GeminiModels[Gemini35Flash].DefaultMaxTokens,
+		CanReason:             GeminiModels[Gemini35Flash].CanReason,
+		SupportsAttachments:   GeminiModels[Gemini35Flash].SupportsAttachments,
+		SupportsStructuredOut: GeminiModels[Gemini35Flash].SupportsStructuredOut,
 	},
 }

@@ -9,6 +9,7 @@ const (
 	Voyage3Large   ID = "voyage-3-large"
 	VoyageCode3    ID = "voyage-code-3"
 	VoyageContext3 ID = "voyage-context-3"
+	VoyageContext4 ID = "voyage-context-4"
 
 	Rerank25     ID = "rerank-2.5"
 	Rerank25Lite ID = "rerank-2.5-lite"
@@ -137,6 +138,19 @@ var VoyageEmbeddingModels = map[ID]EmbeddingModel{
 		Provider:            ProviderVoyage,
 		APIModel:            "voyage-context-3",
 		CostPer1MTokens:     0.18,
+		MaxInputTokens:      32000,
+		EmbeddingDims:       1024,
+		SupportedDimensions: []int{256, 512, 1024, 2048},
+		MaxBatchSize:        1000,
+		SupportsOutputDtype: true,
+		MaxTokensPerBatch:   120000,
+	},
+	VoyageContext4: {
+		ID:                  VoyageContext4,
+		Name:                "Voyage Context 4",
+		Provider:            ProviderVoyage,
+		APIModel:            "voyage-context-4",
+		CostPer1MTokens:     0.12,
 		MaxInputTokens:      32000,
 		EmbeddingDims:       1024,
 		SupportedDimensions: []int{256, 512, 1024, 2048},

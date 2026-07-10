@@ -6,6 +6,7 @@ const (
 
 	Llama4Scout           ID = "meta-llama/llama-4-scout-17b-16e-instruct"
 	Llama3_3_70BVersatile ID = "llama-3.3-70b-versatile"
+	Llama3_1_8BInstant    ID = "llama-3.1-8b-instant"
 	GPTOss120B            ID = "openai/gpt-oss-120b"
 	GPTOss20B             ID = "openai/gpt-oss-20b"
 	Qwen3_32BGroq         ID = "qwen/qwen3-32b"
@@ -38,6 +39,20 @@ var GroqModels = map[ID]Model{
 		CostPer1MOutCached:    0,
 		CostPer1MOut:          0.79,
 		ContextWindow:         128_000,
+		SupportsAttachments:   false,
+		SupportsStructuredOut: false,
+	},
+
+	Llama3_1_8BInstant: {
+		ID:                    Llama3_1_8BInstant,
+		Name:                  "Llama3_1_8BInstant",
+		Provider:              ProviderGROQ,
+		APIModel:              "llama-3.1-8b-instant",
+		CostPer1MIn:           0.05,
+		CostPer1MInCached:     0,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          0.08,
+		ContextWindow:         131_072,
 		SupportsAttachments:   false,
 		SupportsStructuredOut: false,
 	},

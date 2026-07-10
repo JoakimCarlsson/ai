@@ -7,6 +7,8 @@ const ProviderAssemblyAI Provider = "assemblyai"
 const (
 	AssemblyAIBest                      ID = "best"
 	AssemblyAINano                      ID = "nano"
+	AssemblyAIUniversal3Pro             ID = "universal-3-pro"
+	AssemblyAIUniversal2                ID = "universal-2"
 	AssemblyAIUniversalStreamingEnglish ID = "universal-streaming-english"
 	AssemblyAIUniversalStreamingMulti   ID = "universal-streaming-multilingual"
 	AssemblyAIWhisperRT                 ID = "whisper-rt"
@@ -25,6 +27,46 @@ const (
 // equivalent). Streaming endpoints accept pcm_s16le and pcm_mulaw at
 // configurable sample rates with audio chunks of 50–1000 ms.
 var AssemblyAITranscriptionModels = map[ID]TranscriptionModel{
+	AssemblyAIUniversal3Pro: {
+		ID:            AssemblyAIUniversal3Pro,
+		Name:          "AssemblyAI Universal-3.5 Pro",
+		Provider:      ProviderAssemblyAI,
+		APIModel:      "universal-3-pro",
+		CostPer1MIn:   0.0035,
+		MaxFileSizeMB: 5000,
+		SupportedFormats: []string{
+			"mp3", "mp4", "wav", "flac",
+			"ogg", "webm", "m4a",
+		},
+		SupportsTimestamps:     true,
+		SupportsWordTimestamps: true,
+		SupportsDiarization:    true,
+		SupportsTranslation:    false,
+		SupportsStreaming:      false,
+		SupportedResponseFormats: []string{
+			"json", "text", "srt", "vtt",
+		},
+	},
+	AssemblyAIUniversal2: {
+		ID:            AssemblyAIUniversal2,
+		Name:          "AssemblyAI Universal-2",
+		Provider:      ProviderAssemblyAI,
+		APIModel:      "universal-2",
+		CostPer1MIn:   0.0025,
+		MaxFileSizeMB: 5000,
+		SupportedFormats: []string{
+			"mp3", "mp4", "wav", "flac",
+			"ogg", "webm", "m4a",
+		},
+		SupportsTimestamps:     true,
+		SupportsWordTimestamps: true,
+		SupportsDiarization:    true,
+		SupportsTranslation:    false,
+		SupportsStreaming:      false,
+		SupportedResponseFormats: []string{
+			"json", "text", "srt", "vtt",
+		},
+	},
 	AssemblyAIBest: {
 		ID:            AssemblyAIBest,
 		Name:          "AssemblyAI Best",

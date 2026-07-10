@@ -12,6 +12,7 @@ const (
 	Gemini31FlashLite         ID = "gemini-3.1-flash-lite"
 	Gemini31ProPreview        ID = "gemini-3.1-pro-preview"
 	Gemini31FlashImagePreview ID = "gemini-3.1-flash-image-preview"
+	Gemini31FlashLiteImage    ID = "gemini-3.1-flash-lite-image"
 	Gemini31FlashTTSPreview   ID = "gemini-3.1-flash-tts-preview"
 	Gemini31FlashLivePreview  ID = "gemini-3.1-flash-live-preview"
 
@@ -43,10 +44,13 @@ const (
 	Imagen4Fast  ID = "imagen-4.0-fast"
 
 	// imbeddings
-	GeminiEmbedding2 ID = "gemini-embedding-2"
+	GeminiEmbedding2   ID = "gemini-embedding-2"
+	GeminiEmbedding001 ID = "gemini-embedding-001"
 
 	// NanoBanana2 is an alias for Gemini31FlashImagePreview
 	NanoBanana2 ID = Gemini31FlashImagePreview
+	// NanoBanana2Lite is an alias for Gemini31FlashLiteImage
+	NanoBanana2Lite ID = Gemini31FlashLiteImage
 )
 
 // GeminiModels maps Gemini chat model IDs to their configurations.
@@ -392,6 +396,56 @@ var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 		SupportedQualities: []string{"default"},
 		DefaultQuality:     "default",
 	},
+	Gemini31FlashLiteImage: {
+		ID:       Gemini31FlashLiteImage,
+		Name:     "Gemini 3.1 Flash Lite Image (Nano Banana 2 Lite)",
+		Provider: ProviderGemini,
+		APIModel: "gemini-3.1-flash-lite-image",
+		Pricing: map[string]map[string]float64{
+			"1:1": {
+				"default": 0.0336,
+			},
+			"3:4": {
+				"default": 0.0336,
+			},
+			"4:3": {
+				"default": 0.0336,
+			},
+			"9:16": {
+				"default": 0.0336,
+			},
+			"16:9": {
+				"default": 0.0336,
+			},
+			"1:4": {
+				"default": 0.0336,
+			},
+			"4:1": {
+				"default": 0.0336,
+			},
+			"1:8": {
+				"default": 0.0336,
+			},
+			"8:1": {
+				"default": 0.0336,
+			},
+		},
+		MaxPromptTokens: 65536,
+		SupportedAspectRatios: []string{
+			"1:1",
+			"3:4",
+			"4:3",
+			"9:16",
+			"16:9",
+			"1:4",
+			"4:1",
+			"1:8",
+			"8:1",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
 	Imagen4: {
 		ID:       Imagen4,
 		Name:     "Imagen 4",
@@ -488,6 +542,21 @@ var GeminiEmbeddingModels = map[ID]EmbeddingModel{
 		CostPer1MTokens: 0.20,
 		MaxInputTokens:  8192,
 		EmbeddingDims:   768,
+		SupportedDimensions: []int{
+			768,
+			1536,
+			3072,
+		}, // flexible. supports: 128 - 3072,
+		MaxBatchSize: 100,
+	},
+	GeminiEmbedding001: {
+		ID:              GeminiEmbedding001,
+		Name:            "Gemini Embedding 001",
+		Provider:        ProviderGemini,
+		APIModel:        "gemini-embedding-001",
+		CostPer1MTokens: 0.15,
+		MaxInputTokens:  2048,
+		EmbeddingDims:   3072,
 		SupportedDimensions: []int{
 			768,
 			1536,

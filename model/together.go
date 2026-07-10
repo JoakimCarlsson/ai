@@ -15,13 +15,18 @@ const (
 	TogetherDeepSeekV31    ID = "together.deepseek-ai/DeepSeek-V3.1"
 	TogetherDeepSeekV4Pro  ID = "together.deepseek-ai/DeepSeek-V4-Pro"
 	TogetherDeepSeekR1     ID = "together.deepseek-ai/DeepSeek-R1"
+	TogetherQwen37Max      ID = "together.Qwen/Qwen3.7-Max"
+	TogetherQwen36Plus     ID = "together.Qwen/Qwen3.6-Plus"
 	TogetherQwen35_397B    ID = "together.Qwen/Qwen3.5-397B-A17B"
 	TogetherQwen3Coder480B ID = "together.Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8"
 	TogetherQwen25_7BTurbo ID = "together.Qwen/Qwen2.5-7B-Instruct-Turbo"
+	TogetherKimiK2_7Code   ID = "together.moonshotai/Kimi-K2.7-Code"
 	TogetherKimiK2_6       ID = "together.moonshotai/Kimi-K2.6"
 	TogetherKimiK2_5       ID = "together.moonshotai/Kimi-K2.5"
 	TogetherGPTOss120B     ID = "together.openai/gpt-oss-120b"
+	TogetherGPTOss20B      ID = "together.openai/gpt-oss-20b"
 	TogetherGLM5_1         ID = "together.zai-org/GLM-5.1"
+	TogetherGLM5_2         ID = "together.zai-org/GLM-5.2"
 )
 
 // TogetherModels maps Together AI model IDs to their configurations.
@@ -94,6 +99,35 @@ var TogetherModels = map[ID]Model{
 		CanReason:             true,
 		SupportsStructuredOut: true,
 	},
+	TogetherQwen37Max: {
+		ID:                    TogetherQwen37Max,
+		Name:                  "Together – Qwen 3.7 Max",
+		Provider:              ProviderTogether,
+		APIModel:              "Qwen/Qwen3.7-Max",
+		CostPer1MIn:           1.25,
+		CostPer1MInCached:     0,
+		CostPer1MOut:          3.75,
+		CostPer1MOutCached:    0,
+		ContextWindow:         1_048_576,
+		DefaultMaxTokens:      32_768,
+		CanReason:             true,
+		SupportsStructuredOut: true,
+	},
+	TogetherQwen36Plus: {
+		ID:                    TogetherQwen36Plus,
+		Name:                  "Together – Qwen 3.6 Plus",
+		Provider:              ProviderTogether,
+		APIModel:              "Qwen/Qwen3.6-Plus",
+		CostPer1MIn:           0.50,
+		CostPer1MInCached:     0,
+		CostPer1MOut:          3.00,
+		CostPer1MOutCached:    0,
+		ContextWindow:         1_048_576,
+		DefaultMaxTokens:      32_768,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
 	TogetherQwen35_397B: {
 		ID:                    TogetherQwen35_397B,
 		Name:                  "Together – Qwen 3.5 397B A17B",
@@ -132,6 +166,20 @@ var TogetherModels = map[ID]Model{
 		CostPer1MOutCached:    0,
 		ContextWindow:         32_768,
 		DefaultMaxTokens:      4_096,
+		SupportsStructuredOut: true,
+	},
+	TogetherKimiK2_7Code: {
+		ID:                    TogetherKimiK2_7Code,
+		Name:                  "Together – Kimi K2.7 Code",
+		Provider:              ProviderTogether,
+		APIModel:              "moonshotai/Kimi-K2.7-Code",
+		CostPer1MIn:           0.95,
+		CostPer1MInCached:     0,
+		CostPer1MOut:          4.00,
+		CostPer1MOutCached:    0,
+		ContextWindow:         262_144,
+		DefaultMaxTokens:      16_384,
+		CanReason:             true,
 		SupportsStructuredOut: true,
 	},
 	TogetherKimiK2_6: {
@@ -175,6 +223,20 @@ var TogetherModels = map[ID]Model{
 		CanReason:             true,
 		SupportsStructuredOut: true,
 	},
+	TogetherGPTOss20B: {
+		ID:                    TogetherGPTOss20B,
+		Name:                  "Together – GPT-OSS 20B",
+		Provider:              ProviderTogether,
+		APIModel:              "openai/gpt-oss-20b",
+		CostPer1MIn:           0.05,
+		CostPer1MInCached:     0,
+		CostPer1MOut:          0.20,
+		CostPer1MOutCached:    0,
+		ContextWindow:         128_000,
+		DefaultMaxTokens:      65_536,
+		CanReason:             true,
+		SupportsStructuredOut: true,
+	},
 	TogetherGLM5_1: {
 		ID:                    TogetherGLM5_1,
 		Name:                  "Together – GLM 5.1",
@@ -185,6 +247,20 @@ var TogetherModels = map[ID]Model{
 		CostPer1MOut:          4.40,
 		CostPer1MOutCached:    0,
 		ContextWindow:         202_752,
+		DefaultMaxTokens:      32_768,
+		CanReason:             true,
+		SupportsStructuredOut: true,
+	},
+	TogetherGLM5_2: {
+		ID:                    TogetherGLM5_2,
+		Name:                  "Together – GLM 5.2",
+		Provider:              ProviderTogether,
+		APIModel:              "zai-org/GLM-5.2",
+		CostPer1MIn:           1.40,
+		CostPer1MInCached:     0,
+		CostPer1MOut:          4.40,
+		CostPer1MOutCached:    0,
+		ContextWindow:         262_144,
 		DefaultMaxTokens:      32_768,
 		CanReason:             true,
 		SupportsStructuredOut: true,

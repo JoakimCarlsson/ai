@@ -5,7 +5,9 @@ const (
 	ProviderMistral Provider = "mistral"
 
 	MistralLarge3     ID = "mistral-large-3"
+	MistralMedium35   ID = "mistral-medium-3.5"
 	MistralMedium31   ID = "mistral-medium-3.1"
+	MistralSmall4     ID = "mistral-small-4"
 	MistralSmall32    ID = "mistral-small-3.2"
 	Ministral3_14B    ID = "ministral-3-14b"
 	Ministral3_8B     ID = "ministral-3-8b"
@@ -39,6 +41,21 @@ var MistralModels = map[ID]Model{
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 	},
+	MistralMedium35: {
+		ID:                    MistralMedium35,
+		Name:                  "Mistral Medium 3.5",
+		Provider:              ProviderMistral,
+		APIModel:              "mistral-medium-2604",
+		CostPer1MIn:           1.50,
+		CostPer1MOut:          7.50,
+		CostPer1MInCached:     0.0,
+		CostPer1MOutCached:    0.0,
+		ContextWindow:         262_144,
+		DefaultMaxTokens:      8192,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
 	MistralMedium31: {
 		ID:                    MistralMedium31,
 		Name:                  "Mistral Medium 3.1",
@@ -50,6 +67,21 @@ var MistralModels = map[ID]Model{
 		CostPer1MOutCached:    0.0,
 		ContextWindow:         131_072,
 		DefaultMaxTokens:      8192,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	MistralSmall4: {
+		ID:                    MistralSmall4,
+		Name:                  "Mistral Small 4",
+		Provider:              ProviderMistral,
+		APIModel:              "mistral-small-2603",
+		CostPer1MIn:           0.15,
+		CostPer1MOut:          0.60,
+		CostPer1MInCached:     0.0,
+		CostPer1MOutCached:    0.0,
+		ContextWindow:         262_144,
+		DefaultMaxTokens:      8192,
+		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 	},

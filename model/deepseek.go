@@ -4,6 +4,8 @@ package model
 const (
 	ProviderDeepSeek Provider = "deepseek"
 
+	DeepSeekV4Flash     ID = "deepseek-v4-flash"
+	DeepSeekV4Pro       ID = "deepseek-v4-pro"
 	DeepSeekV32         ID = "deepseek-v3.2"
 	DeepSeekV32Thinking ID = "deepseek-v3.2-thinking"
 	DeepSeekR1          ID = "deepseek-r1"
@@ -12,6 +14,36 @@ const (
 
 // DeepSeekModels maps DeepSeek model IDs to their configurations.
 var DeepSeekModels = map[ID]Model{
+	DeepSeekV4Flash: {
+		ID:                    DeepSeekV4Flash,
+		Name:                  "DeepSeek V4 Flash",
+		Provider:              ProviderDeepSeek,
+		APIModel:              "deepseek-v4-flash",
+		CostPer1MIn:           0.14,
+		CostPer1MInCached:     0.0028,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          0.28,
+		ContextWindow:         1_000_000,
+		DefaultMaxTokens:      64000,
+		CanReason:             true,
+		SupportsAttachments:   false,
+		SupportsStructuredOut: false,
+	},
+	DeepSeekV4Pro: {
+		ID:                    DeepSeekV4Pro,
+		Name:                  "DeepSeek V4 Pro",
+		Provider:              ProviderDeepSeek,
+		APIModel:              "deepseek-v4-pro",
+		CostPer1MIn:           0.435,
+		CostPer1MInCached:     0.003625,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          0.87,
+		ContextWindow:         1_000_000,
+		DefaultMaxTokens:      64000,
+		CanReason:             true,
+		SupportsAttachments:   false,
+		SupportsStructuredOut: false,
+	},
 	DeepSeekV32: {
 		ID:                    DeepSeekV32,
 		Name:                  "DeepSeek V3.2",

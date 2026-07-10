@@ -6,10 +6,14 @@ const (
 
 	GoogleCloudSTTDefault ID = "google-cloud-stt-default"
 	GoogleCloudSTTLong    ID = "google-cloud-stt-long"
+	GoogleCloudSTTChirp2  ID = "google-cloud-stt-chirp-2"
+	GoogleCloudSTTChirp3  ID = "google-cloud-stt-chirp-3"
 
 	GoogleCloudTTSStandard ID = "google-cloud-tts-standard"
 	GoogleCloudTTSWavenet  ID = "google-cloud-tts-wavenet"
 	GoogleCloudTTSNeural2  ID = "google-cloud-tts-neural2"
+	GoogleCloudTTSStudio   ID = "google-cloud-tts-studio"
+	GoogleCloudTTSChirp3HD ID = "google-cloud-tts-chirp3-hd"
 )
 
 // GoogleCloudTranscriptionModels maps Google Cloud STT model IDs to their configurations.
@@ -52,6 +56,48 @@ var GoogleCloudTranscriptionModels = map[ID]TranscriptionModel{
 		SupportsDiarization:    false,
 		SupportsTranslation:    false,
 		SupportsStreaming:      false,
+		SupportedResponseFormats: []string{
+			"json",
+		},
+	},
+	GoogleCloudSTTChirp2: {
+		ID:            GoogleCloudSTTChirp2,
+		Name:          "Google Cloud STT Chirp 2",
+		Provider:      ProviderGoogleCloud,
+		APIModel:      "chirp_2",
+		CostPer1MIn:   0.016,
+		MaxFileSizeMB: 480,
+		SupportedFormats: []string{
+			"flac", "linear16", "mulaw",
+			"amr", "amr-wb", "ogg-opus",
+			"speex", "webm-opus", "mp3",
+		},
+		SupportsTimestamps:     true,
+		SupportsWordTimestamps: true,
+		SupportsDiarization:    false,
+		SupportsTranslation:    true,
+		SupportsStreaming:      true,
+		SupportedResponseFormats: []string{
+			"json",
+		},
+	},
+	GoogleCloudSTTChirp3: {
+		ID:            GoogleCloudSTTChirp3,
+		Name:          "Google Cloud STT Chirp 3",
+		Provider:      ProviderGoogleCloud,
+		APIModel:      "chirp_3",
+		CostPer1MIn:   0.016,
+		MaxFileSizeMB: 480,
+		SupportedFormats: []string{
+			"flac", "linear16", "mulaw",
+			"amr", "amr-wb", "ogg-opus",
+			"speex", "webm-opus", "mp3",
+		},
+		SupportsTimestamps:     true,
+		SupportsWordTimestamps: false,
+		SupportsDiarization:    true,
+		SupportsTranslation:    false,
+		SupportsStreaming:      true,
 		SupportedResponseFormats: []string{
 			"json",
 		},
@@ -101,5 +147,33 @@ var GoogleCloudAudioModels = map[ID]AudioModel{
 		},
 		DefaultFormat:     "MP3",
 		SupportsStreaming: false,
+	},
+	GoogleCloudTTSStudio: {
+		ID:             GoogleCloudTTSStudio,
+		Name:           "Google Cloud TTS Studio",
+		Provider:       ProviderGoogleCloud,
+		APIModel:       "studio",
+		CostPer1MChars: 160.00,
+		MaxCharacters:  5000,
+		SupportedFormats: []string{
+			"LINEAR16", "MP3", "OGG_OPUS",
+			"MULAW", "ALAW",
+		},
+		DefaultFormat:     "MP3",
+		SupportsStreaming: false,
+	},
+	GoogleCloudTTSChirp3HD: {
+		ID:             GoogleCloudTTSChirp3HD,
+		Name:           "Google Cloud TTS Chirp 3: HD",
+		Provider:       ProviderGoogleCloud,
+		APIModel:       "chirp3-hd",
+		CostPer1MChars: 30.00,
+		MaxCharacters:  5000,
+		SupportedFormats: []string{
+			"LINEAR16", "MP3", "OGG_OPUS",
+			"MULAW", "ALAW",
+		},
+		DefaultFormat:     "MP3",
+		SupportsStreaming: true,
 	},
 }
