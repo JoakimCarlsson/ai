@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/anthropics/anthropic-sdk-go v1.51.0
-	github.com/joakimcarlsson/ai/batch v0.1.3
+	github.com/joakimcarlsson/ai/batch v0.1.4
 	github.com/joakimcarlsson/ai/llm v0.4.3
 	github.com/joakimcarlsson/ai/message v0.3.1
 	github.com/joakimcarlsson/ai/model v0.6.0

@@ -4,7 +4,7 @@ go 1.25.8
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/joakimcarlsson/ai/batch v0.1.3
+	github.com/joakimcarlsson/ai/batch v0.1.4
 	github.com/joakimcarlsson/ai/embeddings v0.2.3
 	github.com/joakimcarlsson/ai/llm v0.4.3
 	github.com/joakimcarlsson/ai/message v0.3.1

@@ -6,7 +6,7 @@ require (
 	github.com/joakimcarlsson/ai/agent v0.3.4
 	github.com/joakimcarlsson/ai/fim v0.2.1
 	github.com/joakimcarlsson/ai/llm v0.4.3
-	github.com/joakimcarlsson/ai/memory v0.2.3
+	github.com/joakimcarlsson/ai/memory v0.2.4
 	github.com/joakimcarlsson/ai/message v0.3.1
 	github.com/joakimcarlsson/ai/model v0.6.0
 	github.com/joakimcarlsson/ai/prompt v0.1.0
@@ -14,7 +14,7 @@ require (
 	github.com/joakimcarlsson/ai/session v0.1.2
 	github.com/joakimcarlsson/ai/stt v0.2.3
 	github.com/joakimcarlsson/ai/tokens v0.2.3
-	github.com/joakimcarlsson/ai/tokens/summarize v0.1.4
+	github.com/joakimcarlsson/ai/tokens/summarize v0.1.5
 	github.com/joakimcarlsson/ai/tool v0.1.2
 	github.com/joakimcarlsson/ai/tracing v0.1.1
 	github.com/joakimcarlsson/ai/tts v0.2.3

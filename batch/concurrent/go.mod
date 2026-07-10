@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/batch/concurrent
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/batch v0.1.3
+	github.com/joakimcarlsson/ai/batch v0.1.4
 	github.com/joakimcarlsson/ai/embeddings v0.2.3
 	github.com/joakimcarlsson/ai/llm v0.4.3
 )
