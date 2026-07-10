@@ -8,7 +8,7 @@ require (
 	github.com/joakimcarlsson/ai/llm v0.4.2
 	github.com/joakimcarlsson/ai/memory v0.2.3
 	github.com/joakimcarlsson/ai/message v0.3.0
-	github.com/joakimcarlsson/ai/model v0.5.0
+	github.com/joakimcarlsson/ai/model v0.6.0
 	github.com/joakimcarlsson/ai/prompt v0.1.0
 	github.com/joakimcarlsson/ai/schema v0.2.0
 	github.com/joakimcarlsson/ai/session v0.1.1

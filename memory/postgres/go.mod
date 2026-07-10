@@ -9,7 +9,7 @@ require (
 	github.com/lib/pq v1.12.3
 )
 
-require github.com/joakimcarlsson/ai/model v0.5.0 // indirect
+require github.com/joakimcarlsson/ai/model v0.6.0 // indirect
 
 replace (
 	github.com/joakimcarlsson/ai/message => ../../message

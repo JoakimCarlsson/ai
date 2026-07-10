@@ -7,7 +7,7 @@ require (
 	github.com/joakimcarlsson/ai/session v0.1.1
 )
 
-require github.com/joakimcarlsson/ai/model v0.5.0 // indirect
+require github.com/joakimcarlsson/ai/model v0.6.0 // indirect
 
 replace (
 	github.com/joakimcarlsson/ai/message => ../../message

@@ -7,7 +7,7 @@ require (
 	github.com/joakimcarlsson/ai/embeddings v0.2.2
 	github.com/joakimcarlsson/ai/llm v0.4.2
 	github.com/joakimcarlsson/ai/message v0.3.0
-	github.com/joakimcarlsson/ai/model v0.5.0
+	github.com/joakimcarlsson/ai/model v0.6.0
 	github.com/joakimcarlsson/ai/tool v0.1.2
 	github.com/openai/openai-go/v3 v3.41.0
 )
