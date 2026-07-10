@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/joakimcarlsson/ai/embeddings v0.2.3
-	github.com/joakimcarlsson/ai/embeddings/openai v0.1.3
+	github.com/joakimcarlsson/ai/embeddings/openai v0.1.4
 )
 
 require (

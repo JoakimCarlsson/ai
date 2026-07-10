@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/google/uuid v1.6.0
 	github.com/joakimcarlsson/ai/message v0.3.1
-	github.com/joakimcarlsson/ai/session v0.1.1
+	github.com/joakimcarlsson/ai/session v0.1.2
 	github.com/lib/pq v1.12.3
 )
 

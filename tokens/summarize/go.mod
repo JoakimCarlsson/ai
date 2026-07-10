@@ -3,9 +3,9 @@ module github.com/joakimcarlsson/ai/tokens/summarize
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/llm v0.4.2
+	github.com/joakimcarlsson/ai/llm v0.4.3
 	github.com/joakimcarlsson/ai/message v0.3.1
-	github.com/joakimcarlsson/ai/tokens v0.2.2
+	github.com/joakimcarlsson/ai/tokens v0.2.3
 )
 
 require (
