@@ -54,6 +54,46 @@ Supported models: `gpt-image-1.5` and `gpt-image-2`. DALL-E 2/3 and gpt-image-1
 (plus mini) are removed; pricing-registry entries dropped along with the
 matching package code paths.
 
+## Azure OpenAI
+
+`image/azure` is to `image/openai` what `llm/azure` is to `llm/openai` — a thin
+wrapper that reuses the OpenAI request building and overrides only endpoint and
+auth. It resolves in three branches, mirroring `llm/azure`:
+
+- no endpoint set → plain `image/openai` (optionally with `WithAPIKey`);
+- an endpoint containing `/openai/v1` (the OpenAI-compatible surface) → routed
+  through `image/openai` with `WithBaseURL`;
+- a classic `https://<resource>.openai.azure.com` endpoint → the `api-key`
+  header plus the `?api-version=` query param.
+
+```go
+import imageazure "github.com/joakimcarlsson/ai/image/azure"
+
+client := imageazure.NewGeneration(
+    imageazure.WithEndpoint("https://my-resource.openai.azure.com"),
+    imageazure.WithAPIVersion("2025-04-01-preview"),
+    imageazure.WithAPIKey(os.Getenv("AZURE_OPENAI_API_KEY")),
+    imageazure.WithModel(model.OpenAIImageGenerationModels[model.GPTImage2]),
+    imageazure.WithSize(imageazure.Size1024x1024),
+    imageazure.WithOutputFormat(imageazure.OutputFormatPNG),
+)
+
+resp, err := client.GenerateImage(ctx, "A serene mountain landscape at sunset")
+```
+
+Auth resolution matches `llm/azure`: a static `api-key` is used when
+`WithAPIKey` is set; otherwise the client falls back to
+`DefaultAzureCredential` (Entra ID / managed identity) automatically — omit
+`WithAPIKey` and ensure `az login` or a managed identity is available.
+
+The `image/openai` enum types **and their values** are re-exported
+(`imageazure.Size1024x1024`, `imageazure.QualityHigh`,
+`imageazure.OutputFormatPNG`, …), and the full option set is forwarded:
+`WithSize`, `WithQuality`, `WithN`, `WithBackground`, `WithModeration`,
+`WithOutputFormat`, `WithOutputCompression`, `WithUser`, `WithExtraHeaders`,
+`WithStreamingOptions`, `WithTimeout`. Returned clients are tracing-wrapped like
+`image/openai`.
+
 ## Gemini / Imagen
 
 ```go

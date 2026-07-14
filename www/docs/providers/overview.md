@@ -71,6 +71,7 @@ Under `image/`:
 | Module | Provider | Models | Streaming |
 |---|---|---|---|
 | `image/openai` | OpenAI | DALL-E 2, DALL-E 3, GPT Image 1 / 1-mini / 1.5 / 2 | ✅ (gpt-image-*) |
+| `image/azure` | Azure OpenAI | GPT Image 1.5 / 2 (Azure-hosted; api-key or Entra ID) | ✅ (gpt-image-*) |
 | `image/gemini` | Google Gemini | Gemini 2.5 Flash Image, Gemini 3 Pro Image, Imagen 4 / 4 Ultra / 4 Fast | ❌ |
 | `image/xai` | xAI | Grok 2 Image, Grok Imagine, Grok Imagine Pro | ❌ |
 
