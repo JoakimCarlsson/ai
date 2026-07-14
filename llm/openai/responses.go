@@ -306,10 +306,8 @@ func (c *responsesClient) convertMessages(
 		case message.User:
 			out = append(out, responses.ResponseInputItemUnionParam{
 				OfMessage: &responses.EasyInputMessageParam{
-					Role: responses.EasyInputMessageRoleUser,
-					Content: responses.EasyInputMessageContentUnionParam{
-						OfString: openaisdk.String(msg.Content().String()),
-					},
+					Role:    responses.EasyInputMessageRoleUser,
+					Content: userInputContent(msg),
 				},
 			})
 		case message.Assistant:
@@ -346,6 +344,64 @@ func (c *responsesClient) convertMessages(
 		}
 	}
 	return out
+}
+
+// userInputContent builds the Responses-API content for a user message. A
+// text-only message keeps the simple string form; a message that also
+// carries image parts is emitted as a content list of input_text +
+// input_image items instead.
+func userInputContent(
+	msg message.Message,
+) responses.EasyInputMessageContentUnionParam {
+	imageURLs := msg.ImageURLContent()
+	binaries := msg.BinaryContent()
+	if len(imageURLs) == 0 && len(binaries) == 0 {
+		return responses.EasyInputMessageContentUnionParam{
+			OfString: openaisdk.String(msg.Content().String()),
+		}
+	}
+
+	var parts responses.ResponseInputMessageContentListParam
+	if text := msg.Content().String(); text != "" {
+		parts = append(parts, responses.ResponseInputContentUnionParam{
+			OfInputText: &responses.ResponseInputTextParam{Text: text},
+		})
+	}
+	for _, img := range imageURLs {
+		parts = append(parts, responses.ResponseInputContentUnionParam{
+			OfInputImage: &responses.ResponseInputImageParam{
+				ImageURL: openaisdk.String(img.URL),
+				Detail:   inputImageDetail(img.Detail),
+			},
+		})
+	}
+	for _, bin := range binaries {
+		// BinaryContent has no detail hint of its own; "auto" lets the model decide.
+		parts = append(parts, responses.ResponseInputContentUnionParam{
+			OfInputImage: &responses.ResponseInputImageParam{
+				ImageURL: openaisdk.String(bin.String("openai")),
+				Detail:   responses.ResponseInputImageDetailAuto,
+			},
+		})
+	}
+	return responses.EasyInputMessageContentUnionParam{
+		OfInputItemContentList: parts,
+	}
+}
+
+// inputImageDetail maps message.ImageURLContent.Detail ("low"/"high"/"auto",
+// or empty) onto the Responses input-image detail enum, defaulting an empty or
+// unrecognized value to "auto" (the API's own default) rather than sending an
+// invalid detail string.
+func inputImageDetail(detail string) responses.ResponseInputImageDetail {
+	switch detail {
+	case "low":
+		return responses.ResponseInputImageDetailLow
+	case "high":
+		return responses.ResponseInputImageDetailHigh
+	default:
+		return responses.ResponseInputImageDetailAuto
+	}
 }
 
 func (c *responsesClient) convertTools(
