@@ -22,6 +22,7 @@ import (
 
 type mockResponse struct {
 	Content      string
+	Reasoning    string
 	ToolCalls    []message.ToolCall
 	FinishReason message.FinishReason
 	Usage        llm.TokenUsage
@@ -74,6 +75,7 @@ func (m *mockLLM) SendMessages(
 	}
 	return &llm.Response{
 		Content:      resp.Content,
+		Reasoning:    resp.Reasoning,
 		ToolCalls:    resp.ToolCalls,
 		FinishReason: resp.FinishReason,
 		Usage:        resp.Usage,
@@ -103,6 +105,9 @@ func (m *mockLLM) StreamResponse(
 			ch <- llm.Event{Type: types.EventError, Error: resp.Err}
 			return
 		}
+		if resp.Reasoning != "" {
+			ch <- llm.Event{Type: types.EventThinkingDelta, Thinking: resp.Reasoning}
+		}
 		if resp.Content != "" {
 			ch <- llm.Event{Type: types.EventContentDelta, Content: resp.Content}
 		}
@@ -110,6 +115,7 @@ func (m *mockLLM) StreamResponse(
 			Type: types.EventComplete,
 			Response: &llm.Response{
 				Content:      resp.Content,
+				Reasoning:    resp.Reasoning,
 				ToolCalls:    resp.ToolCalls,
 				FinishReason: resp.FinishReason,
 				Usage:        resp.Usage,

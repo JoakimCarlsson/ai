@@ -37,29 +37,30 @@ const (
 
 // Options configures the OpenAI LLM client.
 type Options struct {
-	apiKey            string
-	model             model.Model
-	maxTokens         int64
-	temperature       *float64
-	topP              *float64
-	topK              *int64
-	stopSequences     []string
-	timeout           *time.Duration
-	baseURL           string
-	disableCache      bool
-	reasoningEffort   *ReasoningEffort
-	extraHeaders      map[string]string
-	frequencyPenalty  *float64
-	presencePenalty   *float64
-	seed              *int64
-	parallelToolCalls *bool
-	toolChoice        *llm.ToolChoice
-	extraBodyFields   map[string]any
-	metadataFields    map[string]string
-	httpClient        *http.Client
-	logitBias         map[string]int
-	topLogprobs       *int
-	n                 *int64
+	apiKey                 string
+	model                  model.Model
+	maxTokens              int64
+	temperature            *float64
+	topP                   *float64
+	topK                   *int64
+	stopSequences          []string
+	timeout                *time.Duration
+	baseURL                string
+	disableCache           bool
+	reasoningEffort        *ReasoningEffort
+	extraHeaders           map[string]string
+	frequencyPenalty       *float64
+	presencePenalty        *float64
+	seed                   *int64
+	parallelToolCalls      *bool
+	toolChoice             *llm.ToolChoice
+	extraBodyFields        map[string]any
+	metadataFields         map[string]string
+	httpClient             *http.Client
+	logitBias              map[string]int
+	topLogprobs            *int
+	n                      *int64
+	reasoningContentReplay bool
 }
 
 // Option configures Options.
@@ -117,6 +118,11 @@ func WithBaseURL(
 	baseURL string,
 ) Option {
 	return func(o *Options) { o.baseURL = baseURL }
+}
+
+// WithReasoningContentReplay enables echoing previous reasoning content back in assistant messages.
+func WithReasoningContentReplay(enable bool) Option {
+	return func(o *Options) { o.reasoningContentReplay = enable }
 }
 
 // WithExtraHeaders adds custom HTTP headers to API requests.
@@ -393,6 +399,15 @@ func (c *Client) convertMessages(
 				}
 			}
 
+			if c.options.reasoningContentReplay {
+				rcs := msg.ReasoningContent()
+				if len(rcs) > 0 && rcs[0].Text != "" {
+					assistantMsg.SetExtraFields(map[string]any{
+						"reasoning_content": rcs[0].Text,
+					})
+				}
+			}
+
 			if len(msg.ToolCalls()) > 0 {
 				assistantMsg.ToolCalls = make(
 					[]openaisdk.ChatCompletionMessageToolCallUnionParam,
@@ -514,7 +529,9 @@ func (c *Client) preparedParams(
 		params.Tools = tools
 
 		if c.options.parallelToolCalls != nil {
-			params.ParallelToolCalls = openaisdk.Bool(*c.options.parallelToolCalls)
+			params.ParallelToolCalls = openaisdk.Bool(
+				*c.options.parallelToolCalls,
+			)
 		}
 
 		if c.options.toolChoice != nil {
@@ -663,8 +680,11 @@ func (c *Client) SendMessages(
 				finishReason = message.FinishReasonToolUse
 			}
 
+			reasoning := reasoningForChoice(openaiResponse.Choices[0])
+
 			resp := &llm.Response{
 				Content:          content,
+				Reasoning:        reasoning,
 				ToolCalls:        toolCalls,
 				Usage:            c.usage(*openaiResponse),
 				FinishReason:     finishReason,
@@ -744,6 +764,7 @@ func (c *Client) runStream(
 
 	acc := openaisdk.ChatCompletionAccumulator{}
 	currentContent := ""
+	thinkingText := ""
 	toolCalls := make([]message.ToolCall, 0)
 
 	for openaiStream.Next() {
@@ -757,6 +778,7 @@ func (c *Client) runStream(
 					var rc string
 					if json.Unmarshal([]byte(field.Raw()), &rc) == nil &&
 						rc != "" {
+						thinkingText += rc
 						eventChan <- llm.Event{
 							Type:     types.EventThinkingDelta,
 							Thinking: rc,
@@ -794,6 +816,7 @@ func (c *Client) runStream(
 
 		resp := &llm.Response{
 			Content:          currentContent,
+			Reasoning:        thinkingText,
 			ToolCalls:        toolCalls,
 			Usage:            c.usage(acc.ChatCompletion),
 			FinishReason:     finishReason,
@@ -834,6 +857,25 @@ func (c *Client) toolCallsForChoice(
 		})
 	}
 	return toolCalls
+}
+
+// reasoningForChoice extracts the reasoning content from a choice's extra fields.
+// Returns an empty string if no reasoning fields are present.
+func reasoningForChoice(
+	choice openaisdk.ChatCompletionChoice,
+) string {
+	for _, key := range []string{"reasoning", "reasoning_content"} {
+		if f, ok := choice.Message.JSON.ExtraFields[key]; ok {
+			raw := f.Raw()
+			if raw != "" && raw != "null" {
+				var rc string
+				if json.Unmarshal([]byte(raw), &rc) == nil && rc != "" {
+					return rc
+				}
+			}
+		}
+	}
+	return ""
 }
 
 // logProbsForChoice maps a choice's logprobs.content block to the
@@ -1031,8 +1073,11 @@ func (c *Client) SendMessagesWithStructuredOutput(
 				finishReason = message.FinishReasonToolUse
 			}
 
+			reasoning := reasoningForChoice(openaiResponse.Choices[0])
+
 			resp := &llm.Response{
 				Content:                    content,
+				Reasoning:                  reasoning,
 				ToolCalls:                  toolCalls,
 				Usage:                      c.usage(*openaiResponse),
 				FinishReason:               finishReason,

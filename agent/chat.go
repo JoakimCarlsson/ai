@@ -382,10 +382,13 @@ func (a *Agent) runLoop(
 				if resp.Content != "" {
 					assistantMsg.AppendContent(resp.Content)
 				}
+				if resp.Reasoning != "" {
+					assistantMsg.AppendReasoningContent(resp.Reasoning)
+				}
 				if len(resp.ToolCalls) > 0 && !activeAgent.autoExecute {
 					assistantMsg.AppendToolCalls(resp.ToolCalls)
 				}
-				if resp.Content != "" ||
+				if resp.Content != "" || resp.Reasoning != "" ||
 					len(resp.ToolCalls) > 0 && !activeAgent.autoExecute {
 					if err := activeAgent.session.AddMessages(
 						ctx,
@@ -402,6 +405,7 @@ func (a *Agent) runLoop(
 
 			chatResp := &ChatResponse{
 				Content:            resp.Content,
+				Reasoning:          resp.Reasoning,
 				ToolCalls:          resp.ToolCalls,
 				Usage:              totalUsage,
 				FinishReason:       resp.FinishReason,
@@ -422,6 +426,9 @@ func (a *Agent) runLoop(
 		assistantMsg.Model = activeAgent.llm.Model().ID
 		if resp.Content != "" {
 			assistantMsg.AppendContent(resp.Content)
+		}
+		if resp.Reasoning != "" {
+			assistantMsg.AppendReasoningContent(resp.Reasoning)
 		}
 		assistantMsg.AppendToolCalls(resp.ToolCalls)
 		messages = append(messages, assistantMsg)

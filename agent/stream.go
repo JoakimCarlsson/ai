@@ -386,6 +386,7 @@ func (a *Agent) runLoopStream(
 
 	for {
 		var fullContent string
+		var fullReasoning string
 		var toolCalls []message.ToolCall
 		var finalResponse *llm.Response
 		seenToolStarts := make(map[string]bool)
@@ -423,6 +424,7 @@ func (a *Agent) runLoopStream(
 				fullContent += event.Content
 				eventChan <- ChatEvent{Type: types.EventContentDelta, Content: event.Content}
 			case types.EventThinkingDelta:
+				fullReasoning += event.Thinking
 				eventChan <- ChatEvent{Type: types.EventThinkingDelta, Thinking: event.Thinking}
 			case types.EventToolUseStart,
 				types.EventToolUseDelta,
@@ -496,12 +498,15 @@ func (a *Agent) runLoopStream(
 				if mrResult.Action == HookModify && mrResult.Response != nil {
 					finalResponse = mrResult.Response
 					toolCalls = finalResponse.ToolCalls
+					fullContent = finalResponse.Content
+					fullReasoning = finalResponse.Reasoning
 				}
 			}
 		}
 
 		if streamRecovered && finalResponse != nil {
 			fullContent = finalResponse.Content
+			fullReasoning = finalResponse.Reasoning
 		}
 
 		if len(toolCalls) == 0 || !activeAgent.autoExecute ||
@@ -512,10 +517,13 @@ func (a *Agent) runLoopStream(
 				if fullContent != "" {
 					assistantMsg.AppendContent(fullContent)
 				}
+				if fullReasoning != "" {
+					assistantMsg.AppendReasoningContent(fullReasoning)
+				}
 				if len(toolCalls) > 0 && !activeAgent.autoExecute {
 					assistantMsg.AppendToolCalls(toolCalls)
 				}
-				if fullContent != "" ||
+				if fullContent != "" || fullReasoning != "" ||
 					len(toolCalls) > 0 && !activeAgent.autoExecute {
 					_ = activeAgent.session.AddMessages(
 						ctx,
@@ -537,6 +545,7 @@ func (a *Agent) runLoopStream(
 
 			chatResp := &ChatResponse{
 				Content:            fullContent,
+				Reasoning:          fullReasoning,
 				ToolCalls:          toolCalls,
 				Usage:              totalUsage,
 				FinishReason:       finishReason,
@@ -558,6 +567,9 @@ func (a *Agent) runLoopStream(
 		assistantMsg.Model = activeAgent.llm.Model().ID
 		if fullContent != "" {
 			assistantMsg.AppendContent(fullContent)
+		}
+		if fullReasoning != "" {
+			assistantMsg.AppendReasoningContent(fullReasoning)
 		}
 		assistantMsg.AppendToolCalls(toolCalls)
 		messages = append(messages, assistantMsg)

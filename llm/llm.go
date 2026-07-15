@@ -147,6 +147,7 @@ type Choice struct {
 // Response represents the complete response from an LLM provider.
 type Response struct {
 	Content                    string
+	Reasoning                  string
 	ToolCalls                  []message.ToolCall
 	Usage                      TokenUsage
 	FinishReason               message.FinishReason

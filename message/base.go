@@ -118,6 +118,19 @@ func (tc TextContent) String() string {
 
 func (TextContent) isPart() {}
 
+// ReasoningContent represents reasoning/thinking content within a message.
+type ReasoningContent struct {
+	// Text contains the actual reasoning content.
+	Text string `json:"text"`
+}
+
+// String returns the reasoning content as a string.
+func (rc ReasoningContent) String() string {
+	return rc.Text
+}
+
+func (ReasoningContent) isPart() {}
+
 // ImageURLContent represents an image referenced by URL within a message.
 type ImageURLContent struct {
 	// URL is the location of the image resource.
@@ -205,6 +218,32 @@ func (m *Message) Content() TextContent {
 		}
 	}
 	return TextContent{}
+}
+
+// ReasoningContent returns all reasoning content parts from the message.
+func (m *Message) ReasoningContent() []ReasoningContent {
+	var reasoningContents []ReasoningContent
+	for _, part := range m.Parts {
+		if c, ok := part.(ReasoningContent); ok {
+			reasoningContents = append(reasoningContents, c)
+		}
+	}
+	return reasoningContents
+}
+
+// AppendReasoningContent adds reasoning text content to the message.
+func (m *Message) AppendReasoningContent(delta string) {
+	found := false
+	for i, part := range m.Parts {
+		if c, ok := part.(ReasoningContent); ok {
+			m.Parts[i] = ReasoningContent{Text: c.Text + delta}
+			found = true
+			break
+		}
+	}
+	if !found {
+		m.Parts = append(m.Parts, ReasoningContent{Text: delta})
+	}
 }
 
 // BinaryContent returns all binary content parts from the message.
@@ -332,6 +371,8 @@ func (m Message) MarshalJSON() ([]byte, error) {
 			typeName = "tool_call"
 		case ToolResult:
 			typeName = "tool_result"
+		case ReasoningContent:
+			typeName = "reasoning"
 		default:
 			typeName = "unknown"
 		}
@@ -396,6 +437,12 @@ func (m *Message) UnmarshalJSON(data []byte) error {
 				return err
 			}
 			part = tr
+		case "reasoning":
+			var rc ReasoningContent
+			if err := json.Unmarshal(wrapper.Data, &rc); err != nil {
+				return err
+			}
+			part = rc
 		default:
 			continue
 		}

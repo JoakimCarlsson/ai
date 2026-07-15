@@ -509,3 +509,24 @@ func TestJSON_PreservesCreatedAt(t *testing.T) {
 		)
 	}
 }
+
+func TestJSON_RoundTrip_ReasoningContent(t *testing.T) {
+	orig := message.NewMessage(message.Assistant, []message.ContentPart{
+		message.ReasoningContent{Text: "thinking very hard..."},
+	})
+
+	data, err := json.Marshal(orig)
+	if err != nil {
+		t.Fatalf("marshal error: %v", err)
+	}
+
+	var decoded message.Message
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+
+	reasoning := decoded.ReasoningContent()
+	if len(reasoning) != 1 || reasoning[0].Text != "thinking very hard..." {
+		t.Errorf("expected 'thinking very hard...', got %v", reasoning)
+	}
+}
