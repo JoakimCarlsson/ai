@@ -4,10 +4,10 @@ go 1.25.8
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/joakimcarlsson/ai/batch v0.1.4
+	github.com/joakimcarlsson/ai/batch v0.1.5
 	github.com/joakimcarlsson/ai/embeddings v0.2.3
-	github.com/joakimcarlsson/ai/llm v0.4.3
-	github.com/joakimcarlsson/ai/message v0.3.1
+	github.com/joakimcarlsson/ai/llm v0.5.0
+	github.com/joakimcarlsson/ai/message v0.4.0
 	github.com/joakimcarlsson/ai/model v0.6.0
 	github.com/joakimcarlsson/ai/tool v0.1.2
 	google.golang.org/genai v1.61.0
