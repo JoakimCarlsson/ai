@@ -154,6 +154,8 @@ func (s *summarizeStrategy) generateSummary(
 				fmt.Fprintf(&sb, "[Tool call: %s]", p.Name)
 			case message.ToolResult:
 				fmt.Fprintf(&sb, "[Tool result: %s]", p.Name)
+			case message.ReasoningContent:
+				// ReasoningContent is intentionally skipped to save tokens.
 			}
 		}
 		sb.WriteString("\n\n")

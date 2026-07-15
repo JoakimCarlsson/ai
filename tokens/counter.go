@@ -90,6 +90,8 @@ func (c *Counter) CountTokens(
 			case message.ToolResult:
 				result.MessageTokens += int64(c.tokenizer.Count(p.Content))
 				result.MessageTokens += ToolResultOverhead
+			case message.ReasoningContent:
+				result.MessageTokens += int64(c.tokenizer.Count(p.Text))
 			}
 		}
 	}

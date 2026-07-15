@@ -15,6 +15,8 @@ import (
 type ChatResponse struct {
 	// Content is the final text response from the agent.
 	Content string
+	// Reasoning is the accumulated reasoning/thinking content.
+	Reasoning string
 	// ToolCalls contains any pending tool calls from the final LLM response.
 	ToolCalls []message.ToolCall
 	// ToolResults contains the results of all tool executions during the conversation.

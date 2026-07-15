@@ -10,6 +10,7 @@ import (
 	"github.com/joakimcarlsson/ai/agent"
 	llm "github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/session"
 )
 
 func TestOnToolError_Recovery(t *testing.T) {
@@ -779,5 +780,70 @@ func TestContinue_RecordsErrorOnSpan(t *testing.T) {
 	span := findSpan(spans, "invoke_agent")
 	if span != nil && span.Status.Code != codes.Error {
 		t.Error("expected error status on invoke_agent span")
+	}
+}
+
+func TestChat_Reasoning(t *testing.T) {
+	mock := newMockLLM(
+		mockResponse{
+			Reasoning:    "thinking about the user query",
+			Content:      "hello there",
+			FinishReason: message.FinishReasonEndTurn,
+		},
+	)
+
+	store := session.MemoryStore()
+	ctx := context.Background()
+
+	a := agent.New(mock,
+		agent.WithSession("reasoning-session", store),
+	)
+
+	resp, err := a.Chat(ctx, "hello")
+	if err != nil {
+		t.Fatalf("chat failed: %v", err)
+	}
+
+	if resp.Content != "hello there" {
+		t.Errorf("expected Content 'hello there', got %q", resp.Content)
+	}
+
+	if resp.Reasoning != "thinking about the user query" {
+		t.Errorf(
+			"expected Reasoning 'thinking about the user query', got %q",
+			resp.Reasoning,
+		)
+	}
+
+	sess, err := store.Load(ctx, "reasoning-session")
+	if err != nil {
+		t.Fatalf("load session: %v", err)
+	}
+	msgs, err := sess.GetMessages(ctx, nil)
+	if err != nil {
+		t.Fatalf("get messages: %v", err)
+	}
+
+	var assistantMsg *message.Message
+	for _, msg := range msgs {
+		if msg.Role == message.Assistant {
+			assistantMsg = &msg
+			break
+		}
+	}
+	if assistantMsg == nil {
+		t.Fatal("expected assistant message in history, found none")
+	}
+	reasoningParts := assistantMsg.ReasoningContent()
+	if len(reasoningParts) != 1 {
+		t.Errorf(
+			"expected 1 reasoning content part, got %d",
+			len(reasoningParts),
+		)
+	} else if reasoningParts[0].Text != "thinking about the user query" {
+		t.Errorf(
+			"expected reasoning text 'thinking about the user query', got %q",
+			reasoningParts[0].Text,
+		)
 	}
 }

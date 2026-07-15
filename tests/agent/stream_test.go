@@ -11,6 +11,7 @@ import (
 	"github.com/joakimcarlsson/ai/agent"
 	llm "github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/session"
 	"github.com/joakimcarlsson/ai/types"
 )
 
@@ -553,5 +554,92 @@ func TestChatStream_HookError_RecordsOnSpan(t *testing.T) {
 	}
 	if span.Status.Code != codes.Error {
 		t.Error("expected error status on span from hook error")
+	}
+}
+
+func TestChatStream_Reasoning(t *testing.T) {
+	mock := newMockLLM(
+		mockResponse{
+			Reasoning:    "thinking about the user query in stream",
+			Content:      "hello from stream",
+			FinishReason: message.FinishReasonEndTurn,
+		},
+	)
+
+	store := session.MemoryStore()
+	ctx := context.Background()
+
+	a := agent.New(mock,
+		agent.WithSession("reasoning-stream-session", store),
+	)
+
+	var thinkingEvents []string
+	var finalResponse *agent.ChatResponse
+
+	for evt := range a.ChatStream(ctx, "hello") {
+		switch evt.Type {
+		case types.EventThinkingDelta:
+			thinkingEvents = append(thinkingEvents, evt.Thinking)
+		case types.EventComplete:
+			finalResponse = evt.Response
+		}
+	}
+
+	if len(thinkingEvents) != 1 ||
+		thinkingEvents[0] != "thinking about the user query in stream" {
+		t.Errorf(
+			"expected EventThinkingDelta with 'thinking about the user query in stream', got %q",
+			thinkingEvents,
+		)
+	}
+
+	if finalResponse == nil {
+		t.Fatal("expected EventComplete with response, got nil")
+	}
+
+	if finalResponse.Content != "hello from stream" {
+		t.Errorf(
+			"expected final Content 'hello from stream', got %q",
+			finalResponse.Content,
+		)
+	}
+
+	if finalResponse.Reasoning != "thinking about the user query in stream" {
+		t.Errorf(
+			"expected final Reasoning 'thinking about the user query in stream', got %q",
+			finalResponse.Reasoning,
+		)
+	}
+
+	sess, err := store.Load(ctx, "reasoning-stream-session")
+	if err != nil {
+		t.Fatalf("load session: %v", err)
+	}
+	msgs, err := sess.GetMessages(ctx, nil)
+	if err != nil {
+		t.Fatalf("get messages: %v", err)
+	}
+
+	var assistantMsg *message.Message
+	for _, msg := range msgs {
+		if msg.Role == message.Assistant {
+			assistantMsg = &msg
+			break
+		}
+	}
+	if assistantMsg == nil {
+		t.Fatal("expected assistant message in history, found none")
+	}
+	reasoningParts := assistantMsg.ReasoningContent()
+	if len(reasoningParts) != 1 {
+		t.Errorf(
+			"expected 1 reasoning content part, got %d",
+			len(reasoningParts),
+		)
+	} else if reasoningParts[0].Text != "thinking about the user query in stream" {
+		t.Errorf(
+			"expected reasoning text 'thinking about the user query in stream', got %q",
+			reasoningParts[0].Text,
+		)
 	}
 }

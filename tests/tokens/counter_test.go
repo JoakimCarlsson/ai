@@ -263,3 +263,35 @@ func TestCountTokens_Deterministic(t *testing.T) {
 		)
 	}
 }
+
+func TestCountTokens_ReasoningContent(t *testing.T) {
+	c := newCounter(t)
+
+	msgWithout := message.NewMessage(message.Assistant, []message.ContentPart{})
+	resultWithout, err := c.CountTokens(
+		context.Background(),
+		tokens.CountOptions{Messages: []message.Message{msgWithout}},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	msgWith := message.NewMessage(message.Assistant, []message.ContentPart{
+		message.ReasoningContent{Text: "Thinking process here"},
+	})
+	resultWith, err := c.CountTokens(
+		context.Background(),
+		tokens.CountOptions{Messages: []message.Message{msgWith}},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	diff := resultWith.MessageTokens - resultWithout.MessageTokens
+	if diff <= 0 {
+		t.Errorf(
+			"expected token count to increase with ReasoningContent, got diff: %d",
+			diff,
+		)
+	}
+}

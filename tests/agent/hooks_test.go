@@ -297,6 +297,45 @@ func TestPostModelCall_Modify(t *testing.T) {
 	}
 }
 
+func TestPostModelCall_Modify_Streaming(t *testing.T) {
+	hooks := agent.Hooks{
+		PostModelCall: func(_ context.Context, mc agent.ModelResponseContext) (agent.ModelResponseResult, error) {
+			modified := *mc.Response
+			modified.Content = "overridden by hook stream"
+			modified.Reasoning = "overridden by hook reasoning"
+			return agent.ModelResponseResult{
+				Action:   agent.HookModify,
+				Response: &modified,
+			}, nil
+		},
+	}
+
+	mock := newMockLLM(
+		mockResponse{Content: "original", Reasoning: "thinking original"},
+	)
+	a := agent.New(mock, agent.WithHooks(hooks))
+
+	var resp *agent.ChatResponse
+	for event := range a.ChatStream(context.Background(), "test") {
+		if event.Type == types.EventComplete {
+			resp = event.Response
+		}
+	}
+
+	if resp == nil {
+		t.Fatal("expected non-nil ChatResponse on EventComplete")
+	}
+	if resp.Content != "overridden by hook stream" {
+		t.Fatalf("expected 'overridden by hook stream', got %q", resp.Content)
+	}
+	if resp.Reasoning != "overridden by hook reasoning" {
+		t.Fatalf(
+			"expected 'overridden by hook reasoning', got %q",
+			resp.Reasoning,
+		)
+	}
+}
+
 func TestPostModelCall_OnError(t *testing.T) {
 	var hookFired bool
 	var hookError error
