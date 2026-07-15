@@ -35,6 +35,7 @@ install the modules you import with `go get`.
 - `llm/builtin-tools` — server-side built-in tools across `anthropic`, `gemini`, `openai-responses`, `groq-compound`
 - `embeddings/voyage` — text embeddings with `embeddings/voyage`
 - `image/gemini` — image generation with `image/gemini`
+- `image/azure` — image generation against Azure OpenAI with `image/azure`
 - `tts/elevenlabs` — text-to-speech with `tts/elevenlabs`
 - `stt/deepgram` — speech-to-text with `stt/deepgram`
 - `rerankers/cohere` — document reranking with `rerankers/cohere`
@@ -105,6 +106,7 @@ Audio and image examples may write generated artifacts next to the example
 program:
 
 - `image/gemini` writes `gemini-image.png`
+- `image/azure` writes `azure-image.png`
 - `image/provider-switch` writes `<provider>-image.png`
 - `tts/elevenlabs` writes `elevenlabs-speech.mp3`
 - `tts/provider-switch` writes `<provider>-speech.mp3`

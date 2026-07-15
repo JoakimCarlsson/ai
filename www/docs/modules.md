@@ -91,6 +91,7 @@ Each carries exactly one vendor SDK.
 | Module | Vendor SDK |
 |---|---|
 | `image/openai` | `openai-go` (also xAI via `WithBaseURL`) |
+| `image/azure` | `openai-go` (Azure OpenAI; wraps `image/openai`) |
 | `image/gemini` | `google.golang.org/genai` (also Vertex AI) |
 
 ### Rerankers

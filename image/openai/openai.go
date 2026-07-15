@@ -202,6 +202,18 @@ func NewGeneration(opts ...Option) image.Generation {
 	}, image.TracingAttrs{})
 }
 
+// NewWithExistingClient constructs an image generation client from a pre-built
+// openai-go client (for example one configured for Azure auth). Unlike
+// [NewGeneration] it does not apply tracing — the caller is responsible for
+// wrapping the result with [image.WithTracing]. Mirrors
+// [github.com/joakimcarlsson/ai/llm/openai.NewWithExistingClient].
+func NewWithExistingClient(
+	options Options,
+	client openaisdk.Client,
+) *Client {
+	return &Client{options: options, client: client}
+}
+
 // Model returns the configured image generation model.
 func (c *Client) Model() model.ImageGenerationModel {
 	return c.options.model
