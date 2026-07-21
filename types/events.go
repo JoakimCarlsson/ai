@@ -47,4 +47,6 @@ const (
 	EventTeammateComplete EventType = "teammate_complete"
 	// EventTeammateError indicates a teammate encountered an error during its task.
 	EventTeammateError EventType = "teammate_error"
+	// EventContinuationRequired indicates the max iteration limit was reached and continuation may be requested.
+	EventContinuationRequired EventType = "continuation_required"
 )

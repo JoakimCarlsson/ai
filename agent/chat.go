@@ -403,12 +403,17 @@ func (a *Agent) runLoop(
 				go activeAgent.extractAndStoreMemories(context.Background())
 			}
 
+			finishReason := resp.FinishReason
+			if maxIter > 0 && iteration >= maxIter {
+				finishReason = message.FinishReasonMaxIterations
+			}
+
 			chatResp := &ChatResponse{
 				Content:            resp.Content,
 				Reasoning:          resp.Reasoning,
 				ToolCalls:          resp.ToolCalls,
 				Usage:              totalUsage,
-				FinishReason:       resp.FinishReason,
+				FinishReason:       finishReason,
 				ProviderResponseID: resp.ProviderResponseID,
 				TotalToolCalls:     totalToolCalls,
 				TotalDuration:      time.Since(startTime),

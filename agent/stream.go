@@ -542,6 +542,9 @@ func (a *Agent) runLoopStream(
 				finishReason = finalResponse.FinishReason
 				providerResponseID = finalResponse.ProviderResponseID
 			}
+			if maxIter > 0 && iteration >= maxIter {
+				finishReason = message.FinishReasonMaxIterations
+			}
 
 			chatResp := &ChatResponse{
 				Content:            fullContent,
