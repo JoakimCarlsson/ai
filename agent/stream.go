@@ -378,6 +378,7 @@ func (a *Agent) runLoopStream(
 
 	activeAgent := a
 	iteration := 0
+	totalIterations := 0
 
 	maxIter := activeAgent.maxIterations
 	if cfg.maxIterations > 0 {
@@ -511,6 +512,131 @@ func (a *Agent) runLoopStream(
 
 		if len(toolCalls) == 0 || !activeAgent.autoExecute ||
 			(maxIter > 0 && iteration >= maxIter) {
+			
+			if (maxIter > 0 && iteration >= maxIter) && len(toolCalls) > 0 {
+				if activeAgent.continuationProvider != nil {
+					req := ContinuationRequest{
+						MaxIterations:   maxIter,
+						TotalIterations: totalIterations + iteration,
+						ToolCalls:       toolCalls,
+					}
+					
+					if confirmChan := confirmationChanFromContext(ctx); confirmChan != nil {
+						confirmChan <- ChatEvent{
+							Type:                types.EventContinuationRequired,
+							ContinuationRequest: &req,
+						}
+					}
+
+					decision, pErr := activeAgent.continuationProvider(ctx, req)
+					if pErr == nil && decision == ContinuationApprove {
+						totalIterations += iteration
+						iteration = 0
+						goto executeTools
+					}
+
+					var errText string
+					if pErr != nil {
+						errText = pErr.Error()
+					} else if decision == ContinuationTimeout {
+						errText = "Continuation request timed out."
+					} else {
+						errText = "Maximum iteration limit reached. Continuation declined by user."
+					}
+
+					assistantMsg := message.NewAssistantMessage()
+					assistantMsg.Model = activeAgent.llm.Model().ID
+					if fullContent != "" {
+						assistantMsg.AppendContent(fullContent)
+					}
+					if fullReasoning != "" {
+						assistantMsg.AppendReasoningContent(fullReasoning)
+					}
+					assistantMsg.AppendToolCalls(toolCalls)
+
+					toolMsg := message.Message{
+						Role:      message.Tool,
+						Model:     activeAgent.llm.Model().ID,
+						CreatedAt: time.Now().UnixNano(),
+					}
+					for _, tc := range toolCalls {
+						toolMsg.AddToolResult(message.ToolResult{
+							ToolCallID: tc.ID,
+							Name:       tc.Name,
+							Content:    errText,
+							IsError:    true,
+						})
+					}
+
+					messages = append(messages, assistantMsg, toolMsg)
+					if activeAgent.session != nil {
+						_ = activeAgent.session.AddMessages(
+							ctx,
+							[]message.Message{assistantMsg, toolMsg},
+						)
+					}
+
+					fullContent = ""
+					fullReasoning = ""
+					var finalResp *llm.Response
+
+					for event := range activeAgent.llm.StreamResponse(ctx, messages, nil) {
+						switch event.Type {
+						case types.EventContentDelta:
+							fullContent += event.Content
+							eventChan <- ChatEvent{Type: types.EventContentDelta, Content: event.Content}
+						case types.EventThinkingDelta:
+							fullReasoning += event.Thinking
+							eventChan <- ChatEvent{Type: types.EventThinkingDelta, Thinking: event.Thinking}
+						case types.EventComplete:
+							if event.Response != nil {
+								finalResp = event.Response
+							}
+						case types.EventError:
+							eventChan <- ChatEvent{Type: types.EventError, Error: event.Error}
+							return nil, event.Error
+						}
+					}
+
+					if activeAgent.session != nil && finalResp != nil {
+						finalAssistantMsg := message.NewAssistantMessage()
+						finalAssistantMsg.Model = activeAgent.llm.Model().ID
+						if finalResp.Content != "" {
+							finalAssistantMsg.AppendContent(finalResp.Content)
+						}
+						if finalResp.Reasoning != "" {
+							finalAssistantMsg.AppendReasoningContent(finalResp.Reasoning)
+						}
+						if finalResp.Content != "" || finalResp.Reasoning != "" {
+							_ = activeAgent.session.AddMessages(
+								ctx,
+								[]message.Message{finalAssistantMsg},
+							)
+						}
+					}
+
+					chatResp := &ChatResponse{
+						Content:            fullContent,
+						Reasoning:          fullReasoning,
+						ToolCalls:          nil,
+						Usage:              totalUsage,
+						FinishReason:       message.FinishReasonMaxIterations,
+						ProviderResponseID: "",
+						TotalToolCalls:     totalToolCalls,
+						TotalDuration:      time.Since(startTime),
+						TotalTurns:         turns,
+					}
+					if finalResp != nil {
+						chatResp.Usage.Add(finalResp.Usage)
+						chatResp.ProviderResponseID = finalResp.ProviderResponseID
+					}
+					if activeAgent != a {
+						chatResp.AgentName = findAgentName(a, activeAgent)
+					}
+					return chatResp, nil
+				}
+			}
+
 			if activeAgent.session != nil {
 				assistantMsg := message.NewAssistantMessage()
 				assistantMsg.Model = activeAgent.llm.Model().ID
@@ -563,6 +689,8 @@ func (a *Agent) runLoopStream(
 
 			return chatResp, nil
 		}
+
+	executeTools:
 
 		totalToolCalls += len(toolCalls)
 

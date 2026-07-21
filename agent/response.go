@@ -78,4 +78,6 @@ type ChatEvent struct {
 	ConfirmationRequest *tool.ConfirmationRequest
 	// TeamMessage is set on EventTeamMessage events with the message details.
 	TeamMessage *team.Message
+	// ContinuationRequest is set on EventContinuationRequired events with the details of the pending request.
+	ContinuationRequest *ContinuationRequest
 }
