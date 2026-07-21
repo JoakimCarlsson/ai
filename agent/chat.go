@@ -375,23 +375,18 @@ func (a *Agent) runLoop(
 		turns++
 		totalUsage.Add(resp.Usage)
 
-		if len(resp.ToolCalls) == 0 || !activeAgent.autoExecute ||
-			(maxIter > 0 && iteration >= maxIter) {
-			
-			if (maxIter > 0 && iteration >= maxIter) && len(resp.ToolCalls) > 0 {
-				if activeAgent.continuationProvider != nil {
-					req := ContinuationRequest{
-						MaxIterations:   maxIter,
-						TotalIterations: totalIterations + iteration,
-						ToolCalls:       resp.ToolCalls,
-					}
-					decision, pErr := activeAgent.continuationProvider(ctx, req)
-					if pErr == nil && decision == ContinuationApprove {
-						totalIterations += iteration
-						iteration = 0
-						goto executeTools
-					}
-
+		if (maxIter > 0 && iteration >= maxIter) && len(resp.ToolCalls) > 0 {
+			if activeAgent.continuationProvider != nil {
+				req := ContinuationRequest{
+					MaxIterations:   maxIter,
+					TotalIterations: totalIterations + iteration,
+					ToolCalls:       resp.ToolCalls,
+				}
+				decision, pErr := activeAgent.continuationProvider(ctx, req)
+				if pErr == nil && decision == ContinuationApprove {
+					totalIterations += iteration
+					iteration = 0
+				} else {
 					var errText string
 					if pErr != nil {
 						errText = pErr.Error()
@@ -476,6 +471,10 @@ func (a *Agent) runLoop(
 					return chatResp, nil
 				}
 			}
+		}
+
+		if len(resp.ToolCalls) == 0 || !activeAgent.autoExecute ||
+			(maxIter > 0 && iteration >= maxIter) {
 
 			if activeAgent.session != nil {
 				assistantMsg := message.NewAssistantMessage()
@@ -525,8 +524,6 @@ func (a *Agent) runLoop(
 			}
 			return chatResp, nil
 		}
-
-	executeTools:
 
 		totalToolCalls += len(resp.ToolCalls)
 
