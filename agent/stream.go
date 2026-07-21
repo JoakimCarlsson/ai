@@ -674,7 +674,7 @@ func (a *Agent) runLoopStream(
 				finishReason = finalResponse.FinishReason
 				providerResponseID = finalResponse.ProviderResponseID
 			}
-			if maxIter > 0 && iteration >= maxIter {
+			if maxIter > 0 && iteration >= maxIter && len(toolCalls) > 0 {
 				finishReason = message.FinishReasonMaxIterations
 			}
 

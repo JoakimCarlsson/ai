@@ -434,6 +434,7 @@ func (a *Agent) runLoop(
 					if err != nil {
 						return nil, err
 					}
+					totalUsage.Add(finalResp.Usage)
 
 					if activeAgent.session != nil {
 						finalAssistantMsg := message.NewAssistantMessage()
@@ -504,7 +505,7 @@ func (a *Agent) runLoop(
 			}
 
 			finishReason := resp.FinishReason
-			if maxIter > 0 && iteration >= maxIter {
+			if maxIter > 0 && iteration >= maxIter && len(resp.ToolCalls) > 0 {
 				finishReason = message.FinishReasonMaxIterations
 			}
 
