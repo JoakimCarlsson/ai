@@ -510,29 +510,24 @@ func (a *Agent) runLoopStream(
 			fullReasoning = finalResponse.Reasoning
 		}
 
-		if len(toolCalls) == 0 || !activeAgent.autoExecute ||
-			(maxIter > 0 && iteration >= maxIter) {
-			
-			if (maxIter > 0 && iteration >= maxIter) && len(toolCalls) > 0 {
-				if activeAgent.continuationProvider != nil {
-					req := ContinuationRequest{
-						MaxIterations:   maxIter,
-						TotalIterations: totalIterations + iteration,
-						ToolCalls:       toolCalls,
-					}
-					
-					eventChan <- ChatEvent{
-						Type:                types.EventContinuationRequired,
-						ContinuationRequest: &req,
-					}
+		if (maxIter > 0 && iteration >= maxIter) && len(toolCalls) > 0 {
+			if activeAgent.continuationProvider != nil {
+				req := ContinuationRequest{
+					MaxIterations:   maxIter,
+					TotalIterations: totalIterations + iteration,
+					ToolCalls:       toolCalls,
+				}
+				
+				eventChan <- ChatEvent{
+					Type:                types.EventContinuationRequired,
+					ContinuationRequest: &req,
+				}
 
-					decision, pErr := activeAgent.continuationProvider(ctx, req)
-					if pErr == nil && decision == ContinuationApprove {
-						totalIterations += iteration
-						iteration = 0
-						goto executeTools
-					}
-
+				decision, pErr := activeAgent.continuationProvider(ctx, req)
+				if pErr == nil && decision == ContinuationApprove {
+					totalIterations += iteration
+					iteration = 0
+				} else {
 					var errText string
 					if pErr != nil {
 						errText = pErr.Error()
@@ -640,6 +635,10 @@ func (a *Agent) runLoopStream(
 					return chatResp, nil
 				}
 			}
+		}
+
+		if len(toolCalls) == 0 || !activeAgent.autoExecute ||
+			(maxIter > 0 && iteration >= maxIter) {
 
 			if activeAgent.session != nil {
 				assistantMsg := message.NewAssistantMessage()
@@ -696,8 +695,6 @@ func (a *Agent) runLoopStream(
 
 			return chatResp, nil
 		}
-
-	executeTools:
 
 		totalToolCalls += len(toolCalls)
 
