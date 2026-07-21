@@ -521,11 +521,9 @@ func (a *Agent) runLoopStream(
 						ToolCalls:       toolCalls,
 					}
 					
-					if confirmChan := confirmationChanFromContext(ctx); confirmChan != nil {
-						confirmChan <- ChatEvent{
-							Type:                types.EventContinuationRequired,
-							ContinuationRequest: &req,
-						}
+					eventChan <- ChatEvent{
+						Type:                types.EventContinuationRequired,
+						ContinuationRequest: &req,
 					}
 
 					decision, pErr := activeAgent.continuationProvider(ctx, req)
@@ -570,10 +568,13 @@ func (a *Agent) runLoopStream(
 
 					messages = append(messages, assistantMsg, toolMsg)
 					if activeAgent.session != nil {
-						_ = activeAgent.session.AddMessages(
+						if err := activeAgent.session.AddMessages(
 							ctx,
 							[]message.Message{assistantMsg, toolMsg},
-						)
+						); err != nil {
+							eventChan <- ChatEvent{Type: types.EventError, Error: err}
+							return nil, err
+						}
 					}
 
 					fullContent = ""
@@ -608,10 +609,13 @@ func (a *Agent) runLoopStream(
 							finalAssistantMsg.AppendReasoningContent(finalResp.Reasoning)
 						}
 						if finalResp.Content != "" || finalResp.Reasoning != "" {
-							_ = activeAgent.session.AddMessages(
+							if err := activeAgent.session.AddMessages(
 								ctx,
 								[]message.Message{finalAssistantMsg},
-							)
+							); err != nil {
+								eventChan <- ChatEvent{Type: types.EventError, Error: err}
+								return nil, err
+							}
 						}
 					}
 
@@ -651,10 +655,13 @@ func (a *Agent) runLoopStream(
 				}
 				if fullContent != "" || fullReasoning != "" ||
 					len(toolCalls) > 0 && !activeAgent.autoExecute {
-					_ = activeAgent.session.AddMessages(
+					if err := activeAgent.session.AddMessages(
 						ctx,
 						[]message.Message{assistantMsg},
-					)
+					); err != nil {
+						eventChan <- ChatEvent{Type: types.EventError, Error: err}
+						return nil, err
+					}
 				}
 			}
 
@@ -740,10 +747,13 @@ func (a *Agent) runLoopStream(
 		messages = append(messages, toolMsg)
 
 		if activeAgent.session != nil {
-			_ = activeAgent.session.AddMessages(
+			if err := activeAgent.session.AddMessages(
 				ctx,
 				[]message.Message{assistantMsg, toolMsg},
-			)
+			); err != nil {
+				eventChan <- ChatEvent{Type: types.EventError, Error: err}
+				return nil, err
+			}
 		}
 
 		if handoff := detectHandoff(
