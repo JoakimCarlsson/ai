@@ -377,10 +377,12 @@ func (a *Agent) runLoop(
 
 		if (maxIter > 0 && iteration >= maxIter) && len(resp.ToolCalls) > 0 {
 			if activeAgent.continuationProvider != nil {
+				toolCallsCopy := make([]message.ToolCall, len(resp.ToolCalls))
+				copy(toolCallsCopy, resp.ToolCalls)
 				req := ContinuationRequest{
 					MaxIterations:   maxIter,
 					TotalIterations: totalIterations + iteration,
-					ToolCalls:       resp.ToolCalls,
+					ToolCalls:       toolCallsCopy,
 				}
 				decision, pErr := activeAgent.continuationProvider(ctx, req)
 				if pErr == nil && decision == ContinuationApprove {
@@ -434,6 +436,7 @@ func (a *Agent) runLoop(
 					if err != nil {
 						return nil, err
 					}
+					turns++
 					totalUsage.Add(finalResp.Usage)
 
 					if activeAgent.session != nil {
