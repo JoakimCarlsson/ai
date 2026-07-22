@@ -512,10 +512,12 @@ func (a *Agent) runLoopStream(
 
 		if (maxIter > 0 && iteration >= maxIter) && len(toolCalls) > 0 {
 			if activeAgent.continuationProvider != nil {
+				toolCallsCopy := make([]message.ToolCall, len(toolCalls))
+				copy(toolCallsCopy, toolCalls)
 				req := ContinuationRequest{
 					MaxIterations:   maxIter,
 					TotalIterations: totalIterations + iteration,
-					ToolCalls:       toolCalls,
+					ToolCalls:       toolCallsCopy,
 				}
 				
 				eventChan <- ChatEvent{
@@ -576,6 +578,7 @@ func (a *Agent) runLoopStream(
 					fullReasoning = ""
 					var finalResp *llm.Response
 
+					turns++
 					for event := range activeAgent.llm.StreamResponse(ctx, messages, nil) {
 						switch event.Type {
 						case types.EventContentDelta:

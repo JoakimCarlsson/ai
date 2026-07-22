@@ -9,18 +9,40 @@ import (
 )
 
 func TestOption_WithContinuationProvider(t *testing.T) {
+	llmClient := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{ID: "tc-1", Name: "echo", Input: `{"text":"1"}`, Type: "function"},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{ID: "tc-2", Name: "echo", Input: `{"text":"2"}`, Type: "function"},
+			},
+		},
+		mockResponse{Content: "finished"},
+	)
+
 	called := false
 	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationDecision, error) {
 		called = true
 		return agent.ContinuationApprove, nil
 	}
 
-	a := agent.New(nil, agent.WithContinuationProvider(provider))
-	if a == nil {
-		t.Fatal("agent is nil")
+	a := agent.New(llmClient,
+		agent.WithTools(&echoTool{}),
+		agent.WithMaxIterations(1),
+		agent.WithContinuationProvider(provider),
+	)
+
+	_, err := a.Chat(context.Background(), "test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	_ = called
+	if !called {
+		t.Error("expected continuation provider to be called")
+	}
 }
 
 func TestLoop_Continuation_Approve(t *testing.T) {
@@ -35,7 +57,10 @@ func TestLoop_Continuation_Approve(t *testing.T) {
 				{ID: "tc-2", Name: "echo", Input: `{"text":"2"}`, Type: "function"},
 			},
 		},
-		mockResponse{Content: "finished after continuation"},
+		mockResponse{
+			Content:      "finished after continuation",
+			FinishReason: message.FinishReasonEndTurn,
+		},
 	)
 
 	var capturedReq agent.ContinuationRequest
@@ -57,6 +82,9 @@ func TestLoop_Continuation_Approve(t *testing.T) {
 
 	if resp.Content != "finished after continuation" {
 		t.Errorf("expected finished content, got %q", resp.Content)
+	}
+	if resp.FinishReason != message.FinishReasonEndTurn {
+		t.Errorf("expected FinishReason %q, got %q", message.FinishReasonEndTurn, resp.FinishReason)
 	}
 	if capturedReq.MaxIterations != 1 {
 		t.Errorf("expected MaxIterations 1, got %d", capturedReq.MaxIterations)
