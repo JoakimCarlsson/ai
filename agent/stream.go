@@ -579,6 +579,31 @@ func (a *Agent) runLoopStream(
 					var finalResp *llm.Response
 
 					turns++
+					turnStart := time.Now()
+					taskID, agentName, branch := activeAgent.hookContext(ctx)
+					
+					mcResult, hookErr := runPreModelCall(
+						ctx,
+						activeAgent.hooks,
+						ModelCallContext{
+							Messages:  messages,
+							Tools:     nil,
+							AgentName: agentName,
+							TaskID:    taskID,
+							Branch:    branch,
+						},
+					)
+					if hookErr != nil {
+						eventChan <- ChatEvent{Type: types.EventError, Error: fmt.Errorf("pre-model-call hook: %w", hookErr)}
+						return nil, hookErr
+					}
+					
+					// We don't use mcResult.Tools here since we explicitly don't pass tools to force a final summary
+					if mcResult.Action == HookModify {
+						messages = mcResult.Messages
+					}
+
+					var streamErr error
 					for event := range activeAgent.llm.StreamResponse(ctx, messages, nil) {
 						switch event.Type {
 						case types.EventContentDelta:
@@ -592,13 +617,50 @@ func (a *Agent) runLoopStream(
 								finalResp = event.Response
 							}
 						case types.EventError:
-							eventChan <- ChatEvent{Type: types.EventError, Error: event.Error}
-							return nil, event.Error
+							runPostModelCall(ctx, activeAgent.hooks, ModelResponseContext{
+								Duration:  time.Since(turnStart),
+								AgentName: agentName,
+								TaskID:    taskID,
+								Branch:    branch,
+								Error:     event.Error,
+							})
+							meResult, meErr := runOnModelError(
+								ctx,
+								activeAgent.hooks,
+								ModelErrorContext{
+									Messages:  messages,
+									Tools:     nil,
+									Error:     event.Error,
+									AgentName: agentName,
+									TaskID:    taskID,
+									Branch:    branch,
+								},
+							)
+							if meErr == nil && meResult.Action == HookModify && meResult.Response != nil {
+								finalResp = meResult.Response
+								streamErr = nil
+							} else {
+								eventChan <- ChatEvent{Type: types.EventError, Error: event.Error}
+								streamErr = event.Error
+							}
 						}
 					}
 
+					if streamErr != nil {
+						return nil, streamErr
+					}
+
+					runPostModelCall(ctx, activeAgent.hooks, ModelResponseContext{
+						Response:  finalResp,
+						Duration:  time.Since(turnStart),
+						AgentName: agentName,
+						TaskID:    taskID,
+						Branch:    branch,
+					})
+
 					if activeAgent.session != nil && finalResp != nil {
 						finalAssistantMsg := message.NewAssistantMessage()
+
 						finalAssistantMsg.Model = activeAgent.llm.Model().ID
 						if finalResp.Content != "" {
 							finalAssistantMsg.AppendContent(finalResp.Content)
