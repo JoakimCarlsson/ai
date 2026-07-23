@@ -35,7 +35,7 @@ type ContinuationResponse struct {
 }
 ```
 
-- **Message:** Supply an optional steering message. If the decision is `ContinuationApprove`, this message acts as a steering instruction for the next iteration (e.g., "Please try using the search tool instead"). *Note: When approving without `DiscardToolCalls`, the pending batch of tools will execute first, and the steering message is appended after the tool results.* If `ContinuationDecline` or `ContinuationTimeout`, it overrides the default system halt notification to explain why it was stopped.
+- **Message:** Supply an optional steering message. If the decision is `ContinuationApprove`, this message acts as a steering instruction for the next iteration (e.g., "Please try using the search tool instead"). If `ContinuationDecline` or `ContinuationTimeout`, it overrides the default system halt notification to explain why it was stopped. *Note: Regardless of the decision or whether tools were discarded, the steering message is always appended to the context strictly after the tool execution results (or synthetic error results) to preserve expected LLM request/response sequences.*
 - **DiscardToolCalls & ToolMessage:** When approving, you can set `DiscardToolCalls: true` to prevent the pending tools from executing. The agent injects synthetic error results for those tools, optionally using `ToolMessage` (defaults to "Tool execution canceled by user during continuation.").
 
 ## ContinuationRequest
