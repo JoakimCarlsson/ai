@@ -525,15 +525,31 @@ func (a *Agent) runLoopStream(
 					ContinuationRequest: &req,
 				}
 
-				decision, pErr := activeAgent.continuationProvider(ctx, req)
-				if pErr == nil && decision == ContinuationApprove {
+				contResp, pErr := activeAgent.continuationProvider(ctx, req)
+				if pErr == nil && contResp.Decision == ContinuationApprove {
 					totalIterations += iteration
 					iteration = 0
+					
+					if contResp.Message != "" {
+						sysMsg := message.NewUserMessage(contResp.Message)
+						messages = append(messages, sysMsg)
+						if activeAgent.session != nil {
+							if err := activeAgent.session.AddMessages(
+								ctx,
+								[]message.Message{sysMsg},
+							); err != nil {
+								eventChan <- ChatEvent{Type: types.EventError, Error: err}
+								return nil, err
+							}
+						}
+					}
 				} else {
 					var errText string
 					if pErr != nil {
 						errText = pErr.Error()
-					} else if decision == ContinuationTimeout {
+					} else if contResp.Message != "" {
+						errText = contResp.Message
+					} else if contResp.Decision == ContinuationTimeout {
 						errText = "Continuation request timed out."
 					} else {
 						errText = "Maximum iteration limit reached. Continuation declined by user."
