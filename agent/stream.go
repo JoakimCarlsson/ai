@@ -530,16 +530,63 @@ func (a *Agent) runLoopStream(
 					totalIterations += iteration
 					iteration = 0
 					
-					if contResp.Message != "" {
-						sysMsg := message.NewUserMessage(contResp.Message)
-						messages = append(messages, sysMsg)
+					if contResp.DiscardToolCalls {
+						assistantMsg := message.NewAssistantMessage()
+						assistantMsg.Model = activeAgent.llm.Model().ID
+						if fullContent != "" {
+							assistantMsg.AppendContent(fullContent)
+						}
+						if fullReasoning != "" {
+							assistantMsg.AppendReasoningContent(fullReasoning)
+						}
+						assistantMsg.AppendToolCalls(toolCalls)
+
+						toolMsg := message.Message{
+							Role:      message.Tool,
+							Model:     activeAgent.llm.Model().ID,
+							CreatedAt: time.Now().UnixNano(),
+						}
+						
+						errText := contResp.ToolMessage
+						if errText == "" {
+							errText = "Tool execution canceled by user during continuation."
+						}
+
+						for _, tc := range toolCalls {
+							toolMsg.AddToolResult(message.ToolResult{
+								ToolCallID: tc.ID,
+								Name:       tc.Name,
+								Content:    errText,
+								IsError:    true,
+							})
+						}
+
+						newMessages := []message.Message{assistantMsg, toolMsg}
+						if contResp.Message != "" {
+							sysMsg := message.NewUserMessage(contResp.Message)
+							newMessages = append(newMessages, sysMsg)
+						}
+
+						messages = append(messages, newMessages...)
 						if activeAgent.session != nil {
-							if err := activeAgent.session.AddMessages(
-								ctx,
-								[]message.Message{sysMsg},
-							); err != nil {
+							if err := activeAgent.session.AddMessages(ctx, newMessages); err != nil {
 								eventChan <- ChatEvent{Type: types.EventError, Error: err}
 								return nil, err
+							}
+						}
+						continue
+					} else {
+						if contResp.Message != "" {
+							sysMsg := message.NewUserMessage(contResp.Message)
+							messages = append(messages, sysMsg)
+							if activeAgent.session != nil {
+								if err := activeAgent.session.AddMessages(
+									ctx,
+									[]message.Message{sysMsg},
+								); err != nil {
+									eventChan <- ChatEvent{Type: types.EventError, Error: err}
+									return nil, err
+								}
 							}
 						}
 					}

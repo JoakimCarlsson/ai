@@ -21,8 +21,10 @@ type ContinuationRequest struct {
 }
 
 type ContinuationResponse struct {
-	Decision ContinuationDecision
-	Message  string
+	Decision         ContinuationDecision
+	Message          string
+	DiscardToolCalls bool
+	ToolMessage      string
 }
 
 type ContinuationProvider func(ctx context.Context, req ContinuationRequest) (ContinuationResponse, error)
