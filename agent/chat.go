@@ -422,11 +422,13 @@ func (a *Agent) runLoop(
 						})
 					}
 
-					messages = append(messages, assistantMsg, toolMsg)
+					sysMsg := message.NewUserMessage("System Notification: " + errText)
+
+					messages = append(messages, assistantMsg, toolMsg, sysMsg)
 					if activeAgent.session != nil {
 						if err := activeAgent.session.AddMessages(
 							ctx,
-							[]message.Message{assistantMsg, toolMsg},
+							[]message.Message{assistantMsg, toolMsg, sysMsg},
 						); err != nil {
 							return nil, err
 						}

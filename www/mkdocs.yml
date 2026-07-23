@@ -63,6 +63,7 @@ nav:
     - Streaming: agent/streaming.md
     - Hooks: agent/hooks.md
     - Tool Confirmation: agent/confirmation.md
+    - Loop Continuation: agent/continuation.md
     - Sub-Agents: agent/sub-agents.md
     - Background Agents: agent/background-agents.md
     - Handoffs: agent/handoffs.md
