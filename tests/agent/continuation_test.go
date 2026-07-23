@@ -24,9 +24,9 @@ func TestOption_WithContinuationProvider(t *testing.T) {
 	)
 
 	called := false
-	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationDecision, error) {
+	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
 		called = true
-		return agent.ContinuationApprove, nil
+		return agent.ContinuationResponse{Decision: agent.ContinuationApprove}, nil
 	}
 
 	a := agent.New(llmClient,
@@ -64,9 +64,9 @@ func TestLoop_Continuation_Approve(t *testing.T) {
 	)
 
 	var capturedReq agent.ContinuationRequest
-	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationDecision, error) {
+	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
 		capturedReq = req
-		return agent.ContinuationApprove, nil
+		return agent.ContinuationResponse{Decision: agent.ContinuationApprove}, nil
 	}
 
 	a := agent.New(llmClient,
@@ -109,8 +109,8 @@ func TestLoop_Continuation_Decline(t *testing.T) {
 		mockResponse{Content: "summarized after decline"},
 	)
 
-	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationDecision, error) {
-		return agent.ContinuationDecline, nil
+	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
+		return agent.ContinuationResponse{Decision: agent.ContinuationDecline}, nil
 	}
 
 	a := agent.New(llmClient,
@@ -147,8 +147,8 @@ func TestLoop_Continuation_Timeout(t *testing.T) {
 		mockResponse{Content: "summarized after timeout"},
 	)
 
-	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationDecision, error) {
-		return agent.ContinuationTimeout, nil
+	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
+		return agent.ContinuationResponse{Decision: agent.ContinuationTimeout}, nil
 	}
 
 	a := agent.New(llmClient,

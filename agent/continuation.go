@@ -20,4 +20,9 @@ type ContinuationRequest struct {
 	ToolCalls       []message.ToolCall
 }
 
-type ContinuationProvider func(ctx context.Context, req ContinuationRequest) (ContinuationDecision, error)
+type ContinuationResponse struct {
+	Decision ContinuationDecision
+	Message  string
+}
+
+type ContinuationProvider func(ctx context.Context, req ContinuationRequest) (ContinuationResponse, error)
