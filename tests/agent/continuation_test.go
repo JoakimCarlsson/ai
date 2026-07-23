@@ -166,3 +166,73 @@ func TestLoop_Continuation_Timeout(t *testing.T) {
 		t.Errorf("expected summarized content, got %q", resp.Content)
 	}
 }
+
+func TestLoop_Continuation_Approve_DiscardToolCalls(t *testing.T) {
+	llmClient := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{ID: "tc-1", Name: "echo", Input: `{"text":"1"}`, Type: "function"},
+			},
+		},
+		mockResponse{
+			Content:      "finished after discard",
+			FinishReason: message.FinishReasonEndTurn,
+		},
+	)
+
+	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
+		return agent.ContinuationResponse{
+			Decision:         agent.ContinuationApprove,
+			DiscardToolCalls: true,
+			ToolMessage:      "canceled!",
+		}, nil
+	}
+
+	a := agent.New(llmClient,
+		agent.WithTools(&echoTool{}),
+		agent.WithMaxIterations(1),
+		agent.WithContinuationProvider(provider),
+	)
+
+	resp, err := a.Chat(context.Background(), "test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if resp.Content != "finished after discard" {
+		t.Errorf("expected finished content, got %q", resp.Content)
+	}
+}
+
+func TestLoop_Continuation_Decline_WithSteeringMessage(t *testing.T) {
+	llmClient := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{ID: "tc-1", Name: "echo", Input: `{"text":"1"}`, Type: "function"},
+			},
+		},
+		mockResponse{Content: "summarized after custom decline"},
+	)
+
+	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
+		return agent.ContinuationResponse{
+			Decision: agent.ContinuationDecline,
+			Message:  "Stop right there.",
+		}, nil
+	}
+
+	a := agent.New(llmClient,
+		agent.WithTools(&echoTool{}),
+		agent.WithMaxIterations(1),
+		agent.WithContinuationProvider(provider),
+	)
+
+	resp, err := a.Chat(context.Background(), "test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if resp.Content != "summarized after custom decline" {
+		t.Errorf("expected summarized content, got %q", resp.Content)
+	}
+}
