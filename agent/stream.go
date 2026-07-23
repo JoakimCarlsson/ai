@@ -386,6 +386,7 @@ func (a *Agent) runLoopStream(
 	}
 
 	for {
+		var pendingSteeringMessage string
 		var fullContent string
 		var fullReasoning string
 		var toolCalls []message.ToolCall
@@ -577,17 +578,7 @@ func (a *Agent) runLoopStream(
 						continue
 					} else {
 						if contResp.Message != "" {
-							sysMsg := message.NewUserMessage(contResp.Message)
-							messages = append(messages, sysMsg)
-							if activeAgent.session != nil {
-								if err := activeAgent.session.AddMessages(
-									ctx,
-									[]message.Message{sysMsg},
-								); err != nil {
-									eventChan <- ChatEvent{Type: types.EventError, Error: err}
-									return nil, err
-								}
-							}
+							pendingSteeringMessage = contResp.Message
 						}
 					}
 				} else {
@@ -880,6 +871,20 @@ func (a *Agent) runLoopStream(
 			); err != nil {
 				eventChan <- ChatEvent{Type: types.EventError, Error: err}
 				return nil, err
+			}
+		}
+
+		if pendingSteeringMessage != "" {
+			sysMsg := message.NewUserMessage(pendingSteeringMessage)
+			messages = append(messages, sysMsg)
+			if activeAgent.session != nil {
+				if err := activeAgent.session.AddMessages(
+					ctx,
+					[]message.Message{sysMsg},
+				); err != nil {
+					eventChan <- ChatEvent{Type: types.EventError, Error: err}
+					return nil, err
+				}
 			}
 		}
 
