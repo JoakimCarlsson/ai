@@ -309,6 +309,7 @@ func (a *Agent) runLoop(
 	}
 
 	for {
+		var pendingSteeringMessage string
 		turnStart := time.Now()
 		allTools := activeAgent.getToolsWithContext(ctx)
 
@@ -435,16 +436,7 @@ func (a *Agent) runLoop(
 						continue
 					} else {
 						if contResp.Message != "" {
-							sysMsg := message.NewUserMessage(contResp.Message)
-							messages = append(messages, sysMsg)
-							if activeAgent.session != nil {
-								if err := activeAgent.session.AddMessages(
-									ctx,
-									[]message.Message{sysMsg},
-								); err != nil {
-									return nil, err
-								}
-							}
+							pendingSteeringMessage = contResp.Message
 						}
 					}
 				} else {
@@ -628,6 +620,19 @@ func (a *Agent) runLoop(
 				[]message.Message{assistantMsg, toolMsg},
 			); err != nil {
 				return nil, err
+			}
+		}
+
+		if pendingSteeringMessage != "" {
+			sysMsg := message.NewUserMessage(pendingSteeringMessage)
+			messages = append(messages, sysMsg)
+			if activeAgent.session != nil {
+				if err := activeAgent.session.AddMessages(
+					ctx,
+					[]message.Message{sysMsg},
+				); err != nil {
+					return nil, err
+				}
 			}
 		}
 
