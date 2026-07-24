@@ -38,6 +38,7 @@ type Agent struct {
 	taskManager          *TaskManager
 	hooks                []Hooks
 	confirmationProvider ConfirmationProvider
+	continuationProvider ContinuationProvider
 	team                 *team.Team
 	coordinatorMode      bool
 	teammateTemplates    map[string]*Agent

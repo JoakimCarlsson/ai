@@ -241,6 +241,13 @@ func WithConfirmationProvider(provider ConfirmationProvider) Option {
 	}
 }
 
+// WithContinuationProvider sets a callback that is invoked when maxIterations is reached.
+func WithContinuationProvider(provider ContinuationProvider) Option {
+	return func(a *Agent) {
+		a.continuationProvider = provider
+	}
+}
+
 // WithFanOut registers a fan-out tool that spawns multiple sub-agents in parallel.
 // The LLM calls this tool with a list of tasks, and each task is dispatched to a
 // separate execution of the template agent. Results are aggregated into a single response.

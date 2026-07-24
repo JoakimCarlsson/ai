@@ -527,3 +527,45 @@ func TestLoop_MaxParallelTools(t *testing.T) {
 		)
 	}
 }
+
+func TestLoop_MaxIterations_SetsFinishReason(t *testing.T) {
+	llmClient := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"1"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-2",
+					Name:  "echo",
+					Input: `{"text":"2"}`,
+					Type:  "function",
+				},
+			},
+		},
+	)
+
+	a := agent.New(llmClient,
+		agent.WithTools(&echoTool{}),
+		agent.WithMaxIterations(1),
+	)
+
+	resp, err := a.Chat(context.Background(), "test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if resp.FinishReason != message.FinishReasonMaxIterations {
+		t.Errorf(
+			"expected FinishReasonMaxIterations, got %q",
+			resp.FinishReason,
+		)
+	}
+}

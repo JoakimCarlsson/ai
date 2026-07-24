@@ -59,6 +59,8 @@ const (
 	FinishReasonError FinishReason = "error"
 	// FinishReasonUnknown indicates an unknown finish reason.
 	FinishReasonUnknown FinishReason = "unknown"
+	// FinishReasonMaxIterations indicates the agent loop hit the maximum iterations limit.
+	FinishReasonMaxIterations FinishReason = "max_iterations"
 )
 
 // ToolCall represents a request to execute a tool with specific parameters.

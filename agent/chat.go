@@ -301,6 +301,7 @@ func (a *Agent) runLoop(
 
 	activeAgent := a
 	iteration := 0
+	totalIterations := 0
 
 	maxIter := activeAgent.maxIterations
 	if cfg.maxIterations > 0 {
@@ -308,6 +309,7 @@ func (a *Agent) runLoop(
 	}
 
 	for {
+		var pendingSteeringMessage string
 		turnStart := time.Now()
 		allTools := activeAgent.getToolsWithContext(ctx)
 
@@ -374,8 +376,177 @@ func (a *Agent) runLoop(
 		turns++
 		totalUsage.Add(resp.Usage)
 
+		if (maxIter > 0 && iteration >= maxIter) && len(resp.ToolCalls) > 0 {
+			if activeAgent.continuationProvider != nil {
+				toolCallsCopy := make([]message.ToolCall, len(resp.ToolCalls))
+				copy(toolCallsCopy, resp.ToolCalls)
+				req := ContinuationRequest{
+					MaxIterations:   maxIter,
+					TotalIterations: totalIterations + iteration,
+					ToolCalls:       toolCallsCopy,
+				}
+				contResp, pErr := activeAgent.continuationProvider(ctx, req)
+				if pErr == nil && contResp.Decision == ContinuationApprove {
+					totalIterations += iteration
+					iteration = 0
+
+					if contResp.DiscardToolCalls {
+						assistantMsg := message.NewAssistantMessage()
+						assistantMsg.Model = activeAgent.llm.Model().ID
+						if resp.Content != "" {
+							assistantMsg.AppendContent(resp.Content)
+						}
+						if resp.Reasoning != "" {
+							assistantMsg.AppendReasoningContent(resp.Reasoning)
+						}
+						assistantMsg.AppendToolCalls(resp.ToolCalls)
+
+						toolMsg := message.Message{
+							Role:      message.Tool,
+							Model:     activeAgent.llm.Model().ID,
+							CreatedAt: time.Now().UnixNano(),
+						}
+
+						errText := contResp.ToolMessage
+						if errText == "" {
+							errText = "Tool execution canceled by user during continuation."
+						}
+
+						for _, tc := range resp.ToolCalls {
+							toolMsg.AddToolResult(message.ToolResult{
+								ToolCallID: tc.ID,
+								Name:       tc.Name,
+								Content:    errText,
+								IsError:    true,
+							})
+						}
+
+						newMessages := []message.Message{assistantMsg, toolMsg}
+						if contResp.Message != "" {
+							sysMsg := message.NewUserMessage(contResp.Message)
+							newMessages = append(newMessages, sysMsg)
+						}
+
+						messages = append(messages, newMessages...)
+						if activeAgent.session != nil {
+							if err := activeAgent.session.AddMessages(
+								ctx,
+								newMessages,
+							); err != nil {
+								return nil, err
+							}
+						}
+						continue
+					}
+					if contResp.Message != "" {
+						pendingSteeringMessage = contResp.Message
+					}
+				} else {
+					var errText string
+					switch {
+					case pErr != nil:
+						errText = pErr.Error()
+					case contResp.Message != "":
+						errText = contResp.Message
+					case contResp.Decision == ContinuationTimeout:
+						errText = "Continuation request timed out."
+					default:
+						errText = "Maximum iteration limit reached. Continuation declined by user."
+					}
+
+					assistantMsg := message.NewAssistantMessage()
+					assistantMsg.Model = activeAgent.llm.Model().ID
+					if resp.Content != "" {
+						assistantMsg.AppendContent(resp.Content)
+					}
+					if resp.Reasoning != "" {
+						assistantMsg.AppendReasoningContent(resp.Reasoning)
+					}
+					assistantMsg.AppendToolCalls(resp.ToolCalls)
+
+					toolMsg := message.Message{
+						Role:      message.Tool,
+						Model:     activeAgent.llm.Model().ID,
+						CreatedAt: time.Now().UnixNano(),
+					}
+					for _, tc := range resp.ToolCalls {
+						toolMsg.AddToolResult(message.ToolResult{
+							ToolCallID: tc.ID,
+							Name:       tc.Name,
+							Content:    errText,
+							IsError:    true,
+						})
+					}
+
+					sysMsg := message.NewUserMessage(
+						"System Notification: " + errText,
+					)
+
+					messages = append(messages, assistantMsg, toolMsg, sysMsg)
+					if activeAgent.session != nil {
+						if err := activeAgent.session.AddMessages(
+							ctx,
+							[]message.Message{assistantMsg, toolMsg, sysMsg},
+						); err != nil {
+							return nil, err
+						}
+					}
+
+					finalResp, err := activeAgent.llm.SendMessages(
+						ctx,
+						messages,
+						nil,
+					)
+					if err != nil {
+						return nil, err
+					}
+					turns++
+					totalUsage.Add(finalResp.Usage)
+
+					if activeAgent.session != nil {
+						finalAssistantMsg := message.NewAssistantMessage()
+						finalAssistantMsg.Model = activeAgent.llm.Model().ID
+						if finalResp.Content != "" {
+							finalAssistantMsg.AppendContent(finalResp.Content)
+						}
+						if finalResp.Reasoning != "" {
+							finalAssistantMsg.AppendReasoningContent(
+								finalResp.Reasoning,
+							)
+						}
+						if finalResp.Content != "" ||
+							finalResp.Reasoning != "" {
+							if err := activeAgent.session.AddMessages(
+								ctx,
+								[]message.Message{finalAssistantMsg},
+							); err != nil {
+								return nil, err
+							}
+						}
+					}
+
+					chatResp := &ChatResponse{
+						Content:            finalResp.Content,
+						Reasoning:          finalResp.Reasoning,
+						ToolCalls:          nil,
+						Usage:              totalUsage,
+						FinishReason:       message.FinishReasonMaxIterations,
+						ProviderResponseID: finalResp.ProviderResponseID,
+						TotalToolCalls:     totalToolCalls,
+						TotalDuration:      time.Since(startTime),
+						TotalTurns:         turns,
+					}
+					if activeAgent != a {
+						chatResp.AgentName = findAgentName(a, activeAgent)
+					}
+					return chatResp, nil
+				}
+			}
+		}
+
 		if len(resp.ToolCalls) == 0 || !activeAgent.autoExecute ||
 			(maxIter > 0 && iteration >= maxIter) {
+
 			if activeAgent.session != nil {
 				assistantMsg := message.NewAssistantMessage()
 				assistantMsg.Model = activeAgent.llm.Model().ID
@@ -403,12 +574,17 @@ func (a *Agent) runLoop(
 				go activeAgent.extractAndStoreMemories(context.Background())
 			}
 
+			finishReason := resp.FinishReason
+			if maxIter > 0 && iteration >= maxIter && len(resp.ToolCalls) > 0 {
+				finishReason = message.FinishReasonMaxIterations
+			}
+
 			chatResp := &ChatResponse{
 				Content:            resp.Content,
 				Reasoning:          resp.Reasoning,
 				ToolCalls:          resp.ToolCalls,
 				Usage:              totalUsage,
-				FinishReason:       resp.FinishReason,
+				FinishReason:       finishReason,
 				ProviderResponseID: resp.ProviderResponseID,
 				TotalToolCalls:     totalToolCalls,
 				TotalDuration:      time.Since(startTime),
@@ -456,6 +632,19 @@ func (a *Agent) runLoop(
 				[]message.Message{assistantMsg, toolMsg},
 			); err != nil {
 				return nil, err
+			}
+		}
+
+		if pendingSteeringMessage != "" {
+			sysMsg := message.NewUserMessage(pendingSteeringMessage)
+			messages = append(messages, sysMsg)
+			if activeAgent.session != nil {
+				if err := activeAgent.session.AddMessages(
+					ctx,
+					[]message.Message{sysMsg},
+				); err != nil {
+					return nil, err
+				}
 			}
 		}
 
