@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/joakimcarlsson/ai/agent"
 	"github.com/joakimcarlsson/ai/llm"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
+	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
@@ -42,6 +44,18 @@ func (c *countdownTool) Run(ctx context.Context, tc tool.Call) (tool.Response, e
 	return tool.NewTextResponse(fmt.Sprintf("Count is %d. Please call the countdown tool again with %d.", params.Current, params.Current-1)), nil
 }
 
+// joinNames extracts the tool names from a slice of ToolCalls for display.
+func joinNames(tcs []message.ToolCall) string {
+	out := ""
+	for i, tc := range tcs {
+		if i > 0 {
+			out += ", "
+		}
+		out += tc.Name
+	}
+	return out
+}
+
 func main() {
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
@@ -59,20 +73,26 @@ func main() {
 
 	fmt.Println("\n=== Running Streaming Continuation ===")
 	runStream(llmClient)
+
+	fmt.Println("\n=== Running Streaming Continuation (Timeout demo) ===")
+	runStreamDemoAndTimeout(llmClient)
 }
 
 func runStatic(llmClient llm.LLM) {
 	// Provider that approves the first continuation with a steering message, then declines the second
 	staticProvider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
-		fmt.Printf("[Static Provider] Reached max iterations! (Total so far: %d). Requested Tools: %d\n", req.TotalIterations, len(req.ToolCalls))
-		
+		fmt.Printf("[Static Provider] max=%d total=%d pendingTools=[%s] (count=%d)\n",
+			req.MaxIterations, req.TotalIterations, joinNames(req.ToolCalls), len(req.ToolCalls))
+
 		if req.TotalIterations == 2 {
 			fmt.Println("[Static Provider] Approving with a steering message and discarding current tool calls...")
 			return agent.ContinuationResponse{
 				Decision:         agent.ContinuationApprove,
 				Message:          "You are taking too long. Just tell me 'The countdown is canceled!' and stop calling tools.",
 				DiscardToolCalls: true,
-				ToolMessage:      "Tool rejected.",
+				// ToolMessage becomes the error text attached to each discarded
+				// tool call's ToolResult so the model knows the call was canceled.
+				ToolMessage: "Tool rejected.",
 			}, nil
 		}
 
@@ -99,6 +119,50 @@ func runStatic(llmClient llm.LLM) {
 	}
 
 	fmt.Printf("\nFinal Response:\n%s\n", resp.Content)
+}
+
+// runStreamDemoAndTimeout runs an extra scenario that exercises ContinuationTimeout:
+// the provider never sends an approval/decline, so the consumer must surface a
+// timeout decision (mirroring what a UI would do if the user walked away).
+func runStreamDemoAndTimeout(llmClient llm.LLM) {
+	fmt.Println("\n=== Running Streaming Continuation (Timeout demo) ===")
+
+	// Provider blocks on a channel that is never written to, then surfaces a
+	// timeout decision once the context is canceled.
+	timeoutProvider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
+		select {
+		case <-time.After(2 * time.Second):
+			return agent.ContinuationResponse{
+				Decision: agent.ContinuationTimeout,
+				Message:  "Tell me I did not respond in time.",
+			}, nil
+		case <-ctx.Done():
+			return agent.ContinuationResponse{Decision: agent.ContinuationTimeout}, ctx.Err()
+		}
+	}
+
+	assistant := agent.New(llmClient,
+		agent.WithSystemPrompt("You are a helpful assistant. If asked to countdown, use the countdown tool continuously."),
+		agent.WithTools(newCountdownTool()),
+		agent.WithMaxIterations(1),
+		agent.WithContinuationProvider(timeoutProvider),
+	)
+
+	eventStream := assistant.ChatStream(context.Background(), "Please count down from 3 using the tool.")
+	for event := range eventStream {
+		switch event.Type {
+		case types.EventContinuationRequired:
+			req := event.ContinuationRequest
+			fmt.Printf("\n[Timeout Stream] Continuation required (total=%d) — no UI response expected\n",
+				req.TotalIterations)
+		case types.EventContentDelta:
+			fmt.Print(event.Content)
+		case types.EventComplete:
+			fmt.Println("\n[Timeout Stream] Stream finished!")
+		case types.EventError:
+			fmt.Printf("\n[Timeout Stream] Error: %v\n", event.Error)
+		}
+	}
 }
 
 func runStream(llmClient llm.LLM) {
@@ -129,13 +193,14 @@ func runStream(llmClient llm.LLM) {
 		switch event.Type {
 		case types.EventContinuationRequired:
 			req := event.ContinuationRequest
-			fmt.Printf("\n[Stream UI] Continuation required! (Total iterations: %d)\n", req.TotalIterations)
-			
+			fmt.Printf("\n[Stream UI] Continuation required! (max=%d total=%d pendingTools=[%s])\n",
+				req.MaxIterations, req.TotalIterations, joinNames(req.ToolCalls))
+
 			if req.TotalIterations == 2 {
 				fmt.Println("[Stream UI] Supplying approval with a steering message...")
 				approvalChan <- agent.ContinuationResponse{
-					Decision: agent.ContinuationApprove,
-					Message:  "Skip the tools, just tell me what number you are currently at.",
+					Decision:         agent.ContinuationApprove,
+					Message:          "Skip the tools, just tell me what number you are currently at.",
 					DiscardToolCalls: true,
 				}
 			} else {
