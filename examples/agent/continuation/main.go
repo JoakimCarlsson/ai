@@ -25,12 +25,19 @@ func newCountdownTool() *countdownTool {
 }
 
 func (c *countdownTool) Info() tool.Info {
-	return tool.NewInfo("countdown", "Count down from a given number. Tells the model what the next number should be.", struct {
-		Current int `json:"current" desc:"The current number to count down from"`
-	}{})
+	return tool.NewInfo(
+		"countdown",
+		"Count down from a given number. Tells the model what the next number should be.",
+		struct {
+			Current int `json:"current" desc:"The current number to count down from"`
+		}{},
+	)
 }
 
-func (c *countdownTool) Run(ctx context.Context, tc tool.Call) (tool.Response, error) {
+func (c *countdownTool) Run(
+	ctx context.Context,
+	tc tool.Call,
+) (tool.Response, error) {
 	var params struct {
 		Current int `json:"current"`
 	}
@@ -41,7 +48,13 @@ func (c *countdownTool) Run(ctx context.Context, tc tool.Call) (tool.Response, e
 		return tool.NewTextResponse("Done!"), nil
 	}
 	// Emulate a loop that forces multiple turns
-	return tool.NewTextResponse(fmt.Sprintf("Count is %d. Please call the countdown tool again with %d.", params.Current, params.Current-1)), nil
+	return tool.NewTextResponse(
+		fmt.Sprintf(
+			"Count is %d. Please call the countdown tool again with %d.",
+			params.Current,
+			params.Current-1,
+		),
+	), nil
 }
 
 // joinNames extracts the tool names from a slice of ToolCalls for display.
@@ -81,11 +94,18 @@ func main() {
 func runStatic(llmClient llm.LLM) {
 	// Provider that approves the first continuation with a steering message, then declines the second
 	staticProvider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
-		fmt.Printf("[Static Provider] max=%d total=%d pendingTools=[%s] (count=%d)\n",
-			req.MaxIterations, req.TotalIterations, joinNames(req.ToolCalls), len(req.ToolCalls))
+		fmt.Printf(
+			"[Static Provider] max=%d total=%d pendingTools=[%s] (count=%d)\n",
+			req.MaxIterations,
+			req.TotalIterations,
+			joinNames(req.ToolCalls),
+			len(req.ToolCalls),
+		)
 
 		if req.TotalIterations == 2 {
-			fmt.Println("[Static Provider] Approving with a steering message and discarding current tool calls...")
+			fmt.Println(
+				"[Static Provider] Approving with a steering message and discarding current tool calls...",
+			)
 			return agent.ContinuationResponse{
 				Decision:         agent.ContinuationApprove,
 				Message:          "You are taking too long. Just tell me 'The countdown is canceled!' and stop calling tools.",
@@ -103,8 +123,11 @@ func runStatic(llmClient llm.LLM) {
 		}, nil
 	}
 
-	assistant := agent.New(llmClient,
-		agent.WithSystemPrompt("You are a helpful assistant. If asked to countdown, use the countdown tool continuously."),
+	assistant := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You are a helpful assistant. If asked to countdown, use the countdown tool continuously.",
+		),
 		agent.WithTools(newCountdownTool()),
 		agent.WithMaxIterations(2), // Halt every 2 iterations
 		agent.WithContinuationProvider(staticProvider),
@@ -137,24 +160,34 @@ func runStreamDemoAndTimeout(llmClient llm.LLM) {
 				Message:  "Tell me I did not respond in time.",
 			}, nil
 		case <-ctx.Done():
-			return agent.ContinuationResponse{Decision: agent.ContinuationTimeout}, ctx.Err()
+			return agent.ContinuationResponse{
+				Decision: agent.ContinuationTimeout,
+			}, ctx.Err()
 		}
 	}
 
-	assistant := agent.New(llmClient,
-		agent.WithSystemPrompt("You are a helpful assistant. If asked to countdown, use the countdown tool continuously."),
+	assistant := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You are a helpful assistant. If asked to countdown, use the countdown tool continuously.",
+		),
 		agent.WithTools(newCountdownTool()),
 		agent.WithMaxIterations(1),
 		agent.WithContinuationProvider(timeoutProvider),
 	)
 
-	eventStream := assistant.ChatStream(context.Background(), "Please count down from 3 using the tool.")
+	eventStream := assistant.ChatStream(
+		context.Background(),
+		"Please count down from 3 using the tool.",
+	)
 	for event := range eventStream {
 		switch event.Type {
 		case types.EventContinuationRequired:
 			req := event.ContinuationRequest
-			fmt.Printf("\n[Timeout Stream] Continuation required (total=%d) — no UI response expected\n",
-				req.TotalIterations)
+			fmt.Printf(
+				"\n[Timeout Stream] Continuation required (total=%d) — no UI response expected\n",
+				req.TotalIterations,
+			)
 		case types.EventContentDelta:
 			fmt.Print(event.Content)
 		case types.EventComplete:
@@ -179,25 +212,37 @@ func runStream(llmClient llm.LLM) {
 		}
 	}
 
-	assistant := agent.New(llmClient,
-		agent.WithSystemPrompt("You are a helpful assistant. If asked to countdown, use the countdown tool continuously."),
+	assistant := agent.New(
+		llmClient,
+		agent.WithSystemPrompt(
+			"You are a helpful assistant. If asked to countdown, use the countdown tool continuously.",
+		),
 		agent.WithTools(newCountdownTool()),
 		agent.WithMaxIterations(2), // Halt every 2 iterations
 		agent.WithContinuationProvider(streamProvider),
 	)
 
 	ctx := context.Background()
-	eventStream := assistant.ChatStream(ctx, "Please count down from 3 using the tool.")
+	eventStream := assistant.ChatStream(
+		ctx,
+		"Please count down from 3 using the tool.",
+	)
 
 	for event := range eventStream {
 		switch event.Type {
 		case types.EventContinuationRequired:
 			req := event.ContinuationRequest
-			fmt.Printf("\n[Stream UI] Continuation required! (max=%d total=%d pendingTools=[%s])\n",
-				req.MaxIterations, req.TotalIterations, joinNames(req.ToolCalls))
+			fmt.Printf(
+				"\n[Stream UI] Continuation required! (max=%d total=%d pendingTools=[%s])\n",
+				req.MaxIterations,
+				req.TotalIterations,
+				joinNames(req.ToolCalls),
+			)
 
 			if req.TotalIterations == 2 {
-				fmt.Println("[Stream UI] Supplying approval with a steering message...")
+				fmt.Println(
+					"[Stream UI] Supplying approval with a steering message...",
+				)
 				approvalChan <- agent.ContinuationResponse{
 					Decision:         agent.ContinuationApprove,
 					Message:          "Skip the tools, just tell me what number you are currently at.",
@@ -212,7 +257,10 @@ func runStream(llmClient llm.LLM) {
 		case types.EventContentDelta:
 			fmt.Print(event.Content)
 		case types.EventToolUseStart:
-			fmt.Printf("\n[Stream UI] Tool Call Started: %s\n", event.ToolCall.Name)
+			fmt.Printf(
+				"\n[Stream UI] Tool Call Started: %s\n",
+				event.ToolCall.Name,
+			)
 		case types.EventError:
 			fmt.Printf("\n[Stream UI] Error: %v\n", event.Error)
 		case types.EventComplete:

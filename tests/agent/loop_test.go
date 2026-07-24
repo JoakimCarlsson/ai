@@ -532,12 +532,22 @@ func TestLoop_MaxIterations_SetsFinishReason(t *testing.T) {
 	llmClient := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"1"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"1"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "echo", Input: `{"text":"2"}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "echo",
+					Input: `{"text":"2"}`,
+					Type:  "function",
+				},
 			},
 		},
 	)
@@ -553,7 +563,9 @@ func TestLoop_MaxIterations_SetsFinishReason(t *testing.T) {
 	}
 
 	if resp.FinishReason != message.FinishReasonMaxIterations {
-		t.Errorf("expected FinishReasonMaxIterations, got %q", resp.FinishReason)
+		t.Errorf(
+			"expected FinishReasonMaxIterations, got %q",
+			resp.FinishReason,
+		)
 	}
 }
-
