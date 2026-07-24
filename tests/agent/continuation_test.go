@@ -12,21 +12,33 @@ func TestOption_WithContinuationProvider(t *testing.T) {
 	llmClient := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"1"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"1"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "echo", Input: `{"text":"2"}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "echo",
+					Input: `{"text":"2"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "finished"},
 	)
 
 	called := false
-	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
+	provider := func(_ context.Context, _ agent.ContinuationRequest) (agent.ContinuationResponse, error) {
 		called = true
-		return agent.ContinuationResponse{Decision: agent.ContinuationApprove}, nil
+		return agent.ContinuationResponse{
+			Decision: agent.ContinuationApprove,
+		}, nil
 	}
 
 	a := agent.New(llmClient,
@@ -49,12 +61,22 @@ func TestLoop_Continuation_Approve(t *testing.T) {
 	llmClient := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"1"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"1"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "echo", Input: `{"text":"2"}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "echo",
+					Input: `{"text":"2"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
@@ -64,9 +86,11 @@ func TestLoop_Continuation_Approve(t *testing.T) {
 	)
 
 	var capturedReq agent.ContinuationRequest
-	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
+	provider := func(_ context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
 		capturedReq = req
-		return agent.ContinuationResponse{Decision: agent.ContinuationApprove}, nil
+		return agent.ContinuationResponse{
+			Decision: agent.ContinuationApprove,
+		}, nil
 	}
 
 	a := agent.New(llmClient,
@@ -84,13 +108,20 @@ func TestLoop_Continuation_Approve(t *testing.T) {
 		t.Errorf("expected finished content, got %q", resp.Content)
 	}
 	if resp.FinishReason != message.FinishReasonEndTurn {
-		t.Errorf("expected FinishReason %q, got %q", message.FinishReasonEndTurn, resp.FinishReason)
+		t.Errorf(
+			"expected FinishReason %q, got %q",
+			message.FinishReasonEndTurn,
+			resp.FinishReason,
+		)
 	}
 	if capturedReq.MaxIterations != 1 {
 		t.Errorf("expected MaxIterations 1, got %d", capturedReq.MaxIterations)
 	}
 	if capturedReq.TotalIterations != 1 {
-		t.Errorf("expected TotalIterations 1, got %d", capturedReq.TotalIterations)
+		t.Errorf(
+			"expected TotalIterations 1, got %d",
+			capturedReq.TotalIterations,
+		)
 	}
 }
 
@@ -98,19 +129,31 @@ func TestLoop_Continuation_Decline(t *testing.T) {
 	llmClient := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"1"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"1"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "echo", Input: `{"text":"2"}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "echo",
+					Input: `{"text":"2"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "summarized after decline"},
 	)
 
-	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
-		return agent.ContinuationResponse{Decision: agent.ContinuationDecline}, nil
+	provider := func(_ context.Context, _ agent.ContinuationRequest) (agent.ContinuationResponse, error) {
+		return agent.ContinuationResponse{
+			Decision: agent.ContinuationDecline,
+		}, nil
 	}
 
 	a := agent.New(llmClient,
@@ -128,7 +171,10 @@ func TestLoop_Continuation_Decline(t *testing.T) {
 		t.Errorf("expected summarized content, got %q", resp.Content)
 	}
 	if resp.FinishReason != message.FinishReasonMaxIterations {
-		t.Errorf("expected FinishReasonMaxIterations, got %q", resp.FinishReason)
+		t.Errorf(
+			"expected FinishReasonMaxIterations, got %q",
+			resp.FinishReason,
+		)
 	}
 }
 
@@ -136,19 +182,31 @@ func TestLoop_Continuation_Timeout(t *testing.T) {
 	llmClient := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"1"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"1"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-2", Name: "echo", Input: `{"text":"2"}`, Type: "function"},
+				{
+					ID:    "tc-2",
+					Name:  "echo",
+					Input: `{"text":"2"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "summarized after timeout"},
 	)
 
-	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
-		return agent.ContinuationResponse{Decision: agent.ContinuationTimeout}, nil
+	provider := func(_ context.Context, _ agent.ContinuationRequest) (agent.ContinuationResponse, error) {
+		return agent.ContinuationResponse{
+			Decision: agent.ContinuationTimeout,
+		}, nil
 	}
 
 	a := agent.New(llmClient,
@@ -171,7 +229,12 @@ func TestLoop_Continuation_Approve_DiscardToolCalls(t *testing.T) {
 	llmClient := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"1"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"1"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{
@@ -180,7 +243,7 @@ func TestLoop_Continuation_Approve_DiscardToolCalls(t *testing.T) {
 		},
 	)
 
-	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
+	provider := func(_ context.Context, _ agent.ContinuationRequest) (agent.ContinuationResponse, error) {
 		return agent.ContinuationResponse{
 			Decision:         agent.ContinuationApprove,
 			DiscardToolCalls: true,
@@ -208,13 +271,18 @@ func TestLoop_Continuation_Decline_WithSteeringMessage(t *testing.T) {
 	llmClient := newMockLLM(
 		mockResponse{
 			ToolCalls: []message.ToolCall{
-				{ID: "tc-1", Name: "echo", Input: `{"text":"1"}`, Type: "function"},
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"1"}`,
+					Type:  "function",
+				},
 			},
 		},
 		mockResponse{Content: "summarized after custom decline"},
 	)
 
-	provider := func(ctx context.Context, req agent.ContinuationRequest) (agent.ContinuationResponse, error) {
+	provider := func(_ context.Context, _ agent.ContinuationRequest) (agent.ContinuationResponse, error) {
 		return agent.ContinuationResponse{
 			Decision: agent.ContinuationDecline,
 			Message:  "Stop right there.",

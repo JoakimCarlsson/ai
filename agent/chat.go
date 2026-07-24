@@ -389,7 +389,7 @@ func (a *Agent) runLoop(
 				if pErr == nil && contResp.Decision == ContinuationApprove {
 					totalIterations += iteration
 					iteration = 0
-					
+
 					if contResp.DiscardToolCalls {
 						assistantMsg := message.NewAssistantMessage()
 						assistantMsg.Model = activeAgent.llm.Model().ID
@@ -406,7 +406,7 @@ func (a *Agent) runLoop(
 							Model:     activeAgent.llm.Model().ID,
 							CreatedAt: time.Now().UnixNano(),
 						}
-						
+
 						errText := contResp.ToolMessage
 						if errText == "" {
 							errText = "Tool execution canceled by user during continuation."
@@ -429,25 +429,28 @@ func (a *Agent) runLoop(
 
 						messages = append(messages, newMessages...)
 						if activeAgent.session != nil {
-							if err := activeAgent.session.AddMessages(ctx, newMessages); err != nil {
+							if err := activeAgent.session.AddMessages(
+								ctx,
+								newMessages,
+							); err != nil {
 								return nil, err
 							}
 						}
 						continue
-					} else {
-						if contResp.Message != "" {
-							pendingSteeringMessage = contResp.Message
-						}
+					}
+					if contResp.Message != "" {
+						pendingSteeringMessage = contResp.Message
 					}
 				} else {
 					var errText string
-					if pErr != nil {
+					switch {
+					case pErr != nil:
 						errText = pErr.Error()
-					} else if contResp.Message != "" {
+					case contResp.Message != "":
 						errText = contResp.Message
-					} else if contResp.Decision == ContinuationTimeout {
+					case contResp.Decision == ContinuationTimeout:
 						errText = "Continuation request timed out."
-					} else {
+					default:
 						errText = "Maximum iteration limit reached. Continuation declined by user."
 					}
 
@@ -475,7 +478,9 @@ func (a *Agent) runLoop(
 						})
 					}
 
-					sysMsg := message.NewUserMessage("System Notification: " + errText)
+					sysMsg := message.NewUserMessage(
+						"System Notification: " + errText,
+					)
 
 					messages = append(messages, assistantMsg, toolMsg, sysMsg)
 					if activeAgent.session != nil {
@@ -487,7 +492,11 @@ func (a *Agent) runLoop(
 						}
 					}
 
-					finalResp, err := activeAgent.llm.SendMessages(ctx, messages, nil)
+					finalResp, err := activeAgent.llm.SendMessages(
+						ctx,
+						messages,
+						nil,
+					)
 					if err != nil {
 						return nil, err
 					}
@@ -501,9 +510,12 @@ func (a *Agent) runLoop(
 							finalAssistantMsg.AppendContent(finalResp.Content)
 						}
 						if finalResp.Reasoning != "" {
-							finalAssistantMsg.AppendReasoningContent(finalResp.Reasoning)
+							finalAssistantMsg.AppendReasoningContent(
+								finalResp.Reasoning,
+							)
 						}
-						if finalResp.Content != "" || finalResp.Reasoning != "" {
+						if finalResp.Content != "" ||
+							finalResp.Reasoning != "" {
 							if err := activeAgent.session.AddMessages(
 								ctx,
 								[]message.Message{finalAssistantMsg},

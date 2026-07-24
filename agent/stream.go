@@ -520,7 +520,7 @@ func (a *Agent) runLoopStream(
 					TotalIterations: totalIterations + iteration,
 					ToolCalls:       toolCallsCopy,
 				}
-				
+
 				eventChan <- ChatEvent{
 					Type:                types.EventContinuationRequired,
 					ContinuationRequest: &req,
@@ -530,7 +530,7 @@ func (a *Agent) runLoopStream(
 				if pErr == nil && contResp.Decision == ContinuationApprove {
 					totalIterations += iteration
 					iteration = 0
-					
+
 					if contResp.DiscardToolCalls {
 						assistantMsg := message.NewAssistantMessage()
 						assistantMsg.Model = activeAgent.llm.Model().ID
@@ -547,7 +547,7 @@ func (a *Agent) runLoopStream(
 							Model:     activeAgent.llm.Model().ID,
 							CreatedAt: time.Now().UnixNano(),
 						}
-						
+
 						errText := contResp.ToolMessage
 						if errText == "" {
 							errText = "Tool execution canceled by user during continuation."
@@ -570,26 +570,29 @@ func (a *Agent) runLoopStream(
 
 						messages = append(messages, newMessages...)
 						if activeAgent.session != nil {
-							if err := activeAgent.session.AddMessages(ctx, newMessages); err != nil {
+							if err := activeAgent.session.AddMessages(
+								ctx,
+								newMessages,
+							); err != nil {
 								eventChan <- ChatEvent{Type: types.EventError, Error: err}
 								return nil, err
 							}
 						}
 						continue
-					} else {
-						if contResp.Message != "" {
-							pendingSteeringMessage = contResp.Message
-						}
+					}
+					if contResp.Message != "" {
+						pendingSteeringMessage = contResp.Message
 					}
 				} else {
 					var errText string
-					if pErr != nil {
+					switch {
+					case pErr != nil:
 						errText = pErr.Error()
-					} else if contResp.Message != "" {
+					case contResp.Message != "":
 						errText = contResp.Message
-					} else if contResp.Decision == ContinuationTimeout {
+					case contResp.Decision == ContinuationTimeout:
 						errText = "Continuation request timed out."
-					} else {
+					default:
 						errText = "Maximum iteration limit reached. Continuation declined by user."
 					}
 
@@ -617,7 +620,9 @@ func (a *Agent) runLoopStream(
 						})
 					}
 
-					sysMsg := message.NewUserMessage("System Notification: " + errText)
+					sysMsg := message.NewUserMessage(
+						"System Notification: " + errText,
+					)
 
 					messages = append(messages, assistantMsg, toolMsg, sysMsg)
 					if activeAgent.session != nil {
@@ -637,7 +642,7 @@ func (a *Agent) runLoopStream(
 					turns++
 					turnStart := time.Now()
 					taskID, agentName, branch := activeAgent.hookContext(ctx)
-					
+
 					mcResult, hookErr := runPreModelCall(
 						ctx,
 						activeAgent.hooks,
@@ -653,7 +658,7 @@ func (a *Agent) runLoopStream(
 						eventChan <- ChatEvent{Type: types.EventError, Error: fmt.Errorf("pre-model-call hook: %w", hookErr)}
 						return nil, hookErr
 					}
-					
+
 					// We don't use mcResult.Tools here since we explicitly don't pass tools to force a final summary
 					if mcResult.Action == HookModify {
 						messages = mcResult.Messages
@@ -673,13 +678,17 @@ func (a *Agent) runLoopStream(
 								finalResp = event.Response
 							}
 						case types.EventError:
-							runPostModelCall(ctx, activeAgent.hooks, ModelResponseContext{
-								Duration:  time.Since(turnStart),
-								AgentName: agentName,
-								TaskID:    taskID,
-								Branch:    branch,
-								Error:     event.Error,
-							})
+							runPostModelCall(
+								ctx,
+								activeAgent.hooks,
+								ModelResponseContext{
+									Duration:  time.Since(turnStart),
+									AgentName: agentName,
+									TaskID:    taskID,
+									Branch:    branch,
+									Error:     event.Error,
+								},
+							)
 							meResult, meErr := runOnModelError(
 								ctx,
 								activeAgent.hooks,
@@ -692,7 +701,8 @@ func (a *Agent) runLoopStream(
 									Branch:    branch,
 								},
 							)
-							if meErr == nil && meResult.Action == HookModify && meResult.Response != nil {
+							if meErr == nil && meResult.Action == HookModify &&
+								meResult.Response != nil {
 								finalResp = meResult.Response
 								streamErr = nil
 							} else {
@@ -706,13 +716,17 @@ func (a *Agent) runLoopStream(
 						return nil, streamErr
 					}
 
-					runPostModelCall(ctx, activeAgent.hooks, ModelResponseContext{
-						Response:  finalResp,
-						Duration:  time.Since(turnStart),
-						AgentName: agentName,
-						TaskID:    taskID,
-						Branch:    branch,
-					})
+					runPostModelCall(
+						ctx,
+						activeAgent.hooks,
+						ModelResponseContext{
+							Response:  finalResp,
+							Duration:  time.Since(turnStart),
+							AgentName: agentName,
+							TaskID:    taskID,
+							Branch:    branch,
+						},
+					)
 
 					if activeAgent.session != nil && finalResp != nil {
 						finalAssistantMsg := message.NewAssistantMessage()
@@ -722,9 +736,12 @@ func (a *Agent) runLoopStream(
 							finalAssistantMsg.AppendContent(finalResp.Content)
 						}
 						if finalResp.Reasoning != "" {
-							finalAssistantMsg.AppendReasoningContent(finalResp.Reasoning)
+							finalAssistantMsg.AppendReasoningContent(
+								finalResp.Reasoning,
+							)
 						}
-						if finalResp.Content != "" || finalResp.Reasoning != "" {
+						if finalResp.Content != "" ||
+							finalResp.Reasoning != "" {
 							if err := activeAgent.session.AddMessages(
 								ctx,
 								[]message.Message{finalAssistantMsg},
