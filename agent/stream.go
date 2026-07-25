@@ -410,7 +410,9 @@ func (a *Agent) executeStreamResponse(
 		case types.EventThinkingDelta:
 			fullReasoning += event.Thinking
 			eventChan <- ChatEvent{Type: types.EventThinkingDelta, Thinking: event.Thinking}
-		case types.EventToolUseStart, types.EventToolUseDelta, types.EventToolUseStop:
+		case types.EventToolUseStart,
+			types.EventToolUseDelta,
+			types.EventToolUseStop:
 			if event.ToolCall != nil {
 				if event.Type == types.EventToolUseStart {
 					seenToolStarts[event.ToolCall.ID] = true
@@ -441,7 +443,8 @@ func (a *Agent) executeStreamResponse(
 					Branch:    branch,
 				},
 			)
-			if meErr == nil && meResult.Action == HookModify && meResult.Response != nil {
+			if meErr == nil && meResult.Action == HookModify &&
+				meResult.Response != nil {
 				finalResponse = meResult.Response
 				streamRecovered = true
 			} else {
@@ -530,7 +533,12 @@ func (a *Agent) runLoopStream(
 		allTools := activeAgent.getToolsWithContext(ctx)
 
 		var streamErr error
-		finalResponse, messages, allTools, fullContent, fullReasoning, streamErr = activeAgent.executeStreamResponse(ctx, messages, allTools, eventChan)
+		finalResponse, messages, _, fullContent, fullReasoning, streamErr = activeAgent.executeStreamResponse(
+			ctx,
+			messages,
+			allTools,
+			eventChan,
+		)
 		if streamErr != nil {
 			return nil, streamErr
 		}
@@ -666,7 +674,12 @@ func (a *Agent) runLoopStream(
 
 					var finalResp *llm.Response
 					var streamErr error
-					finalResp, messages, _, fullContent, fullReasoning, streamErr = activeAgent.executeStreamResponse(ctx, messages, nil, eventChan)
+					finalResp, _, _, fullContent, fullReasoning, streamErr = activeAgent.executeStreamResponse(
+						ctx,
+						messages,
+						nil,
+						eventChan,
+					)
 					if streamErr != nil {
 						return nil, streamErr
 					}

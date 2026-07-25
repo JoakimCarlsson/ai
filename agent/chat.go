@@ -202,7 +202,8 @@ func (a *Agent) executeSendMessages(
 				Branch:    branch,
 			},
 		)
-		if meErr != nil || meResult.Action != HookModify || meResult.Response == nil {
+		if meErr != nil || meResult.Action != HookModify ||
+			meResult.Response == nil {
 			return nil, nil, nil, err
 		}
 		resp = meResult.Response
@@ -384,7 +385,11 @@ func (a *Agent) runLoop(
 
 		var err error
 		var resp *llm.Response
-		resp, messages, allTools, err = activeAgent.executeSendMessages(ctx, messages, allTools)
+		resp, messages, _, err = activeAgent.executeSendMessages(
+			ctx,
+			messages,
+			allTools,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -509,7 +514,11 @@ func (a *Agent) runLoop(
 					}
 
 					var finalResp *llm.Response
-					finalResp, messages, _, err = activeAgent.executeSendMessages(ctx, messages, nil)
+					finalResp, _, _, err = activeAgent.executeSendMessages(
+						ctx,
+						messages,
+						nil,
+					)
 					if err != nil {
 						return nil, err
 					}

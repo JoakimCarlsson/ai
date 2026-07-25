@@ -644,7 +644,9 @@ func TestChatStream_Reasoning(t *testing.T) {
 	}
 }
 
-func TestChatStream_InjectedToolCall_PostModelCall_EmitsToolUseStart(t *testing.T) {
+func TestChatStream_InjectedToolCall_PostModelCall_EmitsToolUseStart(
+	t *testing.T,
+) {
 	var injected bool
 	hooks := agent.Hooks{
 		PostModelCall: func(_ context.Context, ctx agent.ModelResponseContext) (agent.ModelResponseResult, error) {
@@ -674,32 +676,40 @@ func TestChatStream_InjectedToolCall_PostModelCall_EmitsToolUseStart(t *testing.
 
 	a := agent.New(mock, agent.WithTools(&echoTool{}), agent.WithHooks(hooks))
 
-	var events []types.EventType
 	var seenStart bool
 	var seenStop bool
 
 	for evt := range a.ChatStream(context.Background(), "test") {
-		events = append(events, evt.Type)
-		if evt.Type == types.EventToolUseStart && evt.ToolCall != nil && evt.ToolCall.ID == "injected-call-1" {
+		if evt.Type == types.EventToolUseStart && evt.ToolCall != nil &&
+			evt.ToolCall.ID == "injected-call-1" {
 			seenStart = true
 		}
-		if evt.Type == types.EventToolUseStop && evt.ToolResult != nil && evt.ToolResult.ToolCallID == "injected-call-1" {
+		if evt.Type == types.EventToolUseStop && evt.ToolResult != nil &&
+			evt.ToolResult.ToolCallID == "injected-call-1" {
 			seenStop = true
 			if !seenStart {
-				t.Errorf("EventToolUseStop received for injected-call-1 before EventToolUseStart")
+				t.Errorf(
+					"EventToolUseStop received for injected-call-1 before EventToolUseStart",
+				)
 			}
 		}
 	}
 
 	if !seenStart {
-		t.Errorf("expected EventToolUseStart for injected tool call, but none was received")
+		t.Errorf(
+			"expected EventToolUseStart for injected tool call, but none was received",
+		)
 	}
 	if !seenStop {
-		t.Errorf("expected EventToolUseStop for injected tool call execution, but none was received")
+		t.Errorf(
+			"expected EventToolUseStop for injected tool call execution, but none was received",
+		)
 	}
 }
 
-func TestChatStream_RecoveredToolCall_OnModelError_EmitsToolUseStart(t *testing.T) {
+func TestChatStream_RecoveredToolCall_OnModelError_EmitsToolUseStart(
+	t *testing.T,
+) {
 	hooks := agent.Hooks{
 		OnModelError: func(_ context.Context, _ agent.ModelErrorContext) (agent.ModelErrorResult, error) {
 			return agent.ModelErrorResult{
@@ -728,22 +738,29 @@ func TestChatStream_RecoveredToolCall_OnModelError_EmitsToolUseStart(t *testing.
 	var seenStop bool
 
 	for evt := range a.ChatStream(context.Background(), "test") {
-		if evt.Type == types.EventToolUseStart && evt.ToolCall != nil && evt.ToolCall.ID == "recovered-call-1" {
+		if evt.Type == types.EventToolUseStart && evt.ToolCall != nil &&
+			evt.ToolCall.ID == "recovered-call-1" {
 			seenStart = true
 		}
-		if evt.Type == types.EventToolUseStop && evt.ToolResult != nil && evt.ToolResult.ToolCallID == "recovered-call-1" {
+		if evt.Type == types.EventToolUseStop && evt.ToolResult != nil &&
+			evt.ToolResult.ToolCallID == "recovered-call-1" {
 			seenStop = true
 			if !seenStart {
-				t.Errorf("EventToolUseStop received for recovered-call-1 before EventToolUseStart")
+				t.Errorf(
+					"EventToolUseStop received for recovered-call-1 before EventToolUseStart",
+				)
 			}
 		}
 	}
 
 	if !seenStart {
-		t.Errorf("expected EventToolUseStart for recovered tool call, but none was received")
+		t.Errorf(
+			"expected EventToolUseStart for recovered tool call, but none was received",
+		)
 	}
 	if !seenStop {
-		t.Errorf("expected EventToolUseStop for recovered tool call execution, but none was received")
+		t.Errorf(
+			"expected EventToolUseStop for recovered tool call execution, but none was received",
+		)
 	}
 }
-

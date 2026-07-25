@@ -1307,10 +1307,16 @@ func TestContinuation_Decline_TriggersHooks(t *testing.T) {
 	}
 
 	if preCalls != 2 {
-		t.Errorf("expected 2 preModelCall invocations (1 main + 1 final decline summary), got %d", preCalls)
+		t.Errorf(
+			"expected 2 preModelCall invocations (1 main + 1 final decline summary), got %d",
+			preCalls,
+		)
 	}
 	if postCalls != 2 {
-		t.Errorf("expected 2 postModelCall invocations (1 main + 1 final decline summary), got %d", postCalls)
+		t.Errorf(
+			"expected 2 postModelCall invocations (1 main + 1 final decline summary), got %d",
+			postCalls,
+		)
 	}
 }
 
@@ -1374,10 +1380,16 @@ func TestContinuation_Decline_TriggersHooks_Stream(t *testing.T) {
 	}
 
 	if preCalls != 2 {
-		t.Errorf("expected 2 preModelCall invocations (1 main + 1 final decline summary), got %d", preCalls)
+		t.Errorf(
+			"expected 2 preModelCall invocations (1 main + 1 final decline summary), got %d",
+			preCalls,
+		)
 	}
 	if postCalls != 2 {
-		t.Errorf("expected 2 postModelCall invocations (1 main + 1 final decline summary), got %d", postCalls)
+		t.Errorf(
+			"expected 2 postModelCall invocations (1 main + 1 final decline summary), got %d",
+			postCalls,
+		)
 	}
 }
 
