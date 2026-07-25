@@ -377,6 +377,7 @@ func (a *Agent) executeStreamResponse(
 	var finalResponse *llm.Response
 	var streamErr error
 	var streamRecovered bool
+	seenToolStarts := make(map[string]bool)
 
 	turnStart := time.Now()
 	taskID, agentName, branch := a.hookContext(ctx)
@@ -411,6 +412,9 @@ func (a *Agent) executeStreamResponse(
 			eventChan <- ChatEvent{Type: types.EventThinkingDelta, Thinking: event.Thinking}
 		case types.EventToolUseStart, types.EventToolUseDelta, types.EventToolUseStop:
 			if event.ToolCall != nil {
+				if event.Type == types.EventToolUseStart {
+					seenToolStarts[event.ToolCall.ID] = true
+				}
 				eventChan <- ChatEvent{Type: event.Type, ToolCall: event.ToolCall}
 			}
 		case types.EventComplete:
@@ -478,6 +482,19 @@ func (a *Agent) executeStreamResponse(
 	if streamRecovered && finalResponse != nil {
 		fullContent = finalResponse.Content
 		fullReasoning = finalResponse.Reasoning
+	}
+
+	if finalResponse != nil {
+		for i := range finalResponse.ToolCalls {
+			tc := &finalResponse.ToolCalls[i]
+			if !seenToolStarts[tc.ID] {
+				seenToolStarts[tc.ID] = true
+				eventChan <- ChatEvent{
+					Type:     types.EventToolUseStart,
+					ToolCall: tc,
+				}
+			}
+		}
 	}
 
 	return finalResponse, messages, tools, fullContent, fullReasoning, nil

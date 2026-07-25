@@ -52,3 +52,24 @@
 - Executed `go test -v ./tests/agent/...`.
 - All tests in `tests/agent` and `tests/agent/team` passed without errors (100% pass rate).
 
+## Reviewer Fix Report (Tool Call Start Events Backfill)
+
+### Issues Resolved
+
+1. **Restored `seenToolStarts` Tracking and Backfill in `executeStreamResponse` (`agent/stream.go`):**
+   - Tracked `seenToolStarts := make(map[string]bool)` inside `executeStreamResponse`.
+   - Recorded `seenToolStarts[event.ToolCall.ID] = true` when `EventToolUseStart` events are emitted during `StreamResponse`.
+   - Added a backfill loop in `executeStreamResponse` right before returning `finalResponse`: for any tool call in `finalResponse.ToolCalls` (such as tool calls injected by `PostModelCall` hooks or recovered by `OnModelError` hooks) that has not had an `EventToolUseStart` emitted, an `EventToolUseStart` event is emitted.
+   - This guarantees that synthesized or error-recovered tool calls will always have a preceding `EventToolUseStart` event prior to tool execution and `EventToolUseStop`, keeping the `ChatEvent` stream contract intact for clients.
+
+### New Unit Tests Added
+
+- `TestChatStream_InjectedToolCall_PostModelCall_EmitsToolUseStart` in `tests/agent/stream_test.go`: Verified that tool calls injected by a `PostModelCall` hook during streaming emit `EventToolUseStart` prior to tool execution and `EventToolUseStop`.
+- `TestChatStream_RecoveredToolCall_OnModelError_EmitsToolUseStart` in `tests/agent/stream_test.go`: Verified that tool calls recovered by an `OnModelError` hook during streaming emit `EventToolUseStart` prior to tool execution and `EventToolUseStop`.
+
+### Test Verification
+
+- Ran `go test ./tests/agent/... -v`.
+- All tests in `tests/agent` and `tests/agent/team` passed cleanly with 100% pass rate.
+
+
