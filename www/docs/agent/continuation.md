@@ -20,7 +20,7 @@ myAgent := agent.New(llmClient,
 )
 ```
 
-Return `agent.ContinuationApprove` inside the response to reset the iteration counter and continue the loop, `agent.ContinuationDecline` to stop execution gracefully, or `agent.ContinuationTimeout` if the wait period expires. If the provider returns an error or anything other than `ContinuationApprove`, the agent halts with an error.
+Return `agent.ContinuationApprove` inside the response to reset the iteration counter and continue the loop, `agent.ContinuationDecline` to stop execution gracefully, or `agent.ContinuationTimeout` if the wait period expires. If the provider returns `ContinuationDecline` or `ContinuationTimeout`, the agent gracefully cancels any pending tool calls, makes a final LLM call to summarize the interruption, and successfully returns with `FinishReasonMaxIterations`. If the provider function itself returns a Go `error`, the agent halts with an error.
 
 ## ContinuationResponse
 
