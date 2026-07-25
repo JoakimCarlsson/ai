@@ -744,6 +744,17 @@ func (a *Agent) runLoopStream(
 						return nil, err
 					}
 				}
+
+				if pendingSteeringMessage != "" {
+					sysMsg := message.NewUserMessage(pendingSteeringMessage)
+					if err := activeAgent.session.AddMessages(
+						ctx,
+						[]message.Message{sysMsg},
+					); err != nil {
+						eventChan <- ChatEvent{Type: types.EventError, Error: err}
+						return nil, err
+					}
+				}
 			}
 
 			if activeAgent.autoExtract && activeAgent.session != nil {

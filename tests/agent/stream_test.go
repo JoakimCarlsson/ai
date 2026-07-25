@@ -645,8 +645,13 @@ func TestChatStream_Reasoning(t *testing.T) {
 }
 
 func TestChatStream_InjectedToolCall_PostModelCall_EmitsToolUseStart(t *testing.T) {
+	var injected bool
 	hooks := agent.Hooks{
 		PostModelCall: func(_ context.Context, ctx agent.ModelResponseContext) (agent.ModelResponseResult, error) {
+			if injected {
+				return agent.ModelResponseResult{Action: agent.HookAllow}, nil
+			}
+			injected = true
 			resp := *ctx.Response
 			resp.ToolCalls = []message.ToolCall{
 				{

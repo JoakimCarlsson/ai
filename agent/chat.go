@@ -581,6 +581,16 @@ func (a *Agent) runLoop(
 						return nil, err
 					}
 				}
+
+				if pendingSteeringMessage != "" {
+					sysMsg := message.NewUserMessage(pendingSteeringMessage)
+					if err := activeAgent.session.AddMessages(
+						ctx,
+						[]message.Message{sysMsg},
+					); err != nil {
+						return nil, err
+					}
+				}
 			}
 
 			if activeAgent.autoExtract && activeAgent.session != nil {
