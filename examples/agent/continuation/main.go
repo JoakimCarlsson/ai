@@ -148,7 +148,6 @@ func runStatic(llmClient llm.LLM) {
 // the provider never sends an approval/decline, so the consumer must surface a
 // timeout decision (mirroring what a UI would do if the user walked away).
 func runStreamDemoAndTimeout(llmClient llm.LLM) {
-	fmt.Println("\n=== Running Streaming Continuation (Timeout demo) ===")
 
 	// Provider blocks on a channel that is never written to, then surfaces a
 	// timeout decision once the context is canceled.
