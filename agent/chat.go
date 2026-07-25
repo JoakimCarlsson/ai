@@ -8,6 +8,7 @@ import (
 	"github.com/joakimcarlsson/ai/agent/team"
 	llm "github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/tracing"
 )
 
@@ -145,6 +146,75 @@ func (a *Agent) Chat(
 	}
 
 	return resp, err
+}
+
+func (a *Agent) executeSendMessages(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+) (*llm.Response, []message.Message, []tool.BaseTool, error) {
+	turnStart := time.Now()
+	taskID, agentName, branch := a.hookContext(ctx)
+
+	mcResult, hookErr := runPreModelCall(
+		ctx,
+		a.hooks,
+		ModelCallContext{
+			Messages:  messages,
+			Tools:     tools,
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+		},
+	)
+	if hookErr != nil {
+		return nil, nil, nil, fmt.Errorf("pre-model-call hook: %w", hookErr)
+	}
+	if mcResult.Action == HookModify {
+		messages = mcResult.Messages
+		tools = mcResult.Tools
+	}
+
+	resp, err := a.llm.SendMessages(ctx, messages, tools)
+
+	mrResult, hookErr := runPostModelCall(
+		ctx,
+		a.hooks,
+		ModelResponseContext{
+			Response:  resp,
+			Duration:  time.Since(turnStart),
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+			Error:     err,
+		},
+	)
+	if err != nil {
+		meResult, meErr := runOnModelError(
+			ctx,
+			a.hooks,
+			ModelErrorContext{
+				Messages:  messages,
+				Tools:     tools,
+				Error:     err,
+				AgentName: agentName,
+				TaskID:    taskID,
+				Branch:    branch,
+			},
+		)
+		if meErr != nil || meResult.Action != HookModify || meResult.Response == nil {
+			return nil, nil, nil, err
+		}
+		resp = meResult.Response
+	}
+	if hookErr != nil {
+		return nil, nil, nil, fmt.Errorf("post-model-call hook: %w", hookErr)
+	}
+	if mrResult.Action == HookModify && mrResult.Response != nil {
+		resp = mrResult.Response
+	}
+
+	return resp, messages, tools, nil
 }
 
 // Continue resumes the agent loop with externally-executed tool results.
@@ -310,67 +380,13 @@ func (a *Agent) runLoop(
 
 	for {
 		var pendingSteeringMessage string
-		turnStart := time.Now()
 		allTools := activeAgent.getToolsWithContext(ctx)
 
-		taskID, agentName, branch := activeAgent.hookContext(ctx)
-		mcResult, err := runPreModelCall(
-			ctx,
-			activeAgent.hooks,
-			ModelCallContext{
-				Messages:  messages,
-				Tools:     allTools,
-				AgentName: agentName,
-				TaskID:    taskID,
-				Branch:    branch,
-			},
-		)
+		var err error
+		var resp *llm.Response
+		resp, messages, allTools, err = activeAgent.executeSendMessages(ctx, messages, allTools)
 		if err != nil {
-			return nil, fmt.Errorf("pre-model-call hook: %w", err)
-		}
-		if mcResult.Action == HookModify {
-			messages = mcResult.Messages
-			allTools = mcResult.Tools
-		}
-
-		resp, err := activeAgent.llm.SendMessages(ctx, messages, allTools)
-
-		mrResult, hookErr := runPostModelCall(
-			ctx,
-			activeAgent.hooks,
-			ModelResponseContext{
-				Response:  resp,
-				Duration:  time.Since(turnStart),
-				AgentName: agentName,
-				TaskID:    taskID,
-				Branch:    branch,
-				Error:     err,
-			},
-		)
-		if err != nil {
-			meResult, meErr := runOnModelError(
-				ctx,
-				activeAgent.hooks,
-				ModelErrorContext{
-					Messages:  messages,
-					Tools:     allTools,
-					Error:     err,
-					AgentName: agentName,
-					TaskID:    taskID,
-					Branch:    branch,
-				},
-			)
-			if meErr != nil || meResult.Action != HookModify ||
-				meResult.Response == nil {
-				return nil, err
-			}
-			resp = meResult.Response
-		}
-		if hookErr != nil {
-			return nil, fmt.Errorf("post-model-call hook: %w", hookErr)
-		}
-		if mrResult.Action == HookModify && mrResult.Response != nil {
-			resp = mrResult.Response
+			return nil, err
 		}
 
 		turns++
@@ -492,11 +508,8 @@ func (a *Agent) runLoop(
 						}
 					}
 
-					finalResp, err := activeAgent.llm.SendMessages(
-						ctx,
-						messages,
-						nil,
-					)
+					var finalResp *llm.Response
+					finalResp, messages, _, err = activeAgent.executeSendMessages(ctx, messages, nil)
 					if err != nil {
 						return nil, err
 					}
