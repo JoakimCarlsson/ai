@@ -78,6 +78,15 @@ All metrics are aggregated across the full agent loop, not just the final LLM ca
 | `TotalDuration` | Wall-clock time from `Chat()` entry to return |
 | `TotalToolCalls` | Total tool invocations across all iterations |
 | `ToolResults` | Results of every tool execution during the conversation |
+| `FinishReason` | Why the agent stopped: `FinishReasonStop` (natural completion), `FinishReasonMaxTokens` (hit context limit), `FinishReasonToolUse` (tool required), or `FinishReasonMaxIterations` (hit tool loop limit) |
+
+### Finish Reasons and Max Iterations
+
+The `FinishReason` indicates why the agent loop terminated:
+- **`FinishReasonStop`**: The agent naturally completed its task and produced a final text response.
+- **`FinishReasonMaxTokens`**: The LLM hit its configured token limit during generation.
+- **`FinishReasonToolUse`**: The agent returned pending tool calls. This occurs either because `WithAutoExecute(false)` is set (see [Continue/Resume](continue.md)), or because a tool requires human confirmation (see [Confirmation](confirmation.md)).
+- **`FinishReasonMaxIterations`**: The agent hit the loop limit configured by `WithMaxIterations(n)` (default 10) before completing its task. When this occurs, the agent can no longer execute tools automatically. You can intercept this behavior by registering a [Continuation Provider](continuation.md).
 
 ## Debug APIs
 

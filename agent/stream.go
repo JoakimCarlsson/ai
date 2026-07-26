@@ -8,6 +8,7 @@ import (
 	"github.com/joakimcarlsson/ai/agent/team"
 	llm "github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/tracing"
 	"github.com/joakimcarlsson/ai/types"
 )
@@ -365,6 +366,143 @@ func (a *Agent) ContinueStream(
 	return eventChan
 }
 
+func (a *Agent) executeStreamResponse(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+	eventChan chan<- ChatEvent,
+) (*llm.Response, []message.Message, []tool.BaseTool, string, string, error) {
+	var fullContent string
+	var fullReasoning string
+	var finalResponse *llm.Response
+	var streamErr error
+	var streamRecovered bool
+	seenToolStarts := make(map[string]bool)
+
+	turnStart := time.Now()
+	taskID, agentName, branch := a.hookContext(ctx)
+	mcResult, hookErr := runPreModelCall(
+		ctx,
+		a.hooks,
+		ModelCallContext{
+			Messages:  messages,
+			Tools:     tools,
+			AgentName: agentName,
+			TaskID:    taskID,
+			Branch:    branch,
+		},
+	)
+	if hookErr != nil {
+		err := fmt.Errorf("pre-model-call hook: %w", hookErr)
+		eventChan <- ChatEvent{Type: types.EventError, Error: err}
+		return nil, nil, nil, "", "", err
+	}
+	if mcResult.Action == HookModify {
+		messages = mcResult.Messages
+		tools = mcResult.Tools
+	}
+
+	for event := range a.llm.StreamResponse(ctx, messages, tools) {
+		switch event.Type {
+		case types.EventContentDelta:
+			fullContent += event.Content
+			eventChan <- ChatEvent{Type: types.EventContentDelta, Content: event.Content}
+		case types.EventThinkingDelta:
+			fullReasoning += event.Thinking
+			eventChan <- ChatEvent{Type: types.EventThinkingDelta, Thinking: event.Thinking}
+		case types.EventToolUseStart,
+			types.EventToolUseDelta,
+			types.EventToolUseStop:
+			if event.ToolCall != nil {
+				if event.Type == types.EventToolUseStart {
+					seenToolStarts[event.ToolCall.ID] = true
+				}
+				eventChan <- ChatEvent{Type: event.Type, ToolCall: event.ToolCall}
+			}
+		case types.EventComplete:
+			if event.Response != nil {
+				finalResponse = event.Response
+			}
+		case types.EventError:
+			runPostModelCall(ctx, a.hooks, ModelResponseContext{
+				Duration:  time.Since(turnStart),
+				AgentName: agentName,
+				TaskID:    taskID,
+				Branch:    branch,
+				Error:     event.Error,
+			})
+			meResult, meErr := runOnModelError(
+				ctx,
+				a.hooks,
+				ModelErrorContext{
+					Messages:  messages,
+					Tools:     tools,
+					Error:     event.Error,
+					AgentName: agentName,
+					TaskID:    taskID,
+					Branch:    branch,
+				},
+			)
+			if meErr == nil && meResult.Action == HookModify &&
+				meResult.Response != nil {
+				finalResponse = meResult.Response
+				streamRecovered = true
+			} else {
+				streamErr = event.Error
+			}
+		}
+	}
+
+	if streamErr != nil && !streamRecovered {
+		eventChan <- ChatEvent{Type: types.EventError, Error: streamErr}
+		return nil, nil, nil, "", "", streamErr
+	}
+
+	if finalResponse != nil && !streamRecovered {
+		mrResult, hookErr := runPostModelCall(
+			ctx,
+			a.hooks,
+			ModelResponseContext{
+				Response:  finalResponse,
+				Duration:  time.Since(turnStart),
+				AgentName: agentName,
+				TaskID:    taskID,
+				Branch:    branch,
+			},
+		)
+		if hookErr != nil {
+			err := fmt.Errorf("post-model-call hook: %w", hookErr)
+			eventChan <- ChatEvent{Type: types.EventError, Error: err}
+			return nil, nil, nil, "", "", err
+		}
+		if mrResult.Action == HookModify && mrResult.Response != nil {
+			finalResponse = mrResult.Response
+			fullContent = finalResponse.Content
+			fullReasoning = finalResponse.Reasoning
+		}
+	}
+
+	if streamRecovered && finalResponse != nil {
+		fullContent = finalResponse.Content
+		fullReasoning = finalResponse.Reasoning
+	}
+
+	if finalResponse != nil {
+		for i := range finalResponse.ToolCalls {
+			tc := &finalResponse.ToolCalls[i]
+			if !seenToolStarts[tc.ID] {
+				seenToolStarts[tc.ID] = true
+				eventChan <- ChatEvent{
+					Type:     types.EventToolUseStart,
+					ToolCall: tc,
+				}
+			}
+		}
+	}
+
+	return finalResponse, messages, tools, fullContent, fullReasoning, nil
+}
+
 func (a *Agent) runLoopStream(
 	ctx context.Context,
 	messages []message.Message,
@@ -378,6 +516,7 @@ func (a *Agent) runLoopStream(
 
 	activeAgent := a
 	iteration := 0
+	totalIterations := 0
 
 	maxIter := activeAgent.maxIterations
 	if cfg.maxIterations > 0 {
@@ -385,132 +524,217 @@ func (a *Agent) runLoopStream(
 	}
 
 	for {
+		var pendingSteeringMessage string
 		var fullContent string
 		var fullReasoning string
 		var toolCalls []message.ToolCall
 		var finalResponse *llm.Response
-		seenToolStarts := make(map[string]bool)
 
-		turnStart := time.Now()
 		allTools := activeAgent.getToolsWithContext(ctx)
 
-		taskID, agentName, branch := activeAgent.hookContext(ctx)
-		mcResult, hookErr := runPreModelCall(
-			ctx,
-			activeAgent.hooks,
-			ModelCallContext{
-				Messages:  messages,
-				Tools:     allTools,
-				AgentName: agentName,
-				TaskID:    taskID,
-				Branch:    branch,
-			},
-		)
-		if hookErr != nil {
-			eventChan <- ChatEvent{Type: types.EventError, Error: fmt.Errorf("pre-model-call hook: %w", hookErr)}
-			return nil, hookErr
-		}
-		if mcResult.Action == HookModify {
-			messages = mcResult.Messages
-			allTools = mcResult.Tools
-		}
-
 		var streamErr error
-		var streamRecovered bool
-
-		for event := range activeAgent.llm.StreamResponse(ctx, messages, allTools) {
-			switch event.Type {
-			case types.EventContentDelta:
-				fullContent += event.Content
-				eventChan <- ChatEvent{Type: types.EventContentDelta, Content: event.Content}
-			case types.EventThinkingDelta:
-				fullReasoning += event.Thinking
-				eventChan <- ChatEvent{Type: types.EventThinkingDelta, Thinking: event.Thinking}
-			case types.EventToolUseStart,
-				types.EventToolUseDelta,
-				types.EventToolUseStop:
-				if event.ToolCall != nil {
-					if event.Type == types.EventToolUseStart {
-						seenToolStarts[event.ToolCall.ID] = true
-					}
-					eventChan <- ChatEvent{Type: event.Type, ToolCall: event.ToolCall}
-				}
-			case types.EventComplete:
-				if event.Response != nil {
-					finalResponse = event.Response
-					toolCalls = event.Response.ToolCalls
-				}
-			case types.EventError:
-				runPostModelCall(ctx, activeAgent.hooks, ModelResponseContext{
-					Duration:  time.Since(turnStart),
-					AgentName: agentName,
-					TaskID:    taskID,
-					Branch:    branch,
-					Error:     event.Error,
-				})
-				meResult, meErr := runOnModelError(
-					ctx,
-					activeAgent.hooks,
-					ModelErrorContext{
-						Messages:  messages,
-						Tools:     allTools,
-						Error:     event.Error,
-						AgentName: agentName,
-						TaskID:    taskID,
-						Branch:    branch,
-					},
-				)
-				if meErr == nil && meResult.Action == HookModify &&
-					meResult.Response != nil {
-					finalResponse = meResult.Response
-					toolCalls = meResult.Response.ToolCalls
-					streamRecovered = true
-				} else {
-					streamErr = event.Error
-				}
-			}
-		}
-
-		if streamErr != nil && !streamRecovered {
-			eventChan <- ChatEvent{Type: types.EventError, Error: streamErr}
+		finalResponse, messages, _, fullContent, fullReasoning, streamErr = activeAgent.executeStreamResponse(
+			ctx,
+			messages,
+			allTools,
+			eventChan,
+		)
+		if streamErr != nil {
 			return nil, streamErr
 		}
-
 		turns++
 		if finalResponse != nil {
+			toolCalls = finalResponse.ToolCalls
 			totalUsage.Add(finalResponse.Usage)
-			if !streamRecovered {
-				mrResult, hookErr := runPostModelCall(
-					ctx,
-					activeAgent.hooks,
-					ModelResponseContext{
-						Response:  finalResponse,
-						Duration:  time.Since(turnStart),
-						AgentName: agentName,
-						TaskID:    taskID,
-						Branch:    branch,
-					},
-				)
-				if hookErr != nil {
-					eventChan <- ChatEvent{Type: types.EventError, Error: fmt.Errorf("post-model-call hook: %w", hookErr)}
-					return nil, hookErr
-				}
-				if mrResult.Action == HookModify && mrResult.Response != nil {
-					finalResponse = mrResult.Response
-					toolCalls = finalResponse.ToolCalls
-					fullContent = finalResponse.Content
-					fullReasoning = finalResponse.Reasoning
-				}
-			}
 		}
 
-		if streamRecovered && finalResponse != nil {
-			fullContent = finalResponse.Content
-			fullReasoning = finalResponse.Reasoning
+		if (maxIter > 0 && iteration >= maxIter) && len(toolCalls) > 0 {
+			if activeAgent.continuationProvider != nil {
+				toolCallsCopy := make([]message.ToolCall, len(toolCalls))
+				copy(toolCallsCopy, toolCalls)
+				req := ContinuationRequest{
+					MaxIterations:   maxIter,
+					TotalIterations: totalIterations + iteration,
+					ToolCalls:       toolCallsCopy,
+				}
+
+				eventChan <- ChatEvent{
+					Type:                types.EventContinuationRequired,
+					ContinuationRequest: &req,
+				}
+
+				contResp, pErr := activeAgent.continuationProvider(ctx, req)
+				if pErr == nil && contResp.Decision == ContinuationApprove {
+					totalIterations += iteration
+					iteration = 0
+
+					if contResp.DiscardToolCalls {
+						assistantMsg := message.NewAssistantMessage()
+						assistantMsg.Model = activeAgent.llm.Model().ID
+						if fullContent != "" {
+							assistantMsg.AppendContent(fullContent)
+						}
+						if fullReasoning != "" {
+							assistantMsg.AppendReasoningContent(fullReasoning)
+						}
+						assistantMsg.AppendToolCalls(toolCalls)
+
+						toolMsg := message.Message{
+							Role:      message.Tool,
+							Model:     activeAgent.llm.Model().ID,
+							CreatedAt: time.Now().UnixNano(),
+						}
+
+						errText := contResp.ToolMessage
+						if errText == "" {
+							errText = "Tool execution canceled by user during continuation."
+						}
+
+						for _, tc := range toolCalls {
+							toolMsg.AddToolResult(message.ToolResult{
+								ToolCallID: tc.ID,
+								Name:       tc.Name,
+								Content:    errText,
+								IsError:    true,
+							})
+						}
+
+						newMessages := []message.Message{assistantMsg, toolMsg}
+						if contResp.Message != "" {
+							sysMsg := message.NewUserMessage(contResp.Message)
+							newMessages = append(newMessages, sysMsg)
+						}
+
+						messages = append(messages, newMessages...)
+						if activeAgent.session != nil {
+							if err := activeAgent.session.AddMessages(
+								ctx,
+								newMessages,
+							); err != nil {
+								eventChan <- ChatEvent{Type: types.EventError, Error: err}
+								return nil, err
+							}
+						}
+						continue
+					}
+					if contResp.Message != "" {
+						pendingSteeringMessage = contResp.Message
+					}
+				} else {
+					var errText string
+					switch {
+					case pErr != nil:
+						errText = pErr.Error()
+					case contResp.Message != "":
+						errText = contResp.Message
+					case contResp.Decision == ContinuationTimeout:
+						errText = "Continuation request timed out."
+					default:
+						errText = "Maximum iteration limit reached. Continuation declined by user."
+					}
+
+					assistantMsg := message.NewAssistantMessage()
+					assistantMsg.Model = activeAgent.llm.Model().ID
+					if fullContent != "" {
+						assistantMsg.AppendContent(fullContent)
+					}
+					if fullReasoning != "" {
+						assistantMsg.AppendReasoningContent(fullReasoning)
+					}
+					assistantMsg.AppendToolCalls(toolCalls)
+
+					toolMsg := message.Message{
+						Role:      message.Tool,
+						Model:     activeAgent.llm.Model().ID,
+						CreatedAt: time.Now().UnixNano(),
+					}
+					for _, tc := range toolCalls {
+						toolMsg.AddToolResult(message.ToolResult{
+							ToolCallID: tc.ID,
+							Name:       tc.Name,
+							Content:    errText,
+							IsError:    true,
+						})
+					}
+
+					sysMsg := message.NewUserMessage(
+						"System Notification: " + errText,
+					)
+
+					messages = append(messages, assistantMsg, toolMsg, sysMsg)
+					if activeAgent.session != nil {
+						if err := activeAgent.session.AddMessages(
+							ctx,
+							[]message.Message{assistantMsg, toolMsg, sysMsg},
+						); err != nil {
+							eventChan <- ChatEvent{Type: types.EventError, Error: err}
+							return nil, err
+						}
+					}
+
+					var finalResp *llm.Response
+					var streamErr error
+					finalResp, _, _, fullContent, fullReasoning, streamErr = activeAgent.executeStreamResponse(
+						ctx,
+						messages,
+						nil,
+						eventChan,
+					)
+					if streamErr != nil {
+						return nil, streamErr
+					}
+					turns++
+
+					if activeAgent.session != nil && finalResp != nil {
+						finalAssistantMsg := message.NewAssistantMessage()
+
+						finalAssistantMsg.Model = activeAgent.llm.Model().ID
+						if finalResp.Content != "" {
+							finalAssistantMsg.AppendContent(finalResp.Content)
+						}
+						if finalResp.Reasoning != "" {
+							finalAssistantMsg.AppendReasoningContent(
+								finalResp.Reasoning,
+							)
+						}
+						if finalResp.Content != "" ||
+							finalResp.Reasoning != "" {
+							if err := activeAgent.session.AddMessages(
+								ctx,
+								[]message.Message{finalAssistantMsg},
+							); err != nil {
+								eventChan <- ChatEvent{Type: types.EventError, Error: err}
+								return nil, err
+							}
+						}
+					}
+
+					chatResp := &ChatResponse{
+						Content:            fullContent,
+						Reasoning:          fullReasoning,
+						ToolCalls:          nil,
+						Usage:              totalUsage,
+						FinishReason:       message.FinishReasonMaxIterations,
+						ProviderResponseID: "",
+						TotalToolCalls:     totalToolCalls,
+						TotalDuration:      time.Since(startTime),
+						TotalTurns:         turns,
+					}
+					if finalResp != nil {
+						chatResp.Usage.Add(finalResp.Usage)
+						chatResp.ProviderResponseID = finalResp.ProviderResponseID
+					}
+					if activeAgent != a {
+						chatResp.AgentName = findAgentName(a, activeAgent)
+					}
+					return chatResp, nil
+				}
+			}
 		}
 
 		if len(toolCalls) == 0 || !activeAgent.autoExecute ||
 			(maxIter > 0 && iteration >= maxIter) {
+
 			if activeAgent.session != nil {
 				assistantMsg := message.NewAssistantMessage()
 				assistantMsg.Model = activeAgent.llm.Model().ID
@@ -525,10 +749,24 @@ func (a *Agent) runLoopStream(
 				}
 				if fullContent != "" || fullReasoning != "" ||
 					len(toolCalls) > 0 && !activeAgent.autoExecute {
-					_ = activeAgent.session.AddMessages(
+					if err := activeAgent.session.AddMessages(
 						ctx,
 						[]message.Message{assistantMsg},
-					)
+					); err != nil {
+						eventChan <- ChatEvent{Type: types.EventError, Error: err}
+						return nil, err
+					}
+				}
+
+				if pendingSteeringMessage != "" {
+					sysMsg := message.NewUserMessage(pendingSteeringMessage)
+					if err := activeAgent.session.AddMessages(
+						ctx,
+						[]message.Message{sysMsg},
+					); err != nil {
+						eventChan <- ChatEvent{Type: types.EventError, Error: err}
+						return nil, err
+					}
 				}
 			}
 
@@ -541,6 +779,9 @@ func (a *Agent) runLoopStream(
 			if finalResponse != nil {
 				finishReason = finalResponse.FinishReason
 				providerResponseID = finalResponse.ProviderResponseID
+			}
+			if maxIter > 0 && iteration >= maxIter && len(toolCalls) > 0 {
+				finishReason = message.FinishReasonMaxIterations
 			}
 
 			chatResp := &ChatResponse{
@@ -574,15 +815,6 @@ func (a *Agent) runLoopStream(
 		assistantMsg.AppendToolCalls(toolCalls)
 		messages = append(messages, assistantMsg)
 
-		for i := range toolCalls {
-			if !seenToolStarts[toolCalls[i].ID] {
-				eventChan <- ChatEvent{
-					Type:     types.EventToolUseStart,
-					ToolCall: &toolCalls[i],
-				}
-			}
-		}
-
 		execCtx := withConfirmationChan(ctx, eventChan)
 		toolResults := activeAgent.executeTools(execCtx, toolCalls)
 
@@ -609,10 +841,27 @@ func (a *Agent) runLoopStream(
 		messages = append(messages, toolMsg)
 
 		if activeAgent.session != nil {
-			_ = activeAgent.session.AddMessages(
+			if err := activeAgent.session.AddMessages(
 				ctx,
 				[]message.Message{assistantMsg, toolMsg},
-			)
+			); err != nil {
+				eventChan <- ChatEvent{Type: types.EventError, Error: err}
+				return nil, err
+			}
+		}
+
+		if pendingSteeringMessage != "" {
+			sysMsg := message.NewUserMessage(pendingSteeringMessage)
+			messages = append(messages, sysMsg)
+			if activeAgent.session != nil {
+				if err := activeAgent.session.AddMessages(
+					ctx,
+					[]message.Message{sysMsg},
+				); err != nil {
+					eventChan <- ChatEvent{Type: types.EventError, Error: err}
+					return nil, err
+				}
+			}
 		}
 
 		if handoff := detectHandoff(

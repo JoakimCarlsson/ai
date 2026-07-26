@@ -1252,6 +1252,147 @@ func TestOnEvent_ModelError(t *testing.T) {
 	}
 }
 
+func TestContinuation_Decline_TriggersHooks(t *testing.T) {
+	var preCalls, postCalls int
+	hooks := agent.Hooks{
+		PreModelCall: func(_ context.Context, _ agent.ModelCallContext) (agent.ModelCallResult, error) {
+			preCalls++
+			return agent.ModelCallResult{Action: agent.HookAllow}, nil
+		},
+		PostModelCall: func(_ context.Context, _ agent.ModelResponseContext) (agent.ModelResponseResult, error) {
+			postCalls++
+			return agent.ModelResponseResult{Action: agent.HookAllow}, nil
+		},
+	}
+
+	llmClient := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"1"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "summarized after decline"},
+	)
+
+	provider := func(_ context.Context, _ agent.ContinuationRequest) (agent.ContinuationResponse, error) {
+		return agent.ContinuationResponse{
+			Decision: agent.ContinuationDecline,
+		}, nil
+	}
+
+	a := agent.New(llmClient,
+		agent.WithTools(&simpleTool{
+			name: "echo",
+			run: func(_ context.Context, _ tool.Call) (tool.Response, error) {
+				return tool.NewTextResponse("1"), nil
+			},
+		}),
+		agent.WithMaxIterations(1),
+		agent.WithContinuationProvider(provider),
+		agent.WithHooks(hooks),
+	)
+
+	resp, err := a.Chat(context.Background(), "test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if resp.Content != "summarized after decline" {
+		t.Errorf("expected summarized content, got %q", resp.Content)
+	}
+
+	if preCalls != 2 {
+		t.Errorf(
+			"expected 2 preModelCall invocations (1 main + 1 final decline summary), got %d",
+			preCalls,
+		)
+	}
+	if postCalls != 2 {
+		t.Errorf(
+			"expected 2 postModelCall invocations (1 main + 1 final decline summary), got %d",
+			postCalls,
+		)
+	}
+}
+
+func TestContinuation_Decline_TriggersHooks_Stream(t *testing.T) {
+	var preCalls, postCalls int
+	hooks := agent.Hooks{
+		PreModelCall: func(_ context.Context, _ agent.ModelCallContext) (agent.ModelCallResult, error) {
+			preCalls++
+			return agent.ModelCallResult{Action: agent.HookAllow}, nil
+		},
+		PostModelCall: func(_ context.Context, _ agent.ModelResponseContext) (agent.ModelResponseResult, error) {
+			postCalls++
+			return agent.ModelResponseResult{Action: agent.HookAllow}, nil
+		},
+	}
+
+	llmClient := newMockLLM(
+		mockResponse{
+			ToolCalls: []message.ToolCall{
+				{
+					ID:    "tc-1",
+					Name:  "echo",
+					Input: `{"text":"1"}`,
+					Type:  "function",
+				},
+			},
+		},
+		mockResponse{Content: "summarized after decline stream"},
+	)
+
+	provider := func(_ context.Context, _ agent.ContinuationRequest) (agent.ContinuationResponse, error) {
+		return agent.ContinuationResponse{
+			Decision: agent.ContinuationDecline,
+		}, nil
+	}
+
+	a := agent.New(llmClient,
+		agent.WithTools(&simpleTool{
+			name: "echo",
+			run: func(_ context.Context, _ tool.Call) (tool.Response, error) {
+				return tool.NewTextResponse("1"), nil
+			},
+		}),
+		agent.WithMaxIterations(1),
+		agent.WithContinuationProvider(provider),
+		agent.WithHooks(hooks),
+	)
+
+	var resp *agent.ChatResponse
+	for evt := range a.ChatStream(context.Background(), "test") {
+		if evt.Type == types.EventComplete {
+			resp = evt.Response
+		}
+	}
+
+	if resp == nil {
+		t.Fatal("expected non-nil ChatResponse on EventComplete")
+	}
+	if resp.Content != "summarized after decline stream" {
+		t.Errorf("expected summarized content, got %q", resp.Content)
+	}
+
+	if preCalls != 2 {
+		t.Errorf(
+			"expected 2 preModelCall invocations (1 main + 1 final decline summary), got %d",
+			preCalls,
+		)
+	}
+	if postCalls != 2 {
+		t.Errorf(
+			"expected 2 postModelCall invocations (1 main + 1 final decline summary), got %d",
+			postCalls,
+		)
+	}
+}
+
 type simpleTool struct {
 	name string
 	run  func(ctx context.Context, params tool.Call) (tool.Response, error)
