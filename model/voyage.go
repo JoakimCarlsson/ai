@@ -150,7 +150,7 @@ var VoyageEmbeddingModels = map[ID]EmbeddingModel{
 		Name:                "Voyage Context 4",
 		Provider:            ProviderVoyage,
 		APIModel:            "voyage-context-4",
-		CostPer1MTokens:     0.12,
+		CostPer1MTokens:     0.18,
 		MaxInputTokens:      32000,
 		EmbeddingDims:       1024,
 		SupportedDimensions: []int{256, 512, 1024, 2048},

@@ -1,6 +1,11 @@
 package model
 
 // Cohere provider identifier and Command model IDs for this registry.
+//
+// Cohere also serves three Command A variants that are intentionally not
+// catalogued here: command-a-reasoning-08-2025, command-a-vision-07-2025 and
+// command-a-translate-08-2025. Their per-token rates are sales-gated rather
+// than published, so recording a price for them would be a guess.
 const (
 	ProviderCohere Provider = "cohere"
 

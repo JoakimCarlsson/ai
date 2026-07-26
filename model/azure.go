@@ -34,6 +34,10 @@ const (
 	AzureGPT54Nano      ID = "azure.gpt-5.4-nano"
 	AzureGPT54Pro       ID = "azure.gpt-5.4-pro"
 	AzureGPT55          ID = "azure.gpt-5.5"
+	AzureGPT55Pro       ID = "azure.gpt-5.5-pro"
+	AzureGPT56Sol       ID = "azure.gpt-5.6-sol"
+	AzureGPT56Terra     ID = "azure.gpt-5.6-terra"
+	AzureGPT56Luna      ID = "azure.gpt-5.6-luna"
 )
 
 // AzureModels maps Azure OpenAI model IDs to their configurations.
@@ -450,6 +454,66 @@ var AzureModels = map[ID]Model{
 		ContextWindow:         OpenAIModels[GPT55].ContextWindow,
 		DefaultMaxTokens:      OpenAIModels[GPT55].DefaultMaxTokens,
 		CanReason:             OpenAIModels[GPT55].CanReason,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	AzureGPT55Pro: {
+		ID:                    AzureGPT55Pro,
+		Name:                  "Azure OpenAI – GPT-5.5 pro",
+		Provider:              ProviderAzure,
+		APIModel:              "gpt-5.5-pro",
+		CostPer1MIn:           OpenAIModels[GPT55Pro].CostPer1MIn,
+		CostPer1MInCached:     OpenAIModels[GPT55Pro].CostPer1MInCached,
+		CostPer1MOut:          OpenAIModels[GPT55Pro].CostPer1MOut,
+		CostPer1MOutCached:    OpenAIModels[GPT55Pro].CostPer1MOutCached,
+		ContextWindow:         OpenAIModels[GPT55Pro].ContextWindow,
+		DefaultMaxTokens:      OpenAIModels[GPT55Pro].DefaultMaxTokens,
+		CanReason:             OpenAIModels[GPT55Pro].CanReason,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	AzureGPT56Sol: {
+		ID:                    AzureGPT56Sol,
+		Name:                  "Azure OpenAI – GPT-5.6 Sol",
+		Provider:              ProviderAzure,
+		APIModel:              "gpt-5.6-sol",
+		CostPer1MIn:           OpenAIModels[GPT56Sol].CostPer1MIn,
+		CostPer1MInCached:     OpenAIModels[GPT56Sol].CostPer1MInCached,
+		CostPer1MOut:          OpenAIModels[GPT56Sol].CostPer1MOut,
+		CostPer1MOutCached:    OpenAIModels[GPT56Sol].CostPer1MOutCached,
+		ContextWindow:         OpenAIModels[GPT56Sol].ContextWindow,
+		DefaultMaxTokens:      OpenAIModels[GPT56Sol].DefaultMaxTokens,
+		CanReason:             OpenAIModels[GPT56Sol].CanReason,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	AzureGPT56Terra: {
+		ID:                    AzureGPT56Terra,
+		Name:                  "Azure OpenAI – GPT-5.6 Terra",
+		Provider:              ProviderAzure,
+		APIModel:              "gpt-5.6-terra",
+		CostPer1MIn:           OpenAIModels[GPT56Terra].CostPer1MIn,
+		CostPer1MInCached:     OpenAIModels[GPT56Terra].CostPer1MInCached,
+		CostPer1MOut:          OpenAIModels[GPT56Terra].CostPer1MOut,
+		CostPer1MOutCached:    OpenAIModels[GPT56Terra].CostPer1MOutCached,
+		ContextWindow:         OpenAIModels[GPT56Terra].ContextWindow,
+		DefaultMaxTokens:      OpenAIModels[GPT56Terra].DefaultMaxTokens,
+		CanReason:             OpenAIModels[GPT56Terra].CanReason,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	AzureGPT56Luna: {
+		ID:                    AzureGPT56Luna,
+		Name:                  "Azure OpenAI – GPT-5.6 Luna",
+		Provider:              ProviderAzure,
+		APIModel:              "gpt-5.6-luna",
+		CostPer1MIn:           OpenAIModels[GPT56Luna].CostPer1MIn,
+		CostPer1MInCached:     OpenAIModels[GPT56Luna].CostPer1MInCached,
+		CostPer1MOut:          OpenAIModels[GPT56Luna].CostPer1MOut,
+		CostPer1MOutCached:    OpenAIModels[GPT56Luna].CostPer1MOutCached,
+		ContextWindow:         OpenAIModels[GPT56Luna].ContextWindow,
+		DefaultMaxTokens:      OpenAIModels[GPT56Luna].DefaultMaxTokens,
+		CanReason:             OpenAIModels[GPT56Luna].CanReason,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 	},

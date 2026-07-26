@@ -55,6 +55,12 @@ const (
 	OpenRouterGrok45            ID = "openrouter.grok-4.5"
 	OpenRouterGrok43            ID = "openrouter.grok-4.3"
 	OpenRouterGemini35Flash     ID = "openrouter.gemini-3.5-flash"
+	OpenRouterGemini36Flash     ID = "openrouter.gemini-3.6-flash"
+	OpenRouterClaude5Opus       ID = "openrouter.claude-5-opus"
+	OpenRouterClaude5Fable      ID = "openrouter.claude-5-fable"
+	OpenRouterGPT56Sol          ID = "openrouter.gpt-5.6-sol"
+	OpenRouterGPT56Terra        ID = "openrouter.gpt-5.6-terra"
+	OpenRouterGPT56Luna         ID = "openrouter.gpt-5.6-luna"
 )
 
 // OpenRouterModels maps OpenRouter model IDs to their configurations.
@@ -754,5 +760,95 @@ var OpenRouterModels = map[ID]Model{
 		CanReason:             GeminiModels[Gemini35Flash].CanReason,
 		SupportsAttachments:   GeminiModels[Gemini35Flash].SupportsAttachments,
 		SupportsStructuredOut: GeminiModels[Gemini35Flash].SupportsStructuredOut,
+	},
+	OpenRouterGemini36Flash: {
+		ID:                    OpenRouterGemini36Flash,
+		Name:                  "OpenRouter – Gemini 3.6 Flash",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "google/gemini-3.6-flash",
+		CostPer1MIn:           GeminiModels[Gemini36Flash].CostPer1MIn,
+		CostPer1MInCached:     GeminiModels[Gemini36Flash].CostPer1MInCached,
+		CostPer1MOut:          GeminiModels[Gemini36Flash].CostPer1MOut,
+		CostPer1MOutCached:    GeminiModels[Gemini36Flash].CostPer1MOutCached,
+		ContextWindow:         GeminiModels[Gemini36Flash].ContextWindow,
+		DefaultMaxTokens:      GeminiModels[Gemini36Flash].DefaultMaxTokens,
+		CanReason:             GeminiModels[Gemini36Flash].CanReason,
+		SupportsAttachments:   GeminiModels[Gemini36Flash].SupportsAttachments,
+		SupportsStructuredOut: GeminiModels[Gemini36Flash].SupportsStructuredOut,
+	},
+	OpenRouterClaude5Opus: {
+		ID:                    OpenRouterClaude5Opus,
+		Name:                  "OpenRouter – Claude Opus 5",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "anthropic/claude-opus-5",
+		CostPer1MIn:           AnthropicModels[Claude5Opus].CostPer1MIn,
+		CostPer1MInCached:     AnthropicModels[Claude5Opus].CostPer1MInCached,
+		CostPer1MOut:          AnthropicModels[Claude5Opus].CostPer1MOut,
+		CostPer1MOutCached:    AnthropicModels[Claude5Opus].CostPer1MOutCached,
+		ContextWindow:         AnthropicModels[Claude5Opus].ContextWindow,
+		DefaultMaxTokens:      AnthropicModels[Claude5Opus].DefaultMaxTokens,
+		CanReason:             AnthropicModels[Claude5Opus].CanReason,
+		SupportsAttachments:   AnthropicModels[Claude5Opus].SupportsAttachments,
+		SupportsStructuredOut: AnthropicModels[Claude5Opus].SupportsStructuredOut,
+	},
+	OpenRouterClaude5Fable: {
+		ID:                    OpenRouterClaude5Fable,
+		Name:                  "OpenRouter – Claude Fable 5",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "anthropic/claude-fable-5",
+		CostPer1MIn:           AnthropicModels[Claude5Fable].CostPer1MIn,
+		CostPer1MInCached:     AnthropicModels[Claude5Fable].CostPer1MInCached,
+		CostPer1MOut:          AnthropicModels[Claude5Fable].CostPer1MOut,
+		CostPer1MOutCached:    AnthropicModels[Claude5Fable].CostPer1MOutCached,
+		ContextWindow:         AnthropicModels[Claude5Fable].ContextWindow,
+		DefaultMaxTokens:      AnthropicModels[Claude5Fable].DefaultMaxTokens,
+		CanReason:             AnthropicModels[Claude5Fable].CanReason,
+		SupportsAttachments:   AnthropicModels[Claude5Fable].SupportsAttachments,
+		SupportsStructuredOut: AnthropicModels[Claude5Fable].SupportsStructuredOut,
+	},
+	OpenRouterGPT56Sol: {
+		ID:                    OpenRouterGPT56Sol,
+		Name:                  "OpenRouter – GPT-5.6 Sol",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "openai/gpt-5.6-sol",
+		CostPer1MIn:           OpenAIModels[GPT56Sol].CostPer1MIn,
+		CostPer1MInCached:     OpenAIModels[GPT56Sol].CostPer1MInCached,
+		CostPer1MOut:          OpenAIModels[GPT56Sol].CostPer1MOut,
+		CostPer1MOutCached:    OpenAIModels[GPT56Sol].CostPer1MOutCached,
+		ContextWindow:         OpenAIModels[GPT56Sol].ContextWindow,
+		DefaultMaxTokens:      OpenAIModels[GPT56Sol].DefaultMaxTokens,
+		CanReason:             OpenAIModels[GPT56Sol].CanReason,
+		SupportsAttachments:   OpenAIModels[GPT56Sol].SupportsAttachments,
+		SupportsStructuredOut: OpenAIModels[GPT56Sol].SupportsStructuredOut,
+	},
+	OpenRouterGPT56Terra: {
+		ID:                    OpenRouterGPT56Terra,
+		Name:                  "OpenRouter – GPT-5.6 Terra",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "openai/gpt-5.6-terra",
+		CostPer1MIn:           OpenAIModels[GPT56Terra].CostPer1MIn,
+		CostPer1MInCached:     OpenAIModels[GPT56Terra].CostPer1MInCached,
+		CostPer1MOut:          OpenAIModels[GPT56Terra].CostPer1MOut,
+		CostPer1MOutCached:    OpenAIModels[GPT56Terra].CostPer1MOutCached,
+		ContextWindow:         OpenAIModels[GPT56Terra].ContextWindow,
+		DefaultMaxTokens:      OpenAIModels[GPT56Terra].DefaultMaxTokens,
+		CanReason:             OpenAIModels[GPT56Terra].CanReason,
+		SupportsAttachments:   OpenAIModels[GPT56Terra].SupportsAttachments,
+		SupportsStructuredOut: OpenAIModels[GPT56Terra].SupportsStructuredOut,
+	},
+	OpenRouterGPT56Luna: {
+		ID:                    OpenRouterGPT56Luna,
+		Name:                  "OpenRouter – GPT-5.6 Luna",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "openai/gpt-5.6-luna",
+		CostPer1MIn:           OpenAIModels[GPT56Luna].CostPer1MIn,
+		CostPer1MInCached:     OpenAIModels[GPT56Luna].CostPer1MInCached,
+		CostPer1MOut:          OpenAIModels[GPT56Luna].CostPer1MOut,
+		CostPer1MOutCached:    OpenAIModels[GPT56Luna].CostPer1MOutCached,
+		ContextWindow:         OpenAIModels[GPT56Luna].ContextWindow,
+		DefaultMaxTokens:      OpenAIModels[GPT56Luna].DefaultMaxTokens,
+		CanReason:             OpenAIModels[GPT56Luna].CanReason,
+		SupportsAttachments:   OpenAIModels[GPT56Luna].SupportsAttachments,
+		SupportsStructuredOut: OpenAIModels[GPT56Luna].SupportsStructuredOut,
 	},
 }

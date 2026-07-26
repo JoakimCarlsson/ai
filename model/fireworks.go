@@ -29,6 +29,10 @@ const (
 	FireworksGPTOss120B           ID = "fireworks.gpt-oss-120b"
 	FireworksGPTOss20B            ID = "fireworks.gpt-oss-20b"
 	FireworksGLM5_2               ID = "fireworks.glm-5p2"
+	FireworksGLM5_1               ID = "fireworks.glm-5p1"
+	FireworksMiniMaxM3            ID = "fireworks.minimax-m3"
+	FireworksMiniMaxM2_7          ID = "fireworks.minimax-m2p7"
+	FireworksNemotron3Ultra       ID = "fireworks.nemotron-3-ultra"
 )
 
 // FireworksModels maps Fireworks model IDs to their configurations.
@@ -277,6 +281,62 @@ var FireworksModels = map[ID]Model{
 		CostPer1MOut:          4.40,
 		CostPer1MOutCached:    0,
 		ContextWindow:         262_144,
+		DefaultMaxTokens:      32_768,
+		CanReason:             true,
+		SupportsStructuredOut: true,
+	},
+	FireworksGLM5_1: {
+		ID:                    FireworksGLM5_1,
+		Name:                  "Fireworks – GLM 5.1",
+		Provider:              ProviderFireworks,
+		APIModel:              "accounts/fireworks/models/glm-5p1",
+		CostPer1MIn:           1.40,
+		CostPer1MInCached:     0,
+		CostPer1MOut:          4.40,
+		CostPer1MOutCached:    0,
+		ContextWindow:         262_144,
+		DefaultMaxTokens:      32_768,
+		CanReason:             true,
+		SupportsStructuredOut: true,
+	},
+	FireworksMiniMaxM3: {
+		ID:                    FireworksMiniMaxM3,
+		Name:                  "Fireworks – MiniMax M3",
+		Provider:              ProviderFireworks,
+		APIModel:              "accounts/fireworks/models/minimax-m3",
+		CostPer1MIn:           0.30,
+		CostPer1MInCached:     0,
+		CostPer1MOut:          1.20,
+		CostPer1MOutCached:    0,
+		ContextWindow:         262_144,
+		DefaultMaxTokens:      32_768,
+		CanReason:             true,
+		SupportsStructuredOut: true,
+	},
+	FireworksMiniMaxM2_7: {
+		ID:                    FireworksMiniMaxM2_7,
+		Name:                  "Fireworks – MiniMax M2.7",
+		Provider:              ProviderFireworks,
+		APIModel:              "accounts/fireworks/models/minimax-m2p7",
+		CostPer1MIn:           0.30,
+		CostPer1MInCached:     0,
+		CostPer1MOut:          1.20,
+		CostPer1MOutCached:    0,
+		ContextWindow:         262_144,
+		DefaultMaxTokens:      32_768,
+		CanReason:             true,
+		SupportsStructuredOut: true,
+	},
+	FireworksNemotron3Ultra: {
+		ID:                    FireworksNemotron3Ultra,
+		Name:                  "Fireworks – NVIDIA Nemotron 3 Ultra",
+		Provider:              ProviderFireworks,
+		APIModel:              "accounts/fireworks/models/nemotron-3-ultra",
+		CostPer1MIn:           0.60,
+		CostPer1MInCached:     0,
+		CostPer1MOut:          2.40,
+		CostPer1MOutCached:    0,
+		ContextWindow:         131_072,
 		DefaultMaxTokens:      32_768,
 		CanReason:             true,
 		SupportsStructuredOut: true,
