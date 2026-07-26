@@ -229,7 +229,7 @@ var XAIModels = map[ID]Model{
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 	},
-	// Pricing source: https://docs.x.ai/developers/models/grok-4.5. Fetched: 2026-07-10.
+	// Pricing source: https://docs.x.ai/developers/models/grok-4.5. Fetched: 2026-07-26.
 	// Flagship general-intelligence model; supports reasoning and non-reasoning
 	// modes. Tiered pricing applies above a 200k-token prompt threshold; the
 	// rate below is the base (<=200k) tier.
@@ -239,7 +239,7 @@ var XAIModels = map[ID]Model{
 		Provider:              ProviderXAI,
 		APIModel:              "grok-4.5",
 		CostPer1MIn:           2.0,
-		CostPer1MInCached:     0.50,
+		CostPer1MInCached:     0.30,
 		CostPer1MOut:          6.0,
 		CostPer1MOutCached:    0,
 		ContextWindow:         500_000,

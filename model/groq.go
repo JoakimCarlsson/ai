@@ -9,7 +9,8 @@ const (
 	Llama3_1_8BInstant    ID = "llama-3.1-8b-instant"
 	GPTOss120B            ID = "openai/gpt-oss-120b"
 	GPTOss20B             ID = "openai/gpt-oss-20b"
-	Qwen3_32BGroq         ID = "qwen/qwen3-32b"
+	GPTOssSafeguard20B    ID = "openai/gpt-oss-safeguard-20b"
+	Qwen36_27BGroq        ID = "qwen/qwen3.6-27b"
 	KimiK2                ID = "moonshotai/kimi-k2-instruct-0905"
 )
 
@@ -87,20 +88,36 @@ var GroqModels = map[ID]Model{
 		SupportsAttachments:   false,
 		SupportsStructuredOut: false,
 	},
-	Qwen3_32BGroq: {
-		ID:                    Qwen3_32BGroq,
-		Name:                  "Qwen3 32B",
+	GPTOssSafeguard20B: {
+		ID:                    GPTOssSafeguard20B,
+		Name:                  "GPT-OSS Safeguard 20B",
 		Provider:              ProviderGROQ,
-		APIModel:              "qwen/qwen3-32b",
-		CostPer1MIn:           0.29,
+		APIModel:              "openai/gpt-oss-safeguard-20b",
+		CostPer1MIn:           0.075,
 		CostPer1MInCached:     0,
 		CostPer1MOutCached:    0,
-		CostPer1MOut:          0.59,
+		CostPer1MOut:          0.30,
 		ContextWindow:         131_072,
-		DefaultMaxTokens:      40960,
-		CanReason:             false,
+		DefaultMaxTokens:      32_768,
+		CanReason:             true,
 		SupportsAttachments:   false,
-		SupportsStructuredOut: false,
+		SupportsStructuredOut: true,
+	},
+	// Preview-tier on Groq; replaces the delisted qwen/qwen3-32b.
+	Qwen36_27BGroq: {
+		ID:                    Qwen36_27BGroq,
+		Name:                  "Qwen3.6 27B",
+		Provider:              ProviderGROQ,
+		APIModel:              "qwen/qwen3.6-27b",
+		CostPer1MIn:           0.60,
+		CostPer1MInCached:     0,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          3.00,
+		ContextWindow:         131_072,
+		DefaultMaxTokens:      16_384,
+		CanReason:             true,
+		SupportsAttachments:   false,
+		SupportsStructuredOut: true,
 	},
 	KimiK2: {
 		ID:                    KimiK2,

@@ -4,8 +4,12 @@ package model
 const (
 	ProviderGemini Provider = "gemini"
 
+	// gemini 3.6
+	Gemini36Flash ID = "gemini-3.6-flash"
+
 	// gemini 3.5
-	Gemini35Flash ID = "gemini-3.5-flash"
+	Gemini35Flash     ID = "gemini-3.5-flash"
+	Gemini35FlashLite ID = "gemini-3.5-flash-lite"
 
 	// gemini 3.1
 	Gemini31FlashLitePreview  ID = "gemini-3.1-flash-lite-preview"
@@ -55,6 +59,36 @@ const (
 
 // GeminiModels maps Gemini chat model IDs to their configurations.
 var GeminiModels = map[ID]Model{
+	Gemini36Flash: {
+		ID:                    Gemini36Flash,
+		Name:                  "Gemini 3.6 Flash",
+		Provider:              ProviderGemini,
+		APIModel:              "gemini-3.6-flash",
+		CostPer1MIn:           1.50,
+		CostPer1MInCached:     0.15,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          7.50,
+		ContextWindow:         1048576,
+		DefaultMaxTokens:      65536,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	Gemini35FlashLite: {
+		ID:                    Gemini35FlashLite,
+		Name:                  "Gemini 3.5 Flash Lite",
+		Provider:              ProviderGemini,
+		APIModel:              "gemini-3.5-flash-lite",
+		CostPer1MIn:           0.30,
+		CostPer1MInCached:     0,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          2.50,
+		ContextWindow:         1048576,
+		DefaultMaxTokens:      65536,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
 	Gemini35Flash: {
 		ID:                    Gemini35Flash,
 		Name:                  "Gemini 3.5 Flash",
