@@ -42,8 +42,17 @@ const (
 
 // AzureModels maps Azure OpenAI model IDs to their configurations.
 //
-// Pricing source: rates mirror OpenAIModels in this package; deployment
-// names from
+// APIModel here is a lookup key, not a request identifier. Azure Foundry
+// routes on the deployment name the caller chose, which is arbitrary, so
+// [llmazure.WithDeployment] is the only model selector and its value always
+// becomes APIModel on the resolved model. These entries exist so a
+// conventionally-named deployment inherits cost and context metadata, by
+// exact match first and then longest-substring ("gpt-5.4-mini-prod" resolves
+// to the gpt-5.4-mini rates). A deployment whose name matches nothing still
+// works; it just carries no cost metadata.
+//
+// Pricing source: rates mirror OpenAIModels in this package; the underlying
+// model names are from
 // https://learn.microsoft.com/azure/ai-foundry/openai/concepts/models.
 // Fetched: 2026-07-26.
 var AzureModels = map[ID]Model{
