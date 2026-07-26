@@ -69,10 +69,18 @@ func TestStreamSSE_AccumulatesAndCompletes(t *testing.T) {
 		t.Fatal("expected a complete event")
 	}
 	if complete.Content != "Hello world" {
-		t.Errorf("complete content = %q, want %q", complete.Content, "Hello world")
+		t.Errorf(
+			"complete content = %q, want %q",
+			complete.Content,
+			"Hello world",
+		)
 	}
 	if complete.FinishReason != fim.FinishReasonStop {
-		t.Errorf("finish reason = %q, want %q", complete.FinishReason, fim.FinishReasonStop)
+		t.Errorf(
+			"finish reason = %q, want %q",
+			complete.FinishReason,
+			fim.FinishReasonStop,
+		)
 	}
 	if complete.Usage.OutputTokens != 5 {
 		t.Errorf("output tokens = %d, want 5", complete.Usage.OutputTokens)
@@ -86,6 +94,10 @@ func TestStreamSSE_CompletesOnEOF(t *testing.T) {
 		t.Fatalf("expected trailing complete event, got %+v", events)
 	}
 	if events[len(events)-1].Response.Content != "partial" {
-		t.Errorf("content = %q, want %q", events[len(events)-1].Response.Content, "partial")
+		t.Errorf(
+			"content = %q, want %q",
+			events[len(events)-1].Response.Content,
+			"partial",
+		)
 	}
 }

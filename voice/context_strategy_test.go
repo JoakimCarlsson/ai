@@ -247,10 +247,16 @@ func TestApplySessionUpdate_PopCountRewindsStore(t *testing.T) {
 	}
 
 	if sessionPersisted != 1 {
-		t.Fatalf("expected sessionPersisted rewound to 1, got %d", sessionPersisted)
+		t.Fatalf(
+			"expected sessionPersisted rewound to 1, got %d",
+			sessionPersisted,
+		)
 	}
 	if stored, _ := sess.GetMessages(ctx, nil); len(stored) != 1 {
-		t.Fatalf("expected 1 message left in store after pop, got %d", len(stored))
+		t.Fatalf(
+			"expected 1 message left in store after pop, got %d",
+			len(stored),
+		)
 	}
 	if len(history) != 3 || history[1].Role != message.Summary {
 		t.Fatalf("expected history [u1, summary, u2], got %+v", history)

@@ -26,10 +26,16 @@ func TestLiveVision(t *testing.T) {
 		llmopenai.WithModel(model.BergetModels[model.BergetGemma431B]),
 		llmopenai.WithMaxTokens(32),
 	)
-	msg := message.NewUserMessage("What number is shown in this image? Reply with just the number.")
+	msg := message.NewUserMessage(
+		"What number is shown in this image? Reply with just the number.",
+	)
 	msg.AddBinary("image/png", data)
 
-	resp, err := c.SendMessages(context.Background(), []message.Message{msg}, nil)
+	resp, err := c.SendMessages(
+		context.Background(),
+		[]message.Message{msg},
+		nil,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

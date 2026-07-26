@@ -41,7 +41,12 @@ func TestLive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("content=%q in=%d out=%d", resp.Content, resp.Usage.InputTokens, resp.Usage.OutputTokens)
+	t.Logf(
+		"content=%q in=%d out=%d",
+		resp.Content,
+		resp.Usage.InputTokens,
+		resp.Usage.OutputTokens,
+	)
 	if resp.Content == "" {
 		t.Fatal("empty content")
 	}
@@ -81,7 +86,10 @@ func (weatherTool) Info() tool.Info {
 		Name:        "get_weather",
 		Description: "Get the current weather for a city",
 		Parameters: map[string]any{
-			"city": map[string]any{"type": "string", "description": "City name"},
+			"city": map[string]any{
+				"type":        "string",
+				"description": "City name",
+			},
 		},
 		Required: []string{"city"},
 	}
@@ -94,7 +102,9 @@ func (weatherTool) Run(_ context.Context, _ tool.Call) (tool.Response, error) {
 func TestLiveToolCalling(t *testing.T) {
 	c := client(t, model.BergetMistralSmall32)
 	resp, err := c.SendMessages(context.Background(), []message.Message{
-		message.NewUserMessage("What is the weather in Paris? Use the get_weather tool."),
+		message.NewUserMessage(
+			"What is the weather in Paris? Use the get_weather tool.",
+		),
 	}, []tool.BaseTool{weatherTool{}})
 	if err != nil {
 		t.Fatal(err)
@@ -119,16 +129,25 @@ func TestLiveStructuredOutput(t *testing.T) {
 		},
 		[]string{"country", "capital"},
 	)
-	resp, err := c.SendMessagesWithStructuredOutput(context.Background(), []message.Message{
-		message.NewUserMessage("What is the capital of France?"),
-	}, nil, out)
+	resp, err := c.SendMessagesWithStructuredOutput(
+		context.Background(),
+		[]message.Message{
+			message.NewUserMessage("What is the capital of France?"),
+		},
+		nil,
+		out,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if resp.StructuredOutput == nil {
 		t.Fatal("no structured output returned")
 	}
-	t.Logf("native=%v json=%s", resp.UsedNativeStructuredOutput, *resp.StructuredOutput)
+	t.Logf(
+		"native=%v json=%s",
+		resp.UsedNativeStructuredOutput,
+		*resp.StructuredOutput,
+	)
 	var got struct{ Country, Capital string }
 	if err := json.Unmarshal([]byte(*resp.StructuredOutput), &got); err != nil {
 		t.Fatalf("structured output not valid JSON: %v", err)
