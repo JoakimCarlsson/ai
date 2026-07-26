@@ -3,11 +3,11 @@ module github.com/joakimcarlsson/ai/memory/sqlite
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/message v0.5.0
-	github.com/joakimcarlsson/ai/session v0.1.4
+	github.com/joakimcarlsson/ai/message v0.5.1
+	github.com/joakimcarlsson/ai/session v0.1.5
 )
 
-require github.com/joakimcarlsson/ai/model v0.6.0 // indirect
+require github.com/joakimcarlsson/ai/model v0.7.0 // indirect
 
 replace (
 	github.com/joakimcarlsson/ai/message => ../../message

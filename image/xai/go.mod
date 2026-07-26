@@ -3,8 +3,8 @@ module github.com/joakimcarlsson/ai/image/xai
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/image v0.1.3
-	github.com/joakimcarlsson/ai/model v0.6.0
+	github.com/joakimcarlsson/ai/image v0.1.4
+	github.com/joakimcarlsson/ai/model v0.7.0
 	github.com/openai/openai-go/v3 v3.41.0
 )
 

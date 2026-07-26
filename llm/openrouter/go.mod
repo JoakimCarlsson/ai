@@ -3,10 +3,10 @@ module github.com/joakimcarlsson/ai/llm/openrouter
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/llm v0.5.1
-	github.com/joakimcarlsson/ai/llm/openai v0.4.6
-	github.com/joakimcarlsson/ai/message v0.5.0
-	github.com/joakimcarlsson/ai/model v0.6.0
+	github.com/joakimcarlsson/ai/llm v0.5.2
+	github.com/joakimcarlsson/ai/llm/openai v0.4.7
+	github.com/joakimcarlsson/ai/message v0.5.1
+	github.com/joakimcarlsson/ai/model v0.7.0
 )
 
 require (
