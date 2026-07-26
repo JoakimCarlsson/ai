@@ -3,13 +3,13 @@ module github.com/joakimcarlsson/ai/tokens/sliding
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/message v0.5.0
-	github.com/joakimcarlsson/ai/tokens v0.2.5
+	github.com/joakimcarlsson/ai/message v0.5.1
+	github.com/joakimcarlsson/ai/tokens v0.2.6
 )
 
 require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
-	github.com/joakimcarlsson/ai/model v0.6.0 // indirect
+	github.com/joakimcarlsson/ai/model v0.7.0 // indirect
 	github.com/joakimcarlsson/ai/tool v0.1.2 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.6.1 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
