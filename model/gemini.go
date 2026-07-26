@@ -384,7 +384,7 @@ var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 		ID:       Gemini31FlashImagePreview,
 		Name:     "Gemini 3.1 Flash Image Preview (Nano Banana 2)",
 		Provider: ProviderGemini,
-		APIModel: "gemini-3.1-flash-image-preview",
+		APIModel: "gemini-3.1-flash-image",
 		Pricing: map[string]map[string]float64{
 			"1:1": {
 				"default": 0.067,
@@ -480,9 +480,10 @@ var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 		SupportedQualities: []string{"default"},
 		DefaultQuality:     "default",
 	},
+	// Deprecated by Google in favour of the Gemini flash-image models.
 	Imagen4: {
 		ID:       Imagen4,
-		Name:     "Imagen 4",
+		Name:     "Imagen 4 [Deprecated]",
 		Provider: ProviderGemini,
 		APIModel: "imagen-4.0-generate-001",
 		Pricing: map[string]map[string]float64{
@@ -508,9 +509,10 @@ var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 		SupportedQualities:    []string{"default"},
 		DefaultQuality:        "default",
 	},
+	// Deprecated by Google in favour of the Gemini flash-image models.
 	Imagen4Ultra: {
 		ID:       Imagen4Ultra,
-		Name:     "Imagen 4 Ultra",
+		Name:     "Imagen 4 Ultra [Deprecated]",
 		Provider: ProviderGemini,
 		APIModel: "imagen-4.0-ultra-generate-001",
 		Pricing: map[string]map[string]float64{
@@ -536,9 +538,10 @@ var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 		SupportedQualities:    []string{"default"},
 		DefaultQuality:        "default",
 	},
+	// Deprecated by Google in favour of the Gemini flash-image models.
 	Imagen4Fast: {
 		ID:       Imagen4Fast,
-		Name:     "Imagen 4 Fast",
+		Name:     "Imagen 4 Fast [Deprecated]",
 		Provider: ProviderGemini,
 		APIModel: "imagen-4.0-fast-generate-001",
 		Pricing: map[string]map[string]float64{

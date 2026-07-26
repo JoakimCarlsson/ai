@@ -14,6 +14,8 @@ const (
 	GPT4oMiniTranscribe     ID = "gpt-4o-mini-transcribe"
 	GPT4oMiniTranscribe2025 ID = "gpt-4o-mini-transcribe-2025-12-15"
 	GPT4oTranscribeDiarize  ID = "gpt-4o-transcribe-diarize"
+	GPTRealtimeWhisper      ID = "gpt-realtime-whisper"
+	GPTRealtimeTranslate    ID = "gpt-realtime-translate"
 )
 
 // AudioModel represents an audio generation (TTS) model with its
@@ -100,8 +102,7 @@ var OpenAITranscriptionModels = map[ID]TranscriptionModel{
 		Name:          "GPT-4o Transcribe",
 		Provider:      ProviderOpenAI,
 		APIModel:      "gpt-4o-transcribe",
-		CostPer1MIn:   0.10,
-		CostPer1MOut:  0.40,
+		CostPer1MIn:   0.006,
 		MaxFileSizeMB: 25,
 		SupportedFormats: []string{
 			"flac",
@@ -126,8 +127,7 @@ var OpenAITranscriptionModels = map[ID]TranscriptionModel{
 		Name:          "GPT-4o Mini Transcribe",
 		Provider:      ProviderOpenAI,
 		APIModel:      "gpt-4o-mini-transcribe",
-		CostPer1MIn:   0.02,
-		CostPer1MOut:  0.08,
+		CostPer1MIn:   0.003,
 		MaxFileSizeMB: 25,
 		SupportedFormats: []string{
 			"flac",
@@ -152,8 +152,7 @@ var OpenAITranscriptionModels = map[ID]TranscriptionModel{
 		Name:          "GPT-4o Mini Transcribe 2025-12-15",
 		Provider:      ProviderOpenAI,
 		APIModel:      "gpt-4o-mini-transcribe-2025-12-15",
-		CostPer1MIn:   0.02,
-		CostPer1MOut:  0.08,
+		CostPer1MIn:   0.003,
 		MaxFileSizeMB: 25,
 		SupportedFormats: []string{
 			"flac",
@@ -196,6 +195,56 @@ var OpenAITranscriptionModels = map[ID]TranscriptionModel{
 		SupportsTranslation:      false,
 		SupportsStreaming:        true,
 		SupportedResponseFormats: []string{"json", "text", "diarized_json"},
+	},
+	GPTRealtimeWhisper: {
+		ID:            GPTRealtimeWhisper,
+		Name:          "GPT Realtime Whisper",
+		Provider:      ProviderOpenAI,
+		APIModel:      "gpt-realtime-whisper",
+		CostPer1MIn:   0.017,
+		MaxFileSizeMB: 25,
+		SupportedFormats: []string{
+			"flac",
+			"mp3",
+			"mp4",
+			"mpeg",
+			"mpga",
+			"m4a",
+			"ogg",
+			"wav",
+			"webm",
+		},
+		SupportsTimestamps:       true,
+		SupportsWordTimestamps:   false,
+		SupportsDiarization:      false,
+		SupportsTranslation:      false,
+		SupportsStreaming:        true,
+		SupportedResponseFormats: []string{"json"},
+	},
+	GPTRealtimeTranslate: {
+		ID:            GPTRealtimeTranslate,
+		Name:          "GPT Realtime Translate",
+		Provider:      ProviderOpenAI,
+		APIModel:      "gpt-realtime-translate",
+		CostPer1MIn:   0.034,
+		MaxFileSizeMB: 25,
+		SupportedFormats: []string{
+			"flac",
+			"mp3",
+			"mp4",
+			"mpeg",
+			"mpga",
+			"m4a",
+			"ogg",
+			"wav",
+			"webm",
+		},
+		SupportsTimestamps:       true,
+		SupportsWordTimestamps:   false,
+		SupportsDiarization:      false,
+		SupportsTranslation:      true,
+		SupportsStreaming:        true,
+		SupportedResponseFormats: []string{"json"},
 	},
 }
 
