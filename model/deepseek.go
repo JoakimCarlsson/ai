@@ -13,6 +13,9 @@ const (
 )
 
 // DeepSeekModels maps DeepSeek model IDs to their configurations.
+//
+// Pricing source: https://api-docs.deepseek.com/quick_start/pricing.
+// Fetched: 2026-07-26.
 var DeepSeekModels = map[ID]Model{
 	DeepSeekV4Flash: {
 		ID:                    DeepSeekV4Flash,

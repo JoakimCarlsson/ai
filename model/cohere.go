@@ -1,6 +1,11 @@
 package model
 
 // Cohere provider identifier and Command model IDs for this registry.
+//
+// Cohere also serves three Command A variants that are intentionally not
+// catalogued here: command-a-reasoning-08-2025, command-a-vision-07-2025 and
+// command-a-translate-08-2025. Their per-token rates are sales-gated rather
+// than published, so recording a price for them would be a guess.
 const (
 	ProviderCohere Provider = "cohere"
 
@@ -24,6 +29,10 @@ const (
 )
 
 // CohereModels maps Cohere model IDs to their configurations.
+//
+// Pricing source: https://docs.cohere.com/docs/models and
+// https://cohere.com/pricing.
+// Fetched: 2026-07-26.
 var CohereModels = map[ID]Model{
 	CommandAPlus: {
 		ID:                    CommandAPlus,
@@ -98,6 +107,9 @@ var CohereModels = map[ID]Model{
 }
 
 // CohereEmbeddingModels maps Cohere embedding model IDs to their configurations.
+//
+// Pricing source: https://docs.cohere.com/docs/models.
+// Fetched: 2026-07-26.
 var CohereEmbeddingModels = map[ID]EmbeddingModel{
 	CohereEmbedV4: {
 		ID:              CohereEmbedV4,
@@ -152,6 +164,9 @@ var CohereEmbeddingModels = map[ID]EmbeddingModel{
 }
 
 // CohereRerankerModels maps Cohere reranker model IDs to their configurations.
+//
+// Pricing source: https://docs.cohere.com/docs/models.
+// Fetched: 2026-07-26.
 var CohereRerankerModels = map[ID]RerankerModel{
 	CohereRerank4Pro: {
 		ID:              CohereRerank4Pro,

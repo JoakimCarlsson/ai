@@ -30,14 +30,26 @@ func TestLive(t *testing.T) {
 	k, data := liveAudio(t)
 	c := NewSpeechToText(
 		WithAPIKey(k),
-		WithModel(model.BergetTranscriptionModels[model.BergetFasterWhisperLargeV3]),
+		WithModel(
+			model.BergetTranscriptionModels[model.BergetFasterWhisperLargeV3],
+		),
 		WithTimeout(60*time.Second),
 	)
-	r, err := c.Transcribe(context.Background(), data, stt.WithFilename("speech.wav"))
+	r, err := c.Transcribe(
+		context.Background(),
+		data,
+		stt.WithFilename("speech.wav"),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("text=%q language=%q segments=%d words=%d", r.Text, r.Language, len(r.Segments), len(r.Words))
+	t.Logf(
+		"text=%q language=%q segments=%d words=%d",
+		r.Text,
+		r.Language,
+		len(r.Segments),
+		len(r.Words),
+	)
 	if !strings.Contains(strings.ToLower(r.Text), "quick brown fox") {
 		t.Fatalf("transcript missing expected phrase: %q", r.Text)
 	}
@@ -55,8 +67,16 @@ func TestLiveAllModels(t *testing.T) {
 	}
 	var ok int
 	for _, id := range ids {
-		c := NewSpeechToText(WithAPIKey(k), WithModel(model.BergetTranscriptionModels[id]), WithTimeout(60*time.Second))
-		r, err := c.Transcribe(context.Background(), data, stt.WithFilename("speech.wav"))
+		c := NewSpeechToText(
+			WithAPIKey(k),
+			WithModel(model.BergetTranscriptionModels[id]),
+			WithTimeout(60*time.Second),
+		)
+		r, err := c.Transcribe(
+			context.Background(),
+			data,
+			stt.WithFilename("speech.wav"),
+		)
 		if err != nil {
 			t.Logf("FAIL %-40s %v", id, err)
 			continue
@@ -71,7 +91,12 @@ func TestLiveAllModels(t *testing.T) {
 }
 
 func TestTranslateUnsupported(t *testing.T) {
-	c := NewSpeechToText(WithAPIKey("x"), WithModel(model.BergetTranscriptionModels[model.BergetFasterWhisperLargeV3]))
+	c := NewSpeechToText(
+		WithAPIKey("x"),
+		WithModel(
+			model.BergetTranscriptionModels[model.BergetFasterWhisperLargeV3],
+		),
+	)
 	_, err := c.Translate(context.Background(), []byte("audio"))
 	if !errors.Is(err, ErrTranslationNotSupported) {
 		t.Fatalf("got %v, want ErrTranslationNotSupported", err)

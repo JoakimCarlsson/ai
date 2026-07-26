@@ -16,7 +16,9 @@ const (
 	TogetherDeepSeekV4Pro  ID = "together.deepseek-ai/DeepSeek-V4-Pro"
 	TogetherDeepSeekR1     ID = "together.deepseek-ai/DeepSeek-R1"
 	TogetherQwen37Max      ID = "together.Qwen/Qwen3.7-Max"
-	TogetherQwen36Plus     ID = "together.Qwen/Qwen3.6-Plus"
+	TogetherQwen37Plus     ID = "together.Qwen/Qwen3.7-Plus"
+	TogetherQwen35_9B      ID = "together.Qwen/Qwen3.5-9B"
+	TogetherMiniMaxM3      ID = "together.MiniMaxAI/MiniMax-M3"
 	TogetherQwen35_397B    ID = "together.Qwen/Qwen3.5-397B-A17B"
 	TogetherQwen3Coder480B ID = "together.Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8"
 	TogetherQwen25_7BTurbo ID = "together.Qwen/Qwen2.5-7B-Instruct-Turbo"
@@ -31,7 +33,7 @@ const (
 
 // TogetherModels maps Together AI model IDs to their configurations.
 //
-// Pricing source: https://www.together.ai/pricing. Fetched: 2026-05-04.
+// Pricing source: https://www.together.ai/pricing. Fetched: 2026-07-26.
 var TogetherModels = map[ID]Model{
 	TogetherLlama33_70B: {
 		ID:                    TogetherLlama33_70B,
@@ -113,19 +115,48 @@ var TogetherModels = map[ID]Model{
 		CanReason:             true,
 		SupportsStructuredOut: true,
 	},
-	TogetherQwen36Plus: {
-		ID:                    TogetherQwen36Plus,
-		Name:                  "Together – Qwen 3.6 Plus",
+	// Replaces the delisted Qwen/Qwen3.6-Plus.
+	TogetherQwen37Plus: {
+		ID:                    TogetherQwen37Plus,
+		Name:                  "Together – Qwen 3.7 Plus",
 		Provider:              ProviderTogether,
-		APIModel:              "Qwen/Qwen3.6-Plus",
-		CostPer1MIn:           0.50,
+		APIModel:              "Qwen/Qwen3.7-Plus",
+		CostPer1MIn:           0.32,
 		CostPer1MInCached:     0,
-		CostPer1MOut:          3.00,
+		CostPer1MOut:          1.28,
 		CostPer1MOutCached:    0,
 		ContextWindow:         1_048_576,
 		DefaultMaxTokens:      32_768,
 		CanReason:             true,
 		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	TogetherQwen35_9B: {
+		ID:                    TogetherQwen35_9B,
+		Name:                  "Together – Qwen 3.5 9B",
+		Provider:              ProviderTogether,
+		APIModel:              "Qwen/Qwen3.5-9B",
+		CostPer1MIn:           0.17,
+		CostPer1MInCached:     0,
+		CostPer1MOut:          0.25,
+		CostPer1MOutCached:    0,
+		ContextWindow:         262_144,
+		DefaultMaxTokens:      32_768,
+		CanReason:             true,
+		SupportsStructuredOut: true,
+	},
+	TogetherMiniMaxM3: {
+		ID:                    TogetherMiniMaxM3,
+		Name:                  "Together – MiniMax M3",
+		Provider:              ProviderTogether,
+		APIModel:              "MiniMaxAI/MiniMax-M3",
+		CostPer1MIn:           0.30,
+		CostPer1MInCached:     0.06,
+		CostPer1MOut:          1.20,
+		CostPer1MOutCached:    0,
+		ContextWindow:         262_144,
+		DefaultMaxTokens:      32_768,
+		CanReason:             true,
 		SupportsStructuredOut: true,
 	},
 	TogetherQwen35_397B: {

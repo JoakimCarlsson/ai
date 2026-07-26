@@ -37,6 +37,7 @@ const (
 	GPT54Nano          ID = "gpt-5.4-nano"
 	GPT54Pro           ID = "gpt-5.4-pro"
 	GPT55              ID = "gpt-5.5"
+	GPT55Pro           ID = "gpt-5.5-pro"
 	GPT56Sol           ID = "gpt-5.6-sol"
 	GPT56Terra         ID = "gpt-5.6-terra"
 	GPT56Luna          ID = "gpt-5.6-luna"
@@ -53,6 +54,9 @@ const (
 )
 
 // OpenAIModels maps OpenAI chat model IDs to their configurations.
+//
+// Pricing source: https://developers.openai.com/api/docs/pricing.
+// Fetched: 2026-07-26.
 var OpenAIModels = map[ID]Model{
 	GPT41: {
 		ID:                    GPT41,
@@ -468,6 +472,21 @@ var OpenAIModels = map[ID]Model{
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 	},
+	GPT55Pro: {
+		ID:                    GPT55Pro,
+		Name:                  "GPT-5.5 pro",
+		Provider:              ProviderOpenAI,
+		APIModel:              "gpt-5.5-pro",
+		CostPer1MIn:           30.00,
+		CostPer1MInCached:     0.0,
+		CostPer1MOutCached:    0.0,
+		CostPer1MOut:          180.00,
+		ContextWindow:         1_050_000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
 	GPT54: {
 		ID:                    GPT54,
 		Name:                  "GPT-5.4",
@@ -636,6 +655,10 @@ var OpenAIModels = map[ID]Model{
 }
 
 // OpenAIEmbeddingModels maps OpenAI embedding model IDs to their configurations.
+//
+// Pricing source: https://developers.openai.com/api/docs/pricing (embedding
+// rates not published on the page; carried forward).
+// Fetched: not re-verified in the 2026-07-26 sweep.
 var OpenAIEmbeddingModels = map[ID]EmbeddingModel{
 	TextEmbedding3Large: {
 		ID:                  TextEmbedding3Large,
@@ -676,6 +699,10 @@ var OpenAIEmbeddingModels = map[ID]EmbeddingModel{
 }
 
 // OpenAIImageGenerationModels maps OpenAI image generation model IDs to their configurations.
+//
+// Pricing source: https://developers.openai.com/api/docs/pricing (per-image
+// quality tiers not published on the page; carried forward).
+// Fetched: not re-verified in the 2026-07-26 sweep.
 var OpenAIImageGenerationModels = map[ID]ImageGenerationModel{
 	GPTImage15: {
 		ID:       GPTImage15,

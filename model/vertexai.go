@@ -7,7 +7,10 @@ const (
 	VertexAIGemini25Flash ID = "vertexai.gemini-2.5-flash"
 	VertexAIGemini25      ID = "vertexai.gemini-2.5"
 
+	VertexAIGemini36Flash     ID = "vertexai.gemini-3.6-flash"
 	VertexAIGemini35Flash     ID = "vertexai.gemini-3.5-flash"
+	VertexAIGemini35FlashLite ID = "vertexai.gemini-3.5-flash-lite"
+	VertexAIGemini31Pro       ID = "vertexai.gemini-3.1-pro"
 	VertexAIGemini31FlashLite ID = "vertexai.gemini-3.1-flash-lite"
 	VertexAIGemini3Pro        ID = "vertexai.gemini-3-pro"
 	VertexAIGemini25FlashLite ID = "vertexai.gemini-2.5-flash-lite"
@@ -16,6 +19,10 @@ const (
 )
 
 // VertexAIGeminiModels maps Vertex AI Gemini model IDs to their configurations.
+//
+// Pricing source: rates mirror GeminiModels in this package; IDs from
+// https://cloud.google.com/vertex-ai/generative-ai/docs/models.
+// Fetched: 2026-07-26.
 var VertexAIGeminiModels = map[ID]Model{
 	VertexAIGemini25Flash: {
 		ID:                    VertexAIGemini25Flash,
@@ -132,6 +139,51 @@ var VertexAIGeminiModels = map[ID]Model{
 		ContextWindow:         GeminiModels[Gemini20FlashLite].ContextWindow,
 		DefaultMaxTokens:      GeminiModels[Gemini20FlashLite].DefaultMaxTokens,
 		CanReason:             GeminiModels[Gemini20FlashLite].CanReason,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	VertexAIGemini36Flash: {
+		ID:                    VertexAIGemini36Flash,
+		Name:                  "VertexAI: Gemini 3.6 Flash",
+		Provider:              ProviderVertexAI,
+		APIModel:              "gemini-3.6-flash",
+		CostPer1MIn:           GeminiModels[Gemini36Flash].CostPer1MIn,
+		CostPer1MInCached:     GeminiModels[Gemini36Flash].CostPer1MInCached,
+		CostPer1MOut:          GeminiModels[Gemini36Flash].CostPer1MOut,
+		CostPer1MOutCached:    GeminiModels[Gemini36Flash].CostPer1MOutCached,
+		ContextWindow:         GeminiModels[Gemini36Flash].ContextWindow,
+		DefaultMaxTokens:      GeminiModels[Gemini36Flash].DefaultMaxTokens,
+		CanReason:             GeminiModels[Gemini36Flash].CanReason,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	VertexAIGemini35FlashLite: {
+		ID:                    VertexAIGemini35FlashLite,
+		Name:                  "VertexAI: Gemini 3.5 Flash Lite",
+		Provider:              ProviderVertexAI,
+		APIModel:              "gemini-3.5-flash-lite",
+		CostPer1MIn:           GeminiModels[Gemini35FlashLite].CostPer1MIn,
+		CostPer1MInCached:     GeminiModels[Gemini35FlashLite].CostPer1MInCached,
+		CostPer1MOut:          GeminiModels[Gemini35FlashLite].CostPer1MOut,
+		CostPer1MOutCached:    GeminiModels[Gemini35FlashLite].CostPer1MOutCached,
+		ContextWindow:         GeminiModels[Gemini35FlashLite].ContextWindow,
+		DefaultMaxTokens:      GeminiModels[Gemini35FlashLite].DefaultMaxTokens,
+		CanReason:             GeminiModels[Gemini35FlashLite].CanReason,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	VertexAIGemini31Pro: {
+		ID:                    VertexAIGemini31Pro,
+		Name:                  "VertexAI: Gemini 3.1 Pro",
+		Provider:              ProviderVertexAI,
+		APIModel:              "gemini-3.1-pro",
+		CostPer1MIn:           GeminiModels[Gemini31Pro].CostPer1MIn,
+		CostPer1MInCached:     GeminiModels[Gemini31Pro].CostPer1MInCached,
+		CostPer1MOut:          GeminiModels[Gemini31Pro].CostPer1MOut,
+		CostPer1MOutCached:    GeminiModels[Gemini31Pro].CostPer1MOutCached,
+		ContextWindow:         GeminiModels[Gemini31Pro].ContextWindow,
+		DefaultMaxTokens:      GeminiModels[Gemini31Pro].DefaultMaxTokens,
+		CanReason:             GeminiModels[Gemini31Pro].CanReason,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 	},

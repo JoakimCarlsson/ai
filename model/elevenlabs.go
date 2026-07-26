@@ -23,13 +23,17 @@ const (
 
 // ElevenLabsAudioModels maps ElevenLabs speech model IDs to audio
 // configurations.
+//
+// Pricing source: https://elevenlabs.io/pricing/api.
+// Fetched: 2026-07-26.
 var ElevenLabsAudioModels = map[ID]AudioModel{
 	ElevenV3: {
-		ID:            ElevenV3,
-		Name:          "Eleven v3",
-		Provider:      ProviderElevenLabs,
-		APIModel:      "eleven_v3",
-		MaxCharacters: 5000,
+		ID:             ElevenV3,
+		Name:           "Eleven v3",
+		Provider:       ProviderElevenLabs,
+		APIModel:       "eleven_v3",
+		CostPer1MChars: 100.00,
+		MaxCharacters:  5000,
 		SupportedFormats: []string{
 			"mp3_44100_128",
 			"mp3_44100_192",
@@ -42,11 +46,12 @@ var ElevenLabsAudioModels = map[ID]AudioModel{
 		SupportsStreaming: true,
 	},
 	ElevenMultilingualV2: {
-		ID:            ElevenMultilingualV2,
-		Name:          "Eleven Multilingual v2",
-		Provider:      ProviderElevenLabs,
-		APIModel:      "eleven_multilingual_v2",
-		MaxCharacters: 10000,
+		ID:             ElevenMultilingualV2,
+		Name:           "Eleven Multilingual v2",
+		Provider:       ProviderElevenLabs,
+		APIModel:       "eleven_multilingual_v2",
+		CostPer1MChars: 100.00,
+		MaxCharacters:  10000,
 		SupportedFormats: []string{
 			"mp3_44100_128",
 			"mp3_44100_192",
@@ -59,11 +64,12 @@ var ElevenLabsAudioModels = map[ID]AudioModel{
 		SupportsStreaming: true,
 	},
 	ElevenFlashV2_5: {
-		ID:            ElevenFlashV2_5,
-		Name:          "Eleven Flash v2.5",
-		Provider:      ProviderElevenLabs,
-		APIModel:      "eleven_flash_v2_5",
-		MaxCharacters: 40000,
+		ID:             ElevenFlashV2_5,
+		Name:           "Eleven Flash v2.5",
+		Provider:       ProviderElevenLabs,
+		APIModel:       "eleven_flash_v2_5",
+		CostPer1MChars: 50.00,
+		MaxCharacters:  40000,
 		SupportedFormats: []string{
 			"mp3_44100_128",
 			"mp3_44100_192",
@@ -76,11 +82,12 @@ var ElevenLabsAudioModels = map[ID]AudioModel{
 		SupportsStreaming: true,
 	},
 	ElevenFlashV2: {
-		ID:            ElevenFlashV2,
-		Name:          "Eleven Flash v2",
-		Provider:      ProviderElevenLabs,
-		APIModel:      "eleven_flash_v2",
-		MaxCharacters: 30000,
+		ID:             ElevenFlashV2,
+		Name:           "Eleven Flash v2",
+		Provider:       ProviderElevenLabs,
+		APIModel:       "eleven_flash_v2",
+		CostPer1MChars: 50.00,
+		MaxCharacters:  30000,
 		SupportedFormats: []string{
 			"mp3_44100_128",
 			"mp3_44100_192",
@@ -93,11 +100,12 @@ var ElevenLabsAudioModels = map[ID]AudioModel{
 		SupportsStreaming: true,
 	},
 	ElevenTurboV2_5: {
-		ID:            ElevenTurboV2_5,
-		Name:          "Eleven Turbo v2.5",
-		Provider:      ProviderElevenLabs,
-		APIModel:      "eleven_turbo_v2_5",
-		MaxCharacters: 40000,
+		ID:             ElevenTurboV2_5,
+		Name:           "Eleven Turbo v2.5",
+		Provider:       ProviderElevenLabs,
+		APIModel:       "eleven_turbo_v2_5",
+		CostPer1MChars: 50.00,
+		MaxCharacters:  40000,
 		SupportedFormats: []string{
 			"mp3_44100_128",
 			"mp3_44100_192",
@@ -110,11 +118,12 @@ var ElevenLabsAudioModels = map[ID]AudioModel{
 		SupportsStreaming: true,
 	},
 	ElevenTurboV2: {
-		ID:            ElevenTurboV2,
-		Name:          "Eleven Turbo v2",
-		Provider:      ProviderElevenLabs,
-		APIModel:      "eleven_turbo_v2",
-		MaxCharacters: 30000,
+		ID:             ElevenTurboV2,
+		Name:           "Eleven Turbo v2",
+		Provider:       ProviderElevenLabs,
+		APIModel:       "eleven_turbo_v2",
+		CostPer1MChars: 50.00,
+		MaxCharacters:  30000,
 		SupportedFormats: []string{
 			"mp3_44100_128",
 			"mp3_44100_192",
@@ -133,6 +142,9 @@ var ElevenLabsAudioModels = map[ID]AudioModel{
 // (wss://api.elevenlabs.io/v1/speech-to-text/realtime) accepting PCM at
 // 8/16/22.05/24/44.1/48 kHz or μ-law 8 kHz, base64-encoded inside JSON
 // input_audio_chunk events.
+//
+// Pricing source: https://elevenlabs.io/pricing/api.
+// Fetched: 2026-07-26.
 var ElevenLabsTranscriptionModels = map[ID]TranscriptionModel{
 	ElevenLabsScribeV1: {
 		ID:            ElevenLabsScribeV1,
@@ -160,7 +172,7 @@ var ElevenLabsTranscriptionModels = map[ID]TranscriptionModel{
 		Name:          "ElevenLabs Scribe v2",
 		Provider:      ProviderElevenLabs,
 		APIModel:      "scribe_v2",
-		CostPer1MIn:   0.0067,
+		CostPer1MIn:   0.00367,
 		MaxFileSizeMB: 3000,
 		SupportedFormats: []string{
 			"mp3", "mp4", "wav", "flac",

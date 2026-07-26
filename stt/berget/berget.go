@@ -169,7 +169,12 @@ func (c *Client) post(
 		"prompt":          opts.Prompt,
 	}
 	if opts.Temperature != nil {
-		fields["temperature"] = strconv.FormatFloat(*opts.Temperature, 'f', -1, 64)
+		fields["temperature"] = strconv.FormatFloat(
+			*opts.Temperature,
+			'f',
+			-1,
+			64,
+		)
 	}
 	for k, v := range fields {
 		if v == "" {
@@ -181,7 +186,10 @@ func (c *Client) post(
 	}
 	for _, g := range opts.TimestampGranularities {
 		if err := w.WriteField("timestamp_granularities[]", g); err != nil {
-			return nil, fmt.Errorf("failed to write timestamp granularity: %w", err)
+			return nil, fmt.Errorf(
+				"failed to write timestamp granularity: %w",
+				err,
+			)
 		}
 	}
 
@@ -198,7 +206,10 @@ func (c *Client) post(
 
 	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+path, &body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create transcription request: %w", err)
+		return nil, fmt.Errorf(
+			"failed to create transcription request: %w",
+			err,
+		)
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.Header.Set("Authorization", "Bearer "+c.options.apiKey)

@@ -4,8 +4,12 @@ package model
 const (
 	ProviderGemini Provider = "gemini"
 
+	// gemini 3.6
+	Gemini36Flash ID = "gemini-3.6-flash"
+
 	// gemini 3.5
-	Gemini35Flash ID = "gemini-3.5-flash"
+	Gemini35Flash     ID = "gemini-3.5-flash"
+	Gemini35FlashLite ID = "gemini-3.5-flash-lite"
 
 	// gemini 3.1
 	Gemini31FlashLitePreview  ID = "gemini-3.1-flash-lite-preview"
@@ -54,7 +58,40 @@ const (
 )
 
 // GeminiModels maps Gemini chat model IDs to their configurations.
+//
+// Pricing source: https://ai.google.dev/gemini-api/docs/pricing.
+// Fetched: 2026-07-26.
 var GeminiModels = map[ID]Model{
+	Gemini36Flash: {
+		ID:                    Gemini36Flash,
+		Name:                  "Gemini 3.6 Flash",
+		Provider:              ProviderGemini,
+		APIModel:              "gemini-3.6-flash",
+		CostPer1MIn:           1.50,
+		CostPer1MInCached:     0.15,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          7.50,
+		ContextWindow:         1048576,
+		DefaultMaxTokens:      65536,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	Gemini35FlashLite: {
+		ID:                    Gemini35FlashLite,
+		Name:                  "Gemini 3.5 Flash Lite",
+		Provider:              ProviderGemini,
+		APIModel:              "gemini-3.5-flash-lite",
+		CostPer1MIn:           0.30,
+		CostPer1MInCached:     0,
+		CostPer1MOutCached:    0,
+		CostPer1MOut:          2.50,
+		ContextWindow:         1048576,
+		DefaultMaxTokens:      65536,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
 	Gemini35Flash: {
 		ID:                    Gemini35Flash,
 		Name:                  "Gemini 3.5 Flash",
@@ -278,6 +315,9 @@ var GeminiModels = map[ID]Model{
 }
 
 // GeminiImageGenerationModels maps Gemini and Imagen image-generation model IDs to their configurations.
+//
+// Pricing source: https://ai.google.dev/gemini-api/docs/pricing.
+// Fetched: 2026-07-26.
 var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 	Gemini25FlashImage: {
 		ID:       Gemini25FlashImage,
@@ -350,7 +390,7 @@ var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 		ID:       Gemini31FlashImagePreview,
 		Name:     "Gemini 3.1 Flash Image Preview (Nano Banana 2)",
 		Provider: ProviderGemini,
-		APIModel: "gemini-3.1-flash-image-preview",
+		APIModel: "gemini-3.1-flash-image",
 		Pricing: map[string]map[string]float64{
 			"1:1": {
 				"default": 0.067,
@@ -446,9 +486,10 @@ var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 		SupportedQualities: []string{"default"},
 		DefaultQuality:     "default",
 	},
+	// Deprecated by Google in favour of the Gemini flash-image models.
 	Imagen4: {
 		ID:       Imagen4,
-		Name:     "Imagen 4",
+		Name:     "Imagen 4 [Deprecated]",
 		Provider: ProviderGemini,
 		APIModel: "imagen-4.0-generate-001",
 		Pricing: map[string]map[string]float64{
@@ -474,9 +515,10 @@ var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 		SupportedQualities:    []string{"default"},
 		DefaultQuality:        "default",
 	},
+	// Deprecated by Google in favour of the Gemini flash-image models.
 	Imagen4Ultra: {
 		ID:       Imagen4Ultra,
-		Name:     "Imagen 4 Ultra",
+		Name:     "Imagen 4 Ultra [Deprecated]",
 		Provider: ProviderGemini,
 		APIModel: "imagen-4.0-ultra-generate-001",
 		Pricing: map[string]map[string]float64{
@@ -502,9 +544,10 @@ var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 		SupportedQualities:    []string{"default"},
 		DefaultQuality:        "default",
 	},
+	// Deprecated by Google in favour of the Gemini flash-image models.
 	Imagen4Fast: {
 		ID:       Imagen4Fast,
-		Name:     "Imagen 4 Fast",
+		Name:     "Imagen 4 Fast [Deprecated]",
 		Provider: ProviderGemini,
 		APIModel: "imagen-4.0-fast-generate-001",
 		Pricing: map[string]map[string]float64{
@@ -533,6 +576,9 @@ var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 }
 
 // GeminiEmbeddingModels maps Gemini embedding model IDs to their configurations.
+//
+// Pricing source: https://ai.google.dev/gemini-api/docs/pricing.
+// Fetched: 2026-07-26.
 var GeminiEmbeddingModels = map[ID]EmbeddingModel{
 	GeminiEmbedding2: {
 		ID:              GeminiEmbedding2,

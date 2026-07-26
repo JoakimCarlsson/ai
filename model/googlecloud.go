@@ -17,6 +17,9 @@ const (
 )
 
 // GoogleCloudTranscriptionModels maps Google Cloud STT model IDs to their configurations.
+//
+// Pricing source: https://cloud.google.com/speech-to-text/pricing.
+// Fetched: not re-verified in the 2026-07-26 sweep.
 var GoogleCloudTranscriptionModels = map[ID]TranscriptionModel{
 	GoogleCloudSTTDefault: {
 		ID:            GoogleCloudSTTDefault,
@@ -105,6 +108,9 @@ var GoogleCloudTranscriptionModels = map[ID]TranscriptionModel{
 }
 
 // GoogleCloudAudioModels maps Google Cloud TTS model IDs to their configurations.
+//
+// Pricing source: https://cloud.google.com/text-to-speech/pricing.
+// Fetched: not re-verified in the 2026-07-26 sweep.
 var GoogleCloudAudioModels = map[ID]AudioModel{
 	GoogleCloudTTSStandard: {
 		ID:             GoogleCloudTTSStandard,

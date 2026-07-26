@@ -15,11 +15,17 @@ const (
 	Claude46Sonnet ID = "claude-4.6-sonnet"
 	Claude47Opus   ID = "claude-4.7-opus"
 	Claude48Opus   ID = "claude-4.8-opus"
+	Claude5Opus    ID = "claude-5-opus"
 	Claude5Sonnet  ID = "claude-5-sonnet"
 	Claude5Fable   ID = "claude-5-fable"
+	Claude5Mythos  ID = "claude-5-mythos"
 )
 
 // AnthropicModels maps Anthropic model IDs to their configurations.
+//
+// Pricing source:
+// https://platform.claude.com/docs/en/about-claude/models/overview.
+// Fetched: 2026-07-26.
 var AnthropicModels = map[ID]Model{
 	Claude3Haiku: {
 		ID:                    Claude3Haiku,
@@ -184,6 +190,21 @@ var AnthropicModels = map[ID]Model{
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 	},
+	Claude5Opus: {
+		ID:                    Claude5Opus,
+		Name:                  "Claude Opus 5",
+		Provider:              ProviderAnthropic,
+		APIModel:              "claude-opus-5",
+		CostPer1MIn:           5.0,
+		CostPer1MInCached:     6.25,
+		CostPer1MOutCached:    0.50,
+		CostPer1MOut:          25.0,
+		ContextWindow:         1000000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
 	Claude5Sonnet: {
 		ID:                    Claude5Sonnet,
 		Name:                  "Claude Sonnet 5",
@@ -204,6 +225,23 @@ var AnthropicModels = map[ID]Model{
 		Name:                  "Claude Fable 5",
 		Provider:              ProviderAnthropic,
 		APIModel:              "claude-fable-5",
+		CostPer1MIn:           10.0,
+		CostPer1MInCached:     12.5,
+		CostPer1MOutCached:    1.0,
+		CostPer1MOut:          50.0,
+		ContextWindow:         1000000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+	},
+	// Claude Mythos 5 matches Claude Fable 5 on capabilities, limits and
+	// pricing; it is reachable only by Project Glasswing participants.
+	Claude5Mythos: {
+		ID:                    Claude5Mythos,
+		Name:                  "Claude Mythos 5",
+		Provider:              ProviderAnthropic,
+		APIModel:              "claude-mythos-5",
 		CostPer1MIn:           10.0,
 		CostPer1MInCached:     12.5,
 		CostPer1MOutCached:    1.0,

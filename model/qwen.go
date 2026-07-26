@@ -13,12 +13,16 @@ const (
 )
 
 // QwenModels maps Qwen model IDs to their configurations.
+//
+// Pricing source: https://www.alibabacloud.com/help/en/model-studio/models
+// (model IDs only; Alibaba does not publish USD per-token rates there).
+// Fetched: 2026-07-26.
 var QwenModels = map[ID]Model{
 	Qwen37Max: {
 		ID:                    Qwen37Max,
 		Name:                  "Qwen 3.7 Max",
 		Provider:              ProviderQwen,
-		APIModel:              "qwen-3.7-max",
+		APIModel:              "qwen3.7-max",
 		CostPer1MIn:           2.50,
 		CostPer1MInCached:     0,
 		CostPer1MOutCached:    0,
@@ -33,7 +37,7 @@ var QwenModels = map[ID]Model{
 		ID:                    Qwen37Plus,
 		Name:                  "Qwen 3.7 Plus",
 		Provider:              ProviderQwen,
-		APIModel:              "qwen-3.7-plus",
+		APIModel:              "qwen3.7-plus",
 		CostPer1MIn:           0.40,
 		CostPer1MInCached:     0,
 		CostPer1MOutCached:    0,
@@ -48,7 +52,7 @@ var QwenModels = map[ID]Model{
 		ID:                    Qwen36Flash,
 		Name:                  "Qwen 3.6 Flash",
 		Provider:              ProviderQwen,
-		APIModel:              "qwen-3.6-flash",
+		APIModel:              "qwen3.6-flash",
 		CostPer1MIn:           0.25,
 		CostPer1MInCached:     0,
 		CostPer1MOutCached:    0,

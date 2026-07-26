@@ -12,6 +12,9 @@ const (
 )
 
 // BedrockEmbeddingModels maps Bedrock embedding model IDs to their configurations.
+//
+// Pricing source: https://aws.amazon.com/bedrock/pricing/.
+// Fetched: not re-verified in the 2026-07-26 sweep.
 var BedrockEmbeddingModels = map[ID]EmbeddingModel{
 	BedrockTitanEmbedV2: {
 		ID:              BedrockTitanEmbedV2,

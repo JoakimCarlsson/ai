@@ -24,7 +24,9 @@ func main() {
 	opts := []imageazure.Option{
 		imageazure.WithEndpoint(endpoint),
 		imageazure.WithAPIVersion(apiVersion),
-		imageazure.WithModel(model.OpenAIImageGenerationModels[model.GPTImage2]),
+		imageazure.WithModel(
+			model.OpenAIImageGenerationModels[model.GPTImage2],
+		),
 		imageazure.WithSize(imageazure.Size1024x1024),
 		imageazure.WithOutputFormat(imageazure.OutputFormatPNG),
 	}

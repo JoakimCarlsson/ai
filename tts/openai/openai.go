@@ -132,7 +132,9 @@ func (c *Client) GenerateAudio(
 	params := openaisdk.AudioSpeechNewParams{
 		Input: text,
 		Model: openaisdk.SpeechModel(c.options.model.APIModel),
-		Voice: openaisdk.AudioSpeechNewParamsVoiceUnion{OfString: param.NewOpt(voice)},
+		Voice: openaisdk.AudioSpeechNewParamsVoiceUnion{
+			OfString: param.NewOpt(voice),
+		},
 	}
 
 	outputFormat := c.options.outputFormat

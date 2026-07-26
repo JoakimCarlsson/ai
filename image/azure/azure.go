@@ -179,7 +179,10 @@ func NewGeneration(opts ...Option) image.Generation {
 
 	if options.endpoint == "" || options.apiVersion == "" {
 		if options.apiKey != "" {
-			imageOpts = append(imageOpts, imageopenai.WithAPIKey(options.apiKey))
+			imageOpts = append(
+				imageOpts,
+				imageopenai.WithAPIKey(options.apiKey),
+			)
 		}
 		return imageopenai.NewGeneration(imageOpts...)
 	}
@@ -190,7 +193,10 @@ func NewGeneration(opts ...Option) image.Generation {
 			imageopenai.WithBaseURL(strings.TrimRight(options.endpoint, "/")),
 		)
 		if options.apiKey != "" {
-			imageOpts = append(imageOpts, imageopenai.WithAPIKey(options.apiKey))
+			imageOpts = append(
+				imageOpts,
+				imageopenai.WithAPIKey(options.apiKey),
+			)
 		}
 		return imageopenai.NewGeneration(imageOpts...)
 	}
@@ -221,7 +227,10 @@ func passthroughOptions(o Options) []imageopenai.Option {
 		imageOpts = append(imageOpts, imageopenai.WithTimeout(*o.timeout))
 	}
 	if o.extraHeaders != nil {
-		imageOpts = append(imageOpts, imageopenai.WithExtraHeaders(o.extraHeaders))
+		imageOpts = append(
+			imageOpts,
+			imageopenai.WithExtraHeaders(o.extraHeaders),
+		)
 	}
 	if o.streamingOptions != nil {
 		imageOpts = append(
@@ -245,7 +254,10 @@ func passthroughOptions(o Options) []imageopenai.Option {
 		imageOpts = append(imageOpts, imageopenai.WithModeration(o.moderation))
 	}
 	if o.outputFormat != "" {
-		imageOpts = append(imageOpts, imageopenai.WithOutputFormat(o.outputFormat))
+		imageOpts = append(
+			imageOpts,
+			imageopenai.WithOutputFormat(o.outputFormat),
+		)
 	}
 	if o.outputCompression != nil {
 		imageOpts = append(

@@ -12,6 +12,9 @@ const (
 )
 
 // PerplexityModels maps Perplexity model IDs to their configurations.
+//
+// Pricing source: https://docs.perplexity.ai/getting-started/pricing.
+// Fetched: 2026-07-26.
 var PerplexityModels = map[ID]Model{
 	Sonar: {
 		ID:                    Sonar,

@@ -67,6 +67,9 @@ const (
 // configurations. Each model identifies a specific voice + language; pick
 // the variant that matches the desired voice. Aura-2 models offer lower
 // latency (~90ms TTFB) and higher quality at a higher per-character cost.
+//
+// Pricing source: https://deepgram.com/pricing.
+// Fetched: 2026-07-26.
 var DeepgramAudioModels = map[ID]AudioModel{
 	DeepgramAura2Amalthea: {
 		ID:             DeepgramAura2Amalthea,
@@ -659,6 +662,9 @@ var DeepgramAudioModels = map[ID]AudioModel{
 // configurations. Both Nova-3 and Nova-2 support batch (HTTP POST) and
 // streaming (WebSocket wss://api.deepgram.com/v1/listen). Streaming accepts
 // linear16 PCM among other encodings; CostPer1MIn is the per-minute price.
+//
+// Pricing source: https://deepgram.com/pricing.
+// Fetched: 2026-07-26.
 var DeepgramTranscriptionModels = map[ID]TranscriptionModel{
 	DeepgramFluxEnglish: {
 		ID:            DeepgramFluxEnglish,
