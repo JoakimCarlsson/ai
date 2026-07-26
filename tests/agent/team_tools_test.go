@@ -6,7 +6,11 @@ import (
 
 	"github.com/joakimcarlsson/ai/agent"
 	"github.com/joakimcarlsson/ai/agent/team"
+	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
+	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/schema"
+	"github.com/joakimcarlsson/ai/tool"
 )
 
 func TestSpawnTeammate_Basic(t *testing.T) {
@@ -61,6 +65,44 @@ func TestSpawnTeammate_Basic(t *testing.T) {
 	}
 }
 
+type routingMockLLM struct {
+	lead     llm.LLM
+	teammate llm.LLM
+}
+
+func (m *routingMockLLM) target(msgs []message.Message) llm.LLM {
+	for _, msg := range msgs {
+		if msg.Role == message.System && msg.Content().Text == "You are a dynamic agent." {
+			return m.teammate
+		}
+	}
+	return m.lead
+}
+
+func (m *routingMockLLM) SendMessages(ctx context.Context, msgs []message.Message, tools []tool.BaseTool) (*llm.Response, error) {
+	return m.target(msgs).SendMessages(ctx, msgs, tools)
+}
+
+func (m *routingMockLLM) SendMessagesWithStructuredOutput(ctx context.Context, msgs []message.Message, tools []tool.BaseTool, info *schema.StructuredOutputInfo) (*llm.Response, error) {
+	return m.target(msgs).SendMessagesWithStructuredOutput(ctx, msgs, tools, info)
+}
+
+func (m *routingMockLLM) StreamResponse(ctx context.Context, msgs []message.Message, tools []tool.BaseTool) <-chan llm.Event {
+	return m.target(msgs).StreamResponse(ctx, msgs, tools)
+}
+
+func (m *routingMockLLM) StreamResponseWithStructuredOutput(ctx context.Context, msgs []message.Message, tools []tool.BaseTool, info *schema.StructuredOutputInfo) <-chan llm.Event {
+	return m.target(msgs).StreamResponseWithStructuredOutput(ctx, msgs, tools, info)
+}
+
+func (m *routingMockLLM) Model() model.Model {
+	return m.lead.Model()
+}
+
+func (m *routingMockLLM) SupportsStructuredOutput() bool {
+	return m.lead.SupportsStructuredOutput()
+}
+
 func TestSpawnTeammate_DynamicSystemPrompt(t *testing.T) {
 	teammateLLM := newMockLLM(
 		mockResponse{Content: "dynamic teammate done"},
@@ -81,11 +123,15 @@ func TestSpawnTeammate_DynamicSystemPrompt(t *testing.T) {
 		mockResponse{Content: "Done."},
 	)
 
-	lead := agent.New(leadLLM,
+	router := &routingMockLLM{
+		lead:     leadLLM,
+		teammate: teammateLLM,
+	}
+
+	lead := agent.New(router,
 		agent.WithSystemPrompt("Lead"),
 		agent.WithTeam(team.Config{Name: "dyn-team"}),
 	)
-	_ = teammateLLM
 
 	resp, err := lead.Chat(context.Background(), "Start")
 	if err != nil {
