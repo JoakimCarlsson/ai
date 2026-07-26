@@ -41,6 +41,11 @@ const (
 )
 
 // AzureModels maps Azure OpenAI model IDs to their configurations.
+//
+// Pricing source: rates mirror OpenAIModels in this package; deployment
+// names from
+// https://learn.microsoft.com/azure/ai-foundry/openai/concepts/models.
+// Fetched: 2026-07-26.
 var AzureModels = map[ID]Model{
 	AzureGPT41: {
 		ID:                    AzureGPT41,

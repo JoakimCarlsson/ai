@@ -64,6 +64,10 @@ const (
 )
 
 // OpenRouterModels maps OpenRouter model IDs to their configurations.
+//
+// Pricing source: https://openrouter.ai/api/v1/models for slugs; rates
+// mirror the upstream provider registries in this package.
+// Fetched: 2026-07-26.
 var OpenRouterModels = map[ID]Model{
 	OpenRouterGPT41: {
 		ID:                    OpenRouterGPT41,

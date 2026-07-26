@@ -26,6 +26,9 @@ const (
 // Universal-3 Pro Streaming $0.45/hr (CostPer1MIn here is the per-minute
 // equivalent). Streaming endpoints accept pcm_s16le and pcm_mulaw at
 // configurable sample rates with audio chunks of 50–1000 ms.
+//
+// Pricing source: https://www.assemblyai.com/pricing.
+// Fetched: 2026-07-26.
 var AssemblyAITranscriptionModels = map[ID]TranscriptionModel{
 	AssemblyAIUniversal3Pro: {
 		ID:            AssemblyAIUniversal3Pro,

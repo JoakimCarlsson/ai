@@ -31,6 +31,10 @@ const (
 
 // BergetModels maps Berget chat model IDs to their configurations.
 // Prices are EUR per 1M tokens.
+//
+// Pricing source: https://api.berget.ai/v1/models (model IDs; Berget does
+// not publish per-model rates).
+// Fetched: 2026-07-26.
 var BergetModels = map[ID]Model{
 	BergetGPTOSS120B: {
 		ID:                    BergetGPTOSS120B,
@@ -127,6 +131,9 @@ var BergetModels = map[ID]Model{
 
 // BergetEmbeddingModels maps Berget embedding model IDs to their configurations.
 // CostPer1MTokens is EUR per 1M tokens.
+//
+// Pricing source: https://api.berget.ai/v1/models.
+// Fetched: 2026-07-26.
 var BergetEmbeddingModels = map[ID]EmbeddingModel{
 	BergetE5LargeInstruct: {
 		ID:              BergetE5LargeInstruct,
@@ -150,6 +157,9 @@ var BergetEmbeddingModels = map[ID]EmbeddingModel{
 
 // BergetRerankerModels maps Berget reranker model IDs to their configurations.
 // CostPer1MTokens is EUR per 1M tokens.
+//
+// Pricing source: https://api.berget.ai/v1/models.
+// Fetched: 2026-07-26.
 var BergetRerankerModels = map[ID]RerankerModel{
 	BergetBGERerankerV2M3: {
 		ID:              BergetBGERerankerV2M3,
@@ -164,6 +174,9 @@ var BergetRerankerModels = map[ID]RerankerModel{
 
 // BergetTranscriptionModels maps Berget speech-to-text model IDs to their
 // configurations.
+//
+// Pricing source: https://api.berget.ai/v1/models.
+// Fetched: 2026-07-26.
 //
 // Berget bills transcription at EUR 0.000033 / audio second; the
 // TranscriptionModel struct has no per-second field, so CostPer1MIn holds the

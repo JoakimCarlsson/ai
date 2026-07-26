@@ -54,6 +54,9 @@ const (
 )
 
 // OpenAIModels maps OpenAI chat model IDs to their configurations.
+//
+// Pricing source: https://developers.openai.com/api/docs/pricing.
+// Fetched: 2026-07-26.
 var OpenAIModels = map[ID]Model{
 	GPT41: {
 		ID:                    GPT41,
@@ -652,6 +655,10 @@ var OpenAIModels = map[ID]Model{
 }
 
 // OpenAIEmbeddingModels maps OpenAI embedding model IDs to their configurations.
+//
+// Pricing source: https://developers.openai.com/api/docs/pricing (embedding
+// rates not published on the page; carried forward).
+// Fetched: not re-verified in the 2026-07-26 sweep.
 var OpenAIEmbeddingModels = map[ID]EmbeddingModel{
 	TextEmbedding3Large: {
 		ID:                  TextEmbedding3Large,
@@ -692,6 +699,10 @@ var OpenAIEmbeddingModels = map[ID]EmbeddingModel{
 }
 
 // OpenAIImageGenerationModels maps OpenAI image generation model IDs to their configurations.
+//
+// Pricing source: https://developers.openai.com/api/docs/pricing (per-image
+// quality tiers not published on the page; carried forward).
+// Fetched: not re-verified in the 2026-07-26 sweep.
 var OpenAIImageGenerationModels = map[ID]ImageGenerationModel{
 	GPTImage15: {
 		ID:       GPTImage15,

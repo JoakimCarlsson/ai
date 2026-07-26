@@ -37,7 +37,8 @@ const (
 
 // FireworksModels maps Fireworks model IDs to their configurations.
 //
-// Pricing source: https://fireworks.ai/pricing. Fetched: 2026-05-04.
+// Pricing source: https://docs.fireworks.ai/serverless/pricing.
+// Fetched: 2026-07-26.
 var FireworksModels = map[ID]Model{
 	FireworksLlama31_70B: {
 		ID:                    FireworksLlama31_70B,

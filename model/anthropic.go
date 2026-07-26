@@ -22,6 +22,10 @@ const (
 )
 
 // AnthropicModels maps Anthropic model IDs to their configurations.
+//
+// Pricing source:
+// https://platform.claude.com/docs/en/about-claude/models/overview.
+// Fetched: 2026-07-26.
 var AnthropicModels = map[ID]Model{
 	Claude3Haiku: {
 		ID:                    Claude3Haiku,

@@ -29,6 +29,10 @@ const (
 )
 
 // CohereModels maps Cohere model IDs to their configurations.
+//
+// Pricing source: https://docs.cohere.com/docs/models and
+// https://cohere.com/pricing.
+// Fetched: 2026-07-26.
 var CohereModels = map[ID]Model{
 	CommandAPlus: {
 		ID:                    CommandAPlus,
@@ -103,6 +107,9 @@ var CohereModels = map[ID]Model{
 }
 
 // CohereEmbeddingModels maps Cohere embedding model IDs to their configurations.
+//
+// Pricing source: https://docs.cohere.com/docs/models.
+// Fetched: 2026-07-26.
 var CohereEmbeddingModels = map[ID]EmbeddingModel{
 	CohereEmbedV4: {
 		ID:              CohereEmbedV4,
@@ -157,6 +164,9 @@ var CohereEmbeddingModels = map[ID]EmbeddingModel{
 }
 
 // CohereRerankerModels maps Cohere reranker model IDs to their configurations.
+//
+// Pricing source: https://docs.cohere.com/docs/models.
+// Fetched: 2026-07-26.
 var CohereRerankerModels = map[ID]RerankerModel{
 	CohereRerank4Pro: {
 		ID:              CohereRerank4Pro,

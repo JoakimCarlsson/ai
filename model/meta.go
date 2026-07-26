@@ -12,6 +12,9 @@ const (
 )
 
 // MetaModels maps Meta Llama model IDs to their configurations.
+//
+// Pricing source: https://llama.developer.meta.com/docs/.
+// Fetched: not re-verified in the 2026-07-26 sweep.
 var MetaModels = map[ID]Model{
 	MetaLlama4Maverick: {
 		ID:                    MetaLlama4Maverick,

@@ -44,6 +44,9 @@ const (
 )
 
 // VoyageEmbeddingModels maps Voyage embedding model IDs to their configurations.
+//
+// Pricing source: https://docs.voyageai.com/docs/pricing.
+// Fetched: 2026-07-26.
 var VoyageEmbeddingModels = map[ID]EmbeddingModel{
 	Voyage3Large: {
 		ID:                  Voyage3Large,
@@ -371,6 +374,9 @@ var VoyageEmbeddingModels = map[ID]EmbeddingModel{
 }
 
 // VoyageRerankerModels maps Voyage reranker model IDs to their configurations.
+//
+// Pricing source: https://docs.voyageai.com/docs/pricing.
+// Fetched: 2026-07-26.
 var VoyageRerankerModels = map[ID]RerankerModel{
 	Rerank25: {
 		ID:              Rerank25,

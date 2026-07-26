@@ -19,6 +19,10 @@ const (
 )
 
 // VertexAIGeminiModels maps Vertex AI Gemini model IDs to their configurations.
+//
+// Pricing source: rates mirror GeminiModels in this package; IDs from
+// https://cloud.google.com/vertex-ai/generative-ai/docs/models.
+// Fetched: 2026-07-26.
 var VertexAIGeminiModels = map[ID]Model{
 	VertexAIGemini25Flash: {
 		ID:                    VertexAIGemini25Flash,

@@ -11,6 +11,10 @@ const (
 )
 
 // AzureSpeechAudioModels maps Azure Speech model IDs to their configurations.
+//
+// Pricing source:
+// https://azure.microsoft.com/pricing/details/cognitive-services/speech-services/.
+// Fetched: not re-verified in the 2026-07-26 sweep.
 var AzureSpeechAudioModels = map[ID]AudioModel{
 	AzureSpeechNeural: {
 		ID:             AzureSpeechNeural,

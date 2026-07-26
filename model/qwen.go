@@ -13,6 +13,10 @@ const (
 )
 
 // QwenModels maps Qwen model IDs to their configurations.
+//
+// Pricing source: https://www.alibabacloud.com/help/en/model-studio/models
+// (model IDs only; Alibaba does not publish USD per-token rates there).
+// Fetched: 2026-07-26.
 var QwenModels = map[ID]Model{
 	Qwen37Max: {
 		ID:                    Qwen37Max,

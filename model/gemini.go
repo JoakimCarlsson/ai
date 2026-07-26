@@ -58,6 +58,9 @@ const (
 )
 
 // GeminiModels maps Gemini chat model IDs to their configurations.
+//
+// Pricing source: https://ai.google.dev/gemini-api/docs/pricing.
+// Fetched: 2026-07-26.
 var GeminiModels = map[ID]Model{
 	Gemini36Flash: {
 		ID:                    Gemini36Flash,
@@ -312,6 +315,9 @@ var GeminiModels = map[ID]Model{
 }
 
 // GeminiImageGenerationModels maps Gemini and Imagen image-generation model IDs to their configurations.
+//
+// Pricing source: https://ai.google.dev/gemini-api/docs/pricing.
+// Fetched: 2026-07-26.
 var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 	Gemini25FlashImage: {
 		ID:       Gemini25FlashImage,
@@ -570,6 +576,9 @@ var GeminiImageGenerationModels = map[ID]ImageGenerationModel{
 }
 
 // GeminiEmbeddingModels maps Gemini embedding model IDs to their configurations.
+//
+// Pricing source: https://ai.google.dev/gemini-api/docs/pricing.
+// Fetched: 2026-07-26.
 var GeminiEmbeddingModels = map[ID]EmbeddingModel{
 	GeminiEmbedding2: {
 		ID:              GeminiEmbedding2,

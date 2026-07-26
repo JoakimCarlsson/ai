@@ -23,6 +23,9 @@ const (
 
 // ElevenLabsAudioModels maps ElevenLabs speech model IDs to audio
 // configurations.
+//
+// Pricing source: https://elevenlabs.io/pricing/api.
+// Fetched: 2026-07-26.
 var ElevenLabsAudioModels = map[ID]AudioModel{
 	ElevenV3: {
 		ID:             ElevenV3,
@@ -139,6 +142,9 @@ var ElevenLabsAudioModels = map[ID]AudioModel{
 // (wss://api.elevenlabs.io/v1/speech-to-text/realtime) accepting PCM at
 // 8/16/22.05/24/44.1/48 kHz or μ-law 8 kHz, base64-encoded inside JSON
 // input_audio_chunk events.
+//
+// Pricing source: https://elevenlabs.io/pricing/api.
+// Fetched: 2026-07-26.
 var ElevenLabsTranscriptionModels = map[ID]TranscriptionModel{
 	ElevenLabsScribeV1: {
 		ID:            ElevenLabsScribeV1,

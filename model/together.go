@@ -33,7 +33,7 @@ const (
 
 // TogetherModels maps Together AI model IDs to their configurations.
 //
-// Pricing source: https://www.together.ai/pricing. Fetched: 2026-05-04.
+// Pricing source: https://www.together.ai/pricing. Fetched: 2026-07-26.
 var TogetherModels = map[ID]Model{
 	TogetherLlama33_70B: {
 		ID:                    TogetherLlama33_70B,

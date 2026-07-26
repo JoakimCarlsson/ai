@@ -15,6 +15,10 @@ const (
 )
 
 // GroqModels maps Groq model IDs to their configurations.
+//
+// Pricing source: https://console.groq.com/docs/models and
+// https://groq.com/pricing.
+// Fetched: 2026-07-26.
 var GroqModels = map[ID]Model{
 	Llama4Scout: {
 		ID:                    Llama4Scout,

@@ -65,6 +65,9 @@ type TranscriptionModel struct {
 
 // OpenAITranscriptionModels contains configuration for OpenAI speech-to-text
 // models.
+//
+// Pricing source: https://developers.openai.com/api/docs/pricing.
+// Fetched: 2026-07-26.
 var OpenAITranscriptionModels = map[ID]TranscriptionModel{
 	Whisper1: {
 		ID:            Whisper1,
@@ -249,6 +252,10 @@ var OpenAITranscriptionModels = map[ID]TranscriptionModel{
 }
 
 // OpenAIAudioModels maps OpenAI TTS model IDs to their configurations.
+//
+// Pricing source: https://developers.openai.com/api/docs/pricing (TTS rates
+// not published on the page; carried forward).
+// Fetched: not re-verified in the 2026-07-26 sweep.
 var OpenAIAudioModels = map[ID]AudioModel{
 	OpenAITTS1: {
 		ID:             OpenAITTS1,

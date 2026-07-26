@@ -26,6 +26,9 @@ const (
 )
 
 // MistralModels maps Mistral model IDs to their configurations.
+//
+// Pricing source: https://mistral.ai/pricing/api.
+// Fetched: 2026-07-26.
 var MistralModels = map[ID]Model{
 	MistralLarge3: {
 		ID:                    MistralLarge3,
@@ -258,6 +261,9 @@ var MistralModels = map[ID]Model{
 }
 
 // MistralEmbeddingModels maps Mistral embedding model IDs to their configurations.
+//
+// Pricing source: https://mistral.ai/pricing/api.
+// Fetched: 2026-07-26.
 var MistralEmbeddingModels = map[ID]EmbeddingModel{
 	MistralEmbed: {
 		ID:              MistralEmbed,

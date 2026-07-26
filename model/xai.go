@@ -27,6 +27,9 @@ const (
 )
 
 // XAIModels maps xAI chat model IDs to their configurations.
+//
+// Pricing source: https://docs.x.ai/docs/models.
+// Fetched: 2026-07-26.
 var XAIModels = map[ID]Model{
 	XAIGrok4: {
 		ID:                    XAIGrok4,
@@ -210,7 +213,7 @@ var XAIModels = map[ID]Model{
 		DefaultMaxTokens:      20_000,
 		SupportsStructuredOut: true,
 	},
-	// Pricing source: https://docs.x.ai/developers/models/grok-4.3. Fetched: 2026-05-04.
+	// Pricing source: https://docs.x.ai/developers/models/grok-4.3. Fetched: 2026-07-26.
 	// Reasoning is enabled by default; reasoning tokens are billed at the
 	// output rate. Per OpenRouter, requests > 200k tokens are billed at a
 	// higher tier; the rate below is the base tier.
@@ -248,7 +251,7 @@ var XAIModels = map[ID]Model{
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 	},
-	// Pricing source: https://docs.x.ai/developers/models/grok-build-0.1. Fetched: 2026-07-10.
+	// Pricing source: https://docs.x.ai/developers/models/grok-build-0.1. Fetched: 2026-07-26.
 	// Fast coding model for agentic software-engineering workflows.
 	XAIGrokBuild01: {
 		ID:                    XAIGrokBuild01,
@@ -269,7 +272,7 @@ var XAIModels = map[ID]Model{
 
 // XAIImageGenerationModels maps xAI image generation model IDs to their configurations.
 //
-// Pricing source: https://docs.x.ai/developers/models/. Fetched: 2026-05-04.
+// Pricing source: https://docs.x.ai/docs/models. Fetched: 2026-07-26.
 // Grok Imagine pricing is flat per image regardless of resolution or quality.
 var XAIImageGenerationModels = map[ID]ImageGenerationModel{
 	XAIGrok2Image: {
