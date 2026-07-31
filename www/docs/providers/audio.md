@@ -50,9 +50,13 @@ client := ttsopenrouter.NewGeneration(
     ttsopenai.WithModel(model.OpenRouterAudioModels[model.OpenRouterMAIVoice2]),
     ttsopenai.WithVoice("en-US-Harper:MAI-Voice-2"),
     ttsopenai.WithOutputFormat("mp3"),
-    ttsopenrouter.WithModelFallbacks("mistralai/voxtral-mini-tts-2603"),
 )
 ```
+
+There is no model-fallback option: OpenRouter documents its `models` fallback
+array for chat completions only, and the audio endpoints ignore request fields
+they do not recognise, so sending it would look like it worked while doing
+nothing. `WithProviderRouting` is documented for `/audio/speech` and is wired up.
 
 Two OpenRouter specifics: `response_format` defaults to `pcm` rather than
 OpenAI's `mp3` and the only documented values are `mp3` and `pcm`; and `speed`

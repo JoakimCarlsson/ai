@@ -263,24 +263,25 @@ func WithRequestJSONField(key string, value any) Option {
 	}
 }
 
-// WithProviderRouting sets OpenRouter's provider routing object. order lists
+// WithProviderRouting sets OpenRouter's provider routing object, which the
+// images endpoint documents alongside the generation fields. order lists
 // provider slugs to try in preference order; allowFallbacks controls whether
 // OpenRouter may fall back to providers outside that list when they are
 // unavailable. See https://openrouter.ai/docs/features/provider-routing.
+//
+// There is deliberately no WithModelFallbacks counterpart here. OpenRouter
+// documents the models fallback array for chat completions and /api/v1/messages
+// only, and the images endpoint validates model before it routes: a nonexistent
+// primary id answers 404 "No model found" rather than falling through to the
+// list. The endpoint's request schema also ignores fields it does not know, so
+// sending models would look like it worked while doing nothing. Fall back in
+// caller code by constructing a second client instead.
 func WithProviderRouting(order []string, allowFallbacks bool) Option {
 	provider := map[string]any{"allow_fallbacks": allowFallbacks}
 	if len(order) > 0 {
 		provider["order"] = order
 	}
 	return WithRequestJSONField("provider", provider)
-}
-
-// WithModelFallbacks sets OpenRouter's models fallback array. When the primary
-// model (set via [WithModel]) errors or is unavailable, OpenRouter
-// automatically retries the next model in this list. See
-// https://openrouter.ai/docs/features/model-routing.
-func WithModelFallbacks(models ...string) Option {
-	return WithRequestJSONField("models", models)
 }
 
 // Client implements [image.Generation] against OpenRouter's image API.

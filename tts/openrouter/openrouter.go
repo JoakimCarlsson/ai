@@ -57,22 +57,22 @@ func WithModelID(id string) Option {
 	})
 }
 
-// WithProviderRouting sets OpenRouter's provider routing object. order lists
-// provider slugs to try in preference order; allowFallbacks controls whether
-// OpenRouter may fall back to providers outside that list when they are
-// unavailable. See https://openrouter.ai/docs/features/provider-routing.
+// WithProviderRouting sets OpenRouter's provider routing object, which the
+// speech endpoint documents alongside model, input, voice, response_format and
+// speed. order lists provider slugs to try in preference order; allowFallbacks
+// controls whether OpenRouter may fall back to providers outside that list when
+// they are unavailable. See
+// https://openrouter.ai/docs/features/provider-routing.
+//
+// There is deliberately no WithModelFallbacks counterpart here. OpenRouter
+// documents the models fallback array for chat completions and /api/v1/messages
+// only, not for the audio endpoints, and the request schemas ignore fields they
+// do not know — so sending models would look like it worked while doing
+// nothing. Fall back in caller code by constructing a second client instead.
 func WithProviderRouting(order []string, allowFallbacks bool) Option {
 	provider := map[string]any{"allow_fallbacks": allowFallbacks}
 	if len(order) > 0 {
 		provider["order"] = order
 	}
 	return ttsopenai.WithRequestJSONField("provider", provider)
-}
-
-// WithModelFallbacks sets OpenRouter's models fallback array. When the primary
-// model (set via [ttsopenai.WithModel]) errors or is unavailable, OpenRouter
-// automatically retries the next model in this list. See
-// https://openrouter.ai/docs/features/model-routing.
-func WithModelFallbacks(models ...string) Option {
-	return ttsopenai.WithRequestJSONField("models", models)
 }

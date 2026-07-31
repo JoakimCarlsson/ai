@@ -26,6 +26,11 @@ func main() {
 // generate renders one image and reports the two fields OpenRouter gives that
 // the other image providers do not: the per-image media type and the
 // dollar-denominated cost of the request.
+//
+// No WithResolution here on purpose. seedream-4.5 advertises 1K, 2K and 4K but
+// enforces a floor of 3,686,400 output pixels, so both 1K and 2K are rejected at
+// 16:9 with an HTTP 400. Omitting resolution lets OpenRouter apply the model's
+// own default, which satisfies the floor.
 func generate(apiKey string) {
 	client := imageopenrouter.NewGeneration(
 		imageopenrouter.WithAPIKey(apiKey),
@@ -33,7 +38,6 @@ func generate(apiKey string) {
 			model.OpenRouterImageGenerationModels[model.OpenRouterSeedream45],
 		),
 		imageopenrouter.WithAspectRatio(imageopenrouter.AspectRatio16x9),
-		imageopenrouter.WithResolution(imageopenrouter.Resolution2K),
 	)
 
 	resp, err := client.GenerateImage(
@@ -173,7 +177,6 @@ func stream(apiKey string) {
 			model.OpenRouterImageGenerationModels[model.OpenRouterGPTImage2],
 		),
 		imageopenrouter.WithQuality(imageopenrouter.QualityMedium),
-		imageopenrouter.WithModelFallbacks("bytedance-seed/seedream-4.5"),
 	)
 
 	var partials int

@@ -906,6 +906,13 @@ const (
 // per-image tiers without saying which tier a given request lands in — a made-up
 // per-image figure would be worse than none. Read usage.Cost off the response
 // for what a request actually cost.
+//
+// DefaultSize is deliberately left empty across these entries. SupportedSizes
+// records the resolution enum a model advertises, but advertising a tier is not
+// the same as accepting it: seedream-4.5 lists 1K, 2K and 4K yet rejects both 1K
+// and 2K at 16:9 with "requires at least 3,686,400 output pixels". Omitting
+// resolution lets OpenRouter apply the model's real default, which is the only
+// value verified to work for every entry here.
 var OpenRouterImageGenerationModels = map[ID]ImageGenerationModel{
 	OpenRouterGPTImage2: {
 		ID:              OpenRouterGPTImage2,

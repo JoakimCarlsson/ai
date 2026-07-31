@@ -185,7 +185,8 @@ func TestWithModelID(t *testing.T) {
 
 // TestWireOptions confirms every construction-time knob reaches the request
 // body in OpenRouter's documented shape, including the routing helpers and the
-// nested input_references objects.
+// nested input_references objects. models is asserted absent: see
+// WithProviderRouting's doc comment.
 func TestWireOptions(t *testing.T) {
 	var body map[string]any
 	srv := newServer(t, &body, nil, http.StatusOK,
@@ -205,7 +206,6 @@ func TestWireOptions(t *testing.T) {
 		openrouter.WithSeed(42),
 		openrouter.WithInputReferences("https://example.com/photo.jpg"),
 		openrouter.WithProviderRouting([]string{"openai", "azure"}, false),
-		openrouter.WithModelFallbacks("a/b", "c/d"),
 	)
 
 	if _, err := client.GenerateImage(context.Background(), "p"); err != nil {
@@ -259,9 +259,9 @@ func TestWireOptions(t *testing.T) {
 		t.Errorf("provider.order = %v, want [openai azure]", provider["order"])
 	}
 
-	models, ok := body["models"].([]any)
-	if !ok || len(models) != 2 || models[0] != "a/b" || models[1] != "c/d" {
-		t.Errorf("models = %v, want [a/b c/d]", body["models"])
+	if _, ok := body["models"]; ok {
+		t.Errorf("models = %v, want it absent: OpenRouter does not honor a "+
+			"fallback array on the images endpoint", body["models"])
 	}
 }
 

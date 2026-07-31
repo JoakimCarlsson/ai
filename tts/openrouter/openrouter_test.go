@@ -132,8 +132,8 @@ func TestWithModelID(t *testing.T) {
 	}
 }
 
-// TestWireRoutingOptions confirms the OpenRouter routing helpers reach the
-// speech request body.
+// TestWireRoutingOptions confirms provider routing reaches the speech request
+// body, and that no models fallback array is sent.
 func TestWireRoutingOptions(t *testing.T) {
 	var body map[string]any
 	srv := newSpeechServer(t, &body, nil)
@@ -143,7 +143,6 @@ func TestWireRoutingOptions(t *testing.T) {
 		ttsopenai.WithBaseURL(srv.URL),
 		ttsopenai.WithModel(model.AudioModel{APIModel: "m"}),
 		openrouter.WithProviderRouting([]string{"openai", "azure"}, false),
-		openrouter.WithModelFallbacks("a/b", "c/d"),
 	)
 
 	if _, err := client.GenerateAudio(context.Background(), "x"); err != nil {
@@ -164,9 +163,9 @@ func TestWireRoutingOptions(t *testing.T) {
 		t.Errorf("provider.order = %v, want [openai azure]", provider["order"])
 	}
 
-	models, ok := body["models"].([]any)
-	if !ok || len(models) != 2 || models[0] != "a/b" || models[1] != "c/d" {
-		t.Errorf("models = %v, want [a/b c/d]", body["models"])
+	if _, ok := body["models"]; ok {
+		t.Errorf("models = %v, want it absent: OpenRouter does not document a "+
+			"fallback array on the audio endpoints", body["models"])
 	}
 }
 
