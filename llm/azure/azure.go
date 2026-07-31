@@ -33,6 +33,7 @@ type Options struct {
 	apiVersion            string
 	canReason             *bool
 	supportsStructuredOut *bool
+	attachments           *bool
 	httpClient            *http.Client
 }
 
@@ -128,6 +129,14 @@ func WithHTTPClient(c *http.Client) Option {
 // the deployment name does not match an entry in [model.AzureModels].
 func WithStructuredOutput(supportsStructuredOutput bool) Option {
 	return func(o *Options) { o.supportsStructuredOut = &supportsStructuredOutput }
+}
+
+// WithAttachments declares whether the deployed model accepts image
+// attachments. Azure routes on deployment name, so a deployment whose name
+// does not appear in [model.AzureModels] resolves to a model with every
+// capability false; this is how a caller states otherwise.
+func WithAttachments(supportsAttachments bool) Option {
+	return func(o *Options) { o.attachments = &supportsAttachments }
 }
 
 // Client implements [llm.LLM] against Azure OpenAI by delegating request handling
@@ -239,7 +248,7 @@ func NewLLM(opts ...Option) llm.LLM {
 //
 // Azure Foundry deployment names are opaque — callers whose deployment
 // doesn't match any registry entry should declare capabilities explicitly
-// via [WithReasoning] and [WithStructuredOutput].
+// via [WithReasoning], [WithStructuredOutput] and [WithAttachments].
 func resolveDeployment(deployment string) model.Model {
 	if deployment == "" {
 		return model.Model{}
@@ -259,7 +268,8 @@ func resolveDeployment(deployment string) model.Model {
 }
 
 // modelFromOptions resolves the deployment and applies any explicit
-// capability overrides from [WithReasoning] / [WithStructuredOutput].
+// capability overrides from [WithReasoning] / [WithStructuredOutput] /
+// [WithAttachments].
 func modelFromOptions(o Options) model.Model {
 	m := resolveDeployment(o.deployment)
 	if o.canReason != nil {
@@ -267,6 +277,9 @@ func modelFromOptions(o Options) model.Model {
 	}
 	if o.supportsStructuredOut != nil {
 		m.SupportsStructuredOut = *o.supportsStructuredOut
+	}
+	if o.attachments != nil {
+		m.SupportsAttachments = *o.attachments
 	}
 	return m
 }
