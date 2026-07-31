@@ -108,6 +108,30 @@ func TestArbitraryModel(t *testing.T) {
 	}
 }
 
+// TestWithModelID confirms the shorthand for uncatalogued models reaches the
+// wire and tags the provider.
+func TestWithModelID(t *testing.T) {
+	var body map[string]any
+	srv := newSpeechServer(t, &body, nil)
+	defer srv.Close()
+
+	client := openrouter.NewGeneration(
+		ttsopenai.WithBaseURL(srv.URL),
+		openrouter.WithModelID("minimax/speech-2.8-hd"),
+	)
+
+	if _, err := client.GenerateAudio(context.Background(), "x"); err != nil {
+		t.Fatalf("GenerateAudio: %v", err)
+	}
+	if body["model"] != "minimax/speech-2.8-hd" {
+		t.Errorf("model = %v, want minimax/speech-2.8-hd", body["model"])
+	}
+	if got := client.Model().Provider; got != model.ProviderOpenRouter {
+		t.Errorf("Model().Provider = %q, want %q", got,
+			model.ProviderOpenRouter)
+	}
+}
+
 // TestWireRoutingOptions confirms the OpenRouter routing helpers reach the
 // speech request body.
 func TestWireRoutingOptions(t *testing.T) {

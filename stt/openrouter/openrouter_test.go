@@ -194,6 +194,33 @@ func TestArbitraryModel(t *testing.T) {
 	}
 }
 
+// TestWithModelID confirms the shorthand for uncatalogued models reaches the
+// wire and tags the provider.
+func TestWithModelID(t *testing.T) {
+	var observed transcriptionRequest
+	srv := newTranscriptionServer(t, &observed, `{"text":"hi"}`)
+	defer srv.Close()
+
+	client := openrouter.NewSpeechToText(
+		sttopenai.WithBaseURL(srv.URL),
+		openrouter.WithModelID("nvidia/parakeet-tdt-0.6b-v3"),
+	)
+
+	if _, err := client.Transcribe(
+		context.Background(), []byte("audio"), stt.WithResponseFormat("json"),
+	); err != nil {
+		t.Fatalf("Transcribe: %v", err)
+	}
+	if observed.fields["model"] != "nvidia/parakeet-tdt-0.6b-v3" {
+		t.Errorf("model = %q, want nvidia/parakeet-tdt-0.6b-v3",
+			observed.fields["model"])
+	}
+	if got := client.Model().Provider; got != model.ProviderOpenRouter {
+		t.Errorf("Model().Provider = %q, want %q", got,
+			model.ProviderOpenRouter)
+	}
+}
+
 // TestTranscribePlainJSON covers the response_format="json" path callers need
 // for the upstreams that reject verbose_json with HTTP 400.
 func TestTranscribePlainJSON(t *testing.T) {

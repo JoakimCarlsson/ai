@@ -36,7 +36,7 @@ install the modules you import with `go get`.
 - `embeddings/voyage` — text embeddings with `embeddings/voyage`
 - `image/gemini` — image generation with `image/gemini`
 - `image/azure` — image generation against Azure OpenAI with `image/azure`
-- `image/openrouter` — image generation and progressive streaming with `image/openrouter`
+- `image/openrouter` — image generation, progressive streaming, and two ways to use an OpenRouter model the `model` registry does not define
 - `tts/elevenlabs` — text-to-speech with `tts/elevenlabs`
 - `stt/deepgram` — speech-to-text with `stt/deepgram`
 - `rerankers/cohere` — document reranking with `rerankers/cohere`
@@ -109,7 +109,7 @@ program:
 
 - `image/gemini` writes `gemini-image.png`
 - `image/azure` writes `azure-image.png`
-- `image/openrouter` writes `openrouter-image.png` and `openrouter-image-streamed.png`
+- `image/openrouter` writes `openrouter-image.png`, `openrouter-image-custom.png`, `openrouter-image-custom-described.png` and `openrouter-image-streamed.png`
 - `image/provider-switch` writes `<provider>-image.png`
 - `tts/elevenlabs` writes `elevenlabs-speech.mp3`
 - `tts/provider-switch` writes `<provider>-speech.mp3`

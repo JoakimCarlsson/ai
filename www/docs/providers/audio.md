@@ -57,8 +57,21 @@ client := ttsopenrouter.NewGeneration(
 Two OpenRouter specifics: `response_format` defaults to `pcm` rather than
 OpenAI's `mp3` and the only documented values are `mp3` and `pcm`; and `speed`
 is honored only by upstreams that support it and silently ignored by the rest.
-OpenRouter routes more speech models than `model` catalogues — pass any id via
-`ttsopenai.WithModel(model.AudioModel{APIModel: "..."})`.
+`model.OpenRouterAudioModels` carries 18 known-good defaults. OpenRouter routes
+more than that, so for anything it does not define, `WithModelID` takes a raw
+id:
+
+```go
+client := ttsopenrouter.NewGeneration(
+    ttsopenai.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
+    ttsopenrouter.WithModelID("minimax/speech-2.8-hd"),
+    ttsopenai.WithOutputFormat("mp3"),
+)
+```
+
+`Model()` then reports only the id and provider — no per-character cost, no
+format list. Pass a hand-built `model.AudioModel` to `ttsopenai.WithModel`
+instead when something downstream reads those fields.
 
 ## Streaming
 

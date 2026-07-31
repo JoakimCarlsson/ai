@@ -158,6 +158,31 @@ func TestGenerateImageArbitraryModel(t *testing.T) {
 	}
 }
 
+// TestWithModelID confirms the shorthand for uncatalogued models reaches the
+// wire and tags the provider.
+func TestWithModelID(t *testing.T) {
+	var body map[string]any
+	srv := newServer(t, &body, nil, http.StatusOK,
+		`{"data":[{"b64_json":"`+pngB64+`"}],"usage":{"cost":0.03}}`)
+	defer srv.Close()
+
+	client := openrouter.NewGeneration(
+		openrouter.WithBaseURL(srv.URL),
+		openrouter.WithModelID("black-forest-labs/flux.2-pro"),
+	)
+
+	if _, err := client.GenerateImage(context.Background(), "p"); err != nil {
+		t.Fatalf("GenerateImage: %v", err)
+	}
+	if body["model"] != "black-forest-labs/flux.2-pro" {
+		t.Errorf("model = %v, want black-forest-labs/flux.2-pro", body["model"])
+	}
+	if got := client.Model().Provider; got != model.ProviderOpenRouter {
+		t.Errorf("Model().Provider = %q, want %q", got,
+			model.ProviderOpenRouter)
+	}
+}
+
 // TestWireOptions confirms every construction-time knob reaches the request
 // body in OpenRouter's documented shape, including the routing helpers and the
 // nested input_references objects.

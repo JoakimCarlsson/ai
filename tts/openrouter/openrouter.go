@@ -21,6 +21,7 @@
 package openrouter
 
 import (
+	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tts"
 	ttsopenai "github.com/joakimcarlsson/ai/tts/openai"
 )
@@ -38,6 +39,22 @@ type Option = ttsopenai.Option
 func NewGeneration(opts ...Option) tts.Generation {
 	return ttsopenai.NewGeneration(
 		append([]Option{ttsopenai.WithBaseURL(DefaultBaseURL)}, opts...)...)
+}
+
+// WithModelID selects a speech model by raw OpenRouter id, for the models
+// [model.OpenRouterAudioModels] does not catalogue. It is shorthand for
+// [ttsopenai.WithModel] with a bare [model.AudioModel], and it is the intended
+// path for anything OpenRouter has routed since this package was last updated:
+//
+//	ttsopenrouter.WithModelID("minimax/speech-2.8-hd")
+//
+// Nothing is validated locally, so the capability and per-1M-character cost
+// fields a registered [model.AudioModel] carries are zero.
+func WithModelID(id string) Option {
+	return ttsopenai.WithModel(model.AudioModel{
+		APIModel: id,
+		Provider: model.ProviderOpenRouter,
+	})
 }
 
 // WithProviderRouting sets OpenRouter's provider routing object. order lists

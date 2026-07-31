@@ -205,9 +205,61 @@ imageopenrouter.WithTimeout(time.Duration)
 
 Not every model accepts every knob — OpenRouter rejects unsupported fields
 rather than ignoring them. Query `GET /api/v1/images/models` for a model's
-`supported_parameters` first. OpenRouter routes far more image models than
-`model` catalogues; pass any id via
-`imageopenrouter.WithModel(model.ImageGenerationModel{APIModel: "..."})`.
+`supported_parameters` first.
+
+### Using a model the registry does not define
+
+`model.OpenRouterImageGenerationModels` carries 26 known-good defaults, but
+OpenRouter routes more than that and adds new models weekly. You never have to
+wait for a release to use one. `WithModelID` takes any raw OpenRouter id:
+
+```go
+client := imageopenrouter.NewGeneration(
+    imageopenrouter.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
+    imageopenrouter.WithModelID("krea/krea-2-large"),
+    imageopenrouter.WithAspectRatio(imageopenrouter.AspectRatio4x5),
+)
+```
+
+That is shorthand for `WithModel(model.ImageGenerationModel{APIModel: id,
+Provider: model.ProviderOpenRouter})`, so `Model()` reports the id and provider
+and nothing else — no pricing, no supported-value lists. Generation works fine;
+what breaks is anything that reads that metadata, such as a cost estimator or a
+UI offering the caller a list of aspect ratios.
+
+When you need those, describe the model yourself and it behaves exactly like a
+registered entry, `DefaultAspectRatio` included:
+
+```go
+riverflowFast := model.ImageGenerationModel{
+    ID:       "openrouter.riverflow-v2.5-fast",
+    Name:     "OpenRouter – Riverflow V2.5 Fast",
+    Provider: model.ProviderOpenRouter,
+    APIModel: "sourceful/riverflow-v2.5-fast",
+    Pricing: map[string]map[string]float64{
+        "default": {"default": 0.019},
+    },
+    MaxPromptTokens:       4000,
+    SupportedAspectRatios: []string{"1:1", "4:3", "16:9", "21:9", "auto"},
+    DefaultAspectRatio:    "16:9",
+    SupportedSizes:        []string{"1K", "2K"},
+    DefaultSize:           "1K",
+    SupportedQualities:    []string{"default"},
+    DefaultQuality:        "default",
+}
+
+client := imageopenrouter.NewGeneration(
+    imageopenrouter.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
+    imageopenrouter.WithModel(riverflowFast),
+)
+```
+
+The real capability and pricing data for any id lives at
+`GET /api/v1/images/models/<id>/endpoints`. `stt/openrouter` and
+`tts/openrouter` expose the same `WithModelID` shorthand over
+`model.TranscriptionModel` and `model.AudioModel`.
+
+`examples/image/openrouter` runs all of this, including both custom-model forms.
 
 `GenerateImageStreaming` is real here, not `ErrStreamingNotSupported`: models
 whose descriptor reports `supports_streaming` (the `gpt-image-*` family today)

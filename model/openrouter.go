@@ -859,67 +859,54 @@ var OpenRouterModels = map[ID]Model{
 
 // OpenRouter image generation model IDs.
 const (
-	OpenRouterSeedream45         ID = "openrouter.seedream-4.5"
-	OpenRouterGPTImage2          ID = "openrouter.gpt-image-2"
-	OpenRouterGemini25FlashImage ID = "openrouter.gemini-2.5-flash-image"
-	OpenRouterRecraftV4          ID = "openrouter.recraft-v4"
-	OpenRouterRecraftV4Vector    ID = "openrouter.recraft-v4-vector"
-)
-
-// OpenRouter text-to-speech model IDs.
-const (
-	OpenRouterMAIVoice2        ID = "openrouter.mai-voice-2"
-	OpenRouterVoxtralMiniTTS   ID = "openrouter.voxtral-mini-tts"
-	OpenRouterGrokVoiceTTS1    ID = "openrouter.grok-voice-tts-1.0"
-	OpenRouterAura2            ID = "openrouter.aura-2"
-	OpenRouterGemini31FlashTTS ID = "openrouter.gemini-3.1-flash-tts"
-)
-
-// OpenRouter speech-to-text model IDs.
-const (
-	OpenRouterWhisper1              ID = "openrouter.whisper-1"
-	OpenRouterWhisperLargeV3        ID = "openrouter.whisper-large-v3"
-	OpenRouterGPT4oTranscribe       ID = "openrouter.gpt-4o-transcribe"
-	OpenRouterGPT4oMiniTranscribe   ID = "openrouter.gpt-4o-mini-transcribe"
-	OpenRouterVoxtralMiniTranscribe ID = "openrouter.voxtral-mini-transcribe"
-	OpenRouterFishAudioTranscribe1  ID = "openrouter.fish-audio-transcribe-1"
-	OpenRouterGrokSTT1              ID = "openrouter.grok-stt-1.0"
+	OpenRouterGPTImage2               ID = "openrouter.gpt-image-2"
+	OpenRouterGPTImage1               ID = "openrouter.gpt-image-1"
+	OpenRouterGPTImage1Mini           ID = "openrouter.gpt-image-1-mini"
+	OpenRouterGPT5Image               ID = "openrouter.gpt-5-image"
+	OpenRouterGPT5ImageMini           ID = "openrouter.gpt-5-image-mini"
+	OpenRouterGPT54Image2             ID = "openrouter.gpt-5.4-image-2"
+	OpenRouterGemini25FlashImage      ID = "openrouter.gemini-2.5-flash-image"
+	OpenRouterGemini3ProImage         ID = "openrouter.gemini-3-pro-image"
+	OpenRouterGemini31FlashImage      ID = "openrouter.gemini-3.1-flash-image"
+	OpenRouterGemini31FlashLiteImage  ID = "openrouter.gemini-3.1-flash-lite-image"
+	OpenRouterSeedream45              ID = "openrouter.seedream-4.5"
+	OpenRouterFlux2Pro                ID = "openrouter.flux.2-pro"
+	OpenRouterFlux2Max                ID = "openrouter.flux.2-max"
+	OpenRouterFlux2Flex               ID = "openrouter.flux.2-flex"
+	OpenRouterFlux2Klein4B            ID = "openrouter.flux.2-klein-4b"
+	OpenRouterGrokImagineImageQuality ID = "openrouter.grok-imagine-image-quality"
+	OpenRouterMAIImage25              ID = "openrouter.mai-image-2.5"
+	OpenRouterMAIImage25Pro           ID = "openrouter.mai-image-2.5-pro"
+	OpenRouterRiverflowV25Pro         ID = "openrouter.riverflow-v2.5-pro"
+	OpenRouterRiverflowV25Fast        ID = "openrouter.riverflow-v2.5-fast"
+	OpenRouterRecraftV41              ID = "openrouter.recraft-v4.1"
+	OpenRouterRecraftV41Pro           ID = "openrouter.recraft-v4.1-pro"
+	OpenRouterRecraftV41Vector        ID = "openrouter.recraft-v4.1-vector"
+	OpenRouterRecraftV41ProVector     ID = "openrouter.recraft-v4.1-pro-vector"
+	OpenRouterRecraftV4               ID = "openrouter.recraft-v4"
+	OpenRouterRecraftV4Vector         ID = "openrouter.recraft-v4-vector"
 )
 
 // OpenRouterImageGenerationModels maps OpenRouter image model IDs to their
 // configurations.
 //
-// This is a small set of known-good defaults, not a mirror of OpenRouter's
-// catalogue: OpenRouter routes far more image models than this package
-// catalogues and the list moves weekly. Pass any OpenRouter image model id with
-// a bare ImageGenerationModel even without a registered entry here.
+// These are known-good defaults, not a mirror of OpenRouter's catalogue:
+// OpenRouter routes more image models than this package catalogues and the list
+// moves weekly. Any OpenRouter image model id works with a bare
+// [ImageGenerationModel] even without an entry here — see the image/openrouter
+// package docs.
 //
-// Pricing source: https://openrouter.ai/api/v1/images/models/<id>/endpoints.
-// Fetched: 2026-07-31. Per-image rates are recorded under the "default" key.
-// gpt-image-2 and gemini-2.5-flash-image bill per output token rather than per
-// image, so their per-image figures mirror the upstream registries in this
-// package instead.
+// Capability source: https://openrouter.ai/api/v1/images/models. Pricing
+// source: the per-model .../endpoints route. Fetched: 2026-07-31.
+//
+// Pricing is only populated where OpenRouter publishes a flat per-image rate,
+// or where an upstream registry in this package already carries a per-image
+// estimate for the same model. It is left nil for the models OpenRouter bills
+// per output token or per megapixel, and for the models it bills at several
+// per-image tiers without saying which tier a given request lands in — a made-up
+// per-image figure would be worse than none. Read usage.Cost off the response
+// for what a request actually cost.
 var OpenRouterImageGenerationModels = map[ID]ImageGenerationModel{
-	OpenRouterSeedream45: {
-		ID:       OpenRouterSeedream45,
-		Name:     "OpenRouter – Seedream 4.5",
-		Provider: ProviderOpenRouter,
-		APIModel: "bytedance-seed/seedream-4.5",
-		Pricing: map[string]map[string]float64{
-			"default": {"default": 0.04},
-		},
-		MaxPromptTokens: 4000,
-		SupportedAspectRatios: []string{
-			"1:1", "1:2", "2:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4",
-			"9:16", "16:9", "9:19.5", "19.5:9", "9:20", "20:9", "9:21", "21:9",
-			"auto",
-		},
-		DefaultAspectRatio: "1:1",
-		SupportedSizes:     []string{"1K", "2K", "4K"},
-		DefaultSize:        "2K",
-		SupportedQualities: []string{"default"},
-		DefaultQuality:     "default",
-	},
 	OpenRouterGPTImage2: {
 		ID:              OpenRouterGPTImage2,
 		Name:            "OpenRouter – GPT Image 2",
@@ -927,14 +914,67 @@ var OpenRouterImageGenerationModels = map[ID]ImageGenerationModel{
 		APIModel:        "openai/gpt-image-2",
 		Pricing:         OpenAIImageGenerationModels[GPTImage2].Pricing,
 		MaxPromptTokens: OpenAIImageGenerationModels[GPTImage2].MaxPromptTokens,
-		SupportedSizes:  OpenAIImageGenerationModels[GPTImage2].SupportedSizes,
-		DefaultSize:     OpenAIImageGenerationModels[GPTImage2].DefaultSize,
 		SupportedAspectRatios: []string{
-			"1:1", "3:2", "2:3", "4:3", "3:4", "16:9", "9:16", "21:9", "auto",
+			"1:1", "3:2", "2:3", "4:3", "3:4", "16:9", "9:16", "21:9",
+			"auto",
 		},
 		DefaultAspectRatio: "1:1",
 		SupportedQualities: []string{"auto", "low", "medium", "high"},
-		DefaultQuality:     OpenAIImageGenerationModels[GPTImage2].DefaultQuality,
+		DefaultQuality:     "auto",
+		SupportsStreaming:  true,
+	},
+	OpenRouterGPTImage1: {
+		ID:                    OpenRouterGPTImage1,
+		Name:                  "OpenRouter – GPT Image 1",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "openai/gpt-image-1",
+		MaxPromptTokens:       4000,
+		SupportedAspectRatios: []string{"1:1", "3:2", "2:3", "auto"},
+		DefaultAspectRatio:    "1:1",
+		SupportedQualities:    []string{"auto", "low", "medium", "high"},
+		DefaultQuality:        "auto",
+		SupportsStreaming:     true,
+	},
+	OpenRouterGPTImage1Mini: {
+		ID:                    OpenRouterGPTImage1Mini,
+		Name:                  "OpenRouter – GPT Image 1 mini",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "openai/gpt-image-1-mini",
+		MaxPromptTokens:       4000,
+		SupportedAspectRatios: []string{"1:1", "3:2", "2:3", "auto"},
+		DefaultAspectRatio:    "1:1",
+		SupportedQualities:    []string{"auto", "low", "medium", "high"},
+		DefaultQuality:        "auto",
+		SupportsStreaming:     true,
+	},
+	OpenRouterGPT5Image: {
+		ID:                 OpenRouterGPT5Image,
+		Name:               "OpenRouter – GPT-5 Image",
+		Provider:           ProviderOpenRouter,
+		APIModel:           "openai/gpt-5-image",
+		MaxPromptTokens:    4000,
+		SupportedQualities: []string{"auto", "low", "medium", "high"},
+		DefaultQuality:     "auto",
+		SupportsStreaming:  true,
+	},
+	OpenRouterGPT5ImageMini: {
+		ID:                 OpenRouterGPT5ImageMini,
+		Name:               "OpenRouter – GPT-5 Image mini",
+		Provider:           ProviderOpenRouter,
+		APIModel:           "openai/gpt-5-image-mini",
+		MaxPromptTokens:    4000,
+		SupportedQualities: []string{"auto", "low", "medium", "high"},
+		DefaultQuality:     "auto",
+		SupportsStreaming:  true,
+	},
+	OpenRouterGPT54Image2: {
+		ID:                 OpenRouterGPT54Image2,
+		Name:               "OpenRouter – GPT-5.4 Image 2",
+		Provider:           ProviderOpenRouter,
+		APIModel:           "openai/gpt-5.4-image-2",
+		MaxPromptTokens:    4000,
+		SupportedQualities: []string{"auto", "low", "medium", "high"},
+		DefaultQuality:     "auto",
 		SupportsStreaming:  true,
 	},
 	OpenRouterGemini25FlashImage: {
@@ -952,6 +992,259 @@ var OpenRouterImageGenerationModels = map[ID]ImageGenerationModel{
 		SupportedQualities: []string{"default"},
 		DefaultQuality:     "default",
 	},
+	OpenRouterGemini3ProImage: {
+		ID:              OpenRouterGemini3ProImage,
+		Name:            "OpenRouter – Gemini 3 Pro Image (Nano Banana Pro)",
+		Provider:        ProviderOpenRouter,
+		APIModel:        "google/gemini-3-pro-image",
+		Pricing:         GeminiImageGenerationModels[Gemini3ProImage].Pricing,
+		MaxPromptTokens: GeminiImageGenerationModels[Gemini3ProImage].MaxPromptTokens,
+		SupportedAspectRatios: []string{
+			"1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9",
+			"21:9",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedSizes:     []string{"1K", "2K", "4K"},
+		DefaultSize:        "1K",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	OpenRouterGemini31FlashImage: {
+		ID:              OpenRouterGemini31FlashImage,
+		Name:            "OpenRouter – Gemini 3.1 Flash Image (Nano Banana 2)",
+		Provider:        ProviderOpenRouter,
+		APIModel:        "google/gemini-3.1-flash-image",
+		Pricing:         GeminiImageGenerationModels[Gemini31FlashImagePreview].Pricing,
+		MaxPromptTokens: GeminiImageGenerationModels[Gemini31FlashImagePreview].MaxPromptTokens,
+		SupportedAspectRatios: []string{
+			"1:1", "1:4", "1:8", "2:3", "3:2", "3:4", "4:1", "4:3", "4:5",
+			"5:4", "8:1", "9:16", "16:9", "21:9",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedSizes:     []string{"512", "1K", "2K", "4K"},
+		DefaultSize:        "1K",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	OpenRouterGemini31FlashLiteImage: {
+		ID:              OpenRouterGemini31FlashLiteImage,
+		Name:            "OpenRouter – Gemini 3.1 Flash Lite Image (Nano Banana 2 Lite)",
+		Provider:        ProviderOpenRouter,
+		APIModel:        "google/gemini-3.1-flash-lite-image",
+		Pricing:         GeminiImageGenerationModels[Gemini31FlashLiteImage].Pricing,
+		MaxPromptTokens: GeminiImageGenerationModels[Gemini31FlashLiteImage].MaxPromptTokens,
+		SupportedAspectRatios: []string{
+			"1:1", "1:4", "1:8", "2:3", "3:2", "3:4", "4:1", "4:3", "4:5",
+			"5:4", "8:1", "9:16", "16:9", "21:9",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedSizes:     []string{"1K"},
+		DefaultSize:        "1K",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	OpenRouterSeedream45: {
+		ID:       OpenRouterSeedream45,
+		Name:     "OpenRouter – Seedream 4.5",
+		Provider: ProviderOpenRouter,
+		APIModel: "bytedance-seed/seedream-4.5",
+		Pricing: map[string]map[string]float64{
+			"default": {"default": 0.04},
+		},
+		MaxPromptTokens: 4000,
+		SupportedAspectRatios: []string{
+			"1:1", "1:2", "2:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4",
+			"9:16", "16:9", "9:19.5", "19.5:9", "9:20", "20:9", "9:21",
+			"21:9", "auto",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedSizes:     []string{"1K", "2K", "4K"},
+		DefaultSize:        "1K",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	OpenRouterFlux2Pro: {
+		ID:              OpenRouterFlux2Pro,
+		Name:            "OpenRouter – FLUX.2 Pro",
+		Provider:        ProviderOpenRouter,
+		APIModel:        "black-forest-labs/flux.2-pro",
+		MaxPromptTokens: 4000,
+		SupportedAspectRatios: []string{
+			"1:1", "4:3", "3:4", "3:2", "2:3", "16:9", "9:16", "21:9",
+			"auto",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	OpenRouterFlux2Max: {
+		ID:              OpenRouterFlux2Max,
+		Name:            "OpenRouter – FLUX.2 Max",
+		Provider:        ProviderOpenRouter,
+		APIModel:        "black-forest-labs/flux.2-max",
+		MaxPromptTokens: 4000,
+		SupportedAspectRatios: []string{
+			"1:1", "4:3", "3:4", "3:2", "2:3", "16:9", "9:16", "21:9",
+			"auto",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	OpenRouterFlux2Flex: {
+		ID:              OpenRouterFlux2Flex,
+		Name:            "OpenRouter – FLUX.2 Flex",
+		Provider:        ProviderOpenRouter,
+		APIModel:        "black-forest-labs/flux.2-flex",
+		MaxPromptTokens: 4000,
+		SupportedAspectRatios: []string{
+			"1:1", "4:3", "3:4", "3:2", "2:3", "16:9", "9:16", "21:9",
+			"auto",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	OpenRouterFlux2Klein4B: {
+		ID:              OpenRouterFlux2Klein4B,
+		Name:            "OpenRouter – FLUX.2 Klein 4B",
+		Provider:        ProviderOpenRouter,
+		APIModel:        "black-forest-labs/flux.2-klein-4b",
+		MaxPromptTokens: 4000,
+		SupportedAspectRatios: []string{
+			"1:1", "4:3", "3:4", "3:2", "2:3", "16:9", "9:16", "21:9",
+			"auto",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	OpenRouterGrokImagineImageQuality: {
+		ID:              OpenRouterGrokImagineImageQuality,
+		Name:            "OpenRouter – Grok Imagine Image Quality",
+		Provider:        ProviderOpenRouter,
+		APIModel:        "x-ai/grok-imagine-image-quality",
+		MaxPromptTokens: 4000,
+		SupportedAspectRatios: []string{
+			"1:1", "3:4", "4:3", "9:16", "16:9", "2:3", "3:2", "9:19.5",
+			"19.5:9", "9:20", "20:9", "1:2", "2:1", "auto",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedSizes:     []string{"1K", "2K"},
+		DefaultSize:        "1K",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	OpenRouterMAIImage25: {
+		ID:                    OpenRouterMAIImage25,
+		Name:                  "OpenRouter – MAI-Image-2.5",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "microsoft/mai-image-2.5",
+		MaxPromptTokens:       4000,
+		SupportedAspectRatios: []string{"1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3", "auto"},
+		DefaultAspectRatio:    "1:1",
+		SupportedQualities:    []string{"default"},
+		DefaultQuality:        "default",
+	},
+	OpenRouterMAIImage25Pro: {
+		ID:                    OpenRouterMAIImage25Pro,
+		Name:                  "OpenRouter – MAI-Image-2.5 Pro",
+		Provider:              ProviderOpenRouter,
+		APIModel:              "microsoft/mai-image-2.5-pro",
+		MaxPromptTokens:       4000,
+		SupportedAspectRatios: []string{"1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3", "auto"},
+		DefaultAspectRatio:    "1:1",
+		SupportedQualities:    []string{"default"},
+		DefaultQuality:        "default",
+	},
+	OpenRouterRiverflowV25Pro: {
+		ID:              OpenRouterRiverflowV25Pro,
+		Name:            "OpenRouter – Riverflow V2.5 Pro",
+		Provider:        ProviderOpenRouter,
+		APIModel:        "sourceful/riverflow-v2.5-pro",
+		MaxPromptTokens: 4000,
+		SupportedAspectRatios: []string{
+			"1:1", "4:3", "3:4", "3:2", "2:3", "16:9", "9:16", "21:9",
+			"auto",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedSizes:     []string{"1K", "2K", "4K"},
+		DefaultSize:        "1K",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	OpenRouterRiverflowV25Fast: {
+		ID:              OpenRouterRiverflowV25Fast,
+		Name:            "OpenRouter – Riverflow V2.5 Fast",
+		Provider:        ProviderOpenRouter,
+		APIModel:        "sourceful/riverflow-v2.5-fast",
+		MaxPromptTokens: 4000,
+		SupportedAspectRatios: []string{
+			"1:1", "4:3", "3:4", "3:2", "2:3", "16:9", "9:16", "21:9",
+			"auto",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedSizes:     []string{"1K", "2K"},
+		DefaultSize:        "1K",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	OpenRouterRecraftV41: {
+		ID:       OpenRouterRecraftV41,
+		Name:     "OpenRouter – Recraft V4.1",
+		Provider: ProviderOpenRouter,
+		APIModel: "recraft/recraft-v4.1",
+		Pricing: map[string]map[string]float64{
+			"default": {"default": 0.035},
+		},
+		MaxPromptTokens:       4000,
+		SupportedAspectRatios: []string{"1:1", "4:3", "3:4", "16:9", "9:16", "auto"},
+		DefaultAspectRatio:    "1:1",
+		SupportedQualities:    []string{"default"},
+		DefaultQuality:        "default",
+	},
+	OpenRouterRecraftV41Pro: {
+		ID:       OpenRouterRecraftV41Pro,
+		Name:     "OpenRouter – Recraft V4.1 Pro",
+		Provider: ProviderOpenRouter,
+		APIModel: "recraft/recraft-v4.1-pro",
+		Pricing: map[string]map[string]float64{
+			"default": {"default": 0.21},
+		},
+		MaxPromptTokens:       4000,
+		SupportedAspectRatios: []string{"1:1", "4:3", "3:4", "16:9", "9:16", "auto"},
+		DefaultAspectRatio:    "1:1",
+		SupportedQualities:    []string{"default"},
+		DefaultQuality:        "default",
+	},
+	OpenRouterRecraftV41Vector: {
+		ID:       OpenRouterRecraftV41Vector,
+		Name:     "OpenRouter – Recraft V4.1 Vector",
+		Provider: ProviderOpenRouter,
+		APIModel: "recraft/recraft-v4.1-vector",
+		Pricing: map[string]map[string]float64{
+			"default": {"default": 0.08},
+		},
+		MaxPromptTokens:       4000,
+		SupportedAspectRatios: []string{"1:1", "4:3", "3:4", "16:9", "9:16", "auto"},
+		DefaultAspectRatio:    "1:1",
+		SupportedQualities:    []string{"default"},
+		DefaultQuality:        "default",
+	},
+	OpenRouterRecraftV41ProVector: {
+		ID:       OpenRouterRecraftV41ProVector,
+		Name:     "OpenRouter – Recraft V4.1 Pro Vector",
+		Provider: ProviderOpenRouter,
+		APIModel: "recraft/recraft-v4.1-pro-vector",
+		Pricing: map[string]map[string]float64{
+			"default": {"default": 0.3},
+		},
+		MaxPromptTokens:       4000,
+		SupportedAspectRatios: []string{"1:1", "4:3", "3:4", "16:9", "9:16", "auto"},
+		DefaultAspectRatio:    "1:1",
+		SupportedQualities:    []string{"default"},
+		DefaultQuality:        "default",
+	},
 	OpenRouterRecraftV4: {
 		ID:       OpenRouterRecraftV4,
 		Name:     "OpenRouter – Recraft V4",
@@ -960,13 +1253,11 @@ var OpenRouterImageGenerationModels = map[ID]ImageGenerationModel{
 		Pricing: map[string]map[string]float64{
 			"default": {"default": 0.04},
 		},
-		MaxPromptTokens: 1000,
-		SupportedAspectRatios: []string{
-			"1:1", "4:3", "3:4", "16:9", "9:16", "auto",
-		},
-		DefaultAspectRatio: "1:1",
-		SupportedQualities: []string{"default"},
-		DefaultQuality:     "default",
+		MaxPromptTokens:       4000,
+		SupportedAspectRatios: []string{"1:1", "4:3", "3:4", "16:9", "9:16", "auto"},
+		DefaultAspectRatio:    "1:1",
+		SupportedQualities:    []string{"default"},
+		DefaultQuality:        "default",
 	},
 	OpenRouterRecraftV4Vector: {
 		ID:       OpenRouterRecraftV4Vector,
@@ -974,37 +1265,68 @@ var OpenRouterImageGenerationModels = map[ID]ImageGenerationModel{
 		Provider: ProviderOpenRouter,
 		APIModel: "recraft/recraft-v4-vector",
 		Pricing: map[string]map[string]float64{
-			"default": {"default": 0.04},
+			"default": {"default": 0.08},
 		},
-		MaxPromptTokens: 1000,
-		SupportedAspectRatios: []string{
-			"1:1", "4:3", "3:4", "16:9", "9:16", "auto",
-		},
-		DefaultAspectRatio: "1:1",
-		SupportedQualities: []string{"default"},
-		DefaultQuality:     "default",
+		MaxPromptTokens:       4000,
+		SupportedAspectRatios: []string{"1:1", "4:3", "3:4", "16:9", "9:16", "auto"},
+		DefaultAspectRatio:    "1:1",
+		SupportedQualities:    []string{"default"},
+		DefaultQuality:        "default",
 	},
 }
+
+// OpenRouter text-to-speech model IDs.
+const (
+	OpenRouterMAIVoice2            ID = "openrouter.mai-voice-2"
+	OpenRouterMAIVoice2Flash       ID = "openrouter.mai-voice-2-flash"
+	OpenRouterVoxtralMiniTTS       ID = "openrouter.voxtral-mini-tts-2603"
+	OpenRouterGrokVoiceTTS1        ID = "openrouter.grok-voice-tts-1.0"
+	OpenRouterAura2                ID = "openrouter.aura-2"
+	OpenRouterGemini31FlashTTS     ID = "openrouter.gemini-3.1-flash-tts-preview"
+	OpenRouterQwenAudio3TTSFlash   ID = "openrouter.qwen-audio-3.0-tts-flash"
+	OpenRouterQwenAudio3TTSPlus    ID = "openrouter.qwen-audio-3.0-tts-plus"
+	OpenRouterFishAudioS1          ID = "openrouter.s1"
+	OpenRouterFishAudioS2Pro       ID = "openrouter.s2-pro"
+	OpenRouterFishAudioS21Pro      ID = "openrouter.s2.1-pro"
+	OpenRouterMiniMaxSpeech28HD    ID = "openrouter.speech-2.8-hd"
+	OpenRouterMiniMaxSpeech28Turbo ID = "openrouter.speech-2.8-turbo"
+	OpenRouterZonosTransformer     ID = "openrouter.zonos-v0.1-transformer"
+	OpenRouterZonosHybrid          ID = "openrouter.zonos-v0.1-hybrid"
+	OpenRouterOrpheus3B            ID = "openrouter.orpheus-3b-0.1-ft"
+	OpenRouterCSM1B                ID = "openrouter.csm-1b"
+	OpenRouterKokoro82M            ID = "openrouter.kokoro-82m"
+)
 
 // OpenRouterAudioModels maps OpenRouter text-to-speech model IDs to their
 // configurations.
 //
-// A small set of known-good defaults; pass any OpenRouter speech model id even
-// without an entry here.
+// Known-good defaults; any OpenRouter speech model id works even without an
+// entry here.
 //
-// Pricing source: https://openrouter.ai/api/v1/models?output_modalities=speech,
-// whose prompt rate for speech models is quoted per input character.
-// Fetched: 2026-07-31.
+// Source: https://openrouter.ai/api/v1/models?output_modalities=speech, whose
+// prompt rate for speech models is quoted per input character and is scaled to
+// CostPer1MChars here. Fetched: 2026-07-31.
 //
 // OpenRouter's /audio/speech defaults to pcm where OpenAI defaults to mp3, so
-// DefaultFormat records pcm.
+// DefaultFormat records pcm. Voice ids are per-model and per-upstream; there is
+// no list-voices route, so consult the model's page.
 var OpenRouterAudioModels = map[ID]AudioModel{
 	OpenRouterMAIVoice2: {
 		ID:                OpenRouterMAIVoice2,
 		Name:              "OpenRouter – MAI-Voice-2",
 		Provider:          ProviderOpenRouter,
 		APIModel:          "microsoft/mai-voice-2",
-		CostPer1MChars:    22.00,
+		CostPer1MChars:    22.0,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterMAIVoice2Flash: {
+		ID:                OpenRouterMAIVoice2Flash,
+		Name:              "OpenRouter – MAI-Voice-2 Flash",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "microsoft/mai-voice-2-flash",
+		CostPer1MChars:    15.0,
 		SupportedFormats:  []string{"mp3", "pcm"},
 		DefaultFormat:     "pcm",
 		SupportsStreaming: false,
@@ -1014,7 +1336,7 @@ var OpenRouterAudioModels = map[ID]AudioModel{
 		Name:              "OpenRouter – Voxtral Mini TTS",
 		Provider:          ProviderOpenRouter,
 		APIModel:          "mistralai/voxtral-mini-tts-2603",
-		CostPer1MChars:    16.00,
+		CostPer1MChars:    16.0,
 		SupportedFormats:  []string{"mp3", "pcm"},
 		DefaultFormat:     "pcm",
 		SupportsStreaming: false,
@@ -1024,7 +1346,7 @@ var OpenRouterAudioModels = map[ID]AudioModel{
 		Name:              "OpenRouter – Grok Voice TTS 1.0",
 		Provider:          ProviderOpenRouter,
 		APIModel:          "x-ai/grok-voice-tts-1.0",
-		CostPer1MChars:    15.00,
+		CostPer1MChars:    15.0,
 		SupportedFormats:  []string{"mp3", "pcm"},
 		DefaultFormat:     "pcm",
 		SupportsStreaming: false,
@@ -1034,7 +1356,7 @@ var OpenRouterAudioModels = map[ID]AudioModel{
 		Name:              "OpenRouter – Deepgram Aura-2",
 		Provider:          ProviderOpenRouter,
 		APIModel:          "deepgram/aura-2",
-		CostPer1MChars:    30.00,
+		CostPer1MChars:    30.0,
 		SupportedFormats:  []string{"mp3", "pcm"},
 		DefaultFormat:     "pcm",
 		SupportsStreaming: false,
@@ -1044,33 +1366,170 @@ var OpenRouterAudioModels = map[ID]AudioModel{
 		Name:              "OpenRouter – Gemini 3.1 Flash TTS Preview",
 		Provider:          ProviderOpenRouter,
 		APIModel:          "google/gemini-3.1-flash-tts-preview",
-		CostPer1MChars:    1.00,
+		CostPer1MChars:    1.0,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterQwenAudio3TTSFlash: {
+		ID:                OpenRouterQwenAudio3TTSFlash,
+		Name:              "OpenRouter – Qwen-Audio-3.0-TTS Flash",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "qwen/qwen-audio-3.0-tts-flash",
+		CostPer1MChars:    15.0,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterQwenAudio3TTSPlus: {
+		ID:                OpenRouterQwenAudio3TTSPlus,
+		Name:              "OpenRouter – Qwen-Audio-3.0-TTS Plus",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "qwen/qwen-audio-3.0-tts-plus",
+		CostPer1MChars:    20.0,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterFishAudioS1: {
+		ID:                OpenRouterFishAudioS1,
+		Name:              "OpenRouter – Fish Audio S1",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "fish-audio/s1",
+		CostPer1MChars:    15.0,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterFishAudioS2Pro: {
+		ID:                OpenRouterFishAudioS2Pro,
+		Name:              "OpenRouter – Fish Audio S2 Pro",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "fish-audio/s2-pro",
+		CostPer1MChars:    15.0,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterFishAudioS21Pro: {
+		ID:                OpenRouterFishAudioS21Pro,
+		Name:              "OpenRouter – Fish Audio S2.1 Pro",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "fish-audio/s2.1-pro",
+		CostPer1MChars:    15.0,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterMiniMaxSpeech28HD: {
+		ID:                OpenRouterMiniMaxSpeech28HD,
+		Name:              "OpenRouter – MiniMax Speech 2.8 HD",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "minimax/speech-2.8-hd",
+		CostPer1MChars:    100.0,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterMiniMaxSpeech28Turbo: {
+		ID:                OpenRouterMiniMaxSpeech28Turbo,
+		Name:              "OpenRouter – MiniMax Speech 2.8 Turbo",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "minimax/speech-2.8-turbo",
+		CostPer1MChars:    60.0,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterZonosTransformer: {
+		ID:                OpenRouterZonosTransformer,
+		Name:              "OpenRouter – Zonos v0.1 Transformer",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "zyphra/zonos-v0.1-transformer",
+		CostPer1MChars:    7.0,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterZonosHybrid: {
+		ID:                OpenRouterZonosHybrid,
+		Name:              "OpenRouter – Zonos v0.1 Hybrid",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "zyphra/zonos-v0.1-hybrid",
+		CostPer1MChars:    7.0,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterOrpheus3B: {
+		ID:                OpenRouterOrpheus3B,
+		Name:              "OpenRouter – Orpheus 3B",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "canopylabs/orpheus-3b-0.1-ft",
+		CostPer1MChars:    7.0,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterCSM1B: {
+		ID:                OpenRouterCSM1B,
+		Name:              "OpenRouter – Sesame CSM 1B",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "sesame/csm-1b",
+		CostPer1MChars:    7.0,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterKokoro82M: {
+		ID:                OpenRouterKokoro82M,
+		Name:              "OpenRouter – Kokoro 82M",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "hexgrad/kokoro-82m",
+		CostPer1MChars:    0.62,
 		SupportedFormats:  []string{"mp3", "pcm"},
 		DefaultFormat:     "pcm",
 		SupportsStreaming: false,
 	},
 }
 
+// OpenRouter speech-to-text model IDs.
+const (
+	OpenRouterWhisper1              ID = "openrouter.whisper-1"
+	OpenRouterWhisperLargeV3        ID = "openrouter.whisper-large-v3"
+	OpenRouterWhisperLargeV3Turbo   ID = "openrouter.whisper-large-v3-turbo"
+	OpenRouterGPT4oTranscribe       ID = "openrouter.gpt-4o-transcribe"
+	OpenRouterGPT4oMiniTranscribe   ID = "openrouter.gpt-4o-mini-transcribe"
+	OpenRouterVoxtralMiniTranscribe ID = "openrouter.voxtral-mini-transcribe"
+	OpenRouterFishAudioTranscribe1  ID = "openrouter.transcribe-1"
+	OpenRouterGrokSTT1              ID = "openrouter.grok-stt-1.0"
+	OpenRouterNova3                 ID = "openrouter.nova-3"
+	OpenRouterMAITranscribe15       ID = "openrouter.mai-transcribe-1.5"
+	OpenRouterParakeetTDT06BV3      ID = "openrouter.parakeet-tdt-0.6b-v3"
+	OpenRouterQwen3ASRFlash         ID = "openrouter.qwen3-asr-flash-2026-02-10"
+	OpenRouterChirp3                ID = "openrouter.chirp-3"
+)
+
 // OpenRouterTranscriptionModels maps OpenRouter speech-to-text model IDs to
 // their configurations.
 //
-// A small set of known-good defaults; pass any OpenRouter transcription model
-// id even without an entry here.
+// Known-good defaults; any OpenRouter transcription model id works even without
+// an entry here.
 //
-// Capability source: the OpenRouter models API filtered to transcription
-// outputs, plus the speech-to-text guide. Fetched: 2026-07-31.
+// Source: the OpenRouter models API filtered to transcription outputs, plus the
+// speech-to-text guide. Fetched: 2026-07-31.
 //
-// Two OpenRouter-wide caveats are encoded here. verbose_json - and with it
-// segments and word timestamps – is only accepted by the OpenAI-compatible
+// Two OpenRouter-wide caveats are encoded here. verbose_json — and with it
+// segments and word timestamps — is only accepted by the OpenAI-compatible
 // upstreams (OpenAI, Groq, Together); the rest reject it with HTTP 400, so
 // SupportsTimestamps is false for those. OpenRouter exposes no
 // /audio/translations route at all, so SupportsTranslation is false for every
 // entry regardless of what the upstream model itself can do.
 //
 // Rates mirror the upstream registries in this package where an entry exists.
-// Where OpenRouter bills in a unit TranscriptionModel cannot express (per audio
-// minute rather than per token) the cost fields are left zero rather than
-// converted into a fabricated per-token figure.
+// Where OpenRouter quotes a rate in a unit TranscriptionModel cannot express
+// (per audio minute rather than per token) the cost fields are left zero rather
+// than converted into a fabricated per-token figure.
 var OpenRouterTranscriptionModels = map[ID]TranscriptionModel{
 	OpenRouterWhisper1: {
 		ID:                       OpenRouterWhisper1,
@@ -1099,15 +1558,28 @@ var OpenRouterTranscriptionModels = map[ID]TranscriptionModel{
 		SupportsStreaming:        false,
 		SupportedResponseFormats: []string{"json", "verbose_json"},
 	},
+	OpenRouterWhisperLargeV3Turbo: {
+		ID:                       OpenRouterWhisperLargeV3Turbo,
+		Name:                     "OpenRouter – Whisper Large v3 Turbo",
+		Provider:                 ProviderOpenRouter,
+		APIModel:                 "openai/whisper-large-v3-turbo",
+		MaxFileSizeMB:            25,
+		SupportedFormats:         OpenAITranscriptionModels[Whisper1].SupportedFormats,
+		SupportsTimestamps:       true,
+		SupportsWordTimestamps:   true,
+		SupportsTranslation:      false,
+		SupportsStreaming:        false,
+		SupportedResponseFormats: []string{"json", "verbose_json"},
+	},
 	OpenRouterGPT4oTranscribe: {
 		ID:                       OpenRouterGPT4oTranscribe,
 		Name:                     "OpenRouter – GPT-4o Transcribe",
 		Provider:                 ProviderOpenRouter,
 		APIModel:                 "openai/gpt-4o-transcribe",
-		CostPer1MIn:              2.50,
-		CostPer1MOut:             10.00,
+		CostPer1MIn:              2.5,
+		CostPer1MOut:             10.0,
 		MaxFileSizeMB:            25,
-		SupportedFormats:         OpenAITranscriptionModels[GPT4oTranscribe].SupportedFormats,
+		SupportedFormats:         OpenAITranscriptionModels[Whisper1].SupportedFormats,
 		SupportsTimestamps:       false,
 		SupportsWordTimestamps:   false,
 		SupportsTranslation:      false,
@@ -1120,9 +1592,9 @@ var OpenRouterTranscriptionModels = map[ID]TranscriptionModel{
 		Provider:                 ProviderOpenRouter,
 		APIModel:                 "openai/gpt-4o-mini-transcribe",
 		CostPer1MIn:              1.25,
-		CostPer1MOut:             5.00,
+		CostPer1MOut:             5.0,
 		MaxFileSizeMB:            25,
-		SupportedFormats:         OpenAITranscriptionModels[GPT4oMiniTranscribe].SupportedFormats,
+		SupportedFormats:         OpenAITranscriptionModels[Whisper1].SupportedFormats,
 		SupportsTimestamps:       false,
 		SupportsWordTimestamps:   false,
 		SupportsTranslation:      false,
@@ -1135,7 +1607,7 @@ var OpenRouterTranscriptionModels = map[ID]TranscriptionModel{
 		Provider:                 ProviderOpenRouter,
 		APIModel:                 "mistralai/voxtral-mini-transcribe",
 		MaxFileSizeMB:            25,
-		SupportedFormats:         []string{"flac", "mp3", "m4a", "ogg", "wav"},
+		SupportedFormats:         OpenAITranscriptionModels[Whisper1].SupportedFormats,
 		SupportsTimestamps:       false,
 		SupportsWordTimestamps:   false,
 		SupportsTranslation:      false,
@@ -1148,7 +1620,7 @@ var OpenRouterTranscriptionModels = map[ID]TranscriptionModel{
 		Provider:                 ProviderOpenRouter,
 		APIModel:                 "fish-audio/transcribe-1",
 		MaxFileSizeMB:            25,
-		SupportedFormats:         []string{"mp3", "m4a", "wav"},
+		SupportedFormats:         OpenAITranscriptionModels[Whisper1].SupportedFormats,
 		SupportsTimestamps:       false,
 		SupportsWordTimestamps:   false,
 		SupportsTranslation:      false,
@@ -1161,7 +1633,72 @@ var OpenRouterTranscriptionModels = map[ID]TranscriptionModel{
 		Provider:                 ProviderOpenRouter,
 		APIModel:                 "x-ai/grok-stt-1.0",
 		MaxFileSizeMB:            25,
-		SupportedFormats:         []string{"mp3", "m4a", "wav"},
+		SupportedFormats:         OpenAITranscriptionModels[Whisper1].SupportedFormats,
+		SupportsTimestamps:       false,
+		SupportsWordTimestamps:   false,
+		SupportsTranslation:      false,
+		SupportsStreaming:        false,
+		SupportedResponseFormats: []string{"json"},
+	},
+	OpenRouterNova3: {
+		ID:                       OpenRouterNova3,
+		Name:                     "OpenRouter – Deepgram Nova-3",
+		Provider:                 ProviderOpenRouter,
+		APIModel:                 "deepgram/nova-3",
+		MaxFileSizeMB:            25,
+		SupportedFormats:         OpenAITranscriptionModels[Whisper1].SupportedFormats,
+		SupportsTimestamps:       false,
+		SupportsWordTimestamps:   false,
+		SupportsTranslation:      false,
+		SupportsStreaming:        false,
+		SupportedResponseFormats: []string{"json"},
+	},
+	OpenRouterMAITranscribe15: {
+		ID:                       OpenRouterMAITranscribe15,
+		Name:                     "OpenRouter – MAI-Transcribe 1.5",
+		Provider:                 ProviderOpenRouter,
+		APIModel:                 "microsoft/mai-transcribe-1.5",
+		MaxFileSizeMB:            25,
+		SupportedFormats:         OpenAITranscriptionModels[Whisper1].SupportedFormats,
+		SupportsTimestamps:       false,
+		SupportsWordTimestamps:   false,
+		SupportsTranslation:      false,
+		SupportsStreaming:        false,
+		SupportedResponseFormats: []string{"json"},
+	},
+	OpenRouterParakeetTDT06BV3: {
+		ID:                       OpenRouterParakeetTDT06BV3,
+		Name:                     "OpenRouter – Parakeet TDT 0.6B v3",
+		Provider:                 ProviderOpenRouter,
+		APIModel:                 "nvidia/parakeet-tdt-0.6b-v3",
+		MaxFileSizeMB:            25,
+		SupportedFormats:         OpenAITranscriptionModels[Whisper1].SupportedFormats,
+		SupportsTimestamps:       false,
+		SupportsWordTimestamps:   false,
+		SupportsTranslation:      false,
+		SupportsStreaming:        false,
+		SupportedResponseFormats: []string{"json"},
+	},
+	OpenRouterQwen3ASRFlash: {
+		ID:                       OpenRouterQwen3ASRFlash,
+		Name:                     "OpenRouter – Qwen3 ASR Flash",
+		Provider:                 ProviderOpenRouter,
+		APIModel:                 "qwen/qwen3-asr-flash-2026-02-10",
+		MaxFileSizeMB:            25,
+		SupportedFormats:         OpenAITranscriptionModels[Whisper1].SupportedFormats,
+		SupportsTimestamps:       false,
+		SupportsWordTimestamps:   false,
+		SupportsTranslation:      false,
+		SupportsStreaming:        false,
+		SupportedResponseFormats: []string{"json"},
+	},
+	OpenRouterChirp3: {
+		ID:                       OpenRouterChirp3,
+		Name:                     "OpenRouter – Chirp 3",
+		Provider:                 ProviderOpenRouter,
+		APIModel:                 "google/chirp-3",
+		MaxFileSizeMB:            25,
+		SupportedFormats:         OpenAITranscriptionModels[Whisper1].SupportedFormats,
 		SupportsTimestamps:       false,
 		SupportsWordTimestamps:   false,
 		SupportsTranslation:      false,

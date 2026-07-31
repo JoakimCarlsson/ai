@@ -156,6 +156,25 @@ func WithModel(m model.ImageGenerationModel) Option {
 	return func(o *Options) { o.model = m }
 }
 
+// WithModelID selects a model by raw OpenRouter id, for the models
+// [model.OpenRouterImageGenerationModels] does not catalogue. It is shorthand
+// for [WithModel] with a bare [model.ImageGenerationModel], and it is the
+// intended path for anything OpenRouter has routed since this package was last
+// updated:
+//
+//	openrouter.WithModelID("black-forest-labs/flux.2-pro")
+//
+// Nothing is validated locally, so the per-model option ceilings recorded on a
+// registered [model.ImageGenerationModel] are not available. Check the model's
+// supported_parameters via GET /api/v1/images/models before setting resolution,
+// quality, background or seed; OpenRouter rejects unsupported fields.
+func WithModelID(id string) Option {
+	return WithModel(model.ImageGenerationModel{
+		APIModel: id,
+		Provider: model.ProviderOpenRouter,
+	})
+}
+
 // WithBaseURL overrides [DefaultBaseURL]. Useful for proxies or staging.
 func WithBaseURL(baseURL string) Option {
 	return func(o *Options) { o.baseURL = baseURL }
