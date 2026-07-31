@@ -60,3 +60,51 @@ func TestWithHTTPClientTransportUsed(t *testing.T) {
 		t.Error("injected transport was not used for the request")
 	}
 }
+
+// TestWithAttachments covers the three states of the attachment-capability
+// override: unset leaves whatever resolveDeployment produced, an explicit true
+// declares support for a deployment name the registry cannot recognise, and an
+// explicit false overrides a table match that reports true.
+func TestWithAttachments(t *testing.T) {
+	tests := []struct {
+		name string
+		opts []Option
+		want bool
+	}{
+		{
+			name: "unset on unknown deployment stays false",
+			opts: []Option{WithDeployment("unknown-deployment")},
+			want: false,
+		},
+		{
+			name: "explicit true on unknown deployment",
+			opts: []Option{
+				WithDeployment("unknown-deployment"),
+				WithAttachments(true),
+			},
+			want: true,
+		},
+		{
+			name: "explicit false overrides a table match",
+			opts: []Option{
+				WithDeployment("gpt-4o"),
+				WithAttachments(false),
+			},
+			want: false,
+		},
+		{
+			name: "unset on a table match keeps registry value",
+			opts: []Option{WithDeployment("gpt-4o")},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NewLLM(tt.opts...).Model().SupportsAttachments
+			if got != tt.want {
+				t.Errorf("SupportsAttachments = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
