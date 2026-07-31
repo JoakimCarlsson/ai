@@ -4,9 +4,9 @@ go 1.25.0
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/joakimcarlsson/ai/embeddings v0.2.4
-	github.com/joakimcarlsson/ai/llm v0.5.2
-	github.com/joakimcarlsson/ai/message v0.5.1
+	github.com/joakimcarlsson/ai/embeddings v0.2.5
+	github.com/joakimcarlsson/ai/llm v0.5.3
+	github.com/joakimcarlsson/ai/message v0.5.2
 	github.com/joakimcarlsson/ai/tool v0.1.2
 )
 
@@ -17,7 +17,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
-	github.com/joakimcarlsson/ai/model v0.7.0 // indirect
+	github.com/joakimcarlsson/ai/model v0.8.0 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.0 // indirect
 	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
 	github.com/joakimcarlsson/ai/types v0.2.0 // indirect

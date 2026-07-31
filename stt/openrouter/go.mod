@@ -3,9 +3,9 @@ module github.com/joakimcarlsson/ai/stt/openrouter
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/model v0.7.0
-	github.com/joakimcarlsson/ai/stt v0.2.4
-	github.com/joakimcarlsson/ai/stt/openai v0.1.4
+	github.com/joakimcarlsson/ai/model v0.8.0
+	github.com/joakimcarlsson/ai/stt v0.2.5
+	github.com/joakimcarlsson/ai/stt/openai v0.1.5
 )
 
 require (
