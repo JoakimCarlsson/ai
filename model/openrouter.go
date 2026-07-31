@@ -856,3 +856,316 @@ var OpenRouterModels = map[ID]Model{
 		SupportsStructuredOut: OpenAIModels[GPT56Luna].SupportsStructuredOut,
 	},
 }
+
+// OpenRouter image generation model IDs.
+const (
+	OpenRouterSeedream45         ID = "openrouter.seedream-4.5"
+	OpenRouterGPTImage2          ID = "openrouter.gpt-image-2"
+	OpenRouterGemini25FlashImage ID = "openrouter.gemini-2.5-flash-image"
+	OpenRouterRecraftV4          ID = "openrouter.recraft-v4"
+	OpenRouterRecraftV4Vector    ID = "openrouter.recraft-v4-vector"
+)
+
+// OpenRouter text-to-speech model IDs.
+const (
+	OpenRouterMAIVoice2        ID = "openrouter.mai-voice-2"
+	OpenRouterVoxtralMiniTTS   ID = "openrouter.voxtral-mini-tts"
+	OpenRouterGrokVoiceTTS1    ID = "openrouter.grok-voice-tts-1.0"
+	OpenRouterAura2            ID = "openrouter.aura-2"
+	OpenRouterGemini31FlashTTS ID = "openrouter.gemini-3.1-flash-tts"
+)
+
+// OpenRouter speech-to-text model IDs.
+const (
+	OpenRouterWhisper1              ID = "openrouter.whisper-1"
+	OpenRouterWhisperLargeV3        ID = "openrouter.whisper-large-v3"
+	OpenRouterGPT4oTranscribe       ID = "openrouter.gpt-4o-transcribe"
+	OpenRouterGPT4oMiniTranscribe   ID = "openrouter.gpt-4o-mini-transcribe"
+	OpenRouterVoxtralMiniTranscribe ID = "openrouter.voxtral-mini-transcribe"
+	OpenRouterFishAudioTranscribe1  ID = "openrouter.fish-audio-transcribe-1"
+	OpenRouterGrokSTT1              ID = "openrouter.grok-stt-1.0"
+)
+
+// OpenRouterImageGenerationModels maps OpenRouter image model IDs to their
+// configurations.
+//
+// This is a small set of known-good defaults, not a mirror of OpenRouter's
+// catalogue: OpenRouter routes far more image models than this package
+// catalogues and the list moves weekly. Pass any OpenRouter image model id with
+// a bare ImageGenerationModel even without a registered entry here.
+//
+// Pricing source: https://openrouter.ai/api/v1/images/models/<id>/endpoints.
+// Fetched: 2026-07-31. Per-image rates are recorded under the "default" key.
+// gpt-image-2 and gemini-2.5-flash-image bill per output token rather than per
+// image, so their per-image figures mirror the upstream registries in this
+// package instead.
+var OpenRouterImageGenerationModels = map[ID]ImageGenerationModel{
+	OpenRouterSeedream45: {
+		ID:       OpenRouterSeedream45,
+		Name:     "OpenRouter – Seedream 4.5",
+		Provider: ProviderOpenRouter,
+		APIModel: "bytedance-seed/seedream-4.5",
+		Pricing: map[string]map[string]float64{
+			"default": {"default": 0.04},
+		},
+		MaxPromptTokens: 4000,
+		SupportedAspectRatios: []string{
+			"1:1", "1:2", "2:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4",
+			"9:16", "16:9", "9:19.5", "19.5:9", "9:20", "20:9", "9:21", "21:9",
+			"auto",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedSizes:     []string{"1K", "2K", "4K"},
+		DefaultSize:        "2K",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	OpenRouterGPTImage2: {
+		ID:              OpenRouterGPTImage2,
+		Name:            "OpenRouter – GPT Image 2",
+		Provider:        ProviderOpenRouter,
+		APIModel:        "openai/gpt-image-2",
+		Pricing:         OpenAIImageGenerationModels[GPTImage2].Pricing,
+		MaxPromptTokens: OpenAIImageGenerationModels[GPTImage2].MaxPromptTokens,
+		SupportedSizes:  OpenAIImageGenerationModels[GPTImage2].SupportedSizes,
+		DefaultSize:     OpenAIImageGenerationModels[GPTImage2].DefaultSize,
+		SupportedAspectRatios: []string{
+			"1:1", "3:2", "2:3", "4:3", "3:4", "16:9", "9:16", "21:9", "auto",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedQualities: []string{"auto", "low", "medium", "high"},
+		DefaultQuality:     OpenAIImageGenerationModels[GPTImage2].DefaultQuality,
+		SupportsStreaming:  true,
+	},
+	OpenRouterGemini25FlashImage: {
+		ID:              OpenRouterGemini25FlashImage,
+		Name:            "OpenRouter – Gemini 2.5 Flash Image (Nano Banana)",
+		Provider:        ProviderOpenRouter,
+		APIModel:        "google/gemini-2.5-flash-image",
+		Pricing:         GeminiImageGenerationModels[Gemini25FlashImage].Pricing,
+		MaxPromptTokens: GeminiImageGenerationModels[Gemini25FlashImage].MaxPromptTokens,
+		SupportedAspectRatios: []string{
+			"1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9",
+			"21:9",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	OpenRouterRecraftV4: {
+		ID:       OpenRouterRecraftV4,
+		Name:     "OpenRouter – Recraft V4",
+		Provider: ProviderOpenRouter,
+		APIModel: "recraft/recraft-v4",
+		Pricing: map[string]map[string]float64{
+			"default": {"default": 0.04},
+		},
+		MaxPromptTokens: 1000,
+		SupportedAspectRatios: []string{
+			"1:1", "4:3", "3:4", "16:9", "9:16", "auto",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+	OpenRouterRecraftV4Vector: {
+		ID:       OpenRouterRecraftV4Vector,
+		Name:     "OpenRouter – Recraft V4 Vector",
+		Provider: ProviderOpenRouter,
+		APIModel: "recraft/recraft-v4-vector",
+		Pricing: map[string]map[string]float64{
+			"default": {"default": 0.04},
+		},
+		MaxPromptTokens: 1000,
+		SupportedAspectRatios: []string{
+			"1:1", "4:3", "3:4", "16:9", "9:16", "auto",
+		},
+		DefaultAspectRatio: "1:1",
+		SupportedQualities: []string{"default"},
+		DefaultQuality:     "default",
+	},
+}
+
+// OpenRouterAudioModels maps OpenRouter text-to-speech model IDs to their
+// configurations.
+//
+// A small set of known-good defaults; pass any OpenRouter speech model id even
+// without an entry here.
+//
+// Pricing source: https://openrouter.ai/api/v1/models?output_modalities=speech,
+// whose prompt rate for speech models is quoted per input character.
+// Fetched: 2026-07-31.
+//
+// OpenRouter's /audio/speech defaults to pcm where OpenAI defaults to mp3, so
+// DefaultFormat records pcm.
+var OpenRouterAudioModels = map[ID]AudioModel{
+	OpenRouterMAIVoice2: {
+		ID:                OpenRouterMAIVoice2,
+		Name:              "OpenRouter – MAI-Voice-2",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "microsoft/mai-voice-2",
+		CostPer1MChars:    22.00,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterVoxtralMiniTTS: {
+		ID:                OpenRouterVoxtralMiniTTS,
+		Name:              "OpenRouter – Voxtral Mini TTS",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "mistralai/voxtral-mini-tts-2603",
+		CostPer1MChars:    16.00,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterGrokVoiceTTS1: {
+		ID:                OpenRouterGrokVoiceTTS1,
+		Name:              "OpenRouter – Grok Voice TTS 1.0",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "x-ai/grok-voice-tts-1.0",
+		CostPer1MChars:    15.00,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterAura2: {
+		ID:                OpenRouterAura2,
+		Name:              "OpenRouter – Deepgram Aura-2",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "deepgram/aura-2",
+		CostPer1MChars:    30.00,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+	OpenRouterGemini31FlashTTS: {
+		ID:                OpenRouterGemini31FlashTTS,
+		Name:              "OpenRouter – Gemini 3.1 Flash TTS Preview",
+		Provider:          ProviderOpenRouter,
+		APIModel:          "google/gemini-3.1-flash-tts-preview",
+		CostPer1MChars:    1.00,
+		SupportedFormats:  []string{"mp3", "pcm"},
+		DefaultFormat:     "pcm",
+		SupportsStreaming: false,
+	},
+}
+
+// OpenRouterTranscriptionModels maps OpenRouter speech-to-text model IDs to
+// their configurations.
+//
+// A small set of known-good defaults; pass any OpenRouter transcription model
+// id even without an entry here.
+//
+// Capability source: the OpenRouter models API filtered to transcription
+// outputs, plus the speech-to-text guide. Fetched: 2026-07-31.
+//
+// Two OpenRouter-wide caveats are encoded here. verbose_json - and with it
+// segments and word timestamps – is only accepted by the OpenAI-compatible
+// upstreams (OpenAI, Groq, Together); the rest reject it with HTTP 400, so
+// SupportsTimestamps is false for those. OpenRouter exposes no
+// /audio/translations route at all, so SupportsTranslation is false for every
+// entry regardless of what the upstream model itself can do.
+//
+// Rates mirror the upstream registries in this package where an entry exists.
+// Where OpenRouter bills in a unit TranscriptionModel cannot express (per audio
+// minute rather than per token) the cost fields are left zero rather than
+// converted into a fabricated per-token figure.
+var OpenRouterTranscriptionModels = map[ID]TranscriptionModel{
+	OpenRouterWhisper1: {
+		ID:                       OpenRouterWhisper1,
+		Name:                     "OpenRouter – Whisper v2",
+		Provider:                 ProviderOpenRouter,
+		APIModel:                 "openai/whisper-1",
+		CostPer1MIn:              OpenAITranscriptionModels[Whisper1].CostPer1MIn,
+		MaxFileSizeMB:            OpenAITranscriptionModels[Whisper1].MaxFileSizeMB,
+		SupportedFormats:         OpenAITranscriptionModels[Whisper1].SupportedFormats,
+		SupportsTimestamps:       true,
+		SupportsWordTimestamps:   true,
+		SupportsTranslation:      false,
+		SupportsStreaming:        false,
+		SupportedResponseFormats: []string{"json", "verbose_json"},
+	},
+	OpenRouterWhisperLargeV3: {
+		ID:                       OpenRouterWhisperLargeV3,
+		Name:                     "OpenRouter – Whisper Large v3",
+		Provider:                 ProviderOpenRouter,
+		APIModel:                 "openai/whisper-large-v3",
+		MaxFileSizeMB:            25,
+		SupportedFormats:         OpenAITranscriptionModels[Whisper1].SupportedFormats,
+		SupportsTimestamps:       true,
+		SupportsWordTimestamps:   true,
+		SupportsTranslation:      false,
+		SupportsStreaming:        false,
+		SupportedResponseFormats: []string{"json", "verbose_json"},
+	},
+	OpenRouterGPT4oTranscribe: {
+		ID:                       OpenRouterGPT4oTranscribe,
+		Name:                     "OpenRouter – GPT-4o Transcribe",
+		Provider:                 ProviderOpenRouter,
+		APIModel:                 "openai/gpt-4o-transcribe",
+		CostPer1MIn:              2.50,
+		CostPer1MOut:             10.00,
+		MaxFileSizeMB:            25,
+		SupportedFormats:         OpenAITranscriptionModels[GPT4oTranscribe].SupportedFormats,
+		SupportsTimestamps:       false,
+		SupportsWordTimestamps:   false,
+		SupportsTranslation:      false,
+		SupportsStreaming:        false,
+		SupportedResponseFormats: []string{"json"},
+	},
+	OpenRouterGPT4oMiniTranscribe: {
+		ID:                       OpenRouterGPT4oMiniTranscribe,
+		Name:                     "OpenRouter – GPT-4o Mini Transcribe",
+		Provider:                 ProviderOpenRouter,
+		APIModel:                 "openai/gpt-4o-mini-transcribe",
+		CostPer1MIn:              1.25,
+		CostPer1MOut:             5.00,
+		MaxFileSizeMB:            25,
+		SupportedFormats:         OpenAITranscriptionModels[GPT4oMiniTranscribe].SupportedFormats,
+		SupportsTimestamps:       false,
+		SupportsWordTimestamps:   false,
+		SupportsTranslation:      false,
+		SupportsStreaming:        false,
+		SupportedResponseFormats: []string{"json"},
+	},
+	OpenRouterVoxtralMiniTranscribe: {
+		ID:                       OpenRouterVoxtralMiniTranscribe,
+		Name:                     "OpenRouter – Voxtral Mini Transcribe",
+		Provider:                 ProviderOpenRouter,
+		APIModel:                 "mistralai/voxtral-mini-transcribe",
+		MaxFileSizeMB:            25,
+		SupportedFormats:         []string{"flac", "mp3", "m4a", "ogg", "wav"},
+		SupportsTimestamps:       false,
+		SupportsWordTimestamps:   false,
+		SupportsTranslation:      false,
+		SupportsStreaming:        false,
+		SupportedResponseFormats: []string{"json"},
+	},
+	OpenRouterFishAudioTranscribe1: {
+		ID:                       OpenRouterFishAudioTranscribe1,
+		Name:                     "OpenRouter – Fish Audio Transcribe 1",
+		Provider:                 ProviderOpenRouter,
+		APIModel:                 "fish-audio/transcribe-1",
+		MaxFileSizeMB:            25,
+		SupportedFormats:         []string{"mp3", "m4a", "wav"},
+		SupportsTimestamps:       false,
+		SupportsWordTimestamps:   false,
+		SupportsTranslation:      false,
+		SupportsStreaming:        false,
+		SupportedResponseFormats: []string{"json"},
+	},
+	OpenRouterGrokSTT1: {
+		ID:                       OpenRouterGrokSTT1,
+		Name:                     "OpenRouter – Grok STT 1.0",
+		Provider:                 ProviderOpenRouter,
+		APIModel:                 "x-ai/grok-stt-1.0",
+		MaxFileSizeMB:            25,
+		SupportedFormats:         []string{"mp3", "m4a", "wav"},
+		SupportsTimestamps:       false,
+		SupportsWordTimestamps:   false,
+		SupportsTranslation:      false,
+		SupportsStreaming:        false,
+		SupportedResponseFormats: []string{"json"},
+	},
+}

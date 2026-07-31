@@ -74,6 +74,7 @@ Under `image/`:
 | `image/azure` | Azure OpenAI | GPT Image 1.5 / 2 (Azure-hosted; api-key or Entra ID) | ✅ (gpt-image-*) |
 | `image/gemini` | Google Gemini | Gemini 2.5 Flash Image, Gemini 3 Pro Image, Imagen 4 / 4 Ultra / 4 Fast | ❌ |
 | `image/xai` | xAI | Grok 2 Image, Grok Imagine, Grok Imagine Pro | ❌ |
+| `image/openrouter` | OpenRouter | Seedream 4.5, GPT Image 2, Gemini 2.5 Flash Image, Recraft V4 (+ any routed id) | ✅ (gpt-image-*) |
 
 ## TTS (Text-to-Speech) Providers
 
@@ -86,6 +87,7 @@ Under `tts/`:
 | `tts/google` | Google Cloud | (buffered) | ❌ |
 | `tts/azure` | Azure Speech | (buffered) | ❌ |
 | `tts/deepgram` | Deepgram Aura | ✅ | ❌ |
+| `tts/openrouter` | OpenRouter (wraps `tts/openai`) | (buffered) | ❌ |
 
 ## STT (Speech-to-Text) Providers
 
@@ -99,6 +101,7 @@ Under `stt/`:
 | `stt/google` | Google Cloud Speech | ❌ | ❌ | ✅ |
 | `stt/elevenlabs` | ElevenLabs Scribe v2 Realtime | ✅ | ❌ | ✅ |
 | `stt/berget` | Berget AI (Whisper: Swedish/Norwegian/v3) | ❌ | ✅ | ✅ |
+| `stt/openrouter` | OpenRouter (wraps `stt/openai`) | ❌ | ❌ | ✅ (OpenAI-compatible upstreams) |
 
 ## Fill-in-the-Middle (FIM) Providers
 

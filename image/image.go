@@ -54,6 +54,10 @@ import (
 type GenerationUsage struct {
 	// PromptTokens is the number of tokens in the input prompt.
 	PromptTokens int64
+	// Cost is the vendor-reported cost of the request in US dollars. Only
+	// vendors that bill the request explicitly (OpenRouter reports usage.cost)
+	// set it; it stays zero elsewhere and is never derived from token counts.
+	Cost float64
 }
 
 // GenerationResult represents a single generated image with its metadata.
@@ -64,6 +68,11 @@ type GenerationResult struct {
 	ImageBase64 string
 	// RevisedPrompt contains the prompt that was actually used to generate the image.
 	RevisedPrompt string
+	// MediaType is the IANA media type of the returned bytes (for example
+	// "image/png", or "image/svg+xml" for vector models). Only vendors that
+	// report it per image populate this; it stays empty elsewhere, in which
+	// case callers fall back to the format they requested.
+	MediaType string
 }
 
 // GenerationResponse contains the generated images and metadata from an image generation request.
@@ -98,6 +107,9 @@ type StreamEvent struct {
 	Size string `json:"size,omitempty"`
 	// Quality is the quality setting of the image.
 	Quality string `json:"quality,omitempty"`
+	// MediaType is the IANA media type of the streamed bytes, when the vendor
+	// reports one.
+	MediaType string `json:"media_type,omitempty"`
 }
 
 // StreamCallback is called for each streaming event during image generation.

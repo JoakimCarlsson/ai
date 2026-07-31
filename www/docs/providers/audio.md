@@ -39,6 +39,27 @@ client := ttsopenai.NewGeneration(
 
 Google Cloud, Azure Speech, Deepgram Aura follow the same shape.
 
+OpenRouter is a thin wrapper over `tts/openai` that fixes the base URL, so one
+key reaches OpenAI, Google, Mistral, Microsoft and Deepgram voices:
+
+```go
+import ttsopenrouter "github.com/joakimcarlsson/ai/tts/openrouter"
+
+client := ttsopenrouter.NewGeneration(
+    ttsopenai.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
+    ttsopenai.WithModel(model.OpenRouterAudioModels[model.OpenRouterMAIVoice2]),
+    ttsopenai.WithVoice("en-US-Harper:MAI-Voice-2"),
+    ttsopenai.WithOutputFormat("mp3"),
+    ttsopenrouter.WithModelFallbacks("mistralai/voxtral-mini-tts-2603"),
+)
+```
+
+Two OpenRouter specifics: `response_format` defaults to `pcm` rather than
+OpenAI's `mp3` and the only documented values are `mp3` and `pcm`; and `speed`
+is honored only by upstreams that support it and silently ignored by the rest.
+OpenRouter routes more speech models than `model` catalogues — pass any id via
+`ttsopenai.WithModel(model.AudioModel{APIModel: "..."})`.
+
 ## Streaming
 
 ElevenLabs and Deepgram stream chunked audio:

@@ -28,6 +28,7 @@ use (
 	./image/gemini
 	./image/xai
 	./image/azure
+	./image/openrouter
 
 	./rerankers
 	./rerankers/voyage
@@ -46,6 +47,7 @@ use (
 	./stt/elevenlabs
 	./stt/azure
 	./stt/berget
+	./stt/openrouter
 
 	./embeddings
 	./embeddings/openai
@@ -62,6 +64,7 @@ use (
 	./tts/google
 	./tts/azure
 	./tts/deepgram
+	./tts/openrouter
 
 	./llm
 	./llm/anthropic

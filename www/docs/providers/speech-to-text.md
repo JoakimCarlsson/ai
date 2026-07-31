@@ -41,6 +41,27 @@ client := sttberget.NewSpeechToText(
 )
 ```
 
+OpenRouter is the same shape via `stt/openrouter`, reaching Whisper, GPT-4o
+Transcribe, Voxtral, Fish Audio and Grok STT on one key:
+
+```go
+import sttopenrouter "github.com/joakimcarlsson/ai/stt/openrouter"
+
+client := sttopenrouter.NewSpeechToText(
+    sttopenai.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
+    sttopenai.WithModel(model.OpenRouterTranscriptionModels[model.OpenRouterWhisper1]),
+)
+```
+
+Two OpenRouter specifics. `response_format="verbose_json"` — and with it the
+`Segments` and `Words` arrays — is only accepted by the OpenAI-compatible
+upstreams (OpenAI, Groq, Together); the rest answer HTTP 400, so pass
+`stt.WithResponseFormat("json")` when routing elsewhere. And OpenRouter
+publishes no `/audio/translations` route, so `Translate` returns
+`sttopenrouter.ErrTranslationNotSupported` instead of issuing a doomed request.
+OpenRouter routes more transcription models than `model` catalogues — pass any
+id via `sttopenai.WithModel(model.TranscriptionModel{APIModel: "..."})`.
+
 ## Translation (OpenAI only)
 
 ```go

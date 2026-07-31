@@ -159,6 +159,60 @@ imagexai.WithResponseFormat(imagexai.ResponseFormatBase64) // url | b64_json
 imagexai.WithUser(string)                                  // end-user identifier
 ```
 
+## OpenRouter
+
+Unlike the TTS and STT OpenRouter packages, `image/openrouter` is a full
+implementation rather than a base-URL wrapper: OpenRouter's image endpoint is
+`POST /api/v1/images`, a different path and body from OpenAI's
+`/v1/images/generations`.
+
+```go
+import imageopenrouter "github.com/joakimcarlsson/ai/image/openrouter"
+
+client := imageopenrouter.NewGeneration(
+    imageopenrouter.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
+    imageopenrouter.WithModel(model.OpenRouterImageGenerationModels[model.OpenRouterSeedream45]),
+    imageopenrouter.WithAspectRatio(imageopenrouter.AspectRatio16x9),
+    imageopenrouter.WithResolution(imageopenrouter.Resolution2K),
+)
+
+resp, err := client.GenerateImage(ctx, "A red panda astronaut")
+data, _ := image.DecodeBase64Image(resp.Images[0].ImageBase64)
+fmt.Println(resp.Images[0].MediaType) // image/png
+fmt.Println(resp.Usage.Cost)         // 0.04 — dollars, as OpenRouter reported them
+```
+
+Full option set:
+
+```go
+imageopenrouter.WithN(int)                                          // 1–10, per-model ceiling
+imageopenrouter.WithSize("2048x2048")                               // tier or explicit pixels
+imageopenrouter.WithAspectRatio(imageopenrouter.AspectRatio16x9)    // 18 values
+imageopenrouter.WithResolution(imageopenrouter.Resolution2K)        // 1K | 2K | 4K
+imageopenrouter.WithQuality(imageopenrouter.QualityHigh)            // auto | low | medium | high
+imageopenrouter.WithBackground(imageopenrouter.BackgroundTransparent) // auto | transparent | opaque
+imageopenrouter.WithOutputFormat(imageopenrouter.OutputFormatWebP)  // png | jpeg | webp | svg
+imageopenrouter.WithOutputCompression(int)                          // 0–100, webp/jpeg
+imageopenrouter.WithSeed(int64)                                     // where supported
+imageopenrouter.WithInputReferences(urls ...string)                 // image-to-image
+imageopenrouter.WithProviderRouting(order []string, allowFallbacks bool)
+imageopenrouter.WithModelFallbacks(models ...string)
+imageopenrouter.WithRequestJSONField(key string, value any)         // escape hatch
+imageopenrouter.WithHTTPClient(*http.Client)
+imageopenrouter.WithExtraHeaders(map[string]string)                 // HTTP-Referer, X-Title
+imageopenrouter.WithTimeout(time.Duration)
+```
+
+Not every model accepts every knob — OpenRouter rejects unsupported fields
+rather than ignoring them. Query `GET /api/v1/images/models` for a model's
+`supported_parameters` first. OpenRouter routes far more image models than
+`model` catalogues; pass any id via
+`imageopenrouter.WithModel(model.ImageGenerationModel{APIModel: "..."})`.
+
+`GenerateImageStreaming` is real here, not `ErrStreamingNotSupported`: models
+whose descriptor reports `supports_streaming` (the `gpt-image-*` family today)
+deliver `EventPartialImage` frames before the final `EventCompleted`.
+
 Per-model capability data — including `SupportedAspectRatios` — lives on
 `model.ImageGenerationModel`. Inspect it to know what a given model accepts:
 
