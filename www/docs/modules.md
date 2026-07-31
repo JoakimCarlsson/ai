@@ -74,6 +74,7 @@ Each carries exactly one vendor SDK.
 | `tts/google` | `cloud.google.com/go/texttospeech` |
 | `tts/azure` | `net/http` (Azure Cognitive Services Speech) |
 | `tts/deepgram` | `net/http` |
+| `tts/openrouter` | `openai-go` (thin wrapper over `tts/openai`) |
 
 ### STT
 
@@ -85,6 +86,7 @@ Each carries exactly one vendor SDK.
 | `stt/assemblyai` | `assemblyai-go-sdk` |
 | `stt/google` | `cloud.google.com/go/speech` |
 | `stt/berget` | `openai-go` (thin wrapper over `stt/openai`) |
+| `stt/openrouter` | `openai-go` (thin wrapper over `stt/openai`) |
 
 ### Image generation
 
@@ -93,6 +95,7 @@ Each carries exactly one vendor SDK.
 | `image/openai` | `openai-go` (also xAI via `WithBaseURL`) |
 | `image/azure` | `openai-go` (Azure OpenAI; wraps `image/openai`) |
 | `image/gemini` | `google.golang.org/genai` (also Vertex AI) |
+| `image/openrouter` | `net/http` (OpenRouter's own `/images` endpoint) |
 
 ### Rerankers
 

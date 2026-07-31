@@ -23,6 +23,8 @@ type Options struct {
 	speed        *float64
 	voice        string
 	outputFormat string
+
+	extraBodyFields map[string]any
 }
 
 // Option configures Options.
@@ -79,6 +81,23 @@ func WithOutputFormat(
 	return func(o *Options) { o.outputFormat = format }
 }
 
+// WithRequestJSONField injects an arbitrary top-level field into the request
+// body via the SDK's WithJSONSet. It is the shared mechanism OpenAI-compatible
+// providers use to express vendor features that are absent from the OpenAI wire
+// schema, such as OpenRouter's provider routing object. Injected fields are only
+// meaningful when a custom base URL targets a provider that accepts them.
+func WithRequestJSONField(
+	key string,
+	value any,
+) Option {
+	return func(o *Options) {
+		if o.extraBodyFields == nil {
+			o.extraBodyFields = make(map[string]any)
+		}
+		o.extraBodyFields[key] = value
+	}
+}
+
 // Client implements [tts.Generation] against the OpenAI Audio Speech API.
 type Client struct {
 	options Options
@@ -113,6 +132,14 @@ func NewGeneration(opts ...Option) tts.Generation {
 
 // Model returns the configured TTS model.
 func (c *Client) Model() model.AudioModel { return c.options.model }
+
+func (c *Client) requestOptions() []option.RequestOption {
+	var opts []option.RequestOption
+	for k, v := range c.options.extraBodyFields {
+		opts = append(opts, option.WithJSONSet(k, v))
+	}
+	return opts
+}
 
 // GenerateAudio creates audio from text and returns the complete audio data.
 func (c *Client) GenerateAudio(
@@ -150,7 +177,7 @@ func (c *Client) GenerateAudio(
 		params.Speed = param.NewOpt(*c.options.speed)
 	}
 
-	resp, err := c.client.Audio.Speech.New(ctx, params)
+	resp, err := c.client.Audio.Speech.New(ctx, params, c.requestOptions()...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate audio: %w", err)
 	}

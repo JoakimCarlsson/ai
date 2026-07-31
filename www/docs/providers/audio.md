@@ -39,6 +39,44 @@ client := ttsopenai.NewGeneration(
 
 Google Cloud, Azure Speech, Deepgram Aura follow the same shape.
 
+OpenRouter is a thin wrapper over `tts/openai` that fixes the base URL, so one
+key reaches OpenAI, Google, Mistral, Microsoft and Deepgram voices:
+
+```go
+import ttsopenrouter "github.com/joakimcarlsson/ai/tts/openrouter"
+
+client := ttsopenrouter.NewGeneration(
+    ttsopenai.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
+    ttsopenai.WithModel(model.OpenRouterAudioModels[model.OpenRouterMAIVoice2]),
+    ttsopenai.WithVoice("en-US-Harper:MAI-Voice-2"),
+    ttsopenai.WithOutputFormat("mp3"),
+)
+```
+
+There is no model-fallback option: OpenRouter documents its `models` fallback
+array for chat completions only, and the audio endpoints ignore request fields
+they do not recognise, so sending it would look like it worked while doing
+nothing. `WithProviderRouting` is documented for `/audio/speech` and is wired up.
+
+Two OpenRouter specifics: `response_format` defaults to `pcm` rather than
+OpenAI's `mp3` and the only documented values are `mp3` and `pcm`; and `speed`
+is honored only by upstreams that support it and silently ignored by the rest.
+`model.OpenRouterAudioModels` carries 18 known-good defaults. OpenRouter routes
+more than that, so for anything it does not define, `WithModelID` takes a raw
+id:
+
+```go
+client := ttsopenrouter.NewGeneration(
+    ttsopenai.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
+    ttsopenrouter.WithModelID("minimax/speech-2.8-hd"),
+    ttsopenai.WithOutputFormat("mp3"),
+)
+```
+
+`Model()` then reports only the id and provider — no per-character cost, no
+format list. Pass a hand-built `model.AudioModel` to `ttsopenai.WithModel`
+instead when something downstream reads those fields.
+
 ## Streaming
 
 ElevenLabs and Deepgram stream chunked audio:
