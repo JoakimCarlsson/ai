@@ -3,8 +3,8 @@ module github.com/joakimcarlsson/ai/stt/azure
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/model v0.7.0
-	github.com/joakimcarlsson/ai/stt v0.2.4
+	github.com/joakimcarlsson/ai/model v0.8.0
+	github.com/joakimcarlsson/ai/stt v0.2.5
 )
 
 require (

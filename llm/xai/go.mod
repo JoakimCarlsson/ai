@@ -3,10 +3,10 @@ module github.com/joakimcarlsson/ai/llm/xai
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/llm v0.5.2
-	github.com/joakimcarlsson/ai/llm/openai v0.4.7
-	github.com/joakimcarlsson/ai/message v0.5.1
-	github.com/joakimcarlsson/ai/model v0.7.0
+	github.com/joakimcarlsson/ai/llm v0.5.3
+	github.com/joakimcarlsson/ai/llm/openai v0.4.8
+	github.com/joakimcarlsson/ai/message v0.5.2
+	github.com/joakimcarlsson/ai/model v0.8.0
 	github.com/joakimcarlsson/ai/schema v0.2.0
 	github.com/joakimcarlsson/ai/tool v0.1.2
 	github.com/joakimcarlsson/ai/types v0.2.0

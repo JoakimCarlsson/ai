@@ -3,8 +3,8 @@ module github.com/joakimcarlsson/ai/fim/mistral
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/fim v0.2.2
-	github.com/joakimcarlsson/ai/model v0.7.0
+	github.com/joakimcarlsson/ai/fim v0.2.3
+	github.com/joakimcarlsson/ai/model v0.8.0
 )
 
 require (
