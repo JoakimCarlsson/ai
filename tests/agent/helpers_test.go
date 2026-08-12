@@ -20,6 +20,10 @@ import (
 	"github.com/joakimcarlsson/ai/types"
 )
 
+// measurableDelay exceeds the coarsest monotonic clock granularity we target
+// (Windows), so an elapsed time measured across it is reliably non-zero.
+const measurableDelay = 5 * time.Millisecond
+
 type mockResponse struct {
 	Content      string
 	Reasoning    string
@@ -27,6 +31,11 @@ type mockResponse struct {
 	FinishReason message.FinishReason
 	Usage        llm.TokenUsage
 	Err          error
+
+	// Delay makes the mock block before responding, so tests that assert on
+	// measured durations observe a non-zero elapsed time regardless of the
+	// platform's monotonic clock granularity.
+	Delay time.Duration
 }
 
 type mockLLM struct {
@@ -70,6 +79,9 @@ func (m *mockLLM) SendMessages(
 ) (*llm.Response, error) {
 	m.recordCall(msgs)
 	resp := m.nextResponse()
+	if resp.Delay > 0 {
+		time.Sleep(resp.Delay)
+	}
 	if resp.Err != nil {
 		return nil, resp.Err
 	}
@@ -101,6 +113,9 @@ func (m *mockLLM) StreamResponse(
 	go func() {
 		defer close(ch)
 		resp := m.nextResponse()
+		if resp.Delay > 0 {
+			time.Sleep(resp.Delay)
+		}
 		if resp.Err != nil {
 			ch <- llm.Event{Type: types.EventError, Error: resp.Err}
 			return
