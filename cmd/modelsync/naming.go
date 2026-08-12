@@ -1,6 +1,7 @@
 package main
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
@@ -17,20 +18,38 @@ func catalogID(apiModel string) string {
 	return strings.ReplaceAll(slug, ":", "-")
 }
 
+var datedSnapshot = regexp.MustCompile(`-\d{8}$`)
+
+// undated strips the dated-snapshot suffix providers pin releases with, so
+// "claude-haiku-4-5-20251001" and "claude-haiku-4-5" are recognised as the same
+// model and the catalog entry is updated rather than duplicated.
+func undated(apiModel string) string {
+	return datedSnapshot.ReplaceAllString(apiModel, "")
+}
+
 // uniqueID derives a catalog ID that no other entry in the package already
 // claims. Two vendors can ship the same slug, and a catalog can already hold a
 // hand-picked ID for one of them, so a clash falls back to a vendor-qualified
 // ID.
-func uniqueID(apiModel, prefix string, taken map[string]bool) string {
-	id := prefix + catalogID(apiModel)
+func uniqueID(
+	apiModel, prefix string,
+	full bool,
+	taken map[string]bool,
+) string {
+	slug := catalogID(apiModel)
+	if full {
+		slug = strings.ReplaceAll(apiModel, ":", "-")
+	}
+
+	id := prefix + slug
 	if !taken[id] {
 		return id
 	}
 
-	vendor, slug := splitSlug(apiModel)
-	if vendor != "" {
+	vendor, tail := splitSlug(apiModel)
+	if vendor != "" && !full {
 		qualified := prefix + strings.ReplaceAll(vendor, "/", "-") + "-" +
-			strings.ReplaceAll(slug, ":", "-")
+			strings.ReplaceAll(tail, ":", "-")
 		if !taken[qualified] {
 			return qualified
 		}

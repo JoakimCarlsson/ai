@@ -138,7 +138,6 @@ const (
 	KatCoderAirV25                       string = "openrouter.kat-coder-air-v2.5"
 	KatCoderProV2                        string = "openrouter.kat-coder-pro-v2"
 	KatCoderProV25                       string = "openrouter.kat-coder-pro-v2.5"
-	Lfm2526BFree                         string = "openrouter.lfm-2.5-2.6b-free"
 	Weaver                               string = "openrouter.weaver"
 	Longcat20                            string = "openrouter.longcat-2.0"
 	Llama3170BInstruct                   string = "openrouter.llama-3.1-70b-instruct"
@@ -2096,17 +2095,6 @@ var Models = map[string]llm.Model{
 		CostPer1MInCached:     0.15,
 		ContextWindow:         256000,
 		DefaultMaxTokens:      50000,
-		SupportsStructuredOut: true,
-	},
-	Lfm2526BFree: {
-		ID:                    Lfm2526BFree,
-		Name:                  "OpenRouter – LFM2.5-2.6B (free)",
-		Provider:              "openrouter",
-		APIModel:              "liquid/lfm-2.5-2.6b:free",
-		Currency:              "USD",
-		ContextWindow:         128000,
-		DefaultMaxTokens:      32768,
-		CanReason:             true,
 		SupportsStructuredOut: true,
 	},
 	Weaver: {

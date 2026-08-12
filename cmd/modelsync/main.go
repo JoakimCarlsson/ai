@@ -38,7 +38,10 @@ func run() error {
 	defer cancel()
 
 	date := time.Now().UTC().Format("2006-01-02")
-	providers := []provider{openRouter(), berget()}
+	providers := []provider{openRouter(), berget(), modelsDev()}
+	if err := checkTargets(providers); err != nil {
+		return err
+	}
 
 	var failures []error
 	for _, p := range providers {
@@ -56,6 +59,8 @@ func syncProvider(
 	p provider,
 	date string,
 ) error {
+	fmt.Printf("\n== %s (%s)\n", p.name, p.source)
+
 	models, err := p.fetch(ctx)
 	if err != nil {
 		return err
@@ -91,19 +96,44 @@ func syncProvider(
 	return nil
 }
 
+// checkTargets rejects a registry where two providers write the same catalog.
+// Precedence between sources is a decision to make when registering a provider,
+// not something to discover from whichever one happened to run last.
+func checkTargets(providers []provider) error {
+	owner := make(map[string]string)
+	for _, p := range providers {
+		for _, t := range p.targets {
+			if held, ok := owner[t.path]; ok {
+				return fmt.Errorf(
+					"%s is claimed by both %s and %s",
+					t.path,
+					held,
+					p.name,
+				)
+			}
+			owner[t.path] = p.name
+		}
+	}
+	return nil
+}
+
 func report(res result) {
 	fmt.Printf(
-		"%s: %d updated, %d added, %d removed\n",
+		"%s: %d updated, %d added, %d removed, %d stale\n",
 		res.target.path,
 		res.updated,
 		len(res.added),
 		len(res.removed),
+		len(res.stale),
 	)
 	for _, a := range res.added {
 		fmt.Printf("  + %s\n", a)
 	}
 	for _, r := range res.removed {
 		fmt.Printf("  - %s\n", r)
+	}
+	for _, s := range res.stale {
+		fmt.Printf("  ? %s (kept, not listed by the source)\n", s)
 	}
 }
 

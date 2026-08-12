@@ -54,7 +54,8 @@ func openRouter() provider {
 	}
 
 	return provider{
-		name: "openrouter",
+		name:   "openrouter",
+		source: openRouterBase,
 		fetch: func(ctx context.Context) ([]model, error) {
 			var models []model
 			for _, q := range queries {

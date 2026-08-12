@@ -15,6 +15,7 @@ import (
 type entry struct {
 	constName string
 	constVal  string
+	apiModel  string
 	fields    map[string]string
 }
 
@@ -115,6 +116,7 @@ func readCatalog(path string) (*catalog, error) {
 		if key == "" {
 			continue
 		}
+		e.apiModel = key
 		cat.entries[key] = e
 	}
 

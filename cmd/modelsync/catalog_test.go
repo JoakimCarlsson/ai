@@ -170,6 +170,91 @@ func TestSyncTargetReportsRemovals(t *testing.T) {
 	}
 }
 
+func TestSyncTargetKeepsStaleEntries(t *testing.T) {
+	cat, err := readCatalog(writeFixture(t))
+	if err != nil {
+		t.Fatalf("readCatalog: %v", err)
+	}
+
+	tgt := demoTarget()
+	tgt.keepStale = true
+
+	fetched := []model{{
+		kind:     kindChat,
+		apiModel: "openai/gpt-5",
+		fields: map[string]string{
+			"Name":     `"Demo – GPT-5"`,
+			"Provider": `"demo"`,
+			"APIModel": `"openai/gpt-5"`,
+			"Currency": `"USD"`,
+		},
+	}}
+
+	src, res, err := syncTarget(tgt, fetched, cat, "2026-01-01")
+	if err != nil {
+		t.Fatalf("syncTarget: %v", err)
+	}
+	if len(res.removed) != 0 || len(res.stale) != 1 {
+		t.Fatalf("removed=%v stale=%v", res.removed, res.stale)
+	}
+	if !strings.Contains(src, "GPT41") {
+		t.Errorf("stale entry dropped from generated source:\n%s", src)
+	}
+}
+
+func TestSyncTargetMatchesDatedSnapshots(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "models.go")
+	dated := strings.ReplaceAll(
+		fixture,
+		`"openai/gpt-4.1"`,
+		`"openai/gpt-4.1-20250101"`,
+	)
+	if err := os.WriteFile(path, []byte(dated), 0o600); err != nil {
+		t.Fatalf("writing fixture: %v", err)
+	}
+
+	cat, err := readCatalog(path)
+	if err != nil {
+		t.Fatalf("readCatalog: %v", err)
+	}
+
+	fetched := []model{{
+		kind:     kindChat,
+		apiModel: "openai/gpt-4.1",
+		fields: map[string]string{
+			"Name":     `"Demo – GPT-4.1"`,
+			"Provider": `"demo"`,
+			"APIModel": `"openai/gpt-4.1"`,
+			"Currency": `"USD"`,
+		},
+	}}
+
+	src, res, err := syncTarget(demoTarget(), fetched, cat, "2026-01-01")
+	if err != nil {
+		t.Fatalf("syncTarget: %v", err)
+	}
+	if res.updated != 1 || len(res.added) != 0 {
+		t.Fatalf("updated=%d added=%v, want the dated entry updated in place",
+			res.updated, res.added)
+	}
+	if !strings.Contains(src, `GPT41 string = "demo.gpt-4.1"`) {
+		t.Errorf("constant not preserved:\n%s", src)
+	}
+	if !strings.Contains(src, "DefaultMaxTokens: 20000,") {
+		t.Errorf("preserved field lost:\n%s", src)
+	}
+}
+
+func TestCheckTargetsRejectsSharedPaths(t *testing.T) {
+	err := checkTargets([]provider{
+		{name: "a", targets: []target{{path: "llm/x/models.go"}}},
+		{name: "b", targets: []target{{path: "llm/x/models.go"}}},
+	})
+	if err == nil {
+		t.Fatal("want an error when two providers write the same catalog")
+	}
+}
+
 func TestNamingDerivesUniqueIdentifiers(t *testing.T) {
 	taken := map[string]bool{"O3Mini": true}
 	if got := uniqueConstName("openai/o3-mini", taken); got != "OpenaiO3Mini" {
@@ -177,7 +262,7 @@ func TestNamingDerivesUniqueIdentifiers(t *testing.T) {
 	}
 
 	takenIDs := map[string]bool{"openrouter.o3-mini": true}
-	got := uniqueID("openai/o3-mini", "openrouter.", takenIDs)
+	got := uniqueID("openai/o3-mini", "openrouter.", false, takenIDs)
 	if got != "openrouter.openai-o3-mini" {
 		t.Errorf("uniqueID = %q, want openrouter.openai-o3-mini", got)
 	}

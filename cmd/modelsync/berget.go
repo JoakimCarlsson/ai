@@ -48,7 +48,8 @@ func berget() provider {
 	}
 
 	return provider{
-		name: "berget",
+		name:   "berget",
+		source: bergetSource,
 		fetch: func(ctx context.Context) ([]model, error) {
 			var list bergetList
 			if err := fetchJSON(ctx, bergetSource, &list); err != nil {
@@ -73,7 +74,7 @@ func berget() provider {
 				importPath: "github.com/joakimcarlsson/ai/llm",
 				typeExpr:   "llm.Model",
 				source:     bergetSource,
-				idVerbatim: true,
+				idFull:     true,
 				order:      chatFields,
 				doc:        windowDoc,
 				defaults: map[string]string{
@@ -89,7 +90,7 @@ func berget() provider {
 				importPath: "github.com/joakimcarlsson/ai/embeddings",
 				typeExpr:   "embeddings.EmbeddingModel",
 				source:     bergetSource,
-				idVerbatim: true,
+				idFull:     true,
 				order:      embeddingFields,
 				doc: []string{
 					"Berget bills in EUR, so CostPer1MTokens is EUR, not USD.",
@@ -106,7 +107,7 @@ func berget() provider {
 				importPath: "github.com/joakimcarlsson/ai/rerankers",
 				typeExpr:   "rerankers.RerankerModel",
 				source:     bergetSource,
-				idVerbatim: true,
+				idFull:     true,
 				order:      rerankFields,
 				doc: []string{
 					"Berget bills in EUR, so CostPer1MTokens is EUR, not USD.",
@@ -123,7 +124,7 @@ func berget() provider {
 				importPath: "github.com/joakimcarlsson/ai/stt",
 				typeExpr:   "stt.TranscriptionModel",
 				source:     bergetSource,
-				idVerbatim: true,
+				idFull:     true,
 				order:      transcriptionFields,
 				doc: []string{
 					"Berget bills transcription in EUR per audio second; CostPer1MIn holds",
