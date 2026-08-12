@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/image/gemini
 go 1.25.8
 
 require (
-	github.com/joakimcarlsson/ai/image v0.2.0
+	github.com/joakimcarlsson/ai/image v0.3.0
 	google.golang.org/genai v1.67.0
 )
 
@@ -23,7 +23,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.23.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.70.0 // indirect
 	go.opentelemetry.io/otel v1.45.0 // indirect

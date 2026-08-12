@@ -4,8 +4,8 @@ go 1.25.0
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.0
-	github.com/joakimcarlsson/ai/image v0.2.0
-	github.com/joakimcarlsson/ai/image/openai v0.2.2
+	github.com/joakimcarlsson/ai/image v0.3.0
+	github.com/joakimcarlsson/ai/image/openai v0.3.0
 	github.com/openai/openai-go/v3 v3.50.0
 )
 
@@ -20,7 +20,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/tidwall/gjson v1.19.0 // indirect
