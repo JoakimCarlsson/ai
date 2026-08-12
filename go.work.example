@@ -5,6 +5,7 @@ use (
 
 	./agent
 	./cmd/llmstxt
+	./cmd/modelsync
 
 	./types
 	./tracing

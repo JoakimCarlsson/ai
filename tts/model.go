@@ -15,7 +15,10 @@ type AudioModel struct {
 	Provider string `json:"provider"`
 	// APIModel is the model identifier used in API requests.
 	APIModel string `json:"api_model"`
-	// CostPer1MChars is the cost per 1 million characters in USD.
+	// Currency is the ISO 4217 code the cost fields are denominated in, for
+	// example "USD" or "EUR". An empty value means "USD".
+	Currency string `json:"currency"`
+	// CostPer1MChars is the cost per 1 million characters, in Currency.
 	CostPer1MChars float64 `json:"cost_per_1m_chars"`
 	// MaxCharacters is the maximum number of characters per request.
 	MaxCharacters int64 `json:"max_characters"`

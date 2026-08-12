@@ -65,7 +65,7 @@ func newLLM() (llm.LLM, string) {
 			),
 			llmopenai.WithModel(
 				modelFromEnv(
-					openrouter.Models[openrouter.Claude46Sonnet],
+					openrouter.Models[openrouter.ClaudeSonnet46],
 				),
 			),
 			llmopenai.WithMaxTokens(256),

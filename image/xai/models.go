@@ -21,6 +21,7 @@ var Models = map[string]image.GenerationModel{
 		Name:     "Grok 2 Image",
 		Provider: "xai",
 		APIModel: "grok-2-image-1212",
+		Currency: "USD",
 		Pricing: map[string]map[string]float64{
 			"default": {
 				"default": 0.07,
@@ -35,6 +36,7 @@ var Models = map[string]image.GenerationModel{
 		Name:     "Grok Imagine Image",
 		Provider: "xai",
 		APIModel: "grok-imagine-image",
+		Currency: "USD",
 		Pricing: map[string]map[string]float64{
 			"default": {
 				"default": 0.02,
@@ -66,6 +68,7 @@ var Models = map[string]image.GenerationModel{
 		Name:     "Grok Imagine Image Pro",
 		Provider: "xai",
 		APIModel: "grok-imagine-image-pro",
+		Currency: "USD",
 		Pricing: map[string]map[string]float64{
 			"default": {
 				"default": 0.07,

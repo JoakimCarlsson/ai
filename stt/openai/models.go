@@ -26,6 +26,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "Whisper v2",
 		Provider:      "openai",
 		APIModel:      "whisper-1",
+		Currency:      "USD",
 		CostPer1MIn:   0.006,
 		MaxFileSizeMB: 25,
 		SupportedFormats: []string{
@@ -55,6 +56,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "GPT-4o Transcribe",
 		Provider:      "openai",
 		APIModel:      "gpt-4o-transcribe",
+		Currency:      "USD",
 		CostPer1MIn:   0.006,
 		MaxFileSizeMB: 25,
 		SupportedFormats: []string{
@@ -76,6 +78,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "GPT-4o Mini Transcribe",
 		Provider:      "openai",
 		APIModel:      "gpt-4o-mini-transcribe",
+		Currency:      "USD",
 		CostPer1MIn:   0.003,
 		MaxFileSizeMB: 25,
 		SupportedFormats: []string{
@@ -97,6 +100,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "GPT-4o Mini Transcribe 2025-12-15",
 		Provider:      "openai",
 		APIModel:      "gpt-4o-mini-transcribe-2025-12-15",
+		Currency:      "USD",
 		CostPer1MIn:   0.003,
 		MaxFileSizeMB: 25,
 		SupportedFormats: []string{
@@ -118,6 +122,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "GPT-4o Transcribe Diarize",
 		Provider:      "openai",
 		APIModel:      "gpt-4o-transcribe-diarize",
+		Currency:      "USD",
 		MaxFileSizeMB: 25,
 		SupportedFormats: []string{
 			"flac",
@@ -140,6 +145,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "GPT Realtime Whisper",
 		Provider:      "openai",
 		APIModel:      "gpt-realtime-whisper",
+		Currency:      "USD",
 		CostPer1MIn:   0.017,
 		MaxFileSizeMB: 25,
 		SupportedFormats: []string{
@@ -162,6 +168,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "GPT Realtime Translate",
 		Provider:      "openai",
 		APIModel:      "gpt-realtime-translate",
+		Currency:      "USD",
 		CostPer1MIn:   0.034,
 		MaxFileSizeMB: 25,
 		SupportedFormats: []string{

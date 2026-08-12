@@ -21,6 +21,7 @@ var Models = map[string]image.GenerationModel{
 		Name:     "GPT Image 1.5",
 		Provider: "openai",
 		APIModel: "gpt-image-1.5",
+		Currency: "USD",
 		Pricing: map[string]map[string]float64{
 			"1024x1024": {
 				"high":   0.133,
@@ -50,6 +51,7 @@ var Models = map[string]image.GenerationModel{
 		Name:     "GPT Image 2",
 		Provider: "openai",
 		APIModel: "gpt-image-2",
+		Currency: "USD",
 		Pricing: map[string]map[string]float64{
 			"1024x1024": {
 				"high":   0.211,

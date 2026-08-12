@@ -25,6 +25,7 @@ var Models = map[string]image.GenerationModel{
 		Name:     "Gemini 2.5 Flash Image",
 		Provider: "gemini",
 		APIModel: "gemini-2.5-flash-image",
+		Currency: "USD",
 		Pricing: map[string]map[string]float64{
 			"16:9": {
 				"default": 0.039,
@@ -64,6 +65,7 @@ var Models = map[string]image.GenerationModel{
 		Name:     "Gemini 3 Pro Image (Nano Banana Pro)",
 		Provider: "gemini",
 		APIModel: "gemini-3-pro-image-preview",
+		Currency: "USD",
 		Pricing: map[string]map[string]float64{
 			"16:9": {
 				"default": 0.134,
@@ -98,6 +100,7 @@ var Models = map[string]image.GenerationModel{
 		Name:     "Gemini 3.1 Flash Image Preview (Nano Banana 2)",
 		Provider: "gemini",
 		APIModel: "gemini-3.1-flash-image",
+		Currency: "USD",
 		Pricing: map[string]map[string]float64{
 			"16:9": {
 				"default": 0.067,
@@ -148,6 +151,7 @@ var Models = map[string]image.GenerationModel{
 		Name:     "Gemini 3.1 Flash Lite Image (Nano Banana 2 Lite)",
 		Provider: "gemini",
 		APIModel: "gemini-3.1-flash-lite-image",
+		Currency: "USD",
 		Pricing: map[string]map[string]float64{
 			"16:9": {
 				"default": 0.0336,
@@ -198,6 +202,7 @@ var Models = map[string]image.GenerationModel{
 		Name:     "Imagen 4 [Deprecated]",
 		Provider: "gemini",
 		APIModel: "imagen-4.0-generate-001",
+		Currency: "USD",
 		Pricing: map[string]map[string]float64{
 			"16:9": {
 				"default": 0.04,
@@ -232,6 +237,7 @@ var Models = map[string]image.GenerationModel{
 		Name:     "Imagen 4 Ultra [Deprecated]",
 		Provider: "gemini",
 		APIModel: "imagen-4.0-ultra-generate-001",
+		Currency: "USD",
 		Pricing: map[string]map[string]float64{
 			"16:9": {
 				"default": 0.06,
@@ -266,6 +272,7 @@ var Models = map[string]image.GenerationModel{
 		Name:     "Imagen 4 Fast [Deprecated]",
 		Provider: "gemini",
 		APIModel: "imagen-4.0-fast-generate-001",
+		Currency: "USD",
 		Pricing: map[string]map[string]float64{
 			"16:9": {
 				"default": 0.02,

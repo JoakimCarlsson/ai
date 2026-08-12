@@ -23,6 +23,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Google Cloud TTS Standard",
 		Provider:       "google-cloud",
 		APIModel:       "standard",
+		Currency:       "USD",
 		CostPer1MChars: 4,
 		MaxCharacters:  5000,
 		SupportedFormats: []string{
@@ -39,6 +40,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Google Cloud TTS WaveNet",
 		Provider:       "google-cloud",
 		APIModel:       "wavenet",
+		Currency:       "USD",
 		CostPer1MChars: 16,
 		MaxCharacters:  5000,
 		SupportedFormats: []string{
@@ -55,6 +57,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Google Cloud TTS Neural2",
 		Provider:       "google-cloud",
 		APIModel:       "neural2",
+		Currency:       "USD",
 		CostPer1MChars: 16,
 		MaxCharacters:  5000,
 		SupportedFormats: []string{
@@ -71,6 +74,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Google Cloud TTS Studio",
 		Provider:       "google-cloud",
 		APIModel:       "studio",
+		Currency:       "USD",
 		CostPer1MChars: 160,
 		MaxCharacters:  5000,
 		SupportedFormats: []string{
@@ -87,6 +91,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Google Cloud TTS Chirp 3: HD",
 		Provider:       "google-cloud",
 		APIModel:       "chirp3-hd",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		MaxCharacters:  5000,
 		SupportedFormats: []string{

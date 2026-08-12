@@ -21,6 +21,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Azure Speech Neural",
 		Provider:       "azure-speech",
 		APIModel:       "neural",
+		Currency:       "USD",
 		CostPer1MChars: 16,
 		MaxCharacters:  10000,
 		SupportedFormats: []string{
@@ -38,6 +39,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Azure Speech Neural HD",
 		Provider:       "azure-speech",
 		APIModel:       "neural-hd",
+		Currency:       "USD",
 		CostPer1MChars: 22,
 		MaxCharacters:  10000,
 		SupportedFormats: []string{

@@ -14,7 +14,10 @@ type RerankerModel struct {
 	Provider string `json:"provider"`
 	// APIModel is the model identifier used in API requests.
 	APIModel string `json:"api_model"`
-	// CostPer1MTokens is the cost per 1 million tokens in USD.
+	// Currency is the ISO 4217 code the cost fields are denominated in, for
+	// example "USD" or "EUR". An empty value means "USD".
+	Currency string `json:"currency"`
+	// CostPer1MTokens is the cost per 1 million tokens, in Currency.
 	CostPer1MTokens float64 `json:"cost_per_1m_tokens"`
 	// MaxQueryTokens is the maximum number of tokens allowed in the query.
 	MaxQueryTokens int64 `json:"max_query_tokens"`

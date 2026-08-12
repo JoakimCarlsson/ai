@@ -22,6 +22,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "Google Cloud STT Default",
 		Provider:      "google-cloud",
 		APIModel:      "default",
+		Currency:      "USD",
 		CostPer1MIn:   0.016,
 		MaxFileSizeMB: 480,
 		SupportedFormats: []string{
@@ -44,6 +45,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "Google Cloud STT Long",
 		Provider:      "google-cloud",
 		APIModel:      "long",
+		Currency:      "USD",
 		CostPer1MIn:   0.016,
 		MaxFileSizeMB: 480,
 		SupportedFormats: []string{
@@ -66,6 +68,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "Google Cloud STT Chirp 2",
 		Provider:      "google-cloud",
 		APIModel:      "chirp_2",
+		Currency:      "USD",
 		CostPer1MIn:   0.016,
 		MaxFileSizeMB: 480,
 		SupportedFormats: []string{
@@ -90,6 +93,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "Google Cloud STT Chirp 3",
 		Provider:      "google-cloud",
 		APIModel:      "chirp_3",
+		Currency:      "USD",
 		CostPer1MIn:   0.016,
 		MaxFileSizeMB: 480,
 		SupportedFormats: []string{

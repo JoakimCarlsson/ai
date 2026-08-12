@@ -2,6 +2,21 @@
 
 All models include built-in pricing information for cost calculation.
 
+## Currency
+
+Every model states the currency its cost fields are denominated in. Most
+providers bill in USD, but not all: Berget bills in EUR, so its catalogs carry
+EUR rates.
+
+```go
+model := berget.Models[berget.GLM52]
+fmt.Printf("%.2f %s per 1M input tokens\n", model.CostPer1MIn, model.Currency)
+// 1.40 EUR per 1M input tokens
+```
+
+Check `Currency` before summing costs across providers, and before formatting a
+figure with a currency symbol. An empty value means USD.
+
 ## LLM Models
 
 ```go
