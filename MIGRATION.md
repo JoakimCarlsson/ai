@@ -2,7 +2,7 @@
 
 This document covers three migrations. Each section is self-contained.
 
-- **[v0.18.x → v0.19.0](#v018x--v0190--model-module-dissolved)** — `model` module removed; every catalog moved into the provider module that calls its API.
+- **[The `model` module dissolved](#the-model-module-dissolved)** — `model` module removed; every catalog moved into the provider module that calls its API.
 - **[v0.1.x → v0.2.0](#v01x--v020--memory-and-session-lifted)** — `memory` and `session` lifted out of `agent/` to top-level modules.
 - **[v0.18.x → v0.1.0](#v018x--v010--multi-module-split)** — single Go module split into ~50 per-vendor modules.
 
@@ -10,7 +10,13 @@ If you're on v0.18.x and want the latest, apply all three in order: the multi-mo
 
 ---
 
-## v0.18.x → v0.19.0 — `model` module dissolved
+## The `model` module dissolved
+
+Applies to you if your `go.mod` requires `github.com/joakimcarlsson/ai/model`.
+
+Unlike the other two migrations, this one has no version boundary to quote. It
+lands across roughly fifty independently tagged modules at once, so what
+identifies it is the dependency itself, not a version you can name.
 
 The `model` module is removed. Its catalogs now live in the module that calls
 the API, and its shared shapes live in the package that consumes them.
