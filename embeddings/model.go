@@ -14,7 +14,10 @@ type EmbeddingModel struct {
 	Provider string `json:"provider"`
 	// APIModel is the model identifier used in API requests.
 	APIModel string `json:"api_model"`
-	// CostPer1MTokens is the cost per 1 million tokens in USD.
+	// Currency is the ISO 4217 code the cost fields are denominated in, for
+	// example "USD" or "EUR". An empty value means "USD".
+	Currency string `json:"currency"`
+	// CostPer1MTokens is the cost per 1 million tokens, in Currency.
 	CostPer1MTokens float64 `json:"cost_per_1m_tokens"`
 	// MaxInputTokens is the maximum number of input tokens per request.
 	MaxInputTokens int64 `json:"max_input_tokens"`

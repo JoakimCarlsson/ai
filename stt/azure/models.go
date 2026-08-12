@@ -20,6 +20,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "Azure Speech Fast Transcription",
 		Provider:      "azure-speech",
 		APIModel:      "fast-transcription",
+		Currency:      "USD",
 		MaxFileSizeMB: 200,
 		SupportedFormats: []string{
 			"wav",
@@ -43,6 +44,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "Azure Speech LLM",
 		Provider:      "azure-speech",
 		APIModel:      "llm-speech",
+		Currency:      "USD",
 		MaxFileSizeMB: 500,
 		SupportedFormats: []string{
 			"wav",

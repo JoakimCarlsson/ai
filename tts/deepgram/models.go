@@ -68,6 +68,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Amalthea",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-amalthea-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -86,6 +87,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Apollo",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-apollo-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -104,6 +106,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Arcas",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-arcas-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -122,6 +125,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Aries",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-aries-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -140,6 +144,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Asteria",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-asteria-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -158,6 +163,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Athena",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-athena-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -176,6 +182,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Atlas",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-atlas-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -194,6 +201,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Aurora",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-aurora-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -212,6 +220,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Callista",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-callista-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -230,6 +239,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Cora",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-cora-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -248,6 +258,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Cordelia",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-cordelia-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -266,6 +277,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Delia",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-delia-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -284,6 +296,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Draco",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-draco-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -302,6 +315,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Electra",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-electra-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -320,6 +334,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Harmonia",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-harmonia-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -338,6 +353,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Hera",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-hera-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -356,6 +372,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Hermes",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-hermes-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -374,6 +391,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Hyperion",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-hyperion-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -392,6 +410,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Iris",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-iris-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -410,6 +429,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Janus",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-janus-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -428,6 +448,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Juno",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-juno-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -446,6 +467,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Jupiter",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-jupiter-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -464,6 +486,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Luna",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-luna-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -482,6 +505,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Mars",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-mars-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -500,6 +524,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Minerva",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-minerva-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -518,6 +543,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Neptune",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-neptune-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -536,6 +562,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Odysseus",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-odysseus-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -554,6 +581,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Ophelia",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-ophelia-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -572,6 +600,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Orion",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-orion-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -590,6 +619,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Orpheus",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-orpheus-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -608,6 +638,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Pandora",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-pandora-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -626,6 +657,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Phoebe",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-phoebe-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -644,6 +676,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Pluto",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-pluto-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -662,6 +695,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Saturn",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-saturn-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -680,6 +714,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Selene",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-selene-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -698,6 +733,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Theia",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-theia-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -716,6 +752,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Vesta",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-vesta-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -734,6 +771,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Zeus",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-zeus-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -752,6 +790,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Thalia",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-thalia-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -770,6 +809,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Andromeda",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-andromeda-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -788,6 +828,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura-2 Helena",
 		Provider:       "deepgram",
 		APIModel:       "aura-2-helena-en",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		SupportedFormats: []string{
 			"mp3",
@@ -806,6 +847,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura Asteria",
 		Provider:       "deepgram",
 		APIModel:       "aura-asteria-en",
+		Currency:       "USD",
 		CostPer1MChars: 15,
 		SupportedFormats: []string{
 			"mp3",
@@ -824,6 +866,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura Luna",
 		Provider:       "deepgram",
 		APIModel:       "aura-luna-en",
+		Currency:       "USD",
 		CostPer1MChars: 15,
 		SupportedFormats: []string{
 			"mp3",
@@ -842,6 +885,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura Stella",
 		Provider:       "deepgram",
 		APIModel:       "aura-stella-en",
+		Currency:       "USD",
 		CostPer1MChars: 15,
 		SupportedFormats: []string{
 			"mp3",
@@ -860,6 +904,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Deepgram Aura Zeus",
 		Provider:       "deepgram",
 		APIModel:       "aura-zeus-en",
+		Currency:       "USD",
 		CostPer1MChars: 15,
 		SupportedFormats: []string{
 			"mp3",

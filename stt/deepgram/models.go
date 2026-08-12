@@ -25,6 +25,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "Deepgram Flux English",
 		Provider:      "deepgram",
 		APIModel:      "flux-general-en",
+		Currency:      "USD",
 		CostPer1MIn:   0.0065,
 		MaxFileSizeMB: 2000,
 		SupportedFormats: []string{
@@ -46,6 +47,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "Deepgram Flux Multilingual",
 		Provider:      "deepgram",
 		APIModel:      "flux-general-multi",
+		Currency:      "USD",
 		CostPer1MIn:   0.0078,
 		MaxFileSizeMB: 2000,
 		SupportedFormats: []string{
@@ -67,6 +69,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "Deepgram Nova 3",
 		Provider:      "deepgram",
 		APIModel:      "nova-3",
+		Currency:      "USD",
 		CostPer1MIn:   0.0077,
 		MaxFileSizeMB: 2000,
 		SupportedFormats: []string{
@@ -94,6 +97,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "Deepgram Nova 2",
 		Provider:      "deepgram",
 		APIModel:      "nova-2",
+		Currency:      "USD",
 		CostPer1MIn:   0.0058,
 		MaxFileSizeMB: 2000,
 		SupportedFormats: []string{

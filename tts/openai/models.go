@@ -22,6 +22,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "OpenAI TTS-1",
 		Provider:       "openai",
 		APIModel:       "tts-1",
+		Currency:       "USD",
 		CostPer1MChars: 15,
 		MaxCharacters:  4096,
 		SupportedFormats: []string{
@@ -40,6 +41,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "OpenAI TTS-1 HD",
 		Provider:       "openai",
 		APIModel:       "tts-1-hd",
+		Currency:       "USD",
 		CostPer1MChars: 30,
 		MaxCharacters:  4096,
 		SupportedFormats: []string{
@@ -58,6 +60,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "GPT-4o Mini TTS",
 		Provider:       "openai",
 		APIModel:       "gpt-4o-mini-tts",
+		Currency:       "USD",
 		CostPer1MChars: 12,
 		MaxCharacters:  4096,
 		SupportedFormats: []string{

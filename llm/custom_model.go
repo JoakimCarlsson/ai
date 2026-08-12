@@ -68,28 +68,40 @@ func WithAPIModel(apiModel string) ModelOption {
 	}
 }
 
-// WithCostPer1MIn sets the cost per 1 million input tokens in USD.
+// WithCurrency sets the ISO 4217 code the cost fields are denominated in,
+// for example "USD" or "EUR". An empty value means "USD".
+func WithCurrency(currency string) ModelOption {
+	return func(m *Model) {
+		m.Currency = currency
+	}
+}
+
+// WithCostPer1MIn sets the cost per 1 million input tokens, in the model's
+// currency.
 func WithCostPer1MIn(cost float64) ModelOption {
 	return func(m *Model) {
 		m.CostPer1MIn = cost
 	}
 }
 
-// WithCostPer1MOut sets the cost per 1 million output tokens in USD.
+// WithCostPer1MOut sets the cost per 1 million output tokens, in the model's
+// currency.
 func WithCostPer1MOut(cost float64) ModelOption {
 	return func(m *Model) {
 		m.CostPer1MOut = cost
 	}
 }
 
-// WithCostPer1MInCached sets the cost per 1 million cached input tokens in USD.
+// WithCostPer1MInCached sets the cost per 1 million cached input tokens, in the
+// model's currency.
 func WithCostPer1MInCached(cost float64) ModelOption {
 	return func(m *Model) {
 		m.CostPer1MInCached = cost
 	}
 }
 
-// WithCostPer1MOutCached sets the cost per 1 million cached output tokens in USD.
+// WithCostPer1MOutCached sets the cost per 1 million cached output tokens, in
+// the model's currency.
 func WithCostPer1MOutCached(cost float64) ModelOption {
 	return func(m *Model) {
 		m.CostPer1MOutCached = cost

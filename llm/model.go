@@ -16,13 +16,18 @@ type Model struct {
 	Provider string `json:"provider"`
 	// APIModel is the model identifier used in API requests.
 	APIModel string `json:"api_model"`
-	// CostPer1MIn is the cost per 1 million input tokens in USD.
+	// Currency is the ISO 4217 code the Cost fields are denominated in, for
+	// example "USD" or "EUR". An empty value means "USD".
+	Currency string `json:"currency"`
+	// CostPer1MIn is the cost per 1 million input tokens, in Currency.
 	CostPer1MIn float64 `json:"cost_per_1m_in"`
-	// CostPer1MOut is the cost per 1 million output tokens in USD.
+	// CostPer1MOut is the cost per 1 million output tokens, in Currency.
 	CostPer1MOut float64 `json:"cost_per_1m_out"`
-	// CostPer1MInCached is the cost per 1 million cached input tokens in USD.
+	// CostPer1MInCached is the cost per 1 million cached input tokens, in
+	// Currency.
 	CostPer1MInCached float64 `json:"cost_per_1m_in_cached"`
-	// CostPer1MOutCached is the cost per 1 million cached output tokens in USD.
+	// CostPer1MOutCached is the cost per 1 million cached output tokens, in
+	// Currency.
 	CostPer1MOutCached float64 `json:"cost_per_1m_out_cached"`
 	// ContextWindow is the maximum number of tokens the model can process.
 	ContextWindow int64 `json:"context_window"`

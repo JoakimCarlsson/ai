@@ -25,6 +25,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "ElevenLabs Scribe v1",
 		Provider:      "elevenlabs",
 		APIModel:      "scribe_v1",
+		Currency:      "USD",
 		CostPer1MIn:   0.0067,
 		MaxFileSizeMB: 3000,
 		SupportedFormats: []string{
@@ -49,6 +50,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:          "ElevenLabs Scribe v2",
 		Provider:      "elevenlabs",
 		APIModel:      "scribe_v2",
+		Currency:      "USD",
 		CostPer1MIn:   0.00367,
 		MaxFileSizeMB: 3000,
 		SupportedFormats: []string{
@@ -81,6 +83,7 @@ var Models = map[string]stt.TranscriptionModel{
 		Name:        "ElevenLabs Scribe v2 Realtime",
 		Provider:    "elevenlabs",
 		APIModel:    "scribe_v2_realtime",
+		Currency:    "USD",
 		CostPer1MIn: 0.0065,
 		SupportedFormats: []string{
 			"pcm_8000",

@@ -1,4 +1,4 @@
-.PHONY: install fmt lint test test-integration build modules release-tag release release-warm llms workspace
+.PHONY: install fmt lint test test-integration build modules release-tag release release-warm llms models workspace
 
 GOPATH_FWD := $(subst \,/,$(shell go env GOPATH))
 
@@ -71,3 +71,6 @@ release-warm:
 
 llms:
 	cd cmd/llmstxt && go run . -config ../../www/mkdocs.yml -docs ../../www/docs -out ../../www/docs
+
+models:
+	cd cmd/modelsync && go run .

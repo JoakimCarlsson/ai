@@ -75,6 +75,7 @@ customModel := llm.NewCustomModel(
     llm.WithAttachments(true),
     llm.WithReasoning(true),
     llm.WithImageGeneration(false),
+    llm.WithCurrency("USD"),
     llm.WithCostPer1MIn(1.50),
     llm.WithCostPer1MOut(5.00),
     llm.WithCostPer1MInCached(0.15),
@@ -94,6 +95,7 @@ customModel := llm.NewCustomModel(
 | `WithAttachments(bool)` | Enable image/file inputs | `false` |
 | `WithReasoning(bool)` | Enable chain-of-thought | `false` |
 | `WithImageGeneration(bool)` | Enable image generation | `false` |
+| `WithCurrency(code)` | ISO 4217 code the costs are in | `""` (USD) |
 | `WithCostPer1MIn(cost)` | Input token cost per million | `0` |
 | `WithCostPer1MOut(cost)` | Output token cost per million | `0` |
 | `WithCostPer1MInCached(cost)` | Cached input token cost | `0` |

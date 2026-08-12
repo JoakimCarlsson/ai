@@ -25,6 +25,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Eleven v3",
 		Provider:       "elevenlabs",
 		APIModel:       "eleven_v3",
+		Currency:       "USD",
 		CostPer1MChars: 100,
 		MaxCharacters:  5000,
 		SupportedFormats: []string{
@@ -43,6 +44,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Eleven Multilingual v2",
 		Provider:       "elevenlabs",
 		APIModel:       "eleven_multilingual_v2",
+		Currency:       "USD",
 		CostPer1MChars: 100,
 		MaxCharacters:  10000,
 		SupportedFormats: []string{
@@ -61,6 +63,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Eleven Flash v2.5",
 		Provider:       "elevenlabs",
 		APIModel:       "eleven_flash_v2_5",
+		Currency:       "USD",
 		CostPer1MChars: 50,
 		MaxCharacters:  40000,
 		SupportedFormats: []string{
@@ -79,6 +82,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Eleven Flash v2",
 		Provider:       "elevenlabs",
 		APIModel:       "eleven_flash_v2",
+		Currency:       "USD",
 		CostPer1MChars: 50,
 		MaxCharacters:  30000,
 		SupportedFormats: []string{
@@ -97,6 +101,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Eleven Turbo v2.5",
 		Provider:       "elevenlabs",
 		APIModel:       "eleven_turbo_v2_5",
+		Currency:       "USD",
 		CostPer1MChars: 50,
 		MaxCharacters:  40000,
 		SupportedFormats: []string{
@@ -115,6 +120,7 @@ var Models = map[string]tts.AudioModel{
 		Name:           "Eleven Turbo v2",
 		Provider:       "elevenlabs",
 		APIModel:       "eleven_turbo_v2",
+		Currency:       "USD",
 		CostPer1MChars: 50,
 		MaxCharacters:  30000,
 		SupportedFormats: []string{

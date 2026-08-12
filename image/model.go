@@ -14,7 +14,10 @@ type GenerationModel struct {
 	Provider string `json:"provider"`
 	// APIModel is the model identifier used in API requests.
 	APIModel string `json:"api_model"`
-	// Pricing maps size to quality to cost per image in USD.
+	// Currency is the ISO 4217 code the Pricing values are denominated in, for
+	// example "USD" or "EUR". An empty value means "USD".
+	Currency string `json:"currency"`
+	// Pricing maps size to quality to cost per image, in Currency.
 	// For models with fixed pricing (no quality levels), use a single quality key like "default".
 	// Example: Pricing["1024x1024"]["standard"] = 0.04
 	Pricing map[string]map[string]float64 `json:"pricing"`

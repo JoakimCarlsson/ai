@@ -11,6 +11,7 @@ type TranscriptionModel struct {
 	Name                     string   `json:"name"`
 	Provider                 string   `json:"provider"`
 	APIModel                 string   `json:"api_model"`
+	Currency                 string   `json:"currency"`
 	CostPer1MIn              float64  `json:"cost_per_1m_in"`
 	CostPer1MOut             float64  `json:"cost_per_1m_out"`
 	MaxFileSizeMB            int64    `json:"max_file_size_mb"`
