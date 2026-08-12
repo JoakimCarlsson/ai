@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"go.opentelemetry.io/otel"
-	otellog "go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/log/global"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
@@ -49,8 +49,8 @@ func setupMetrics(
 }
 
 type capturedRecord struct {
-	Body       otellog.Value
-	Attributes []otellog.KeyValue
+	Body       attribute.Value
+	Attributes []attribute.KeyValue
 }
 
 type logCapture struct {
@@ -65,8 +65,8 @@ func (c *logCapture) OnEmit(
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	var attrs []otellog.KeyValue
-	record.WalkAttributes(func(kv otellog.KeyValue) bool {
+	var attrs []attribute.KeyValue
+	record.WalkAttributes(func(kv attribute.KeyValue) bool {
 		attrs = append(attrs, kv)
 		return true
 	})
