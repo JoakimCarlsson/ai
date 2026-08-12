@@ -12,11 +12,94 @@ If you're on v0.18.x and want the latest, apply all three in order: the multi-mo
 
 ## The `model` module dissolved
 
-Applies to you if your `go.mod` requires `github.com/joakimcarlsson/ai/model`.
+Applies to you if your `go.mod` requires `github.com/joakimcarlsson/ai/model`,
+directly or indirectly.
 
-Unlike the other two migrations, this one has no version boundary to quote. It
-lands across roughly fifty independently tagged modules at once, so what
-identifies it is the dependency itself, not a version you can name.
+The boundary is per module rather than a single number, because 72 published
+modules depended on `model` and each has its own final release that did. The
+versions below are the last ones that carry the `model` dependency; anything at
+or below them predates this change. `model` itself stops at `v0.8.0`, which is
+its final release.
+
+<details>
+<summary>The 72 affected modules and their last <code>model</code>-dependent release</summary>
+
+| Module | Last release depending on `model` |
+|---|---|
+| `agent` | `v0.5.2` |
+| `memory` | `v0.2.8` |
+| `memory/pgvector` | `v0.1.8` |
+| `memory/postgres` | `v0.1.6` |
+| `memory/sqlite` | `v0.1.7` |
+| `message` | `v0.5.2` |
+| `session` | `v0.1.6` |
+| `image` | `v0.2.0` |
+| `image/openai` | `v0.2.2` |
+| `image/gemini` | `v0.1.7` |
+| `image/xai` | `v0.1.5` |
+| `image/azure` | `v0.1.2` |
+| `image/openrouter` | `v0.1.0` |
+| `rerankers` | `v0.2.3` |
+| `rerankers/voyage` | `v0.1.5` |
+| `rerankers/cohere` | `v0.1.5` |
+| `rerankers/berget` | `v0.1.4` |
+| `fim` | `v0.2.3` |
+| `fim/mistral` | `v0.1.5` |
+| `fim/deepseek` | `v0.1.5` |
+| `stt` | `v0.2.5` |
+| `stt/openai` | `v0.1.5` |
+| `stt/google` | `v0.1.5` |
+| `stt/assemblyai` | `v0.2.5` |
+| `stt/deepgram` | `v0.2.5` |
+| `stt/elevenlabs` | `v0.2.6` |
+| `stt/azure` | `v0.1.5` |
+| `stt/berget` | `v0.1.4` |
+| `stt/openrouter` | `v0.1.0` |
+| `embeddings` | `v0.2.5` |
+| `embeddings/openai` | `v0.1.6` |
+| `embeddings/voyage` | `v0.1.6` |
+| `embeddings/cohere` | `v0.1.6` |
+| `embeddings/mistral` | `v0.1.6` |
+| `embeddings/gemini` | `v0.3.6` |
+| `embeddings/bedrock` | `v0.1.6` |
+| `embeddings/berget` | `v0.1.4` |
+| `tts` | `v0.2.5` |
+| `tts/openai` | `v0.2.0` |
+| `tts/elevenlabs` | `v0.2.5` |
+| `tts/google` | `v0.1.5` |
+| `tts/azure` | `v0.1.5` |
+| `tts/deepgram` | `v0.2.5` |
+| `tts/openrouter` | `v0.1.0` |
+| `llm` | `v0.5.3` |
+| `llm/anthropic` | `v0.3.8` |
+| `llm/openai` | `v0.4.8` |
+| `llm/gemini` | `v0.3.7` |
+| `llm/azure` | `v0.6.0` |
+| `llm/vertexai` | `v0.2.7` |
+| `llm/bedrock` | `v0.2.7` |
+| `llm/xai` | `v0.4.7` |
+| `llm/openrouter` | `v0.2.12` |
+| `llm/groq` | `v0.4.7` |
+| `llm/deepseek` | `v0.2.10` |
+| `llm/perplexity` | `v0.2.10` |
+| `llm/mistral` | `v0.2.10` |
+| `llm/cerebras` | `v0.2.10` |
+| `llm/fireworks` | `v0.2.10` |
+| `llm/together` | `v0.2.10` |
+| `llm/ollama` | `v0.2.10` |
+| `llm/berget` | `v0.1.6` |
+| `tokens` | `v0.2.7` |
+| `tokens/sliding` | `v0.1.8` |
+| `tokens/truncate` | `v0.1.8` |
+| `tokens/summarize` | `v0.1.9` |
+| `batch` | `v0.1.8` |
+| `batch/openai` | `v0.1.8` |
+| `batch/anthropic` | `v0.1.10` |
+| `batch/gemini` | `v0.1.11` |
+| `batch/concurrent` | `v0.1.8` |
+| `voice` | `v0.2.9` |
+
+</details>
 
 The `model` module is removed. Its catalogs now live in the module that calls
 the API, and its shared shapes live in the package that consumes them.
