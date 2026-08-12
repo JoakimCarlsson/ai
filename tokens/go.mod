@@ -3,8 +3,8 @@ module github.com/joakimcarlsson/ai/tokens
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/message v0.5.2
-	github.com/joakimcarlsson/ai/tool v0.1.2
+	github.com/joakimcarlsson/ai/message v0.6.0
+	github.com/joakimcarlsson/ai/tool v0.1.3
 )
 
 require (

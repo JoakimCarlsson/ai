@@ -3,11 +3,11 @@ module github.com/joakimcarlsson/ai/llm/bedrock
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/llm v0.5.3
-	github.com/joakimcarlsson/ai/llm/anthropic v0.3.8
-	github.com/joakimcarlsson/ai/message v0.5.2
+	github.com/joakimcarlsson/ai/llm v0.6.0
+	github.com/joakimcarlsson/ai/llm/anthropic v0.4.0
+	github.com/joakimcarlsson/ai/message v0.6.0
 	github.com/joakimcarlsson/ai/schema v0.2.0
-	github.com/joakimcarlsson/ai/tool v0.1.2
+	github.com/joakimcarlsson/ai/tool v0.1.3
 	github.com/joakimcarlsson/ai/types v0.2.0
 )
 
@@ -38,7 +38,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/invopop/jsonschema v0.14.0 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.0 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.7.0 // indirect
 	github.com/pb33f/ordered-map/v2 v2.3.1 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect

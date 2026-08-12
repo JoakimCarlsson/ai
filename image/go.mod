@@ -2,7 +2,7 @@ module github.com/joakimcarlsson/ai/image
 
 go 1.25.0
 
-require github.com/joakimcarlsson/ai/tracing v0.1.1
+require github.com/joakimcarlsson/ai/tracing v0.2.0
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
