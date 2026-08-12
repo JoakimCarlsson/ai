@@ -14,6 +14,7 @@ func TestMetrics_SingleTurn(t *testing.T) {
 	mockLLM := newMockLLM(mockResponse{
 		Content: "hello",
 		Usage:   llm.TokenUsage{InputTokens: 10, OutputTokens: 5},
+		Delay:   measurableDelay,
 	})
 	a := agent.New(mockLLM)
 
@@ -103,7 +104,10 @@ func TestMetrics_MultiTurn(t *testing.T) {
 }
 
 func TestMetrics_Duration(t *testing.T) {
-	mockLLM := newMockLLM(mockResponse{Content: "fast"})
+	mockLLM := newMockLLM(mockResponse{
+		Content: "fast",
+		Delay:   measurableDelay,
+	})
 	a := agent.New(mockLLM)
 
 	resp, err := a.Chat(context.Background(), "go")
@@ -132,6 +136,7 @@ func TestMetrics_Stream(t *testing.T) {
 				OutputTokens:    10,
 				CacheReadTokens: 5,
 			},
+			Delay: measurableDelay,
 		},
 		mockResponse{
 			Content: "stream done",

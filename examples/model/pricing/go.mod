@@ -3,11 +3,11 @@ module github.com/joakimcarlsson/ai/examples/model/pricing
 go 1.25.8
 
 require (
-	github.com/joakimcarlsson/ai/embeddings/voyage v0.0.0
-	github.com/joakimcarlsson/ai/image/gemini v0.0.0
+	github.com/joakimcarlsson/ai/embeddings/voyage v0.1.6
+	github.com/joakimcarlsson/ai/image/gemini v0.1.7
 	github.com/joakimcarlsson/ai/llm v0.5.3
-	github.com/joakimcarlsson/ai/llm/openai v0.0.0
-	github.com/joakimcarlsson/ai/tts/elevenlabs v0.0.0
+	github.com/joakimcarlsson/ai/llm/openai v0.4.8
+	github.com/joakimcarlsson/ai/tts/elevenlabs v0.2.5
 )
 
 require (
@@ -30,6 +30,7 @@ require (
 	github.com/joakimcarlsson/ai/embeddings v0.2.5 // indirect
 	github.com/joakimcarlsson/ai/image v0.2.0 // indirect
 	github.com/joakimcarlsson/ai/message v0.5.2 // indirect
+	github.com/joakimcarlsson/ai/model v0.8.0 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.0 // indirect
 	github.com/joakimcarlsson/ai/tool v0.1.2 // indirect
 	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
@@ -70,29 +71,3 @@ require (
 	google.golang.org/grpc v1.81.1 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
-
-replace github.com/joakimcarlsson/ai/embeddings/voyage => ../../../embeddings/voyage
-
-replace github.com/joakimcarlsson/ai/image/gemini => ../../../image/gemini
-
-replace github.com/joakimcarlsson/ai/llm/openai => ../../../llm/openai
-
-replace github.com/joakimcarlsson/ai/tts/elevenlabs => ../../../tts/elevenlabs
-
-replace github.com/joakimcarlsson/ai/types => ../../../types
-
-replace github.com/joakimcarlsson/ai/embeddings => ../../../embeddings
-
-replace github.com/joakimcarlsson/ai/image => ../../../image
-
-replace github.com/joakimcarlsson/ai/llm => ../../../llm
-
-replace github.com/joakimcarlsson/ai/message => ../../../message
-
-replace github.com/joakimcarlsson/ai/schema => ../../../schema
-
-replace github.com/joakimcarlsson/ai/tool => ../../../tool
-
-replace github.com/joakimcarlsson/ai/tracing => ../../../tracing
-
-replace github.com/joakimcarlsson/ai/tts => ../../../tts

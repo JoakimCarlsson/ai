@@ -683,6 +683,7 @@ func TestNewObservingHooks(t *testing.T) {
 					Type:  "function",
 				},
 			},
+			Delay: measurableDelay,
 		},
 		mockResponse{Content: "done"},
 	)
@@ -927,7 +928,6 @@ func TestBranch_OnObserverEvents(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Child model call events should have a TaskID set
 	modelCalls := collector.ofType(agent.HookEventPreModelCall)
 	var childModelCalls []agent.HookEvent
 	for _, evt := range modelCalls {
