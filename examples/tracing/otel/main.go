@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/joakimcarlsson/ai/llm/openai"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	aitracing "github.com/joakimcarlsson/ai/tracing"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -40,7 +40,7 @@ func main() {
 
 	client := llmopenai.NewLLM(
 		llmopenai.WithAPIKey(apiKey),
-		llmopenai.WithModel(model.OpenAIModels[model.GPT54Nano]),
+		llmopenai.WithModel(openai.Models[openai.GPT54Nano]),
 		llmopenai.WithMaxTokens(128),
 	)
 

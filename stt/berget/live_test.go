@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/stt"
 )
 
@@ -31,7 +30,7 @@ func TestLive(t *testing.T) {
 	c := NewSpeechToText(
 		WithAPIKey(k),
 		WithModel(
-			model.BergetTranscriptionModels[model.BergetFasterWhisperLargeV3],
+			Models[FasterWhisperLargeV3],
 		),
 		WithTimeout(60*time.Second),
 	)
@@ -60,16 +59,16 @@ func TestLive(t *testing.T) {
 
 func TestLiveAllModels(t *testing.T) {
 	k, data := liveAudio(t)
-	ids := []model.ID{
-		model.BergetFasterWhisperLargeV3,
-		model.BergetKBWhisperLarge,
-		model.BergetNBWhisperLarge,
+	ids := []string{
+		FasterWhisperLargeV3,
+		KBWhisperLarge,
+		NBWhisperLarge,
 	}
 	var ok int
 	for _, id := range ids {
 		c := NewSpeechToText(
 			WithAPIKey(k),
-			WithModel(model.BergetTranscriptionModels[id]),
+			WithModel(Models[id]),
 			WithTimeout(60*time.Second),
 		)
 		r, err := c.Transcribe(
@@ -94,7 +93,7 @@ func TestTranslateUnsupported(t *testing.T) {
 	c := NewSpeechToText(
 		WithAPIKey("x"),
 		WithModel(
-			model.BergetTranscriptionModels[model.BergetFasterWhisperLargeV3],
+			Models[FasterWhisperLargeV3],
 		),
 	)
 	_, err := c.Translate(context.Background(), []byte("audio"))

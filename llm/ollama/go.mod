@@ -16,7 +16,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/joakimcarlsson/ai/message v0.5.2 // indirect
-	github.com/joakimcarlsson/ai/model v0.8.0 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.0 // indirect
 	github.com/joakimcarlsson/ai/tool v0.1.2 // indirect
 	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
@@ -59,7 +58,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm => ../
 	github.com/joakimcarlsson/ai/llm/openai => ../openai
 	github.com/joakimcarlsson/ai/message => ../../message
-	github.com/joakimcarlsson/ai/model => ../../model
 	github.com/joakimcarlsson/ai/schema => ../../schema
 	github.com/joakimcarlsson/ai/tool => ../../tool
 	github.com/joakimcarlsson/ai/tracing => ../../tracing

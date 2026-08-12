@@ -8,7 +8,7 @@ import (
 
 	"github.com/joakimcarlsson/ai/image"
 	imageazure "github.com/joakimcarlsson/ai/image/azure"
-	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/image/openai"
 )
 
 func main() {
@@ -25,7 +25,7 @@ func main() {
 		imageazure.WithEndpoint(endpoint),
 		imageazure.WithAPIVersion(apiVersion),
 		imageazure.WithModel(
-			model.OpenAIImageGenerationModels[model.GPTImage2],
+			openai.Models[openai.GPTImage2],
 		),
 		imageazure.WithSize(imageazure.Size1024x1024),
 		imageazure.WithOutputFormat(imageazure.OutputFormatPNG),

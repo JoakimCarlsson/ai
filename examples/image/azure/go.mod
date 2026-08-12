@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/joakimcarlsson/ai/image v0.2.0
 	github.com/joakimcarlsson/ai/image/azure v0.1.2
-	github.com/joakimcarlsson/ai/model v0.8.0
+	github.com/joakimcarlsson/ai/image/openai v0.2.2
 )
 
 require (
@@ -20,7 +20,6 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
-	github.com/joakimcarlsson/ai/image/openai v0.2.2 // indirect
 	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/openai/openai-go/v3 v3.50.0 // indirect
@@ -57,6 +56,5 @@ replace (
 	github.com/joakimcarlsson/ai/image => ../../../image
 	github.com/joakimcarlsson/ai/image/azure => ../../../image/azure
 	github.com/joakimcarlsson/ai/image/openai => ../../../image/openai
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/tracing => ../../../tracing
 )

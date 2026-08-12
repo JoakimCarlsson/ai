@@ -8,9 +8,9 @@ import (
 
 	"github.com/joakimcarlsson/ai/batch"
 	batchconcurrent "github.com/joakimcarlsson/ai/batch/concurrent"
+	"github.com/joakimcarlsson/ai/llm/gemini"
 	llmgemini "github.com/joakimcarlsson/ai/llm/gemini"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -21,7 +21,7 @@ func main() {
 
 	llmClient := llmgemini.NewLLM(
 		llmgemini.WithAPIKey(apiKey),
-		llmgemini.WithModel(model.GeminiModels[model.Gemini25FlashLite]),
+		llmgemini.WithModel(gemini.Models[gemini.Gemini25FlashLite]),
 		llmgemini.WithMaxTokens(128),
 	)
 

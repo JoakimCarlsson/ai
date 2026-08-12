@@ -10,7 +10,6 @@ import (
 
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/types"
 )
@@ -32,7 +31,7 @@ func TestExtractReasoningSendMessages(t *testing.T) {
 			client := NewLLM(
 				WithAPIKey("test-key"),
 				WithBaseURL(srv.URL),
-				WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+				WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 			)
 
 			resp, err := client.SendMessages(
@@ -73,7 +72,7 @@ func TestExtractReasoningStructuredOutput(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 	)
 
 	schemaInfo := &schema.StructuredOutputInfo{
@@ -133,7 +132,7 @@ func TestAccumulateReasoningStream(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 	)
 
 	var events []llm.Event
@@ -195,7 +194,7 @@ func TestReplayReasoningContent(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 		WithReasoningContentReplay(true),
 	)
 
@@ -254,7 +253,7 @@ func TestNoReplayReasoningContent(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 	)
 
 	msg := message.NewAssistantMessage()

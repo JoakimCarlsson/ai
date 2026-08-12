@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/embeddings"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 const defaultBaseURL = "https://api.voyageai.com/v1"
@@ -169,7 +168,7 @@ func (ev *EmbeddingVector) IsBase64() bool { return ev.DataType == "base64" }
 // Options configures the Voyage embeddings client.
 type Options struct {
 	apiKey          string
-	model           model.EmbeddingModel
+	model           embeddings.EmbeddingModel
 	timeout         *time.Duration
 	batchSize       int
 	dimensions      *int
@@ -192,7 +191,7 @@ func WithAPIKey(
 
 // WithModel selects the embedding model.
 func WithModel(
-	m model.EmbeddingModel,
+	m embeddings.EmbeddingModel,
 ) Option {
 	return func(o *Options) { o.model = m }
 }
@@ -289,7 +288,7 @@ func NewEmbedding(opts ...Option) embeddings.Embedding {
 }
 
 // Model returns the configured embedding model.
-func (c *Client) Model() model.EmbeddingModel { return c.options.model }
+func (c *Client) Model() embeddings.EmbeddingModel { return c.options.model }
 
 type embedRequest struct {
 	Input           []string `json:"input"`

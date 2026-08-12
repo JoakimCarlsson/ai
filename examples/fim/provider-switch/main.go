@@ -10,7 +10,6 @@ import (
 	"github.com/joakimcarlsson/ai/fim"
 	fimdeepseek "github.com/joakimcarlsson/ai/fim/deepseek"
 	fimmistral "github.com/joakimcarlsson/ai/fim/mistral"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -36,13 +35,13 @@ func newFIM() (fim.FIM, string) {
 	case "deepseek":
 		return fimdeepseek.NewFIM(
 			fimdeepseek.WithAPIKey(requiredEnv("DEEPSEEK_API_KEY")),
-			fimdeepseek.WithModel(model.DeepSeekModels[model.DeepSeekV32]),
+			fimdeepseek.WithModel(fimdeepseek.Models[fimdeepseek.V32]),
 			fimdeepseek.WithMaxTokens(64),
 		), provider
 	case "mistral":
 		return fimmistral.NewFIM(
 			fimmistral.WithAPIKey(requiredEnv("MISTRAL_API_KEY")),
-			fimmistral.WithModel(model.MistralModels[model.Codestral]),
+			fimmistral.WithModel(fimmistral.Models[fimmistral.Codestral]),
 			fimmistral.WithMaxTokens(64),
 		), provider
 	default:

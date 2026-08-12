@@ -19,11 +19,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/joakimcarlsson/ai/llm/openai"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/stt"
+	"github.com/joakimcarlsson/ai/stt/assemblyai"
 	sttassemblyai "github.com/joakimcarlsson/ai/stt/assemblyai"
+	"github.com/joakimcarlsson/ai/tts/elevenlabs"
 	ttselevenlabs "github.com/joakimcarlsson/ai/tts/elevenlabs"
 )
 
@@ -81,7 +83,7 @@ func transcribe(ctx context.Context, apiKey, pcmPath string) (string, error) {
 	client := sttassemblyai.NewSpeechToText(
 		sttassemblyai.WithAPIKey(apiKey),
 		sttassemblyai.WithModel(
-			model.AssemblyAITranscriptionModels[model.AssemblyAIUniversalStreamingEnglish],
+			assemblyai.Models[assemblyai.UniversalStreamingEnglish],
 		),
 	)
 
@@ -155,7 +157,7 @@ func feedPCM(ctx context.Context, r io.Reader, audio chan<- []byte) {
 func chat(ctx context.Context, apiKey, prompt string) (string, error) {
 	client := llmopenai.NewLLM(
 		llmopenai.WithAPIKey(apiKey),
-		llmopenai.WithModel(model.OpenAIModels[model.GPT54]),
+		llmopenai.WithModel(openai.Models[openai.GPT54]),
 		llmopenai.WithMaxTokens(256),
 	)
 	resp, err := client.SendMessages(ctx, []message.Message{
@@ -171,7 +173,7 @@ func speak(ctx context.Context, apiKey, text, outputPath string) error {
 	client := ttselevenlabs.NewGeneration(
 		ttselevenlabs.WithAPIKey(apiKey),
 		ttselevenlabs.WithModel(
-			model.ElevenLabsAudioModels[model.ElevenTurboV2_5],
+			elevenlabs.Models[elevenlabs.TurboV2_5],
 		),
 		ttselevenlabs.WithOutputFormat("mp3_44100_128"),
 	)

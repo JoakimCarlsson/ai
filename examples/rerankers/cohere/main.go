@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/rerankers/cohere"
 	rerankercohere "github.com/joakimcarlsson/ai/rerankers/cohere"
 )
 
@@ -19,7 +19,7 @@ func main() {
 	client := rerankercohere.NewReranker(
 		rerankercohere.WithAPIKey(apiKey),
 		rerankercohere.WithModel(
-			model.CohereRerankerModels[model.CohereRerank35],
+			cohere.Models[cohere.Rerank35],
 		),
 		rerankercohere.WithTopK(3),
 		rerankercohere.WithReturnDocuments(true),

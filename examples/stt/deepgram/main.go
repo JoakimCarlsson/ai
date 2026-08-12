@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/stt"
+	"github.com/joakimcarlsson/ai/stt/deepgram"
 	sttdeepgram "github.com/joakimcarlsson/ai/stt/deepgram"
 )
 
@@ -29,7 +29,7 @@ func main() {
 	client := sttdeepgram.NewSpeechToText(
 		sttdeepgram.WithAPIKey(apiKey),
 		sttdeepgram.WithModel(
-			model.DeepgramTranscriptionModels[model.DeepgramNova3],
+			deepgram.Models[deepgram.Nova3],
 		),
 		sttdeepgram.WithPunctuate(true),
 		sttdeepgram.WithSmartFormat(true),

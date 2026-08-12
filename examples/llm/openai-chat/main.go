@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/joakimcarlsson/ai/llm/openai"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 
 	client := llmopenai.NewLLM(
 		llmopenai.WithAPIKey(apiKey),
-		llmopenai.WithModel(model.OpenAIModels[model.GPT54Nano]),
+		llmopenai.WithModel(openai.Models[openai.GPT54Nano]),
 		llmopenai.WithMaxTokens(256),
 	)
 

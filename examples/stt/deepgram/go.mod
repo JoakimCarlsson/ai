@@ -3,7 +3,6 @@ module github.com/joakimcarlsson/ai/examples/stt/deepgram
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/model v0.8.0
 	github.com/joakimcarlsson/ai/stt v0.2.5
 	github.com/joakimcarlsson/ai/stt/deepgram v0.2.5
 )
@@ -49,7 +48,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm => ../../../llm
 	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
 	github.com/joakimcarlsson/ai/rerankers => ../../../rerankers
 	github.com/joakimcarlsson/ai/schema => ../../../schema

@@ -7,10 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/joakimcarlsson/ai/llm"
+
 	"github.com/joakimcarlsson/ai/llm/deepseek"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 // TestCacheHitTokens verifies a DeepSeek response with a cache hit populates
@@ -33,7 +34,7 @@ func TestCacheHitTokens(t *testing.T) {
 	client := deepseek.NewLLM(
 		llmopenai.WithAPIKey("test-key"),
 		llmopenai.WithBaseURL(srv.URL),
-		llmopenai.WithModel(model.Model{APIModel: "deepseek-chat"}),
+		llmopenai.WithModel(llm.Model{APIModel: "deepseek-chat"}),
 	)
 
 	resp, err := client.SendMessages(context.Background(),

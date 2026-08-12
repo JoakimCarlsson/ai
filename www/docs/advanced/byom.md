@@ -10,13 +10,13 @@ registry for organising multiple BYOM endpoints.
 ```go
 import (
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
-    "github.com/joakimcarlsson/ai/model"
+    "github.com/joakimcarlsson/ai/llm"
 )
 
-llamaModel := model.NewCustomModel(
-    model.WithModelID("llama3.2"),
-    model.WithAPIModel("llama3.2:latest"),
-    model.WithContextWindow(128_000),
+llamaModel := llm.NewCustomModel(
+    llm.WithModelID("llama3.2"),
+    llm.WithAPIModel("llama3.2:latest"),
+    llm.WithContextWindow(128_000),
 )
 
 client := llmopenai.NewLLM(
@@ -64,21 +64,21 @@ which vendor module they're invoking.
 ## Custom model options
 
 ```go
-customModel := model.NewCustomModel(
-    model.WithModelID("my-model"),
-    model.WithAPIModel("my-model-v1"),         // sent in API requests
-    model.WithName("My Custom Model"),         // human-readable
-    model.WithProvider("my-provider"),         // provider identifier
-    model.WithContextWindow(131_072),
-    model.WithDefaultMaxTokens(4096),
-    model.WithStructuredOutput(true),
-    model.WithAttachments(true),
-    model.WithReasoning(true),
-    model.WithImageGeneration(false),
-    model.WithCostPer1MIn(1.50),
-    model.WithCostPer1MOut(5.00),
-    model.WithCostPer1MInCached(0.15),
-    model.WithCostPer1MOutCached(2.50),
+customModel := llm.NewCustomModel(
+    llm.WithModelID("my-model"),
+    llm.WithAPIModel("my-model-v1"),         // sent in API requests
+    llm.WithName("My Custom Model"),         // human-readable
+    llm.WithProvider("my-provider"),         // provider identifier
+    llm.WithContextWindow(131_072),
+    llm.WithDefaultMaxTokens(4096),
+    llm.WithStructuredOutput(true),
+    llm.WithAttachments(true),
+    llm.WithReasoning(true),
+    llm.WithImageGeneration(false),
+    llm.WithCostPer1MIn(1.50),
+    llm.WithCostPer1MOut(5.00),
+    llm.WithCostPer1MInCached(0.15),
+    llm.WithCostPer1MOutCached(2.50),
 )
 ```
 

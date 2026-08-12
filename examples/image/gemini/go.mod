@@ -5,7 +5,6 @@ go 1.25.8
 require (
 	github.com/joakimcarlsson/ai/image v0.2.0
 	github.com/joakimcarlsson/ai/image/gemini v0.1.7
-	github.com/joakimcarlsson/ai/model v0.8.0
 )
 
 require (
@@ -62,7 +61,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm => ../../../llm
 	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
 	github.com/joakimcarlsson/ai/rerankers => ../../../rerankers
 	github.com/joakimcarlsson/ai/schema => ../../../schema

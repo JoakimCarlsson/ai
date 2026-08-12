@@ -8,10 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/joakimcarlsson/ai/llm"
+
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 	"github.com/joakimcarlsson/ai/llm/perplexity"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 // TestWireSearchControlsAndMetadata confirms search-control options reach the
@@ -35,7 +36,7 @@ func TestWireSearchControlsAndMetadata(t *testing.T) {
 	client := perplexity.NewLLM(
 		llmopenai.WithAPIKey("test-key"),
 		llmopenai.WithBaseURL(srv.URL),
-		llmopenai.WithModel(model.Model{APIModel: "sonar"}),
+		llmopenai.WithModel(llm.Model{APIModel: "sonar"}),
 		perplexity.WithSearchDomainFilter("a.test", "-b.test"),
 		perplexity.WithSearchRecencyFilter("week"),
 		perplexity.WithReturnRelatedQuestions(true),

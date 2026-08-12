@@ -6,7 +6,6 @@ require (
 	github.com/joakimcarlsson/ai/llm v0.5.3
 	github.com/joakimcarlsson/ai/memory v0.2.8
 	github.com/joakimcarlsson/ai/message v0.5.2
-	github.com/joakimcarlsson/ai/model v0.8.0
 	github.com/joakimcarlsson/ai/schema v0.2.0
 	github.com/joakimcarlsson/ai/session v0.1.6
 	github.com/joakimcarlsson/ai/stt v0.2.5
@@ -60,7 +59,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm => ../llm
 	github.com/joakimcarlsson/ai/memory => ../memory
 	github.com/joakimcarlsson/ai/message => ../message
-	github.com/joakimcarlsson/ai/model => ../model
 	github.com/joakimcarlsson/ai/schema => ../schema
 	github.com/joakimcarlsson/ai/session => ../session
 	github.com/joakimcarlsson/ai/stt => ../stt

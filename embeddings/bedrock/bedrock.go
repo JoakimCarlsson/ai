@@ -11,12 +11,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
 	"github.com/joakimcarlsson/ai/embeddings"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 // Options configures the Bedrock embeddings client.
 type Options struct {
-	model      model.EmbeddingModel
+	model      embeddings.EmbeddingModel
 	batchSize  int
 	dimensions *int
 	region     string
@@ -28,7 +27,7 @@ type Option func(*Options)
 
 // WithModel selects the embedding model.
 func WithModel(
-	m model.EmbeddingModel,
+	m embeddings.EmbeddingModel,
 ) Option {
 	return func(o *Options) { o.model = m }
 }
@@ -98,7 +97,7 @@ func NewEmbedding(opts ...Option) embeddings.Embedding {
 }
 
 // Model returns the configured embedding model.
-func (c *Client) Model() model.EmbeddingModel { return c.options.model }
+func (c *Client) Model() embeddings.EmbeddingModel { return c.options.model }
 
 type titanRequest struct {
 	InputText  string `json:"inputText"`

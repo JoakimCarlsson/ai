@@ -16,7 +16,7 @@
 //
 //	embedder := voyage.NewEmbedding(
 //		voyage.WithAPIKey("your-api-key"),
-//		voyage.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
+//		voyage.WithModel(voyage.Models[voyage.Voyage35]),
 //	)
 //
 //	response, err := embedder.GenerateEmbeddings(ctx, []string{"Hello world"})
@@ -26,7 +26,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tracing"
 )
 
@@ -109,7 +108,7 @@ type Embedding interface {
 	) (*ContextualizedEmbeddingResponse, error)
 
 	// Model returns the embedding model configuration being used.
-	Model() model.EmbeddingModel
+	Model() EmbeddingModel
 }
 
 // TracingAttrs are construction-time attributes vendor packages forward to the
@@ -130,7 +129,7 @@ type tracingEmbedding struct {
 	attrs TracingAttrs
 }
 
-func (t *tracingEmbedding) Model() model.EmbeddingModel {
+func (t *tracingEmbedding) Model() EmbeddingModel {
 	return t.inner.Model()
 }
 

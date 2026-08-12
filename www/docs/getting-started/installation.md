@@ -16,7 +16,6 @@ Each modality and vendor is a separate Go module. Pull just the ones you need.
 go get github.com/joakimcarlsson/ai/llm
 go get github.com/joakimcarlsson/ai/llm/openai
 go get github.com/joakimcarlsson/ai/message
-go get github.com/joakimcarlsson/ai/model
 ```
 
 **LLM with Anthropic:**
@@ -25,7 +24,6 @@ go get github.com/joakimcarlsson/ai/model
 go get github.com/joakimcarlsson/ai/llm
 go get github.com/joakimcarlsson/ai/llm/anthropic
 go get github.com/joakimcarlsson/ai/message
-go get github.com/joakimcarlsson/ai/model
 ```
 
 **Embeddings (Voyage) + LLM (OpenAI) + agent runtime:**
@@ -37,7 +35,6 @@ go get github.com/joakimcarlsson/ai/llm/openai
 go get github.com/joakimcarlsson/ai/embeddings
 go get github.com/joakimcarlsson/ai/embeddings/voyage
 go get github.com/joakimcarlsson/ai/message
-go get github.com/joakimcarlsson/ai/model
 ```
 
 **Persistent memory with pgvector:**
@@ -58,7 +55,6 @@ clashing with the modality package:
 ```go
 import (
     "github.com/joakimcarlsson/ai/message"
-    "github.com/joakimcarlsson/ai/model"
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 )
 ```
@@ -72,7 +68,6 @@ import (
     pgvectormem "github.com/joakimcarlsson/ai/memory/pgvector"
     embopenai "github.com/joakimcarlsson/ai/embeddings/openai"
     llmanthropic "github.com/joakimcarlsson/ai/llm/anthropic"
-    "github.com/joakimcarlsson/ai/model"
 )
 ```
 
@@ -96,7 +91,7 @@ You can also pass the key directly to the constructor:
 ```go
 client := llmopenai.NewLLM(
     llmopenai.WithAPIKey("sk-..."),
-    llmopenai.WithModel(model.OpenAIModels[model.GPT4o]),
+    llmopenai.WithModel(openai.Models[openai.GPT4o]),
 )
 ```
 
@@ -110,7 +105,7 @@ separate vendor module:
 client := llmopenai.NewLLM(
     llmopenai.WithAPIKey(os.Getenv("GROQ_API_KEY")),
     llmopenai.WithBaseURL("https://api.groq.com/openai/v1"),
-    llmopenai.WithModel(model.GroqModels[model.LLaMA3_70B]),
+    llmopenai.WithModel(groq.Models[groq.Llama3_3_70BVersatile]),
 )
 ```
 

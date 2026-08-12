@@ -118,7 +118,7 @@ import (
 // Anthropic web_search
 anthropic := llmanthropic.NewLLM(
     llmanthropic.WithAPIKey(os.Getenv("ANTHROPIC_API_KEY")),
-    llmanthropic.WithModel(model.AnthropicModels[model.Claude47Opus]),
+    llmanthropic.WithModel(anthropic.Models[anthropic.Claude47Opus]),
     llmanthropic.WithWebSearch(llmanthropic.WebSearchConfig{
         MaxUses:        5,
         AllowedDomains: []string{"go.dev", "pkg.go.dev"},
@@ -128,7 +128,7 @@ anthropic := llmanthropic.NewLLM(
 // Gemini google_search + code_execution
 gemini := llmgemini.NewLLM(
     llmgemini.WithAPIKey(os.Getenv("GEMINI_API_KEY")),
-    llmgemini.WithModel(model.GeminiModels[model.Gemini25Flash]),
+    llmgemini.WithModel(gemini.Models[gemini.Gemini25Flash]),
     llmgemini.WithGoogleSearch(),
     llmgemini.WithCodeExecution(),
 )
@@ -136,7 +136,7 @@ gemini := llmgemini.NewLLM(
 // OpenAI Responses API: web_search, file_search, code_interpreter
 openaiR := llmopenai.NewResponsesLLM(
     llmopenai.WithResponsesAPIKey(os.Getenv("OPENAI_API_KEY")),
-    llmopenai.WithResponsesModel(model.OpenAIModels[model.GPT5]),
+    llmopenai.WithResponsesModel(openai.Models[openai.GPT5]),
     llmopenai.WithWebSearch(llmopenai.WebSearchOpts{
         SearchContextSize: llmopenai.SearchContextMedium,
     }),
@@ -145,14 +145,14 @@ openaiR := llmopenai.NewResponsesLLM(
 // Groq compound models: browser_search, code_execution, visit_website
 groq := llmgroq.NewCompoundLLM(
     llmgroq.WithCompoundAPIKey(os.Getenv("GROQ_API_KEY")),
-    llmgroq.WithCompoundModel(model.Model{APIModel: "groq/compound"}),
+    llmgroq.WithCompoundModel(llm.Model{APIModel: "groq/compound"}),
     llmgroq.WithBrowserSearch(),
 )
 
 // xAI Responses API: web_search, x_search, code_execution
 xai := llmxai.NewResponsesLLM(
     llmxai.WithResponsesAPIKey(os.Getenv("XAI_API_KEY")),
-    llmxai.WithResponsesModel(model.XAIModels[model.XAIGrok4]),
+    llmxai.WithResponsesModel(xai.Models[xai.Grok4]),
     llmxai.WithWebSearch(),
     llmxai.WithXSearch(),
 )

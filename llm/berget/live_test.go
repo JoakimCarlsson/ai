@@ -10,7 +10,6 @@ import (
 	"github.com/joakimcarlsson/ai/llm"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
@@ -25,16 +24,16 @@ func key(t *testing.T) string {
 	return k
 }
 
-func client(t *testing.T, id model.ID) llm.LLM {
+func client(t *testing.T, id string) llm.LLM {
 	return NewLLM(
 		llmopenai.WithAPIKey(key(t)),
-		llmopenai.WithModel(model.BergetModels[id]),
+		llmopenai.WithModel(Models[id]),
 		llmopenai.WithMaxTokens(64),
 	)
 }
 
 func TestLive(t *testing.T) {
-	c := client(t, model.BergetMistralSmall32)
+	c := client(t, MistralSmall32)
 	resp, err := c.SendMessages(context.Background(), []message.Message{
 		message.NewUserMessage("Reply with exactly the word: pong"),
 	}, nil)
@@ -53,7 +52,7 @@ func TestLive(t *testing.T) {
 }
 
 func TestLiveStreaming(t *testing.T) {
-	c := client(t, model.BergetMistralSmall32)
+	c := client(t, MistralSmall32)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -100,7 +99,7 @@ func (weatherTool) Run(_ context.Context, _ tool.Call) (tool.Response, error) {
 }
 
 func TestLiveToolCalling(t *testing.T) {
-	c := client(t, model.BergetMistralSmall32)
+	c := client(t, MistralSmall32)
 	resp, err := c.SendMessages(context.Background(), []message.Message{
 		message.NewUserMessage(
 			"What is the weather in Paris? Use the get_weather tool.",
@@ -119,7 +118,7 @@ func TestLiveToolCalling(t *testing.T) {
 }
 
 func TestLiveStructuredOutput(t *testing.T) {
-	c := client(t, model.BergetMistralSmall32)
+	c := client(t, MistralSmall32)
 	out := schema.NewStructuredOutputInfo(
 		"capital",
 		"The capital city of a country",
@@ -159,15 +158,15 @@ func TestLiveStructuredOutput(t *testing.T) {
 
 func TestLiveAllChatModels(t *testing.T) {
 	key(t)
-	ids := []model.ID{
-		model.BergetGPTOSS120B,
-		model.BergetMistralMedium35,
-		model.BergetMistralSmall32,
-		model.BergetGLM47,
-		model.BergetGLM52,
-		model.BergetKimiK26,
-		model.BergetGemma431B,
-		model.BergetLlama3370B,
+	ids := []string{
+		GPTOSS120B,
+		MistralMedium35,
+		MistralSmall32,
+		GLM47,
+		GLM52,
+		KimiK26,
+		Gemma431B,
+		Llama3370B,
 	}
 	var ok int
 	for _, id := range ids {

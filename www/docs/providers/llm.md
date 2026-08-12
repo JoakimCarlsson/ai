@@ -10,12 +10,11 @@ vendor-agnostic.
 ```go
 import (
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
-    "github.com/joakimcarlsson/ai/model"
 )
 
 client := llmopenai.NewLLM(
     llmopenai.WithAPIKey("your-api-key"),
-    llmopenai.WithModel(model.OpenAIModels[model.GPT4o]),
+    llmopenai.WithModel(llmopenai.Models[llmopenai.GPT4o]),
     llmopenai.WithMaxTokens(1000),
 )
 ```
@@ -27,7 +26,7 @@ import llmanthropic "github.com/joakimcarlsson/ai/llm/anthropic"
 
 client := llmanthropic.NewLLM(
     llmanthropic.WithAPIKey("..."),
-    llmanthropic.WithModel(model.AnthropicModels[model.Claude45Sonnet]),
+    llmanthropic.WithModel(anthropic.Models[anthropic.Claude45Sonnet]),
     llmanthropic.WithMaxTokens(1000),
 )
 ```
@@ -81,7 +80,7 @@ Every vendor exports the standard set:
 
 ```go
 llmopenai.WithAPIKey("...")
-llmopenai.WithModel(model.OpenAIModels[model.GPT4o])
+llmopenai.WithModel(openai.Models[openai.GPT4o])
 llmopenai.WithMaxTokens(2000)
 llmopenai.WithTemperature(0.7)
 llmopenai.WithTopP(0.9)
@@ -202,7 +201,7 @@ Responses API is a separate surface from Chat Completions; use
 ```go
 client := llmopenai.NewResponsesLLM(
     llmopenai.WithResponsesAPIKey(os.Getenv("OPENAI_API_KEY")),
-    llmopenai.WithResponsesModel(model.OpenAIModels[model.GPT5]),
+    llmopenai.WithResponsesModel(openai.Models[openai.GPT5]),
     llmopenai.WithResponsesMaxTokens(1024),
     llmopenai.WithWebSearch(llmopenai.WebSearchOpts{
         SearchContextSize: llmopenai.SearchContextMedium,
@@ -223,7 +222,7 @@ import llmgroq "github.com/joakimcarlsson/ai/llm/groq"
 
 client := llmgroq.NewCompoundLLM(
     llmgroq.WithCompoundAPIKey(os.Getenv("GROQ_API_KEY")),
-    llmgroq.WithCompoundModel(model.Model{APIModel: "groq/compound"}),
+    llmgroq.WithCompoundModel(llm.Model{APIModel: "groq/compound"}),
     llmgroq.WithBrowserSearch(llmgroq.BrowserSearchOpts{
         Country:       "us",
         IncludeImages: true,
@@ -244,7 +243,7 @@ import llmxai "github.com/joakimcarlsson/ai/llm/xai"
 
 client := llmxai.NewResponsesLLM(
     llmxai.WithResponsesAPIKey(os.Getenv("XAI_API_KEY")),
-    llmxai.WithResponsesModel(model.XAIModels[model.XAIGrok4]),
+    llmxai.WithResponsesModel(xai.Models[xai.Grok4]),
     llmxai.WithWebSearch(llmxai.WebSearchOpts{
         SearchContextSize: llmxai.SearchContextMedium,
     }),
@@ -280,7 +279,7 @@ import llmbedrock "github.com/joakimcarlsson/ai/llm/bedrock"
 
 // Region is read from $AWS_REGION (or $AWS_DEFAULT_REGION).
 client := llmbedrock.NewLLM(
-    llmbedrock.WithModel(model.AnthropicModels[model.Claude45Sonnet]),
+    llmbedrock.WithModel(anthropic.Models[anthropic.Claude45Sonnet]),
     llmbedrock.WithMaxTokens(2000),
 )
 ```
@@ -297,7 +296,7 @@ import llmvertex "github.com/joakimcarlsson/ai/llm/vertexai"
 client := llmvertex.NewLLM(
     llmvertex.WithProject(os.Getenv("VERTEXAI_PROJECT")),
     llmvertex.WithLocation(os.Getenv("VERTEXAI_LOCATION")),
-    llmvertex.WithModel(model.GeminiModels[model.Gemini25Pro]),
+    llmvertex.WithModel(llmvertex.Models[llmvertex.Gemini31Pro]),
 )
 ```
 
@@ -310,7 +309,7 @@ base URL:
 openrouter := llmopenai.NewLLM(
     llmopenai.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
     llmopenai.WithBaseURL("https://openrouter.ai/api/v1"),
-    llmopenai.WithModel(model.OpenAIModels[model.GPT5]),
+    llmopenai.WithModel(openai.Models[openai.GPT5]),
 )
 ```
 
@@ -332,12 +331,11 @@ does not re-export the option constructors; pass the standard ones from
 import (
     llmberget "github.com/joakimcarlsson/ai/llm/berget"
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
-    "github.com/joakimcarlsson/ai/model"
 )
 
 client := llmberget.NewLLM(
     llmopenai.WithAPIKey(os.Getenv("BERGET_API_KEY")),
-    llmopenai.WithModel(model.BergetModels[model.BergetGPTOSS120B]),
+    llmopenai.WithModel(llmberget.Models[llmberget.GPTOSS120B]),
     llmopenai.WithMaxTokens(1000),
 )
 ```

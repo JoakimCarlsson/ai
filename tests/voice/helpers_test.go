@@ -12,8 +12,8 @@ import (
 	"time"
 
 	llm "github.com/joakimcarlsson/ai/llm"
+
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/stt"
 	"github.com/joakimcarlsson/ai/tool"
@@ -158,7 +158,7 @@ func (f *fakeLLM) StreamResponseWithStructuredOutput(
 	return nil
 }
 
-func (f *fakeLLM) Model() model.Model             { return model.Model{} }
+func (f *fakeLLM) Model() llm.Model               { return llm.Model{} }
 func (f *fakeLLM) SupportsStructuredOutput() bool { return false }
 
 type fakeSTT struct {
@@ -222,7 +222,7 @@ func (f *fakeSTT) Translate(
 
 func (f *fakeSTT) SupportsStreaming() bool { return true }
 
-func (f *fakeSTT) Model() model.TranscriptionModel { return model.TranscriptionModel{} }
+func (f *fakeSTT) Model() stt.TranscriptionModel { return stt.TranscriptionModel{} }
 
 type fakeTTS struct {
 	mu       sync.Mutex
@@ -295,7 +295,7 @@ func (f *fakeTTS) ListVoices(context.Context) ([]tts.Voice, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (f *fakeTTS) Model() model.AudioModel { return model.AudioModel{} }
+func (f *fakeTTS) Model() tts.AudioModel { return tts.AudioModel{} }
 
 type fakeTransport struct {
 	mu      sync.Mutex

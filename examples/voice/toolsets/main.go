@@ -31,10 +31,12 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/joakimcarlsson/ai/llm/openai"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
-	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/stt/assemblyai"
 	sttassemblyai "github.com/joakimcarlsson/ai/stt/assemblyai"
 	"github.com/joakimcarlsson/ai/tool"
+	"github.com/joakimcarlsson/ai/tts/deepgram"
 	ttsdeepgram "github.com/joakimcarlsson/ai/tts/deepgram"
 	"github.com/joakimcarlsson/ai/voice"
 )
@@ -62,7 +64,7 @@ func main() {
 	openaiKey := requireEnv("OPENAI_API_KEY")
 	assemblyKey := requireEnv("ASSEMBLYAI_API_KEY")
 	deepgramKey := requireEnv("DEEPGRAM_API_KEY")
-	deepgramVoice := envOr("DEEPGRAM_VOICE", string(model.DeepgramAura2Thalia))
+	deepgramVoice := envOr("DEEPGRAM_VOICE", string(deepgram.Aura2Thalia))
 	addr := envOr("LISTEN_ADDR", ":8080")
 
 	mux := http.NewServeMux()
@@ -114,14 +116,14 @@ func wsHandler(
 
 		llmClient := llmopenai.NewLLM(
 			llmopenai.WithAPIKey(openaiKey),
-			llmopenai.WithModel(model.OpenAIModels[model.GPT54Mini]),
+			llmopenai.WithModel(openai.Models[openai.GPT54Mini]),
 			llmopenai.WithMaxTokens(2048),
 		)
 
 		sttClient := sttassemblyai.NewSpeechToText(
 			sttassemblyai.WithAPIKey(assemblyKey),
 			sttassemblyai.WithModel(
-				model.AssemblyAITranscriptionModels[model.AssemblyAIU3RTPro],
+				assemblyai.Models[assemblyai.U3RTPro],
 			),
 		)
 

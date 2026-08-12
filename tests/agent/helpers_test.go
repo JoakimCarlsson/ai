@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
+	llm "github.com/joakimcarlsson/ai/llm"
+
 	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 
-	llm "github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
@@ -151,8 +151,8 @@ func (m *mockLLM) StreamResponseWithStructuredOutput(
 	return ch
 }
 
-func (m *mockLLM) Model() model.Model {
-	return model.Model{ID: "mock-model", Provider: "mock"}
+func (m *mockLLM) Model() llm.Model {
+	return llm.Model{ID: "mock-model", Provider: "mock"}
 }
 
 func (m *mockLLM) SupportsStructuredOutput() bool {
@@ -217,7 +217,7 @@ func (m *concurrencyTrackingLLM) StreamResponseWithStructuredOutput(
 	return m.base.StreamResponseWithStructuredOutput(ctx, msgs, tools, info)
 }
 
-func (m *concurrencyTrackingLLM) Model() model.Model {
+func (m *concurrencyTrackingLLM) Model() llm.Model {
 	return m.base.Model()
 }
 
@@ -270,7 +270,7 @@ func (m *toolResultCapturingLLM) StreamResponseWithStructuredOutput(
 	return m.base.StreamResponseWithStructuredOutput(ctx, msgs, tools, info)
 }
 
-func (m *toolResultCapturingLLM) Model() model.Model {
+func (m *toolResultCapturingLLM) Model() llm.Model {
 	return m.base.Model()
 }
 

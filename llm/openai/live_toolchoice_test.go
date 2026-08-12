@@ -9,7 +9,6 @@ import (
 
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tool"
 )
 
@@ -40,7 +39,7 @@ func liveOpenAI(t *testing.T, tc llm.ToolChoice) llm.LLM {
 	}
 	return NewLLM(
 		WithAPIKey(key),
-		WithModel(model.OpenAIModels[model.GPT54Nano]),
+		WithModel(Models[GPT54Nano]),
 		WithMaxTokens(256),
 		WithToolChoice(tc),
 	)

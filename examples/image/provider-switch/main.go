@@ -8,10 +8,12 @@ import (
 	"strings"
 
 	"github.com/joakimcarlsson/ai/image"
+	"github.com/joakimcarlsson/ai/image/gemini"
 	imagegemini "github.com/joakimcarlsson/ai/image/gemini"
+	"github.com/joakimcarlsson/ai/image/openai"
 	imageopenai "github.com/joakimcarlsson/ai/image/openai"
+	"github.com/joakimcarlsson/ai/image/xai"
 	imagexai "github.com/joakimcarlsson/ai/image/xai"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -46,7 +48,7 @@ func newImageClient() (image.Generation, string) {
 		return imagegemini.NewGeneration(
 			imagegemini.WithAPIKey(requiredEnv("GEMINI_API_KEY")),
 			imagegemini.WithModel(
-				model.GeminiImageGenerationModels[model.Imagen4Fast],
+				gemini.Models[gemini.Imagen4Fast],
 			),
 			imagegemini.WithAspectRatio(imagegemini.AspectRatio1x1),
 		), provider
@@ -54,7 +56,7 @@ func newImageClient() (image.Generation, string) {
 		return imageopenai.NewGeneration(
 			imageopenai.WithAPIKey(requiredEnv("OPENAI_API_KEY")),
 			imageopenai.WithModel(
-				model.OpenAIImageGenerationModels[model.GPTImage15],
+				openai.Models[openai.GPTImage15],
 			),
 			imageopenai.WithSize(imageopenai.Size1024x1024),
 		), provider
@@ -62,7 +64,7 @@ func newImageClient() (image.Generation, string) {
 		return imagexai.NewGeneration(
 			imagexai.WithAPIKey(requiredEnv("XAI_API_KEY")),
 			imagexai.WithModel(
-				model.XAIImageGenerationModels[model.XAIGrokImagineImage],
+				xai.Models[xai.GrokImagineImage],
 			),
 			imagexai.WithAspectRatio(imagexai.AspectRatio1x1),
 			imagexai.WithResponseFormat(imagexai.ResponseFormatBase64),

@@ -8,7 +8,6 @@ import (
 	"github.com/joakimcarlsson/ai/agent/team"
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 )
@@ -116,7 +115,7 @@ func (m *routingMockLLM) StreamResponseWithStructuredOutput(
 		StreamResponseWithStructuredOutput(ctx, msgs, tools, info)
 }
 
-func (m *routingMockLLM) Model() model.Model {
+func (m *routingMockLLM) Model() llm.Model {
 	return m.lead.Model()
 }
 

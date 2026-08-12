@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tts"
+	"github.com/joakimcarlsson/ai/tts/elevenlabs"
 	ttselevenlabs "github.com/joakimcarlsson/ai/tts/elevenlabs"
 )
 
@@ -20,7 +20,7 @@ func main() {
 	client := ttselevenlabs.NewGeneration(
 		ttselevenlabs.WithAPIKey(apiKey),
 		ttselevenlabs.WithModel(
-			model.ElevenLabsAudioModels[model.ElevenMultilingualV2],
+			elevenlabs.Models[elevenlabs.MultilingualV2],
 		),
 		ttselevenlabs.WithOutputFormat("mp3_44100_128"),
 	)

@@ -3,7 +3,6 @@ module github.com/joakimcarlsson/ai/examples/rerankers/provider-switch
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/model v0.8.0
 	github.com/joakimcarlsson/ai/rerankers v0.2.3
 	github.com/joakimcarlsson/ai/rerankers/cohere v0.1.5
 	github.com/joakimcarlsson/ai/rerankers/voyage v0.1.5
@@ -59,7 +58,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm/openai => ../../../llm/openai
 	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
 	github.com/joakimcarlsson/ai/rerankers => ../../../rerankers
 	github.com/joakimcarlsson/ai/rerankers/cohere => ../../../rerankers/cohere

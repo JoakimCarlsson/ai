@@ -23,7 +23,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/joakimcarlsson/ai/embeddings v0.2.5 // indirect
-	github.com/joakimcarlsson/ai/model v0.8.0 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.0 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.7.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
@@ -59,7 +58,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm => ../llm
 	github.com/joakimcarlsson/ai/memory => ../memory
 	github.com/joakimcarlsson/ai/message => ../message
-	github.com/joakimcarlsson/ai/model => ../model
 	github.com/joakimcarlsson/ai/prompt => ../prompt
 	github.com/joakimcarlsson/ai/schema => ../schema
 	github.com/joakimcarlsson/ai/session => ../session

@@ -10,7 +10,6 @@ require (
 
 require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
-	github.com/joakimcarlsson/ai/model v0.8.0 // indirect
 	github.com/joakimcarlsson/ai/tool v0.1.2 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.7.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
@@ -32,7 +31,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm => ../../../llm
 	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
 	github.com/joakimcarlsson/ai/rerankers => ../../../rerankers
 	github.com/joakimcarlsson/ai/schema => ../../../schema

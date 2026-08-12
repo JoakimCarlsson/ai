@@ -13,7 +13,6 @@ import (
 
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
     "github.com/joakimcarlsson/ai/message"
-    "github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -21,7 +20,7 @@ func main() {
 
     client := llmopenai.NewLLM(
         llmopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-        llmopenai.WithModel(model.OpenAIModels[model.GPT4o]),
+        llmopenai.WithModel(llmopenai.Models[llmopenai.GPT4o]),
         llmopenai.WithMaxTokens(1000),
     )
 
@@ -84,7 +83,7 @@ import llmanthropic "github.com/joakimcarlsson/ai/llm/anthropic"
 
 client := llmanthropic.NewLLM(
     llmanthropic.WithAPIKey(os.Getenv("ANTHROPIC_API_KEY")),
-    llmanthropic.WithModel(model.AnthropicModels[model.Claude45Sonnet]),
+    llmanthropic.WithModel(anthropic.Models[anthropic.Claude45Sonnet]),
     llmanthropic.WithMaxTokens(1000),
 )
 ```

@@ -2,10 +2,7 @@ module github.com/joakimcarlsson/ai/examples/embeddings/voyage
 
 go 1.25.0
 
-require (
-	github.com/joakimcarlsson/ai/embeddings/voyage v0.1.6
-	github.com/joakimcarlsson/ai/model v0.8.0
-)
+require github.com/joakimcarlsson/ai/embeddings/voyage v0.1.6
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
@@ -49,7 +46,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm => ../../../llm
 	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
 	github.com/joakimcarlsson/ai/rerankers => ../../../rerankers
 	github.com/joakimcarlsson/ai/schema => ../../../schema

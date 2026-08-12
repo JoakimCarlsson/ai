@@ -8,9 +8,12 @@ import (
 	"strings"
 
 	"github.com/joakimcarlsson/ai/llm"
+	"github.com/joakimcarlsson/ai/llm/groq"
+	"github.com/joakimcarlsson/ai/llm/ollama"
+	"github.com/joakimcarlsson/ai/llm/openai"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
+	"github.com/joakimcarlsson/ai/llm/openrouter"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -37,7 +40,7 @@ func newLLM() (llm.LLM, string) {
 				envOrDefault("BASE_URL", "https://api.groq.com/openai/v1"),
 			),
 			llmopenai.WithModel(
-				modelFromEnv(model.GroqModels[model.Llama3_3_70BVersatile]),
+				modelFromEnv(groq.Models[groq.Llama3_3_70BVersatile]),
 			),
 			llmopenai.WithMaxTokens(256),
 		), provider
@@ -48,7 +51,7 @@ func newLLM() (llm.LLM, string) {
 				envOrDefault("BASE_URL", "http://localhost:11434/v1"),
 			),
 			llmopenai.WithModel(
-				modelFromEnv(model.OllamaModels[model.OllamaLlama32_3B]),
+				modelFromEnv(ollama.Models[ollama.Llama32_3B]),
 			),
 			llmopenai.WithMaxTokens(256),
 		), provider
@@ -62,7 +65,7 @@ func newLLM() (llm.LLM, string) {
 			),
 			llmopenai.WithModel(
 				modelFromEnv(
-					model.OpenRouterModels[model.OpenRouterClaude46Sonnet],
+					openrouter.Models[openrouter.Claude46Sonnet],
 				),
 			),
 			llmopenai.WithMaxTokens(256),
@@ -72,7 +75,7 @@ func newLLM() (llm.LLM, string) {
 			llmopenai.WithAPIKey(os.Getenv("API_KEY")),
 			llmopenai.WithBaseURL(requiredEnv("BASE_URL")),
 			llmopenai.WithModel(
-				customModel(requiredEnv("MODEL"), model.Provider("custom")),
+				customModel(requiredEnv("MODEL"), string("custom")),
 			),
 			llmopenai.WithMaxTokens(256),
 		), provider
@@ -80,7 +83,7 @@ func newLLM() (llm.LLM, string) {
 		opts := []llmopenai.Option{
 			llmopenai.WithAPIKey(requiredFirstEnv("OPENAI_API_KEY", "API_KEY")),
 			llmopenai.WithModel(
-				modelFromEnv(model.OpenAIModels[model.GPT54Nano]),
+				modelFromEnv(openai.Models[openai.GPT54Nano]),
 			),
 			llmopenai.WithMaxTokens(256),
 		}
@@ -97,7 +100,7 @@ func newLLM() (llm.LLM, string) {
 	}
 }
 
-func modelFromEnv(defaultModel model.Model) model.Model {
+func modelFromEnv(defaultModel llm.Model) llm.Model {
 	modelID := os.Getenv("MODEL")
 	if modelID == "" {
 		return defaultModel
@@ -105,12 +108,12 @@ func modelFromEnv(defaultModel model.Model) model.Model {
 	return customModel(modelID, defaultModel.Provider)
 }
 
-func customModel(modelID string, provider model.Provider) model.Model {
-	return model.NewCustomModel(
-		model.WithModelID(model.ID(modelID)),
-		model.WithAPIModel(modelID),
-		model.WithName(modelID),
-		model.WithProvider(provider),
+func customModel(modelID string, provider string) llm.Model {
+	return llm.NewCustomModel(
+		llm.WithModelID(string(modelID)),
+		llm.WithAPIModel(modelID),
+		llm.WithName(modelID),
+		llm.WithProvider(provider),
 	)
 }
 

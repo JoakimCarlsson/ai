@@ -5,7 +5,6 @@ go 1.25.0
 require (
 	github.com/joakimcarlsson/ai/llm/openai v0.4.8
 	github.com/joakimcarlsson/ai/message v0.5.2
-	github.com/joakimcarlsson/ai/model v0.8.0
 	github.com/joakimcarlsson/ai/tracing v0.1.1
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.45.0
 	go.opentelemetry.io/otel/sdk v1.45.0
@@ -76,7 +75,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm/openai => ../../../llm/openai
 	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
 	github.com/joakimcarlsson/ai/rerankers => ../../../rerankers
 	github.com/joakimcarlsson/ai/rerankers/cohere => ../../../rerankers/cohere

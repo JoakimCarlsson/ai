@@ -16,7 +16,7 @@ Each LLM vendor module exports its own `WithReasoningEffort` (or
 
     client := llmopenai.NewLLM(
         llmopenai.WithAPIKey("your-key"),
-        llmopenai.WithModel(model.OpenAIModels[model.O4Mini]),
+        llmopenai.WithModel(openai.Models[openai.O4Mini]),
         llmopenai.WithMaxTokens(16000),
         llmopenai.WithReasoningEffort(llmopenai.ReasoningEffortHigh),
     )
@@ -38,7 +38,7 @@ Each LLM vendor module exports its own `WithReasoningEffort` (or
 
     client := llmanthropic.NewLLM(
         llmanthropic.WithAPIKey("your-key"),
-        llmanthropic.WithModel(model.AnthropicModels[model.Claude45Sonnet]),
+        llmanthropic.WithModel(anthropic.Models[anthropic.Claude45Sonnet]),
         llmanthropic.WithMaxTokens(16000),
         llmanthropic.WithReasoningEffort(llmanthropic.ReasoningEffortHigh),
     )
@@ -58,7 +58,7 @@ Each LLM vendor module exports its own `WithReasoningEffort` (or
 
     client := llmgemini.NewLLM(
         llmgemini.WithAPIKey("your-key"),
-        llmgemini.WithModel(model.GeminiModels[model.Gemini3Pro]),
+        llmgemini.WithModel(gemini.Models[gemini.Gemini3Pro]),
         llmgemini.WithMaxTokens(16000),
         llmgemini.WithThinkingLevel(llmgemini.ThinkingLevelHigh),
     )
@@ -118,17 +118,17 @@ stream thinking content over the same `reasoning` delta channel. Use
 ```go
 import (
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
-    "github.com/joakimcarlsson/ai/model"
+    "github.com/joakimcarlsson/ai/llm"
 )
 
 ollama := llmopenai.NewLLM(
     llmopenai.WithAPIKey("ollama"),
     llmopenai.WithBaseURL("http://localhost:11434/v1"),
-    llmopenai.WithModel(model.Model{
+    llmopenai.WithModel(llm.Model{
         ID:               "qwen3:14b",
         Name:             "Qwen3 14B",
         APIModel:         "qwen3:14b",
-        Provider:         model.ProviderOpenAI,
+        Provider:         "openai",
         ContextWindow:    32768,
         DefaultMaxTokens: 4096,
         CanReason:        true,

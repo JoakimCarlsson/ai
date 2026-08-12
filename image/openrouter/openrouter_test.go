@@ -13,7 +13,6 @@ import (
 
 	"github.com/joakimcarlsson/ai/image"
 	"github.com/joakimcarlsson/ai/image/openrouter"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 // pngB64 is a 1x1 PNG, base64-encoded the way OpenRouter returns image bytes.
@@ -69,7 +68,7 @@ func TestGenerateImage(t *testing.T) {
 		openrouter.WithAPIKey("test-key"),
 		openrouter.WithBaseURL(srv.URL),
 		openrouter.WithModel(
-			model.OpenRouterImageGenerationModels[model.OpenRouterSeedream45],
+			openrouter.Models[openrouter.Seedream45],
 		),
 		openrouter.WithAspectRatio(openrouter.AspectRatio16x9),
 		openrouter.WithResolution(openrouter.Resolution2K),
@@ -136,7 +135,7 @@ func TestGenerateImageArbitraryModel(t *testing.T) {
 
 	client := openrouter.NewGeneration(
 		openrouter.WithBaseURL(srv.URL),
-		openrouter.WithModel(model.ImageGenerationModel{
+		openrouter.WithModel(image.GenerationModel{
 			APIModel: "some-vendor/unreleased-image-model",
 		}),
 	)
@@ -177,9 +176,9 @@ func TestWithModelID(t *testing.T) {
 	if body["model"] != "black-forest-labs/flux.2-pro" {
 		t.Errorf("model = %v, want black-forest-labs/flux.2-pro", body["model"])
 	}
-	if got := client.Model().Provider; got != model.ProviderOpenRouter {
+	if got := client.Model().Provider; got != "openrouter" {
 		t.Errorf("Model().Provider = %q, want %q", got,
-			model.ProviderOpenRouter)
+			"openrouter")
 	}
 }
 
@@ -195,7 +194,7 @@ func TestWireOptions(t *testing.T) {
 
 	client := openrouter.NewGeneration(
 		openrouter.WithBaseURL(srv.URL),
-		openrouter.WithModel(model.ImageGenerationModel{APIModel: "m"}),
+		openrouter.WithModel(image.GenerationModel{APIModel: "m"}),
 		openrouter.WithN(3),
 		openrouter.WithSize("2048x2048"),
 		openrouter.WithAspectRatio(openrouter.AspectRatio1x1),
@@ -303,7 +302,7 @@ func TestGenerateImageError(t *testing.T) {
 
 			client := openrouter.NewGeneration(
 				openrouter.WithBaseURL(srv.URL),
-				openrouter.WithModel(model.ImageGenerationModel{APIModel: "m"}),
+				openrouter.WithModel(image.GenerationModel{APIModel: "m"}),
 			)
 
 			_, err := client.GenerateImage(context.Background(), "p")
@@ -365,7 +364,7 @@ func TestGenerateImageStreaming(t *testing.T) {
 	client := openrouter.NewGeneration(
 		openrouter.WithBaseURL(srv.URL),
 		openrouter.WithModel(
-			model.OpenRouterImageGenerationModels[model.OpenRouterGPTImage2],
+			openrouter.Models[openrouter.GPTImage2],
 		),
 	)
 
@@ -430,7 +429,7 @@ func TestGenerateImageStreamingLargeFrame(t *testing.T) {
 
 	client := openrouter.NewGeneration(
 		openrouter.WithBaseURL(srv.URL),
-		openrouter.WithModel(model.ImageGenerationModel{APIModel: "m"}),
+		openrouter.WithModel(image.GenerationModel{APIModel: "m"}),
 	)
 
 	var got string
@@ -462,7 +461,7 @@ func TestGenerateImageStreamingError(t *testing.T) {
 
 	client := openrouter.NewGeneration(
 		openrouter.WithBaseURL(srv.URL),
-		openrouter.WithModel(model.ImageGenerationModel{APIModel: "m"}),
+		openrouter.WithModel(image.GenerationModel{APIModel: "m"}),
 	)
 
 	err := client.GenerateImageStreaming(
@@ -490,7 +489,7 @@ func TestGenerateImageStreamingCallbackError(t *testing.T) {
 
 	client := openrouter.NewGeneration(
 		openrouter.WithBaseURL(srv.URL),
-		openrouter.WithModel(model.ImageGenerationModel{APIModel: "m"}),
+		openrouter.WithModel(image.GenerationModel{APIModel: "m"}),
 	)
 
 	want := fmt.Errorf("caller gave up")
@@ -526,7 +525,7 @@ func TestAuthHeaders(t *testing.T) {
 	client := openrouter.NewGeneration(
 		openrouter.WithAPIKey("test-key"),
 		openrouter.WithBaseURL(srv.URL),
-		openrouter.WithModel(model.ImageGenerationModel{APIModel: "m"}),
+		openrouter.WithModel(image.GenerationModel{APIModel: "m"}),
 		openrouter.WithExtraHeaders(map[string]string{"X-Title": "unit test"}),
 	)
 

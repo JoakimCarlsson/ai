@@ -15,7 +15,7 @@
 //
 //	reranker := voyage.NewReranker(
 //		voyage.WithAPIKey("your-api-key"),
-//		voyage.WithModel(model.VoyageRerankerModels[model.Rerank25Lite]),
+//		voyage.WithModel(voyage.Models[voyage.Rerank25Lite]),
 //		voyage.WithTopK(5),
 //		voyage.WithReturnDocuments(true),
 //	)
@@ -33,7 +33,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tracing"
 )
 
@@ -123,7 +122,7 @@ type Reranker interface {
 		documents []string,
 	) (*RerankerResponse, error)
 	// Model returns the reranker model configuration being used.
-	Model() model.RerankerModel
+	Model() RerankerModel
 }
 
 // TracingAttrs are construction-time attributes vendor packages forward to the
@@ -146,7 +145,7 @@ type tracingReranker struct {
 	attrs TracingAttrs
 }
 
-func (t *tracingReranker) Model() model.RerankerModel {
+func (t *tracingReranker) Model() RerankerModel {
 	return t.inner.Model()
 }
 

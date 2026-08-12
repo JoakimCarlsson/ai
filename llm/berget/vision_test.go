@@ -8,7 +8,6 @@ import (
 
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func TestLiveVision(t *testing.T) {
@@ -23,7 +22,7 @@ func TestLiveVision(t *testing.T) {
 	}
 	c := NewLLM(
 		llmopenai.WithAPIKey(k),
-		llmopenai.WithModel(model.BergetModels[model.BergetGemma431B]),
+		llmopenai.WithModel(Models[Gemma431B]),
 		llmopenai.WithMaxTokens(32),
 	)
 	msg := message.NewUserMessage(

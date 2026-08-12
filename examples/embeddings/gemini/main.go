@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/joakimcarlsson/ai/embeddings"
+	"github.com/joakimcarlsson/ai/embeddings/gemini"
 	geminiembed "github.com/joakimcarlsson/ai/embeddings/gemini"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -21,7 +21,7 @@ func main() {
 	embedder := geminiembed.NewEmbedding(
 		geminiembed.WithAPIKey(apiKey),
 		geminiembed.WithModel(
-			model.GeminiEmbeddingModels[model.GeminiEmbedding2],
+			gemini.Models[gemini.Embedding2],
 		),
 		geminiembed.WithDimensions(1536),
 	)

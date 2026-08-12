@@ -24,7 +24,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tracing"
 )
 
@@ -123,7 +122,7 @@ type Generation interface {
 	ListVoices(ctx context.Context) ([]Voice, error)
 
 	// Model returns the audio generation model configuration being used.
-	Model() model.AudioModel
+	Model() AudioModel
 }
 
 // ForcedAlignmentProvider is an optional sub-interface for providers that support
@@ -252,7 +251,7 @@ type tracingGeneration struct {
 	attrs TracingAttrs
 }
 
-func (t *tracingGeneration) Model() model.AudioModel {
+func (t *tracingGeneration) Model() AudioModel {
 	return t.inner.Model()
 }
 

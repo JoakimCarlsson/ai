@@ -7,8 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/joakimcarlsson/ai/llm"
+
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/types"
 )
 
@@ -32,7 +33,7 @@ func TestStreamNoChoicesEmitsSingleError(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 	)
 
 	errCount := 0

@@ -17,7 +17,6 @@ import (
 
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
@@ -65,7 +64,7 @@ type WebSearchPreviewOpts struct {
 // ResponsesOptions configures the OpenAI Responses LLM client.
 type ResponsesOptions struct {
 	apiKey          string
-	model           model.Model
+	model           llm.Model
 	maxOutputTokens int64
 	temperature     *float64
 	topP            *float64
@@ -86,7 +85,7 @@ func WithResponsesAPIKey(k string) ResponsesOption {
 }
 
 // WithResponsesModel selects the LLM model.
-func WithResponsesModel(m model.Model) ResponsesOption {
+func WithResponsesModel(m llm.Model) ResponsesOption {
 	return func(o *ResponsesOptions) { o.model = m }
 }
 
@@ -281,7 +280,7 @@ func NewResponsesLLM(opts ...ResponsesOption) llm.LLM {
 }
 
 // Model returns the configured LLM model.
-func (c *responsesClient) Model() model.Model { return c.options.model }
+func (c *responsesClient) Model() llm.Model { return c.options.model }
 
 // SupportsStructuredOutput reports whether the configured model supports
 // structured output.

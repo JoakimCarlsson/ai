@@ -3,8 +3,7 @@
 //
 // Berget's embeddings endpoint is OpenAI-compatible, so this wraps
 // [embeddings/openai] pinned to Berget's base URL (https://api.berget.ai/v1).
-// See [github.com/joakimcarlsson/ai/model] for the catalog
-// (BergetEmbeddingModels) and pricing.
+// [Models] carries the catalog and pricing.
 package berget
 
 import (

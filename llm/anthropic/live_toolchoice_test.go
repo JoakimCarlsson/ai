@@ -9,7 +9,6 @@ import (
 
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tool"
 )
 
@@ -40,7 +39,7 @@ func liveAnthropic(t *testing.T, tc llm.ToolChoice) llm.LLM {
 	}
 	return NewLLM(
 		WithAPIKey(key),
-		WithModel(model.AnthropicModels[model.Claude45Haiku]),
+		WithModel(Models[Claude45Haiku]),
 		WithMaxTokens(256),
 		WithToolChoice(tc),
 	)

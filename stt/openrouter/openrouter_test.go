@@ -10,7 +10,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/stt"
 	sttopenai "github.com/joakimcarlsson/ai/stt/openai"
 	"github.com/joakimcarlsson/ai/stt/openrouter"
@@ -112,7 +111,7 @@ func TestTranscribe(t *testing.T) {
 		sttopenai.WithAPIKey("test-key"),
 		sttopenai.WithBaseURL(srv.URL),
 		sttopenai.WithModel(
-			model.OpenRouterTranscriptionModels[model.OpenRouterWhisper1],
+			openrouter.Models[openrouter.Whisper1],
 		),
 	)
 
@@ -178,7 +177,7 @@ func TestArbitraryModel(t *testing.T) {
 
 	client := openrouter.NewSpeechToText(
 		sttopenai.WithBaseURL(srv.URL),
-		sttopenai.WithModel(model.TranscriptionModel{
+		sttopenai.WithModel(stt.TranscriptionModel{
 			APIModel: "some-vendor/unreleased-stt",
 		}),
 	)
@@ -215,9 +214,9 @@ func TestWithModelID(t *testing.T) {
 		t.Errorf("model = %q, want nvidia/parakeet-tdt-0.6b-v3",
 			observed.fields["model"])
 	}
-	if got := client.Model().Provider; got != model.ProviderOpenRouter {
+	if got := client.Model().Provider; got != "openrouter" {
 		t.Errorf("Model().Provider = %q, want %q", got,
-			model.ProviderOpenRouter)
+			"openrouter")
 	}
 }
 
@@ -232,7 +231,7 @@ func TestTranscribePlainJSON(t *testing.T) {
 	client := openrouter.NewSpeechToText(
 		sttopenai.WithBaseURL(srv.URL),
 		sttopenai.WithModel(
-			model.OpenRouterTranscriptionModels[model.OpenRouterVoxtralMiniTranscribe],
+			openrouter.Models[openrouter.VoxtralMiniTranscribe],
 		),
 	)
 
@@ -271,7 +270,7 @@ func TestTranslateNotSupported(t *testing.T) {
 
 	client := openrouter.NewSpeechToText(
 		sttopenai.WithBaseURL(srv.URL),
-		sttopenai.WithModel(model.TranscriptionModel{APIModel: "m"}),
+		sttopenai.WithModel(stt.TranscriptionModel{APIModel: "m"}),
 	)
 
 	_, err := client.Translate(context.Background(), []byte("audio"))
@@ -287,7 +286,7 @@ func TestTranslateNotSupported(t *testing.T) {
 // non-streaming behaviour rather than silently claiming support.
 func TestStreamingNotSupported(t *testing.T) {
 	client := openrouter.NewSpeechToText(
-		sttopenai.WithModel(model.TranscriptionModel{APIModel: "m"}),
+		sttopenai.WithModel(stt.TranscriptionModel{APIModel: "m"}),
 	)
 
 	if client.SupportsStreaming() {
@@ -304,7 +303,7 @@ func TestStreamingNotSupported(t *testing.T) {
 func TestModel(t *testing.T) {
 	client := openrouter.NewSpeechToText(
 		sttopenai.WithModel(
-			model.OpenRouterTranscriptionModels[model.OpenRouterGPT4oTranscribe],
+			openrouter.Models[openrouter.GPT4oTranscribe],
 		),
 	)
 	if got := client.Model().APIModel; got != "openai/gpt-4o-transcribe" {

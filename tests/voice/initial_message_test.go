@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/session"
 	"github.com/joakimcarlsson/ai/stt"
 	"github.com/joakimcarlsson/ai/tts"
@@ -301,7 +300,7 @@ func (n *nonStreamingTTS) ListVoices(context.Context) ([]tts.Voice, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (n *nonStreamingTTS) Model() model.AudioModel { return model.AudioModel{} }
+func (n *nonStreamingTTS) Model() tts.AudioModel { return tts.AudioModel{} }
 
 // holdingTTS implements tts.StreamingTextProvider but keeps the audio
 // output channel open until ctx cancels, so a barge-in test has a
@@ -365,4 +364,4 @@ func (h *holdingTTS) ListVoices(context.Context) ([]tts.Voice, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (h *holdingTTS) Model() model.AudioModel { return model.AudioModel{} }
+func (h *holdingTTS) Model() tts.AudioModel { return tts.AudioModel{} }

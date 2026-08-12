@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tts"
 )
 
@@ -21,7 +20,7 @@ const defaultBaseURL = "https://texttospeech.googleapis.com/v1"
 // Options configures the Google Cloud TTS client.
 type Options struct {
 	apiKey       string
-	model        model.AudioModel
+	model        tts.AudioModel
 	timeout      *time.Duration
 	languageCode string
 	ssmlGender   string
@@ -41,7 +40,7 @@ func WithAPIKey(
 
 // WithModel selects the TTS model.
 func WithModel(
-	m model.AudioModel,
+	m tts.AudioModel,
 ) Option {
 	return func(o *Options) { o.model = m }
 }
@@ -111,7 +110,7 @@ func NewGeneration(opts ...Option) tts.Generation {
 }
 
 // Model returns the configured TTS model.
-func (c *Client) Model() model.AudioModel { return c.options.model }
+func (c *Client) Model() tts.AudioModel { return c.options.model }
 
 type ttsRequest struct {
 	Input       ttsInput       `json:"input"`

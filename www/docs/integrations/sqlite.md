@@ -87,7 +87,6 @@ import (
     "github.com/joakimcarlsson/ai/agent"
     sqlitemem "github.com/joakimcarlsson/ai/memory/sqlite"
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
-    "github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -101,7 +100,7 @@ func main() {
 
     llmClient := llmopenai.NewLLM(
         llmopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-        llmopenai.WithModel(model.OpenAIModels[model.GPT4o]),
+        llmopenai.WithModel(llmopenai.Models[llmopenai.GPT4o]),
     )
 
     sessionStore, err := sqlitemem.SessionStore(ctx, db)

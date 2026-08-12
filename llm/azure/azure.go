@@ -13,7 +13,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/joakimcarlsson/ai/llm"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
-	"github.com/joakimcarlsson/ai/model"
 	openaisdk "github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/azure"
 	"github.com/openai/openai-go/v3/option"
@@ -50,9 +49,9 @@ func WithAPIKey(
 // WithDeployment sets the Azure OpenAI deployment name. Azure routes requests
 // purely on deployment, so this is the only model selector callers need to
 // provide. Cost and context metadata are resolved by matching the deployment
-// string against [model.AzureModels] (exact APIModel match first, then a
+// string against [Models] (exact APIModel match first, then a
 // substring fallback for custom deployment names like "gpt-4.1-nano-prod").
-// When no match is found, a minimal [model.Model] is used with the deployment
+// When no match is found, a minimal [llm.Model] is used with the deployment
 // as APIModel.
 func WithDeployment(deployment string) Option {
 	return func(o *Options) { o.deployment = deployment }
@@ -108,7 +107,7 @@ func WithAPIVersion(apiVersion string) Option {
 // semantics. When true the chat-completions request emits
 // max_completion_tokens instead of max_tokens — required by gpt-5.x,
 // o-series, and most newer Azure Foundry deployments. Use this when the
-// deployment name does not match an entry in [model.AzureModels].
+// deployment name does not match an entry in [Models].
 func WithReasoning(canReason bool) Option {
 	return func(o *Options) { o.canReason = &canReason }
 }
@@ -126,14 +125,14 @@ func WithHTTPClient(c *http.Client) Option {
 
 // WithStructuredOutput declares whether the deployed model supports the
 // chat-completions response_format JSON-schema constraint. Use this when
-// the deployment name does not match an entry in [model.AzureModels].
+// the deployment name does not match an entry in [Models].
 func WithStructuredOutput(supportsStructuredOutput bool) Option {
 	return func(o *Options) { o.supportsStructuredOut = &supportsStructuredOutput }
 }
 
 // WithAttachments declares whether the deployed model accepts image
 // attachments. Azure routes on deployment name, so a deployment whose name
-// does not appear in [model.AzureModels] resolves to a model with every
+// does not appear in [Models] resolves to a model with every
 // capability false; this is how a caller states otherwise.
 func WithAttachments(supportsAttachments bool) Option {
 	return func(o *Options) { o.attachments = &supportsAttachments }
@@ -240,18 +239,18 @@ func NewLLM(opts ...Option) llm.LLM {
 	})
 }
 
-// resolveDeployment maps an Azure deployment name to a [model.Model] carrying
+// resolveDeployment maps an Azure deployment name to a [llm.Model] carrying
 // cost and context metadata. The deployment string always becomes APIModel so
-// requests route correctly; metadata is filled in from [model.AzureModels] by
+// requests route correctly; metadata is filled in from [Models] by
 // exact APIModel match, then by substring fallback (so a deployment named
 // "gpt-4.1-nano-prod" inherits metadata from the "gpt-4.1-nano" entry).
 //
 // Azure Foundry deployment names are opaque — callers whose deployment
 // doesn't match any registry entry should declare capabilities explicitly
 // via [WithReasoning], [WithStructuredOutput] and [WithAttachments].
-func resolveDeployment(deployment string) model.Model {
+func resolveDeployment(deployment string) llm.Model {
 	if deployment == "" {
-		return model.Model{}
+		return llm.Model{}
 	}
 	if m, ok := findAzureModel(deployment, true); ok {
 		m.APIModel = deployment
@@ -261,16 +260,16 @@ func resolveDeployment(deployment string) model.Model {
 		m.APIModel = deployment
 		return m
 	}
-	return model.Model{
+	return llm.Model{
 		APIModel: deployment,
-		Provider: model.ProviderAzure,
+		Provider: "azure",
 	}
 }
 
 // modelFromOptions resolves the deployment and applies any explicit
 // capability overrides from [WithReasoning] / [WithStructuredOutput] /
 // [WithAttachments].
-func modelFromOptions(o Options) model.Model {
+func modelFromOptions(o Options) llm.Model {
 	m := resolveDeployment(o.deployment)
 	if o.canReason != nil {
 		m.CanReason = *o.canReason
@@ -284,11 +283,11 @@ func modelFromOptions(o Options) model.Model {
 	return m
 }
 
-func findAzureModel(deployment string, exact bool) (model.Model, bool) {
-	var best model.Model
+func findAzureModel(deployment string, exact bool) (llm.Model, bool) {
+	var best llm.Model
 	var bestLen int
 	found := false
-	for _, m := range model.AzureModels {
+	for _, m := range Models {
 		if exact {
 			if m.APIModel == deployment {
 				return m, true

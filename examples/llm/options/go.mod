@@ -8,7 +8,6 @@ require (
 	github.com/joakimcarlsson/ai/llm/gemini v0.3.7
 	github.com/joakimcarlsson/ai/llm/openai v0.4.8
 	github.com/joakimcarlsson/ai/message v0.5.2
-	github.com/joakimcarlsson/ai/model v0.8.0
 )
 
 require (
@@ -105,7 +104,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm/openai => ../../../llm/openai
 	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
 	github.com/joakimcarlsson/ai/rerankers => ../../../rerankers
 	github.com/joakimcarlsson/ai/schema => ../../../schema

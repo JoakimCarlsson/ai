@@ -7,8 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/joakimcarlsson/ai/llm"
+
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	openaisdk "github.com/openai/openai-go/v3"
 )
 
@@ -45,7 +46,7 @@ func TestCompoundWithHTTPClientTransportUsed(t *testing.T) {
 	client := NewCompoundLLM(
 		WithCompoundAPIKey("test-key"),
 		WithCompoundBaseURL(srv.URL),
-		WithCompoundModel(model.Model{APIModel: "groq/compound"}),
+		WithCompoundModel(llm.Model{APIModel: "groq/compound"}),
 		WithCompoundHTTPClient(&http.Client{
 			Transport: countingRT{RoundTripper: http.DefaultTransport, n: &n},
 		}),

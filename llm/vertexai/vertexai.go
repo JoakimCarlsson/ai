@@ -11,13 +11,12 @@ import (
 
 	"github.com/joakimcarlsson/ai/llm"
 	llmgemini "github.com/joakimcarlsson/ai/llm/gemini"
-	"github.com/joakimcarlsson/ai/model"
 	"google.golang.org/genai"
 )
 
 // Options configures the Vertex AI LLM client.
 type Options struct {
-	model         model.Model
+	model         llm.Model
 	maxTokens     int64
 	temperature   *float64
 	topP          *float64
@@ -34,7 +33,7 @@ type Options struct {
 type Option func(*Options)
 
 // WithModel selects the LLM model.
-func WithModel(m model.Model) Option { return func(o *Options) { o.model = m } }
+func WithModel(m llm.Model) Option { return func(o *Options) { o.model = m } }
 
 // WithMaxTokens sets the max generation tokens.
 func WithMaxTokens(

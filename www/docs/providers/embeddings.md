@@ -10,12 +10,11 @@ OpenAI:
 import (
     "github.com/joakimcarlsson/ai/embeddings"
     embopenai "github.com/joakimcarlsson/ai/embeddings/openai"
-    "github.com/joakimcarlsson/ai/model"
 )
 
 embedder := embopenai.NewEmbedding(
     embopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-    embopenai.WithModel(model.OpenAIEmbeddingModels[model.TextEmbedding3Small]),
+    embopenai.WithModel(embopenai.Models[embopenai.TextEmbedding3Small]),
 )
 
 resp, err := embedder.GenerateEmbeddings(ctx, []string{
@@ -32,7 +31,7 @@ import embvoyage "github.com/joakimcarlsson/ai/embeddings/voyage"
 
 embedder := embvoyage.NewEmbedding(
     embvoyage.WithAPIKey(os.Getenv("VOYAGE_API_KEY")),
-    embvoyage.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
+    embvoyage.WithModel(voyage.Models[voyage.Voyage35]),
     embvoyage.WithInputType("document"),  // or "query"
 )
 ```
@@ -44,7 +43,7 @@ import embcohere "github.com/joakimcarlsson/ai/embeddings/cohere"
 
 embedder := embcohere.NewEmbedding(
     embcohere.WithAPIKey(os.Getenv("COHERE_API_KEY")),
-    embcohere.WithModel(model.CohereEmbeddingModels[model.EmbedV3]),
+    embcohere.WithModel(cohere.Models[cohere.EmbedEnV3]),
     embcohere.WithInputType("search_document"),
 )
 ```
@@ -61,12 +60,11 @@ constructors; pass the standard ones from `embeddings/openai`:
 import (
     embberget "github.com/joakimcarlsson/ai/embeddings/berget"
     embopenai "github.com/joakimcarlsson/ai/embeddings/openai"
-    "github.com/joakimcarlsson/ai/model"
 )
 
 embedder := embberget.NewEmbedding(
     embopenai.WithAPIKey(os.Getenv("BERGET_API_KEY")),
-    embopenai.WithModel(model.BergetEmbeddingModels[model.BergetE5Large]),
+    embopenai.WithModel(embberget.Models[embberget.E5Large]),
 )
 ```
 
@@ -114,7 +112,7 @@ resp, err := embedder.GenerateEmbeddings(ctx, texts, "query")
 import embbedrock "github.com/joakimcarlsson/ai/embeddings/bedrock"
 
 embedder := embbedrock.NewEmbedding(
-    embbedrock.WithModel(model.BedrockEmbeddingModels[model.TitanEmbedV2]),
+    embbedrock.WithModel(bedrock.Models[bedrock.TitanEmbedV2]),
     embbedrock.WithRegion("us-east-1"),
     // or embbedrock.WithProfile("my-aws-profile"),
 )

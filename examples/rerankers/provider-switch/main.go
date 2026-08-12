@@ -7,9 +7,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/rerankers"
+	"github.com/joakimcarlsson/ai/rerankers/cohere"
 	rerankercohere "github.com/joakimcarlsson/ai/rerankers/cohere"
+	"github.com/joakimcarlsson/ai/rerankers/voyage"
 	rerankervoyage "github.com/joakimcarlsson/ai/rerankers/voyage"
 )
 
@@ -42,7 +43,7 @@ func newReranker() (rerankers.Reranker, string) {
 		return rerankercohere.NewReranker(
 			rerankercohere.WithAPIKey(requiredEnv("COHERE_API_KEY")),
 			rerankercohere.WithModel(
-				model.CohereRerankerModels[model.CohereRerank35],
+				cohere.Models[cohere.Rerank35],
 			),
 			rerankercohere.WithTopK(3),
 			rerankercohere.WithReturnDocuments(true),
@@ -51,7 +52,7 @@ func newReranker() (rerankers.Reranker, string) {
 		return rerankervoyage.NewReranker(
 			rerankervoyage.WithAPIKey(requiredEnv("VOYAGE_API_KEY")),
 			rerankervoyage.WithModel(
-				model.VoyageRerankerModels[model.Rerank25Lite],
+				voyage.Models[voyage.Rerank25Lite],
 			),
 			rerankervoyage.WithTopK(3),
 			rerankervoyage.WithReturnDocuments(true),

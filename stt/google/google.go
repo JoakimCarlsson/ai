@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/stt"
 )
 
@@ -21,7 +20,7 @@ const defaultBaseURL = "https://speech.googleapis.com/v1"
 // Options configures the Google Cloud STT client.
 type Options struct {
 	apiKey       string
-	model        model.TranscriptionModel
+	model        stt.TranscriptionModel
 	timeout      *time.Duration
 	encoding     string
 	sampleRateHz int
@@ -39,7 +38,7 @@ func WithAPIKey(apiKey string) Option {
 }
 
 // WithModel selects the transcription model.
-func WithModel(m model.TranscriptionModel) Option {
+func WithModel(m stt.TranscriptionModel) Option {
 	return func(o *Options) {
 		o.model = m
 	}
@@ -107,7 +106,7 @@ func NewSpeechToText(opts ...Option) stt.SpeechToText {
 }
 
 // Model returns the configured transcription model.
-func (c *Client) Model() model.TranscriptionModel {
+func (c *Client) Model() stt.TranscriptionModel {
 	return c.options.model
 }
 

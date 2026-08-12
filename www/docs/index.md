@@ -40,7 +40,6 @@ You install only the modules you use. For an OpenAI chat client:
 go get github.com/joakimcarlsson/ai/llm
 go get github.com/joakimcarlsson/ai/llm/openai
 go get github.com/joakimcarlsson/ai/message
-go get github.com/joakimcarlsson/ai/model
 ```
 
 ## Quick example
@@ -56,7 +55,6 @@ import (
 
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
     "github.com/joakimcarlsson/ai/message"
-    "github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -64,7 +62,7 @@ func main() {
 
     client := llmopenai.NewLLM(
         llmopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-        llmopenai.WithModel(model.OpenAIModels[model.GPT4o]),
+        llmopenai.WithModel(llmopenai.Models[llmopenai.GPT4o]),
         llmopenai.WithMaxTokens(1000),
     )
 

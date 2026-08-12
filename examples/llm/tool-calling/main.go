@@ -8,11 +8,13 @@ import (
 	"strings"
 
 	"github.com/joakimcarlsson/ai/llm"
+	"github.com/joakimcarlsson/ai/llm/anthropic"
 	llmanthropic "github.com/joakimcarlsson/ai/llm/anthropic"
+	"github.com/joakimcarlsson/ai/llm/gemini"
 	llmgemini "github.com/joakimcarlsson/ai/llm/gemini"
+	"github.com/joakimcarlsson/ai/llm/openai"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/tool/functiontool"
 )
@@ -115,7 +117,7 @@ func newLLM() (llm.LLM, string) {
 	case "anthropic":
 		return llmanthropic.NewLLM(
 			llmanthropic.WithAPIKey(requiredEnv("ANTHROPIC_API_KEY")),
-			llmanthropic.WithModel(model.AnthropicModels[model.Claude45Haiku]),
+			llmanthropic.WithModel(anthropic.Models[anthropic.Claude45Haiku]),
 			llmanthropic.WithMaxTokens(512),
 			// Force a tool call on the first turn instead of letting the model
 			// answer from prior knowledge.
@@ -126,7 +128,7 @@ func newLLM() (llm.LLM, string) {
 	case "gemini":
 		return llmgemini.NewLLM(
 			llmgemini.WithAPIKey(requiredEnv("GEMINI_API_KEY")),
-			llmgemini.WithModel(model.GeminiModels[model.Gemini25FlashLite]),
+			llmgemini.WithModel(gemini.Models[gemini.Gemini25FlashLite]),
 			llmgemini.WithMaxTokens(512),
 			llmgemini.WithToolChoice(
 				llm.ToolChoice{Mode: llm.ToolChoiceRequired},
@@ -135,7 +137,7 @@ func newLLM() (llm.LLM, string) {
 	case "openai":
 		return llmopenai.NewLLM(
 			llmopenai.WithAPIKey(requiredEnv("OPENAI_API_KEY")),
-			llmopenai.WithModel(model.OpenAIModels[model.GPT54Nano]),
+			llmopenai.WithModel(openai.Models[openai.GPT54Nano]),
 			llmopenai.WithMaxTokens(512),
 			llmopenai.WithParallelToolCalls(false),
 			llmopenai.WithToolChoice(

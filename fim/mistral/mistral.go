@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/fim"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 const defaultBaseURL = "https://api.mistral.ai/v1/fim/completions"
@@ -17,7 +16,7 @@ const defaultBaseURL = "https://api.mistral.ai/v1/fim/completions"
 // Options configures the Mistral FIM client.
 type Options struct {
 	apiKey      string
-	model       model.Model
+	model       fim.Model
 	maxTokens   int64
 	temperature *float64
 	topP        *float64
@@ -36,7 +35,7 @@ func WithAPIKey(apiKey string) Option {
 }
 
 // WithModel selects the FIM model.
-func WithModel(m model.Model) Option {
+func WithModel(m fim.Model) Option {
 	return func(o *Options) {
 		o.model = m
 	}
@@ -107,7 +106,7 @@ func NewFIM(opts ...Option) fim.FIM {
 }
 
 // Model returns the configured FIM model.
-func (c *Client) Model() model.Model {
+func (c *Client) Model() fim.Model {
 	return c.options.model
 }
 

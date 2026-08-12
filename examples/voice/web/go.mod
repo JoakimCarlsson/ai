@@ -5,7 +5,6 @@ go 1.25.0
 require (
 	github.com/coder/websocket v1.8.15
 	github.com/joakimcarlsson/ai/llm/openai v0.4.8
-	github.com/joakimcarlsson/ai/model v0.8.0
 	github.com/joakimcarlsson/ai/prompt v0.1.0
 	github.com/joakimcarlsson/ai/session v0.1.6
 	github.com/joakimcarlsson/ai/stt/assemblyai v0.2.5
@@ -74,7 +73,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm/openai => ../../../llm/openai
 	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
 	github.com/joakimcarlsson/ai/schema => ../../../schema
 	github.com/joakimcarlsson/ai/session => ../../../session

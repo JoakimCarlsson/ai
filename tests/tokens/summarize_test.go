@@ -7,7 +7,6 @@ import (
 
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tokens"
 	"github.com/joakimcarlsson/ai/tokens/summarize"
@@ -55,8 +54,8 @@ func (m *mockSummarizerLLM) StreamResponseWithStructuredOutput(
 	return nil
 }
 
-func (m *mockSummarizerLLM) Model() model.Model {
-	return model.Model{ID: "mock-summarizer"}
+func (m *mockSummarizerLLM) Model() llm.Model {
+	return llm.Model{ID: "mock-summarizer"}
 }
 
 func (m *mockSummarizerLLM) SupportsStructuredOutput() bool {

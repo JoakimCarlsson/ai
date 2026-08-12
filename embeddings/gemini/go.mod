@@ -4,7 +4,6 @@ go 1.25.8
 
 require (
 	github.com/joakimcarlsson/ai/embeddings v0.2.5
-	github.com/joakimcarlsson/ai/model v0.8.0
 	google.golang.org/genai v1.67.0
 )
 
@@ -52,6 +51,5 @@ require (
 
 replace (
 	github.com/joakimcarlsson/ai/embeddings => ../
-	github.com/joakimcarlsson/ai/model => ../../model
 	github.com/joakimcarlsson/ai/tracing => ../../tracing
 )

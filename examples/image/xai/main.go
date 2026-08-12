@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/joakimcarlsson/ai/image"
+	"github.com/joakimcarlsson/ai/image/xai"
 	imagexai "github.com/joakimcarlsson/ai/image/xai"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -20,7 +20,7 @@ func main() {
 	client := imagexai.NewGeneration(
 		imagexai.WithAPIKey(apiKey),
 		imagexai.WithModel(
-			model.XAIImageGenerationModels[model.XAIGrokImagineImage],
+			xai.Models[xai.GrokImagineImage],
 		),
 		imagexai.WithAspectRatio(imagexai.AspectRatio16x9),
 		imagexai.WithResolution(imagexai.Resolution2K),

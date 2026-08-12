@@ -19,7 +19,7 @@
 //
 //	client := mistral.NewFIM(
 //		mistral.WithAPIKey("your-api-key"),
-//		mistral.WithModel(model.MistralModels[model.Codestral]),
+//		mistral.WithModel(mistral.Models[mistral.Codestral]),
 //	)
 //
 //	resp, err := client.Complete(ctx, fim.Request{
@@ -32,7 +32,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tracing"
 )
 
@@ -115,7 +114,7 @@ type FIM interface {
 	// CompleteStream sends a FIM request and returns a channel of streaming events.
 	CompleteStream(ctx context.Context, req Request) <-chan Event
 	// Model returns the model configuration being used.
-	Model() model.Model
+	Model() Model
 }
 
 // TracingAttrs are construction-time attributes vendor packages forward to the
@@ -139,7 +138,7 @@ type tracingFIM struct {
 	attrs TracingAttrs
 }
 
-func (t *tracingFIM) Model() model.Model {
+func (t *tracingFIM) Model() Model {
 	return t.inner.Model()
 }
 

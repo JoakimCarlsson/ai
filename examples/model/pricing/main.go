@@ -3,11 +3,16 @@ package main
 import (
 	"fmt"
 
-	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/llm"
+
+	"github.com/joakimcarlsson/ai/embeddings/voyage"
+	"github.com/joakimcarlsson/ai/image/gemini"
+	"github.com/joakimcarlsson/ai/llm/openai"
+	"github.com/joakimcarlsson/ai/tts/elevenlabs"
 )
 
 func main() {
-	chatModel := model.OpenAIModels[model.GPT54Nano]
+	chatModel := openai.Models[openai.GPT54Nano]
 	inputTokens := int64(8_000)
 	outputTokens := int64(1_200)
 	cachedInputTokens := int64(2_000)
@@ -23,20 +28,20 @@ func main() {
 		),
 	)
 
-	embeddingModel := model.VoyageEmbeddingModels[model.Voyage35Lite]
+	embeddingModel := voyage.Models[voyage.Voyage35Lite]
 	embeddingTokens := int64(25_000)
 	fmt.Printf("%s embedding estimate: $%.6f\n",
 		embeddingModel.Name,
 		estimatePerMillion(embeddingTokens, embeddingModel.CostPer1MTokens),
 	)
 
-	imageModel := model.GeminiImageGenerationModels[model.Imagen4Fast]
+	imageModel := gemini.Models[gemini.Imagen4Fast]
 	fmt.Printf("%s image estimate: $%.6f\n",
 		imageModel.Name,
 		imageModel.Pricing[imageModel.DefaultSize][imageModel.DefaultQuality],
 	)
 
-	audioModel := model.ElevenLabsAudioModels[model.ElevenMultilingualV2]
+	audioModel := elevenlabs.Models[elevenlabs.MultilingualV2]
 	characters := int64(3_500)
 	fmt.Printf("%s TTS estimate: $%.6f\n",
 		audioModel.Name,
@@ -45,7 +50,7 @@ func main() {
 }
 
 func estimateChatCost(
-	m model.Model,
+	m llm.Model,
 	inputTokens int64,
 	outputTokens int64,
 	cachedInputTokens int64,

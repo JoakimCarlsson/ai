@@ -1,11 +1,244 @@
 # Migration Guide
 
-This document covers two migrations. Each section is self-contained.
+This document covers three migrations. Each section is self-contained.
 
+- **[The `model` module dissolved](#the-model-module-dissolved)** — `model` module removed; every catalog moved into the provider module that calls its API.
 - **[v0.1.x → v0.2.0](#v01x--v020--memory-and-session-lifted)** — `memory` and `session` lifted out of `agent/` to top-level modules.
 - **[v0.18.x → v0.1.0](#v018x--v010--multi-module-split)** — single Go module split into ~50 per-vendor modules.
 
-If you're on v0.18.x and want the latest, apply both in order: do the multi-module split first, then the lift. The path tables in the split section already show the final post-lift destinations, so a single-pass migration also works.
+If you're on v0.18.x and want the latest, apply all three in order: the multi-module split first, then the lift, then the model dissolve. The path tables in the split section already show the final post-lift destinations, so those two can be done in a single pass; the model dissolve is independent of both and can be applied on its own.
+
+---
+
+## The `model` module dissolved
+
+Applies to you if your `go.mod` requires `github.com/joakimcarlsson/ai/model`,
+directly or indirectly.
+
+The boundary is per module rather than a single number, because 72 published
+modules depended on `model` and each has its own final release that did. The
+versions below are the last ones that carry the `model` dependency; anything at
+or below them predates this change. `model` itself stops at `v0.8.0`, which is
+its final release.
+
+<details>
+<summary>The 72 affected modules and their last <code>model</code>-dependent release</summary>
+
+| Module | Last release depending on `model` |
+|---|---|
+| `agent` | `v0.5.2` |
+| `memory` | `v0.2.8` |
+| `memory/pgvector` | `v0.1.8` |
+| `memory/postgres` | `v0.1.6` |
+| `memory/sqlite` | `v0.1.7` |
+| `message` | `v0.5.2` |
+| `session` | `v0.1.6` |
+| `image` | `v0.2.0` |
+| `image/openai` | `v0.2.2` |
+| `image/gemini` | `v0.1.7` |
+| `image/xai` | `v0.1.5` |
+| `image/azure` | `v0.1.2` |
+| `image/openrouter` | `v0.1.0` |
+| `rerankers` | `v0.2.3` |
+| `rerankers/voyage` | `v0.1.5` |
+| `rerankers/cohere` | `v0.1.5` |
+| `rerankers/berget` | `v0.1.4` |
+| `fim` | `v0.2.3` |
+| `fim/mistral` | `v0.1.5` |
+| `fim/deepseek` | `v0.1.5` |
+| `stt` | `v0.2.5` |
+| `stt/openai` | `v0.1.5` |
+| `stt/google` | `v0.1.5` |
+| `stt/assemblyai` | `v0.2.5` |
+| `stt/deepgram` | `v0.2.5` |
+| `stt/elevenlabs` | `v0.2.6` |
+| `stt/azure` | `v0.1.5` |
+| `stt/berget` | `v0.1.4` |
+| `stt/openrouter` | `v0.1.0` |
+| `embeddings` | `v0.2.5` |
+| `embeddings/openai` | `v0.1.6` |
+| `embeddings/voyage` | `v0.1.6` |
+| `embeddings/cohere` | `v0.1.6` |
+| `embeddings/mistral` | `v0.1.6` |
+| `embeddings/gemini` | `v0.3.6` |
+| `embeddings/bedrock` | `v0.1.6` |
+| `embeddings/berget` | `v0.1.4` |
+| `tts` | `v0.2.5` |
+| `tts/openai` | `v0.2.0` |
+| `tts/elevenlabs` | `v0.2.5` |
+| `tts/google` | `v0.1.5` |
+| `tts/azure` | `v0.1.5` |
+| `tts/deepgram` | `v0.2.5` |
+| `tts/openrouter` | `v0.1.0` |
+| `llm` | `v0.5.3` |
+| `llm/anthropic` | `v0.3.8` |
+| `llm/openai` | `v0.4.8` |
+| `llm/gemini` | `v0.3.7` |
+| `llm/azure` | `v0.6.0` |
+| `llm/vertexai` | `v0.2.7` |
+| `llm/bedrock` | `v0.2.7` |
+| `llm/xai` | `v0.4.7` |
+| `llm/openrouter` | `v0.2.12` |
+| `llm/groq` | `v0.4.7` |
+| `llm/deepseek` | `v0.2.10` |
+| `llm/perplexity` | `v0.2.10` |
+| `llm/mistral` | `v0.2.10` |
+| `llm/cerebras` | `v0.2.10` |
+| `llm/fireworks` | `v0.2.10` |
+| `llm/together` | `v0.2.10` |
+| `llm/ollama` | `v0.2.10` |
+| `llm/berget` | `v0.1.6` |
+| `tokens` | `v0.2.7` |
+| `tokens/sliding` | `v0.1.8` |
+| `tokens/truncate` | `v0.1.8` |
+| `tokens/summarize` | `v0.1.9` |
+| `batch` | `v0.1.8` |
+| `batch/openai` | `v0.1.8` |
+| `batch/anthropic` | `v0.1.10` |
+| `batch/gemini` | `v0.1.11` |
+| `batch/concurrent` | `v0.1.8` |
+| `voice` | `v0.2.9` |
+
+</details>
+
+The `model` module is removed. Its catalogs now live in the module that calls
+the API, and its shared shapes live in the package that consumes them.
+
+The reason is release cadence. Catalog data changes weekly, but it lived in a
+module that 114 `go.mod` files depended on, so adding a single model forced a
+release of `model` and then of every consumer. No shared catalog module is left,
+so a model update now touches one module and needs one tag.
+
+No values changed. All 513 entries across 44 catalogs are byte-for-byte
+identical to the ones in the deleted package.
+
+### Catalogs
+
+Each catalog is now called `Models` and lives in the provider module that calls
+that API:
+
+| Old | New module | New reference |
+|---|---|---|
+| `model.AnthropicModels` | `llm/anthropic` | `anthropic.Models` |
+| `model.AssemblyAITranscriptionModels` | `stt/assemblyai` | `assemblyai.Models` |
+| `model.AzureModels` | `llm/azure` | `azure.Models` |
+| `model.AzureSpeechAudioModels` | `tts/azure` | `azure.Models` |
+| `model.AzureSpeechTranscriptionModels` | `stt/azure` | `azure.Models` |
+| `model.BedrockEmbeddingModels` | `embeddings/bedrock` | `bedrock.Models` |
+| `model.BergetEmbeddingModels` | `embeddings/berget` | `berget.Models` |
+| `model.BergetModels` | `llm/berget` | `berget.Models` |
+| `model.BergetRerankerModels` | `rerankers/berget` | `berget.Models` |
+| `model.BergetTranscriptionModels` | `stt/berget` | `berget.Models` |
+| `model.CerebrasModels` | `llm/cerebras` | `cerebras.Models` |
+| `model.CohereEmbeddingModels` | `embeddings/cohere` | `cohere.Models` |
+| `model.CohereRerankerModels` | `rerankers/cohere` | `cohere.Models` |
+| `model.DeepSeekModels` | `llm/deepseek` | `deepseek.Models` |
+| `model.DeepgramAudioModels` | `tts/deepgram` | `deepgram.Models` |
+| `model.DeepgramTranscriptionModels` | `stt/deepgram` | `deepgram.Models` |
+| `model.ElevenLabsAudioModels` | `tts/elevenlabs` | `elevenlabs.Models` |
+| `model.ElevenLabsTranscriptionModels` | `stt/elevenlabs` | `elevenlabs.Models` |
+| `model.FireworksModels` | `llm/fireworks` | `fireworks.Models` |
+| `model.GeminiEmbeddingModels` | `embeddings/gemini` | `gemini.Models` |
+| `model.GeminiImageGenerationModels` | `image/gemini` | `gemini.Models` |
+| `model.GeminiModels` | `llm/gemini` | `gemini.Models` |
+| `model.GoogleCloudAudioModels` | `tts/google` | `google.Models` |
+| `model.GoogleCloudTranscriptionModels` | `stt/google` | `google.Models` |
+| `model.GroqModels` | `llm/groq` | `groq.Models` |
+| `model.MistralEmbeddingModels` | `embeddings/mistral` | `mistral.Models` |
+| `model.MistralModels` | `llm/mistral` | `mistral.Models` |
+| `model.OllamaModels` | `llm/ollama` | `ollama.Models` |
+| `model.OpenAIAudioModels` | `tts/openai` | `openai.Models` |
+| `model.OpenAIEmbeddingModels` | `embeddings/openai` | `openai.Models` |
+| `model.OpenAIImageGenerationModels` | `image/openai` | `openai.Models` |
+| `model.OpenAIModels` | `llm/openai` | `openai.Models` |
+| `model.OpenAITranscriptionModels` | `stt/openai` | `openai.Models` |
+| `model.OpenRouterAudioModels` | `tts/openrouter` | `openrouter.Models` |
+| `model.OpenRouterImageGenerationModels` | `image/openrouter` | `openrouter.Models` |
+| `model.OpenRouterModels` | `llm/openrouter` | `openrouter.Models` |
+| `model.OpenRouterTranscriptionModels` | `stt/openrouter` | `openrouter.Models` |
+| `model.PerplexityModels` | `llm/perplexity` | `perplexity.Models` |
+| `model.TogetherModels` | `llm/together` | `together.Models` |
+| `model.VertexAIGeminiModels` | `llm/vertexai` | `vertexai.Models` |
+| `model.VoyageEmbeddingModels` | `embeddings/voyage` | `voyage.Models` |
+| `model.VoyageRerankerModels` | `rerankers/voyage` | `voyage.Models` |
+| `model.XAIImageGenerationModels` | `image/xai` | `xai.Models` |
+| `model.XAIModels` | `llm/xai` | `xai.Models` |
+
+### Constants
+
+Model ID constants drop the provider-brand prefix, since the package already
+supplies it. The ID string values are unchanged, so anything you have persisted
+still matches.
+
+```go
+model.OpenAIModels[model.GPT4o]                 ->  openai.Models[openai.GPT4o]
+model.OpenRouterModels[model.OpenRouterGPT41]   ->  openrouter.Models[openrouter.GPT41]
+model.GeminiEmbeddingModels[model.GeminiEmbedding2]
+                                                ->  gemini.Models[gemini.Embedding2]
+```
+
+Where stripping the prefix would not leave a valid identifier the name is kept
+as it was, so `model.Gemini36Flash` becomes `gemini.Gemini36Flash`: `36Flash`
+cannot start an identifier.
+
+### Shapes
+
+| Old | New |
+|---|---|
+| `model.Model` | `llm.Model` |
+| `model.EmbeddingModel` | `embeddings.EmbeddingModel` |
+| `model.RerankerModel` | `rerankers.RerankerModel` |
+| `model.AudioModel` | `tts.AudioModel` |
+| `model.TranscriptionModel` | `stt.TranscriptionModel` |
+| `model.ImageGenerationModel` | `image.GenerationModel` |
+| `model.Option` | `llm.ModelOption` |
+| `model.NewCustomModel`, `model.With*` | `llm.NewCustomModel`, `llm.With*` |
+
+Two renames are worth noting. `Option` became `ModelOption` so it does not read
+as a client option beside `openai.Option`. `ImageGenerationModel` became
+`GenerationModel` because `image.ImageGenerationModel` stutters.
+
+### `ID` and `Provider` are plain strings
+
+`model.ID` and `model.Provider` were named string types. They are now plain
+`string`, and the `model.Provider*` constants are gone. Use the literal:
+
+```go
+Provider: model.ProviderOpenAI   ->   Provider: "openai"
+```
+
+This leaves the `types` module untouched. `types` is required by 64 modules, so
+putting the shared vocabulary there would have forced exactly the cascade this
+change exists to remove. As a side effect, `message` no longer depends on
+`types` at all.
+
+### Fill-in-the-middle takes its own model type
+
+`fim` previously accepted the chat `model.Model`, so it compiled with any chat
+model even though only a few support infilling. It now takes `fim.Model`, and
+each FIM provider publishes the models that actually work:
+
+```go
+fimmistral.WithModel(mistral.Models[mistral.Codestral])
+    ->  fimmistral.WithModel(fimmistral.Models[fimmistral.Codestral])
+
+fimdeepseek.WithModel(deepseek.Models[deepseek.V32])
+    ->  fimdeepseek.WithModel(fimdeepseek.Models[fimdeepseek.V32])
+```
+
+`fim.Model` carries only `ID`, `Name`, `Provider` and `APIModel`, which is
+everything the FIM clients read. Pricing and context-window metadata stay on the
+chat model configuration, which is a separate concern from selecting an
+infilling endpoint.
+
+### Removed
+
+`model.CohereModels`, `model.MetaModels` and `model.QwenModels` are gone, along
+with their ID constants. Nothing referenced them except pricing aliases inside
+`model.OpenRouterModels`, and those are now literal values. There is no
+`llm/cohere`, `llm/meta` or `llm/qwen` module because those are not directly
+callable here: Llama and Qwen are reached through OpenRouter, Together,
+Fireworks, Groq or Bedrock, each of which carries its own catalog.
 
 ---
 
@@ -171,7 +404,7 @@ constructor.
 
 ```go
 // Before
-client := providers.NewLLM(model.ProviderOpenAI,
+client := providers.NewLLM("openai",
     providers.WithAPIKey(key),
     providers.WithModel(m),
 )

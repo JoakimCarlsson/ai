@@ -3,11 +3,11 @@ package gemini
 import (
 	"testing"
 
-	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/llm"
 )
 
 func reasoningClient(opts ...Option) *Client {
-	o := Options{model: model.Model{CanReason: true}}
+	o := Options{model: llm.Model{CanReason: true}}
 	for _, opt := range opts {
 		opt(&o)
 	}
@@ -60,7 +60,7 @@ func TestThinkingLevelStillWorks(t *testing.T) {
 // TestThinkingDisabledWithoutReasoning verifies no thinking config leaks onto a
 // model that cannot reason.
 func TestThinkingDisabledWithoutReasoning(t *testing.T) {
-	c := &Client{options: Options{model: model.Model{CanReason: false}}}
+	c := &Client{options: Options{model: llm.Model{CanReason: false}}}
 	WithThinkingBudget(1024)(&c.options)
 	cfg := c.buildConfig(nil, nil)
 	if cfg.ThinkingConfig != nil {
