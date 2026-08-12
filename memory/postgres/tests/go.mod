@@ -10,8 +10,8 @@ replace github.com/joakimcarlsson/ai/session => ../../../session
 
 require (
 	github.com/joakimcarlsson/ai/memory/postgres v0.1.0
-	github.com/joakimcarlsson/ai/message v0.1.0
-	github.com/joakimcarlsson/ai/session v0.1.0
+	github.com/joakimcarlsson/ai/message v0.5.2
+	github.com/joakimcarlsson/ai/session v0.1.6
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.42.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.42.0
@@ -38,7 +38,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/joakimcarlsson/ai/model v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/model v0.8.0 // indirect
 	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/lib/pq v1.12.3 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect

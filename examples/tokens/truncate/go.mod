@@ -3,21 +3,23 @@ module github.com/joakimcarlsson/ai/examples/tokens/truncate
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/message v0.1.0
-	github.com/joakimcarlsson/ai/tokens v0.1.0
-	github.com/joakimcarlsson/ai/tokens/truncate v0.0.0-00010101000000-000000000000
+	github.com/joakimcarlsson/ai/message v0.5.2
+	github.com/joakimcarlsson/ai/tokens v0.2.7
+	github.com/joakimcarlsson/ai/tokens/truncate v0.1.8
 )
 
 require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
-	github.com/joakimcarlsson/ai/model v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/tool v0.1.1 // indirect
-	github.com/modelcontextprotocol/go-sdk v1.6.1 // indirect
+	github.com/joakimcarlsson/ai/model v0.8.0 // indirect
+	github.com/joakimcarlsson/ai/tool v0.1.2 // indirect
+	github.com/modelcontextprotocol/go-sdk v1.7.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
 )
 
 replace (
