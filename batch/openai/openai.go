@@ -16,7 +16,6 @@ import (
 	"github.com/joakimcarlsson/ai/embeddings"
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tool"
 	openaisdk "github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -25,8 +24,8 @@ import (
 // Options configures the OpenAI batch processor.
 type Options struct {
 	apiKey           string
-	model            model.Model
-	embeddingModel   model.EmbeddingModel
+	model            llm.Model
+	embeddingModel   embeddings.EmbeddingModel
 	maxTokens        int64
 	progressCallback batch.ProgressCallback
 	pollInterval     time.Duration
@@ -46,10 +45,10 @@ func WithAPIKey(
 }
 
 // WithModel sets the LLM model for chat completion batch requests.
-func WithModel(m model.Model) Option { return func(o *Options) { o.model = m } }
+func WithModel(m llm.Model) Option { return func(o *Options) { o.model = m } }
 
 // WithEmbeddingModel sets the embedding model for embedding batch requests.
-func WithEmbeddingModel(m model.EmbeddingModel) Option {
+func WithEmbeddingModel(m embeddings.EmbeddingModel) Option {
 	return func(o *Options) { o.embeddingModel = m }
 }
 

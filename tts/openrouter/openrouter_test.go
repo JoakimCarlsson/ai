@@ -8,7 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/joakimcarlsson/ai/model"
+	"github.com/joakimcarlsson/ai/tts"
+
 	ttsopenai "github.com/joakimcarlsson/ai/tts/openai"
 	"github.com/joakimcarlsson/ai/tts/openrouter"
 )
@@ -52,7 +53,7 @@ func TestGenerateAudio(t *testing.T) {
 		ttsopenai.WithAPIKey("test-key"),
 		ttsopenai.WithBaseURL(srv.URL),
 		ttsopenai.WithModel(
-			model.OpenRouterAudioModels[model.OpenRouterMAIVoice2],
+			openrouter.Models[openrouter.MAIVoice2],
 		),
 		ttsopenai.WithVoice("en-US-Harper:MAI-Voice-2"),
 		ttsopenai.WithOutputFormat("mp3"),
@@ -95,7 +96,7 @@ func TestArbitraryModel(t *testing.T) {
 
 	client := openrouter.NewGeneration(
 		ttsopenai.WithBaseURL(srv.URL),
-		ttsopenai.WithModel(model.AudioModel{
+		ttsopenai.WithModel(tts.AudioModel{
 			APIModel: "some-vendor/unreleased-tts",
 		}),
 	)
@@ -126,9 +127,9 @@ func TestWithModelID(t *testing.T) {
 	if body["model"] != "minimax/speech-2.8-hd" {
 		t.Errorf("model = %v, want minimax/speech-2.8-hd", body["model"])
 	}
-	if got := client.Model().Provider; got != model.ProviderOpenRouter {
+	if got := client.Model().Provider; got != "openrouter" {
 		t.Errorf("Model().Provider = %q, want %q", got,
-			model.ProviderOpenRouter)
+			"openrouter")
 	}
 }
 
@@ -141,7 +142,7 @@ func TestWireRoutingOptions(t *testing.T) {
 
 	client := openrouter.NewGeneration(
 		ttsopenai.WithBaseURL(srv.URL),
-		ttsopenai.WithModel(model.AudioModel{APIModel: "m"}),
+		ttsopenai.WithModel(tts.AudioModel{APIModel: "m"}),
 		openrouter.WithProviderRouting([]string{"openai", "azure"}, false),
 	)
 
@@ -177,7 +178,7 @@ func TestStreamAudio(t *testing.T) {
 
 	client := openrouter.NewGeneration(
 		ttsopenai.WithBaseURL(srv.URL),
-		ttsopenai.WithModel(model.AudioModel{APIModel: "m"}),
+		ttsopenai.WithModel(tts.AudioModel{APIModel: "m"}),
 	)
 
 	chunks, err := client.StreamAudio(context.Background(), "x")

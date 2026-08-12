@@ -9,7 +9,8 @@ When the TTS client implements `tts.StreamingTextProvider` (ElevenLabs does), th
 ```go
 import (
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
-    "github.com/joakimcarlsson/ai/model"
+    sttelevenlabs "github.com/joakimcarlsson/ai/stt/elevenlabs"
+    ttselevenlabs "github.com/joakimcarlsson/ai/tts/elevenlabs"
     "github.com/joakimcarlsson/ai/stt"
     sttelevenlabs "github.com/joakimcarlsson/ai/stt/elevenlabs"
     "github.com/joakimcarlsson/ai/tts"
@@ -19,19 +20,19 @@ import (
 
 llmClient := llmopenai.NewLLM(
     llmopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-    llmopenai.WithModel(model.OpenAIModels[model.GPT4oMini]),
+    llmopenai.WithModel(llmopenai.Models[llmopenai.GPT4oMini]),
 )
 
 sttClient := sttelevenlabs.NewSpeechToText(
     sttelevenlabs.WithAPIKey(os.Getenv("ELEVENLABS_API_KEY")),
-    sttelevenlabs.WithModel(model.ElevenLabsTranscriptionModels[model.ElevenLabsScribeV2]),
+    sttelevenlabs.WithModel(sttelevenlabs.Models[sttelevenlabs.ScribeV2]),
     sttelevenlabs.WithStreamCommitStrategy(sttelevenlabs.CommitStrategyVAD),
     sttelevenlabs.WithStreamVADSilenceMs(500),
 )
 
 ttsClient := ttselevenlabs.NewGeneration(
     ttselevenlabs.WithAPIKey(os.Getenv("ELEVENLABS_API_KEY")),
-    ttselevenlabs.WithModel(model.ElevenLabsAudioModels[model.ElevenFlashV2_5]),
+    ttselevenlabs.WithModel(ttselevenlabs.Models[ttselevenlabs.FlashV2_5]),
     ttselevenlabs.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),
     ttselevenlabs.WithOutputFormat("pcm_16000"),
 )

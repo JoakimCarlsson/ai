@@ -16,13 +16,16 @@ import (
 	"strings"
 
 	"github.com/joakimcarlsson/ai/llm"
+	"github.com/joakimcarlsson/ai/llm/anthropic"
 	llmanthropic "github.com/joakimcarlsson/ai/llm/anthropic"
+	"github.com/joakimcarlsson/ai/llm/gemini"
 	llmgemini "github.com/joakimcarlsson/ai/llm/gemini"
 	llmgroq "github.com/joakimcarlsson/ai/llm/groq"
+	"github.com/joakimcarlsson/ai/llm/openai"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
+	"github.com/joakimcarlsson/ai/llm/xai"
 	llmxai "github.com/joakimcarlsson/ai/llm/xai"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 const prompt = "What is the latest stable Go release? Answer in one sentence."
@@ -51,7 +54,7 @@ func newLLM() (llm.LLM, string) {
 	case "anthropic":
 		return llmanthropic.NewLLM(
 			llmanthropic.WithAPIKey(requiredEnv("ANTHROPIC_API_KEY")),
-			llmanthropic.WithModel(model.AnthropicModels[model.Claude47Opus]),
+			llmanthropic.WithModel(anthropic.Models[anthropic.Claude47Opus]),
 			llmanthropic.WithMaxTokens(1024),
 			llmanthropic.WithWebSearch(llmanthropic.WebSearchConfig{
 				MaxUses: 3,
@@ -61,7 +64,7 @@ func newLLM() (llm.LLM, string) {
 	case "gemini":
 		return llmgemini.NewLLM(
 			llmgemini.WithAPIKey(requiredEnv("GEMINI_API_KEY")),
-			llmgemini.WithModel(model.GeminiModels[model.Gemini25Flash]),
+			llmgemini.WithModel(gemini.Models[gemini.Gemini25Flash]),
 			llmgemini.WithMaxTokens(1024),
 			llmgemini.WithGoogleSearch(),
 		), provider
@@ -69,7 +72,7 @@ func newLLM() (llm.LLM, string) {
 	case "openai-responses":
 		return llmopenai.NewResponsesLLM(
 			llmopenai.WithResponsesAPIKey(requiredEnv("OPENAI_API_KEY")),
-			llmopenai.WithResponsesModel(model.OpenAIModels[model.GPT5]),
+			llmopenai.WithResponsesModel(openai.Models[openai.GPT5]),
 			llmopenai.WithResponsesMaxTokens(1024),
 			llmopenai.WithWebSearch(llmopenai.WebSearchOpts{
 				SearchContextSize: llmopenai.SearchContextMedium,
@@ -79,7 +82,7 @@ func newLLM() (llm.LLM, string) {
 	case "groq-compound":
 		return llmgroq.NewCompoundLLM(
 			llmgroq.WithCompoundAPIKey(requiredEnv("GROQ_API_KEY")),
-			llmgroq.WithCompoundModel(model.Model{APIModel: "groq/compound"}),
+			llmgroq.WithCompoundModel(llm.Model{APIModel: "groq/compound"}),
 			llmgroq.WithCompoundMaxTokens(1024),
 			llmgroq.WithBrowserSearch(),
 		), provider
@@ -87,7 +90,7 @@ func newLLM() (llm.LLM, string) {
 	case "xai-responses":
 		return llmxai.NewResponsesLLM(
 			llmxai.WithResponsesAPIKey(requiredEnv("XAI_API_KEY")),
-			llmxai.WithResponsesModel(model.XAIModels[model.XAIGrok4]),
+			llmxai.WithResponsesModel(xai.Models[xai.Grok4]),
 			llmxai.WithResponsesMaxTokens(1024),
 			llmxai.WithWebSearch(),
 		), provider

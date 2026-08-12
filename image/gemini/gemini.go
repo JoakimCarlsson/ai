@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/image"
-	"github.com/joakimcarlsson/ai/model"
 	"google.golang.org/genai"
 )
 
@@ -59,7 +58,7 @@ const (
 // Options configures the Gemini image generation client.
 type Options struct {
 	apiKey                   string
-	model                    model.ImageGenerationModel
+	model                    image.GenerationModel
 	timeout                  *time.Duration
 	backend                  genai.Backend
 	n                        *int32
@@ -85,7 +84,7 @@ func WithAPIKey(apiKey string) Option {
 }
 
 // WithModel selects the image generation model.
-func WithModel(m model.ImageGenerationModel) Option {
+func WithModel(m image.GenerationModel) Option {
 	return func(o *Options) { o.model = m }
 }
 
@@ -203,7 +202,7 @@ func NewGeneration(opts ...Option) image.Generation {
 }
 
 // Model returns the configured image generation model.
-func (c *Client) Model() model.ImageGenerationModel {
+func (c *Client) Model() image.GenerationModel {
 	return c.options.model
 }
 

@@ -7,7 +7,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tts"
 	openaisdk "github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -17,7 +16,7 @@ import (
 // Options configures the OpenAI TTS client.
 type Options struct {
 	apiKey       string
-	model        model.AudioModel
+	model        tts.AudioModel
 	timeout      *time.Duration
 	baseURL      string
 	speed        *float64
@@ -39,7 +38,7 @@ func WithAPIKey(
 
 // WithModel selects the TTS model.
 func WithModel(
-	m model.AudioModel,
+	m tts.AudioModel,
 ) Option {
 	return func(o *Options) { o.model = m }
 }
@@ -131,7 +130,7 @@ func NewGeneration(opts ...Option) tts.Generation {
 }
 
 // Model returns the configured TTS model.
-func (c *Client) Model() model.AudioModel { return c.options.model }
+func (c *Client) Model() tts.AudioModel { return c.options.model }
 
 func (c *Client) requestOptions() []option.RequestOption {
 	var opts []option.RequestOption

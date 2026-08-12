@@ -3,11 +3,10 @@ module github.com/joakimcarlsson/ai/examples/batch/concurrent
 go 1.25.8
 
 require (
-	github.com/joakimcarlsson/ai/batch v0.1.0
+	github.com/joakimcarlsson/ai/batch v0.1.8
 	github.com/joakimcarlsson/ai/batch/concurrent v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/llm/gemini v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/message v0.2.0
-	github.com/joakimcarlsson/ai/model v0.2.0
+	github.com/joakimcarlsson/ai/message v0.5.2
 )
 
 require (
@@ -27,12 +26,12 @@ require (
 	github.com/googleapis/gax-go/v2 v2.22.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
-	github.com/joakimcarlsson/ai/embeddings v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/llm v0.4.0 // indirect
-	github.com/joakimcarlsson/ai/schema v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/tool v0.1.1 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/types v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/embeddings v0.2.5 // indirect
+	github.com/joakimcarlsson/ai/llm v0.5.3 // indirect
+	github.com/joakimcarlsson/ai/schema v0.2.0 // indirect
+	github.com/joakimcarlsson/ai/tool v0.1.2 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
+	github.com/joakimcarlsson/ai/types v0.2.0 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.6.1 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
@@ -77,7 +76,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm/openai => ../../../llm/openai
 	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
 	github.com/joakimcarlsson/ai/rerankers => ../../../rerankers
 	github.com/joakimcarlsson/ai/schema => ../../../schema

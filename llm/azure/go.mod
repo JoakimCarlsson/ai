@@ -7,7 +7,6 @@ require (
 	github.com/joakimcarlsson/ai/llm v0.5.3
 	github.com/joakimcarlsson/ai/llm/openai v0.4.8
 	github.com/joakimcarlsson/ai/message v0.5.2
-	github.com/joakimcarlsson/ai/model v0.8.0
 	github.com/openai/openai-go/v3 v3.41.0
 )
 
@@ -65,7 +64,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm => ../
 	github.com/joakimcarlsson/ai/llm/openai => ../openai
 	github.com/joakimcarlsson/ai/message => ../../message
-	github.com/joakimcarlsson/ai/model => ../../model
 	github.com/joakimcarlsson/ai/schema => ../../schema
 	github.com/joakimcarlsson/ai/tool => ../../tool
 	github.com/joakimcarlsson/ai/tracing => ../../tracing

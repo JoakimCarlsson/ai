@@ -11,7 +11,6 @@ import (
 
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tool"
 )
 
@@ -46,7 +45,7 @@ func TestWireToolChoiceRequired(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 		WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceRequired}),
 	)
 
@@ -71,7 +70,7 @@ func TestWireToolChoiceSpecific(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 		WithToolChoice(llm.ToolChoice{
 			Mode: llm.ToolChoiceSpecific,
 			Name: "get_weather",
@@ -111,7 +110,7 @@ func TestWireToolChoiceOmittedWithoutTools(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 		WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceRequired}),
 	)
 
@@ -131,7 +130,7 @@ func TestWireToolChoiceOmittedWithoutTools(t *testing.T) {
 func TestToolChoiceSpecificEmptyNameRejected(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 		WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceSpecific}),
 	)
 
@@ -238,7 +237,7 @@ func TestWireTopKAndStop(t *testing.T) {
 	llm := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 		WithTopK(40),
 		WithStopSequences("END", "STOP", "HALT"),
 	)
@@ -291,7 +290,7 @@ func TestWireRequestJSONField(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "x"}),
+		WithModel(llm.Model{APIModel: "x"}),
 		WithRequestJSONField(
 			"provider",
 			map[string]any{"allow_fallbacks": false},
@@ -332,7 +331,7 @@ func TestResponseMetadataField(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "x"}),
+		WithModel(llm.Model{APIModel: "x"}),
 		WithResponseMetadataField("citations", "perplexity.citations"),
 	)
 
@@ -363,7 +362,7 @@ func TestUsageReasoningAndDeepSeekCache(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "deepseek-chat"}),
+		WithModel(llm.Model{APIModel: "deepseek-chat"}),
 	)
 
 	resp, err := client.SendMessages(context.Background(),
@@ -401,7 +400,7 @@ func TestResponseRequestIDAndHeaders(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 	)
 
 	resp, err := client.SendMessages(context.Background(),
@@ -450,7 +449,7 @@ func TestWithHTTPClientTransportUsed(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 		WithHTTPClient(&http.Client{
 			Transport: countingRT{RoundTripper: http.DefaultTransport, n: &n},
 		}),
@@ -476,7 +475,7 @@ func TestWireLogitBias(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 		WithLogitBias(map[string]int{"50256": -100, "1212": 5}),
 	)
 
@@ -508,7 +507,7 @@ func TestWireLogitBiasOmitted(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 	)
 
 	if _, err := client.SendMessages(context.Background(),
@@ -532,7 +531,7 @@ func TestWireLogprobs(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 		WithLogprobs(5),
 	)
 
@@ -559,7 +558,7 @@ func TestWireLogprobsOmitted(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 	)
 
 	if _, err := client.SendMessages(context.Background(),
@@ -594,7 +593,7 @@ func TestResponseLogProbs(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 		WithLogprobs(2),
 	)
 
@@ -629,7 +628,7 @@ func TestResponseLogProbsNilWhenAbsent(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 	)
 
 	out, err := client.SendMessages(context.Background(),
@@ -653,7 +652,7 @@ func TestWireN(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 		WithN(3),
 	)
 
@@ -676,7 +675,7 @@ func TestWireNOmitted(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 	)
 
 	if _, err := client.SendMessages(context.Background(),
@@ -707,7 +706,7 @@ func TestResponseChoices(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 		WithN(3),
 	)
 
@@ -746,7 +745,7 @@ func TestResponseChoicesEmptyForSingleChoice(t *testing.T) {
 	client := NewLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
-		WithModel(model.Model{APIModel: "gpt-4o-mini"}),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 	)
 
 	out, err := client.SendMessages(context.Background(),

@@ -7,8 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/joakimcarlsson/ai/llm"
+
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 const generateContentOK = `{"candidates":[{"content":{"role":"model",` +
@@ -50,7 +51,7 @@ func TestWithHTTPClientTransportUsed(t *testing.T) {
 	client := NewLLM(
 		WithProject("test-project"),
 		WithLocation("us-central1"),
-		WithModel(model.Model{APIModel: "gemini-2.0-flash"}),
+		WithModel(llm.Model{APIModel: "gemini-2.0-flash"}),
 		WithHTTPClient(&http.Client{
 			Transport: redirectRT{
 				base: http.DefaultTransport,

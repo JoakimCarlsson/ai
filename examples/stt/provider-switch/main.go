@@ -7,10 +7,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/stt"
+	"github.com/joakimcarlsson/ai/stt/azure"
 	sttazure "github.com/joakimcarlsson/ai/stt/azure"
+	"github.com/joakimcarlsson/ai/stt/deepgram"
 	sttdeepgram "github.com/joakimcarlsson/ai/stt/deepgram"
+	"github.com/joakimcarlsson/ai/stt/openai"
 	sttopenai "github.com/joakimcarlsson/ai/stt/openai"
 )
 
@@ -45,7 +47,7 @@ func newSTT() (stt.SpeechToText, string) {
 		return sttdeepgram.NewSpeechToText(
 			sttdeepgram.WithAPIKey(requiredEnv("DEEPGRAM_API_KEY")),
 			sttdeepgram.WithModel(
-				model.DeepgramTranscriptionModels[model.DeepgramNova3],
+				deepgram.Models[deepgram.Nova3],
 			),
 			sttdeepgram.WithPunctuate(true),
 			sttdeepgram.WithSmartFormat(true),
@@ -54,7 +56,7 @@ func newSTT() (stt.SpeechToText, string) {
 		return sttopenai.NewSpeechToText(
 			sttopenai.WithAPIKey(requiredEnv("OPENAI_API_KEY")),
 			sttopenai.WithModel(
-				model.OpenAITranscriptionModels[model.GPT4oTranscribe],
+				openai.Models[openai.GPT4oTranscribe],
 			),
 			sttopenai.WithLanguage("en"),
 		), provider
@@ -63,7 +65,7 @@ func newSTT() (stt.SpeechToText, string) {
 			sttazure.WithAPIKey(requiredEnv("AZURE_SPEECH_KEY")),
 			sttazure.WithRegion(envOrDefault("AZURE_SPEECH_REGION", "eastus")),
 			sttazure.WithModel(
-				model.AzureSpeechTranscriptionModels[model.AzureSpeechFastTranscription],
+				azure.Models[azure.FastTranscription],
 			),
 			sttazure.WithLocales("en-US"),
 		), provider

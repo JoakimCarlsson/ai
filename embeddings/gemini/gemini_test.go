@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/joakimcarlsson/ai/embeddings"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func TestParseDataURI(t *testing.T) {
@@ -178,10 +177,10 @@ func TestParseDataURI(t *testing.T) {
 func TestGenerateMultimodalEmbeddings_WrongModel(t *testing.T) {
 	c := &Client{
 		options: Options{
-			model: model.EmbeddingModel{
+			model: embeddings.EmbeddingModel{
 				ID:       "text-embedding-004",
 				Name:     "Gemini Text Embedding 004",
-				Provider: model.ProviderGemini,
+				Provider: "gemini",
 				APIModel: "text-embedding-004",
 			},
 		},
@@ -201,7 +200,7 @@ func TestGenerateMultimodalEmbeddings_WrongModel(t *testing.T) {
 func TestGenerateMultimodalEmbeddings_MissingMimeType(t *testing.T) {
 	c := &Client{
 		options: Options{
-			model: model.GeminiEmbeddingModels[model.GeminiEmbedding2],
+			model: Models[Embedding2],
 		},
 	}
 	_, err := c.GenerateMultimodalEmbeddings(
@@ -226,7 +225,7 @@ func TestGenerateMultimodalEmbeddings_MissingMimeType(t *testing.T) {
 func TestGenerateMultimodalEmbeddings_EmptyImageBase64(t *testing.T) {
 	c := &Client{
 		options: Options{
-			model: model.GeminiEmbeddingModels[model.GeminiEmbedding2],
+			model: Models[Embedding2],
 		},
 	}
 	_, err := c.GenerateMultimodalEmbeddings(
@@ -251,7 +250,7 @@ func TestGenerateMultimodalEmbeddings_EmptyImageBase64(t *testing.T) {
 func TestGenerateMultimodalEmbeddings_ImageBase64NoMime(t *testing.T) {
 	c := &Client{
 		options: Options{
-			model: model.GeminiEmbeddingModels[model.GeminiEmbedding2],
+			model: Models[Embedding2],
 		},
 	}
 	_, err := c.GenerateMultimodalEmbeddings(
@@ -276,7 +275,7 @@ func TestGenerateMultimodalEmbeddings_ImageBase64NoMime(t *testing.T) {
 func TestGenerateMultimodalEmbeddings_InvalidImageBase64(t *testing.T) {
 	c := &Client{
 		options: Options{
-			model: model.GeminiEmbeddingModels[model.GeminiEmbedding2],
+			model: Models[Embedding2],
 		},
 	}
 	_, err := c.GenerateMultimodalEmbeddings(
@@ -302,7 +301,7 @@ func TestGenerateMultimodalEmbeddings_InvalidImageBase64(t *testing.T) {
 func TestGenerateMultimodalEmbeddings_EmptyImageURL(t *testing.T) {
 	c := &Client{
 		options: Options{
-			model: model.GeminiEmbeddingModels[model.GeminiEmbedding2],
+			model: Models[Embedding2],
 		},
 	}
 	_, err := c.GenerateMultimodalEmbeddings(
@@ -324,7 +323,7 @@ func TestGenerateMultimodalEmbeddings_EmptyImageURL(t *testing.T) {
 func TestGenerateMultimodalEmbeddings_InvalidImageURL(t *testing.T) {
 	c := &Client{
 		options: Options{
-			model: model.GeminiEmbeddingModels[model.GeminiEmbedding2],
+			model: Models[Embedding2],
 		},
 	}
 	_, err := c.GenerateMultimodalEmbeddings(
@@ -346,7 +345,7 @@ func TestGenerateMultimodalEmbeddings_InvalidImageURL(t *testing.T) {
 func TestGenerateMultimodalEmbeddings_UnsupportedContentType(t *testing.T) {
 	c := &Client{
 		options: Options{
-			model: model.GeminiEmbeddingModels[model.GeminiEmbedding2],
+			model: Models[Embedding2],
 		},
 	}
 	_, err := c.GenerateMultimodalEmbeddings(
@@ -368,7 +367,7 @@ func TestGenerateMultimodalEmbeddings_UnsupportedContentType(t *testing.T) {
 func TestGenerateMultimodalEmbeddings_EmptyInput(t *testing.T) {
 	c := &Client{
 		options: Options{
-			model: model.GeminiEmbeddingModels[model.GeminiEmbedding2],
+			model: Models[Embedding2],
 		},
 	}
 	resp, err := c.GenerateMultimodalEmbeddings(context.Background(), nil)
@@ -394,7 +393,7 @@ func TestGenerateMultimodalEmbeddings_Integration(t *testing.T) {
 
 	c := NewEmbedding(
 		WithAPIKey(apiKey),
-		WithModel(model.GeminiEmbeddingModels[model.GeminiEmbedding2]),
+		WithModel(Models[Embedding2]),
 		WithDimensions(768),
 	)
 

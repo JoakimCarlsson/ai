@@ -8,10 +8,12 @@ import (
 	"strings"
 
 	"github.com/joakimcarlsson/ai/embeddings"
+	"github.com/joakimcarlsson/ai/embeddings/cohere"
 	embeddingcohere "github.com/joakimcarlsson/ai/embeddings/cohere"
+	"github.com/joakimcarlsson/ai/embeddings/openai"
 	embeddingopenai "github.com/joakimcarlsson/ai/embeddings/openai"
+	"github.com/joakimcarlsson/ai/embeddings/voyage"
 	embeddingvoyage "github.com/joakimcarlsson/ai/embeddings/voyage"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -34,7 +36,7 @@ func newEmbedding() (embeddings.Embedding, string) {
 		return embeddingcohere.NewEmbedding(
 			embeddingcohere.WithAPIKey(requiredEnv("COHERE_API_KEY")),
 			embeddingcohere.WithModel(
-				model.CohereEmbeddingModels[model.CohereEmbedEnV3],
+				cohere.Models[cohere.EmbedEnV3],
 			),
 			embeddingcohere.WithInputType("search_document"),
 			embeddingcohere.WithEmbeddingTypes([]string{"float"}),
@@ -43,14 +45,14 @@ func newEmbedding() (embeddings.Embedding, string) {
 		return embeddingopenai.NewEmbedding(
 			embeddingopenai.WithAPIKey(requiredEnv("OPENAI_API_KEY")),
 			embeddingopenai.WithModel(
-				model.OpenAIEmbeddingModels[model.TextEmbedding3Small],
+				openai.Models[openai.TextEmbedding3Small],
 			),
 		), provider
 	case "voyage":
 		return embeddingvoyage.NewEmbedding(
 			embeddingvoyage.WithAPIKey(requiredEnv("VOYAGE_API_KEY")),
 			embeddingvoyage.WithModel(
-				model.VoyageEmbeddingModels[model.Voyage35Lite],
+				voyage.Models[voyage.Voyage35Lite],
 			),
 			embeddingvoyage.WithInputType("document"),
 		), provider

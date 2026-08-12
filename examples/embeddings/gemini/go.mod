@@ -3,9 +3,8 @@ module embeddings
 go 1.25.8
 
 require (
-	github.com/joakimcarlsson/ai/embeddings v0.2.0
+	github.com/joakimcarlsson/ai/embeddings v0.2.5
 	github.com/joakimcarlsson/ai/embeddings/gemini v0.1.0
-	github.com/joakimcarlsson/ai/model v0.2.0
 )
 
 require (
@@ -24,7 +23,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.22.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0 // indirect
 	go.opentelemetry.io/otel v1.44.0 // indirect
@@ -54,6 +53,5 @@ require (
 replace (
 	github.com/joakimcarlsson/ai/embeddings => ../../../embeddings
 	github.com/joakimcarlsson/ai/embeddings/gemini => ../../../embeddings/gemini
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/tracing => ../../../tracing
 )

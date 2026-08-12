@@ -18,7 +18,6 @@ import (
 
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
@@ -37,7 +36,7 @@ type BrowserSearchOpts struct {
 // CompoundOptions configures the Groq compound LLM client.
 type CompoundOptions struct {
 	apiKey        string
-	model         model.Model
+	model         llm.Model
 	maxTokens     int64
 	temperature   *float64
 	topP          *float64
@@ -58,7 +57,7 @@ func WithCompoundAPIKey(k string) CompoundOption {
 }
 
 // WithCompoundModel selects a Groq compound model (e.g. groq/compound).
-func WithCompoundModel(m model.Model) CompoundOption {
+func WithCompoundModel(m llm.Model) CompoundOption {
 	return func(o *CompoundOptions) { o.model = m }
 }
 
@@ -198,7 +197,7 @@ func NewCompoundLLM(opts ...CompoundOption) llm.LLM {
 	})
 }
 
-func (c *compoundClient) Model() model.Model { return c.options.model }
+func (c *compoundClient) Model() llm.Model { return c.options.model }
 
 func (c *compoundClient) SupportsStructuredOutput() bool {
 	return c.options.model.SupportsStructuredOut

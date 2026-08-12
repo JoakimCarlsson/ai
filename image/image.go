@@ -17,12 +17,11 @@
 //	import (
 //		"github.com/joakimcarlsson/ai/image"
 //		imageopenai "github.com/joakimcarlsson/ai/image/openai"
-//		"github.com/joakimcarlsson/ai/model"
 //	)
 //
 //	client := imageopenai.NewGeneration(
 //		imageopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-//		imageopenai.WithModel(model.OpenAIImageGenerationModels[model.DallE3]),
+//		imageopenai.WithModel(imageopenai.Models[imageopenai.GPTImage2]),
 //		imageopenai.WithSize("1024x1024"),
 //		imageopenai.WithQuality("hd"),
 //		imageopenai.WithStyle("vivid"),
@@ -46,7 +45,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tracing"
 )
 
@@ -140,7 +138,7 @@ type Generation interface {
 	) error
 
 	// Model returns the image generation model configuration being used.
-	Model() model.ImageGenerationModel
+	Model() GenerationModel
 }
 
 // TracingAttrs are construction-time attributes vendor packages forward to the
@@ -159,7 +157,7 @@ type tracingClient struct {
 	attrs TracingAttrs
 }
 
-func (t *tracingClient) Model() model.ImageGenerationModel {
+func (t *tracingClient) Model() GenerationModel {
 	return t.inner.Model()
 }
 

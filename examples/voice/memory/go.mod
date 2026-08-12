@@ -6,9 +6,8 @@ require (
 	github.com/coder/websocket v1.8.15
 	github.com/joakimcarlsson/ai/embeddings/openai v0.1.0
 	github.com/joakimcarlsson/ai/llm/openai v0.2.0
-	github.com/joakimcarlsson/ai/memory v0.1.0
-	github.com/joakimcarlsson/ai/model v0.1.0
-	github.com/joakimcarlsson/ai/session v0.1.0
+	github.com/joakimcarlsson/ai/memory v0.2.8
+	github.com/joakimcarlsson/ai/session v0.1.6
 	github.com/joakimcarlsson/ai/stt/assemblyai v0.1.0
 	github.com/joakimcarlsson/ai/tts/deepgram v0.2.0
 	github.com/joakimcarlsson/ai/voice v0.0.0-00010101000000-000000000000
@@ -23,16 +22,16 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
-	github.com/joakimcarlsson/ai/embeddings v0.2.0 // indirect
-	github.com/joakimcarlsson/ai/llm v0.4.0 // indirect
-	github.com/joakimcarlsson/ai/message v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/schema v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/stt v0.2.0 // indirect
-	github.com/joakimcarlsson/ai/tokens v0.2.0 // indirect
-	github.com/joakimcarlsson/ai/tool v0.1.1 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/tts v0.2.0 // indirect
-	github.com/joakimcarlsson/ai/types v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/embeddings v0.2.5 // indirect
+	github.com/joakimcarlsson/ai/llm v0.5.3 // indirect
+	github.com/joakimcarlsson/ai/message v0.5.2 // indirect
+	github.com/joakimcarlsson/ai/schema v0.2.0 // indirect
+	github.com/joakimcarlsson/ai/stt v0.2.5 // indirect
+	github.com/joakimcarlsson/ai/tokens v0.2.7 // indirect
+	github.com/joakimcarlsson/ai/tool v0.1.2 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
+	github.com/joakimcarlsson/ai/tts v0.2.5 // indirect
+	github.com/joakimcarlsson/ai/types v0.2.0 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.6.1 // indirect
 	github.com/openai/openai-go/v3 v3.41.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
@@ -73,7 +72,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm/openai => ../../../llm/openai
 	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
 	github.com/joakimcarlsson/ai/schema => ../../../schema
 	github.com/joakimcarlsson/ai/session => ../../../session

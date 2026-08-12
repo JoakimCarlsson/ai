@@ -13,7 +13,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/joakimcarlsson/ai/image"
 	imageopenai "github.com/joakimcarlsson/ai/image/openai"
-	"github.com/joakimcarlsson/ai/model"
 	openaisdk "github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/azure"
 	"github.com/openai/openai-go/v3/option"
@@ -63,7 +62,7 @@ const (
 // Options configures the Azure OpenAI image generation client.
 type Options struct {
 	apiKey            string
-	model             model.ImageGenerationModel
+	model             image.GenerationModel
 	timeout           *time.Duration
 	endpoint          string
 	apiVersion        string
@@ -89,7 +88,7 @@ func WithAPIKey(apiKey string) Option {
 }
 
 // WithModel selects the image generation model.
-func WithModel(m model.ImageGenerationModel) Option {
+func WithModel(m image.GenerationModel) Option {
 	return func(o *Options) { o.model = m }
 }
 

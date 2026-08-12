@@ -14,14 +14,13 @@ import (
 	"github.com/joakimcarlsson/ai/batch"
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tool"
 )
 
 // Options configures the Anthropic batch processor.
 type Options struct {
 	apiKey           string
-	model            model.Model
+	model            llm.Model
 	maxTokens        int64
 	progressCallback batch.ProgressCallback
 	pollInterval     time.Duration
@@ -39,7 +38,7 @@ func WithAPIKey(
 }
 
 // WithModel sets the LLM model.
-func WithModel(m model.Model) Option { return func(o *Options) { o.model = m } }
+func WithModel(m llm.Model) Option { return func(o *Options) { o.model = m } }
 
 // WithMaxTokens sets the maximum number of tokens to generate per request.
 func WithMaxTokens(

@@ -2,8 +2,7 @@
 //
 // This wraps [llm/openai] fixed to Berget's chat-completions endpoint
 // (https://api.berget.ai/v1). Berget is a Swedish, EU-hosted provider serving
-// open-weight models; see [github.com/joakimcarlsson/ai/model] for the catalog
-// (BergetModels) and pricing.
+// open-weight models. [Models] carries the catalog and pricing.
 package berget
 
 import (

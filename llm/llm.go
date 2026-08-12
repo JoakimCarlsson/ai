@@ -16,7 +16,7 @@
 //	groq := llmopenai.NewLLM(
 //		llmopenai.WithAPIKey(os.Getenv("GROQ_API_KEY")),
 //		llmopenai.WithBaseURL("https://api.groq.com/openai/v1"),
-//		llmopenai.WithModel(model.GroqModels[model.LLaMA3_70B]),
+//		llmopenai.WithModel(groq.Models[model.LLaMA3_70B]),
 //	)
 //
 // The [RegisterCustomProvider] / [GetCustomProvider] registry stores BYOM
@@ -32,7 +32,6 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/tracing"
@@ -43,7 +42,7 @@ import (
 // Vendor packages may override this in their RetryConfig.
 const MaxRetries = 8
 
-var customProviders = make(map[model.Provider]CustomProviderConfig)
+var customProviders = make(map[string]CustomProviderConfig)
 var customProvidersMu sync.RWMutex
 
 // CustomProviderConfig defines configuration for OpenAI-compatible custom providers.
@@ -55,7 +54,7 @@ var customProvidersMu sync.RWMutex
 //
 //	ollama := llm.RegisterCustomProvider("ollama", llm.CustomProviderConfig{
 //	    BaseURL: "http://localhost:11434/v1",
-//	    DefaultModel: model.NewCustomModel(...),
+//	    DefaultModel: NewCustomModel(...),
 //	})
 //
 //	cfg, _ := llm.GetCustomProvider(ollama)
@@ -72,7 +71,7 @@ type CustomProviderConfig struct {
 	ExtraHeaders map[string]string
 
 	// DefaultModel is the model configuration to use when none is specified.
-	DefaultModel model.Model
+	DefaultModel Model
 }
 
 // RegisterCustomProvider stores a BYOM configuration under a synthetic provider ID
@@ -80,17 +79,17 @@ type CustomProviderConfig struct {
 func RegisterCustomProvider(
 	name string,
 	config CustomProviderConfig,
-) model.Provider {
+) string {
 	customProvidersMu.Lock()
 	defer customProvidersMu.Unlock()
 
-	providerID := model.Provider("custom:" + name)
+	providerID := string("custom:" + name)
 	customProviders[providerID] = config
 	return providerID
 }
 
 // GetCustomProvider retrieves a previously-registered custom provider configuration.
-func GetCustomProvider(provider model.Provider) (CustomProviderConfig, bool) {
+func GetCustomProvider(provider string) (CustomProviderConfig, bool) {
 	customProvidersMu.RLock()
 	defer customProvidersMu.RUnlock()
 	config, exists := customProviders[provider]
@@ -261,7 +260,7 @@ type LLM interface {
 	) <-chan Event
 
 	// Model returns the model configuration being used by this LLM instance.
-	Model() model.Model
+	Model() Model
 
 	// SupportsStructuredOutput returns true if the provider supports structured output generation.
 	SupportsStructuredOutput() bool
@@ -288,7 +287,7 @@ type tracingLLM struct {
 	attrs TracingAttrs
 }
 
-func (t *tracingLLM) Model() model.Model {
+func (t *tracingLLM) Model() Model {
 	return t.inner.Model()
 }
 
@@ -398,7 +397,7 @@ func (t *tracingLLM) recordMetrics(
 		ctx,
 		"generate_content",
 		m.APIModel,
-		string(m.Provider),
+		m.Provider,
 		time.Since(start),
 		inputTokens,
 		outputTokens,
@@ -416,7 +415,7 @@ func (t *tracingLLM) SendMessages(
 	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
-		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
+		ctx, m.APIModel, m.Provider, t.spanAttrs()...,
 	)
 	defer span.End()
 
@@ -444,7 +443,7 @@ func (t *tracingLLM) SendMessagesWithStructuredOutput(
 	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
-		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
+		ctx, m.APIModel, m.Provider, t.spanAttrs()...,
 	)
 	defer span.End()
 
@@ -476,7 +475,7 @@ func (t *tracingLLM) StreamResponse(
 	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
-		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
+		ctx, m.APIModel, m.Provider, t.spanAttrs()...,
 	)
 
 	innerCh := t.inner.StreamResponse(ctx, messages, tools)
@@ -535,7 +534,7 @@ func (t *tracingLLM) StreamResponseWithStructuredOutput(
 	start := time.Now()
 
 	ctx, span := tracing.StartGenerateSpan(
-		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
+		ctx, m.APIModel, m.Provider, t.spanAttrs()...,
 	)
 
 	innerCh := t.inner.StreamResponseWithStructuredOutput(

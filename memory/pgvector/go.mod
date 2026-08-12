@@ -18,7 +18,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
 	github.com/joakimcarlsson/ai/llm v0.5.3 // indirect
 	github.com/joakimcarlsson/ai/message v0.5.2 // indirect
-	github.com/joakimcarlsson/ai/model v0.8.0 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.0 // indirect
 	github.com/joakimcarlsson/ai/tool v0.1.2 // indirect
 	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
@@ -55,7 +54,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm => ../../llm
 	github.com/joakimcarlsson/ai/memory => ../
 	github.com/joakimcarlsson/ai/message => ../../message
-	github.com/joakimcarlsson/ai/model => ../../model
 	github.com/joakimcarlsson/ai/schema => ../../schema
 	github.com/joakimcarlsson/ai/tool => ../../tool
 	github.com/joakimcarlsson/ai/tracing => ../../tracing

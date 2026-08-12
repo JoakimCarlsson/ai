@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/joakimcarlsson/ai/agent"
 	llm "github.com/joakimcarlsson/ai/llm"
+
+	"github.com/joakimcarlsson/ai/agent"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/session"
 	"github.com/joakimcarlsson/ai/tokens"
@@ -59,8 +59,8 @@ func (m *bugMockSummarizer) StreamResponseWithStructuredOutput(
 	return nil
 }
 
-func (m *bugMockSummarizer) Model() model.Model {
-	return model.Model{ID: "mock-summarizer"}
+func (m *bugMockSummarizer) Model() llm.Model {
+	return llm.Model{ID: "mock-summarizer"}
 }
 
 func (m *bugMockSummarizer) SupportsStructuredOutput() bool {
@@ -109,8 +109,8 @@ func (m *mockAgentLLM) StreamResponseWithStructuredOutput(
 	return nil
 }
 
-func (m *mockAgentLLM) Model() model.Model {
-	return model.Model{ID: "mock-agent-llm"}
+func (m *mockAgentLLM) Model() llm.Model {
+	return llm.Model{ID: "mock-agent-llm"}
 }
 
 func (m *mockAgentLLM) SupportsStructuredOutput() bool {

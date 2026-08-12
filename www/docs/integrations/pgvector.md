@@ -93,7 +93,8 @@ import (
     pgsessmem "github.com/joakimcarlsson/ai/memory/postgres"
     embopenai "github.com/joakimcarlsson/ai/embeddings/openai"
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
-    "github.com/joakimcarlsson/ai/model"
+    embeddingsopenai "github.com/joakimcarlsson/ai/embeddings/openai"
+    llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 )
 
 func main() {
@@ -102,12 +103,12 @@ func main() {
 
     embedder := embopenai.NewEmbedding(
         embopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-        embopenai.WithModel(model.OpenAIEmbeddingModels[model.TextEmbedding3Small]),
+        embopenai.WithModel(embeddingsopenai.Models[embeddingsopenai.TextEmbedding3Small]),
     )
 
     llmClient := llmopenai.NewLLM(
         llmopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-        llmopenai.WithModel(model.OpenAIModels[model.GPT4o]),
+        llmopenai.WithModel(llmopenai.Models[llmopenai.GPT4o]),
     )
 
     // PostgreSQL sessions + pgvector memory

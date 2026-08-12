@@ -3,11 +3,10 @@ module github.com/joakimcarlsson/ai/examples/embeddings/provider-switch
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/embeddings v0.2.0
+	github.com/joakimcarlsson/ai/embeddings v0.2.5
 	github.com/joakimcarlsson/ai/embeddings/cohere v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/embeddings/openai v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/embeddings/voyage v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/model v0.1.0
 )
 
 require (
@@ -17,7 +16,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
 	github.com/openai/openai-go/v3 v3.41.0 // indirect
 	github.com/tidwall/gjson v1.19.0 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
@@ -65,7 +64,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm/openai => ../../../llm/openai
 	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
 	github.com/joakimcarlsson/ai/rerankers => ../../../rerankers
 	github.com/joakimcarlsson/ai/rerankers/cohere => ../../../rerankers/cohere

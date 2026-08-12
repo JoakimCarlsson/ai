@@ -16,11 +16,11 @@
 //
 // OpenRouter exposes far more image models than the [model] package
 // catalogues; pass any OpenRouter image model id via [WithModel] with a bare
-// [model.ImageGenerationModel] even without a registered entry in [model]:
+// [image.GenerationModel] even without a registered entry in [model]:
 //
 //	client := openrouter.NewGeneration(
 //		openrouter.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
-//		openrouter.WithModel(model.ImageGenerationModel{
+//		openrouter.WithModel(image.GenerationModel{
 //			APIModel: "bytedance-seed/seedream-4.5",
 //		}),
 //		openrouter.WithAspectRatio("16:9"),
@@ -46,7 +46,6 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/image"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 // DefaultBaseURL is the canonical OpenRouter API endpoint.
@@ -124,7 +123,7 @@ const (
 // Options configures the OpenRouter image generation client.
 type Options struct {
 	apiKey            string
-	model             model.ImageGenerationModel
+	model             image.GenerationModel
 	baseURL           string
 	httpClient        *http.Client
 	timeout           *time.Duration
@@ -151,27 +150,27 @@ func WithAPIKey(apiKey string) Option {
 }
 
 // WithModel selects the image generation model. Any OpenRouter model id works;
-// a bare [model.ImageGenerationModel] with only APIModel set is enough.
-func WithModel(m model.ImageGenerationModel) Option {
+// a bare [image.GenerationModel] with only APIModel set is enough.
+func WithModel(m image.GenerationModel) Option {
 	return func(o *Options) { o.model = m }
 }
 
 // WithModelID selects a model by raw OpenRouter id, for the models
-// [model.OpenRouterImageGenerationModels] does not catalogue. It is shorthand
-// for [WithModel] with a bare [model.ImageGenerationModel], and it is the
+// [Models] does not catalogue. It is shorthand
+// for [WithModel] with a bare [image.GenerationModel], and it is the
 // intended path for anything OpenRouter has routed since this package was last
 // updated:
 //
 //	openrouter.WithModelID("black-forest-labs/flux.2-pro")
 //
 // Nothing is validated locally, so the per-model option ceilings recorded on a
-// registered [model.ImageGenerationModel] are not available. Check the model's
+// registered [image.GenerationModel] are not available. Check the model's
 // supported_parameters via GET /api/v1/images/models before setting resolution,
 // quality, background or seed; OpenRouter rejects unsupported fields.
 func WithModelID(id string) Option {
-	return WithModel(model.ImageGenerationModel{
+	return WithModel(image.GenerationModel{
 		APIModel: id,
-		Provider: model.ProviderOpenRouter,
+		Provider: "openrouter",
 	})
 }
 
@@ -311,7 +310,7 @@ func NewGeneration(opts ...Option) image.Generation {
 }
 
 // Model returns the configured image generation model.
-func (c *Client) Model() model.ImageGenerationModel {
+func (c *Client) Model() image.GenerationModel {
 	return c.options.model
 }
 

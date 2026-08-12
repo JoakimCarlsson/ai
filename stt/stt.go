@@ -14,7 +14,7 @@
 //
 //	client := sttopenai.NewSpeechToText(
 //		sttopenai.WithAPIKey("your-api-key"),
-//		sttopenai.WithModel(model.OpenAITranscriptionModels[model.Whisper1]),
+//		sttopenai.WithModel(openai.Models[openai.Whisper1]),
 //	)
 //
 //	audioData, _ := os.ReadFile("audio.mp3")
@@ -26,7 +26,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tracing"
 )
 
@@ -122,7 +121,7 @@ type SpeechToText interface {
 	SupportsStreaming() bool
 
 	// Model returns the transcription model configuration being used.
-	Model() model.TranscriptionModel
+	Model() TranscriptionModel
 }
 
 // Options contains parameters for customizing transcription requests.
@@ -230,7 +229,7 @@ type tracingClient struct {
 	attrs TracingAttrs
 }
 
-func (t *tracingClient) Model() model.TranscriptionModel {
+func (t *tracingClient) Model() TranscriptionModel {
 	return t.inner.Model()
 }
 

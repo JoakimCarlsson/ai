@@ -11,12 +11,12 @@ under `fim/<name>/`.
 import (
     "github.com/joakimcarlsson/ai/fim"
     fimmistral "github.com/joakimcarlsson/ai/fim/mistral"
-    "github.com/joakimcarlsson/ai/model"
+    "github.com/joakimcarlsson/ai/llm/mistral"
 )
 
 client := fimmistral.NewFIM(
     fimmistral.WithAPIKey(os.Getenv("MISTRAL_API_KEY")),
-    fimmistral.WithModel(model.MistralModels[model.Codestral]),
+    fimmistral.WithModel(mistral.Models[mistral.Codestral]),
 )
 
 resp, err := client.Complete(ctx, fim.Request{
@@ -33,7 +33,7 @@ import fimdeepseek "github.com/joakimcarlsson/ai/fim/deepseek"
 
 client := fimdeepseek.NewFIM(
     fimdeepseek.WithAPIKey(os.Getenv("DEEPSEEK_API_KEY")),
-    fimdeepseek.WithModel(model.DeepSeekModels[model.DeepSeekCoder]),
+    fimdeepseek.WithModel(fimdeepseek.Models[fimdeepseek.V32]),
 )
 ```
 

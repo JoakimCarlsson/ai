@@ -14,7 +14,6 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
-	github.com/joakimcarlsson/ai/model v0.8.0 // indirect
 	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
 	github.com/openai/openai-go/v3 v3.41.0 // indirect
 	github.com/tidwall/gjson v1.19.0 // indirect
@@ -46,6 +45,5 @@ require (
 replace (
 	github.com/joakimcarlsson/ai/embeddings => ../
 	github.com/joakimcarlsson/ai/embeddings/openai => ../openai
-	github.com/joakimcarlsson/ai/model => ../../model
 	github.com/joakimcarlsson/ai/tracing => ../../tracing
 )

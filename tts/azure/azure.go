@@ -11,14 +11,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tts"
 )
 
 // Options configures the Azure Speech client.
 type Options struct {
 	apiKey       string
-	model        model.AudioModel
+	model        tts.AudioModel
 	timeout      *time.Duration
 	region       string
 	voiceName    string
@@ -37,7 +36,7 @@ func WithAPIKey(
 
 // WithModel selects the TTS model.
 func WithModel(
-	m model.AudioModel,
+	m tts.AudioModel,
 ) Option {
 	return func(o *Options) { o.model = m }
 }
@@ -100,7 +99,7 @@ func NewGeneration(opts ...Option) tts.Generation {
 }
 
 // Model returns the configured TTS model.
-func (c *Client) Model() model.AudioModel { return c.options.model }
+func (c *Client) Model() tts.AudioModel { return c.options.model }
 
 // GenerateAudio synthesises speech from text via SSML.
 func (c *Client) GenerateAudio(

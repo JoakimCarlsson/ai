@@ -17,12 +17,12 @@ import (
     "github.com/joakimcarlsson/ai/batch"
     batchopenai "github.com/joakimcarlsson/ai/batch/openai"
     "github.com/joakimcarlsson/ai/message"
-    "github.com/joakimcarlsson/ai/model"
+    "github.com/joakimcarlsson/ai/llm/openai"
 )
 
 proc := batchopenai.NewProcessor(
     batchopenai.WithAPIKey("your-api-key"),
-    batchopenai.WithModel(model.OpenAIModels[model.GPT4o]),
+    batchopenai.WithModel(openai.Models[openai.GPT4o]),
     batchopenai.WithPollInterval(30 * time.Second),
 )
 
@@ -60,7 +60,7 @@ import batchanthropic "github.com/joakimcarlsson/ai/batch/anthropic"
 
 proc := batchanthropic.NewProcessor(
     batchanthropic.WithAPIKey("your-api-key"),
-    batchanthropic.WithModel(model.AnthropicModels[model.Claude45Sonnet]),
+    batchanthropic.WithModel(anthropic.Models[anthropic.Claude45Sonnet]),
     batchanthropic.WithMaxTokens(1024),
     batchanthropic.WithPollInterval(30 * time.Second),
 )
@@ -76,7 +76,7 @@ import batchgemini "github.com/joakimcarlsson/ai/batch/gemini"
 
 proc := batchgemini.NewProcessor(
     batchgemini.WithAPIKey("your-api-key"),
-    batchgemini.WithModel(model.GeminiModels[model.Gemini25Flash]),
+    batchgemini.WithModel(gemini.Models[gemini.Gemini25Flash]),
     batchgemini.WithPollInterval(30 * time.Second),
 )
 ```
@@ -106,7 +106,7 @@ import (
 groq := llmopenai.NewLLM(
     llmopenai.WithAPIKey(os.Getenv("GROQ_API_KEY")),
     llmopenai.WithBaseURL("https://api.groq.com/openai/v1"),
-    llmopenai.WithModel(model.GroqModels[model.Llama4Scout]),
+    llmopenai.WithModel(groq.Models[groq.Llama4Scout]),
 )
 
 proc := batchconcurrent.NewProcessor(
@@ -130,7 +130,7 @@ import (
 
 embedder := embvoyage.NewEmbedding(
     embvoyage.WithAPIKey(os.Getenv("VOYAGE_API_KEY")),
-    embvoyage.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
+    embvoyage.WithModel(voyage.Models[voyage.Voyage35]),
 )
 
 proc := batchconcurrent.NewProcessor(
@@ -162,7 +162,7 @@ resp, _ := proc.Process(ctx, requests)
 ```go
 proc := batchopenai.NewProcessor(
     batchopenai.WithAPIKey("your-api-key"),
-    batchopenai.WithModel(model.OpenAIModels[model.GPT4o]),
+    batchopenai.WithModel(openai.Models[openai.GPT4o]),
     batchopenai.WithProgressCallback(func(p batch.Progress) {
         fmt.Printf("%d/%d completed, %d failed [%s]\n",
             p.Completed, p.Total, p.Failed, p.Status)

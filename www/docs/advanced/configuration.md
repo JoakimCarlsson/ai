@@ -15,12 +15,11 @@ options.
 import (
     "github.com/joakimcarlsson/ai/llm"
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
-    "github.com/joakimcarlsson/ai/model"
 )
 
 client := llmopenai.NewLLM(
     llmopenai.WithAPIKey("your-key"),
-    llmopenai.WithModel(model.OpenAIModels[model.GPT4o]),
+    llmopenai.WithModel(llmopenai.Models[llmopenai.GPT4o]),
     llmopenai.WithMaxTokens(2000),
     llmopenai.WithTemperature(0.7),
     llmopenai.WithTopP(0.9),
@@ -64,7 +63,7 @@ import llmanthropic "github.com/joakimcarlsson/ai/llm/anthropic"
 
 client := llmanthropic.NewLLM(
     llmanthropic.WithAPIKey("your-key"),
-    llmanthropic.WithModel(model.AnthropicModels[model.Claude45Sonnet]),
+    llmanthropic.WithModel(anthropic.Models[anthropic.Claude45Sonnet]),
     llmanthropic.WithMaxTokens(4000),
     llmanthropic.WithTemperature(0.7),
     llmanthropic.WithBeta("beta-feature"),
@@ -82,7 +81,7 @@ import llmgemini "github.com/joakimcarlsson/ai/llm/gemini"
 
 client := llmgemini.NewLLM(
     llmgemini.WithAPIKey("your-key"),
-    llmgemini.WithModel(model.GeminiModels[model.Gemini25Flash]),
+    llmgemini.WithModel(gemini.Models[gemini.Gemini25Flash]),
     llmgemini.WithMaxTokens(2000),
     llmgemini.WithDisableCache(),
     llmgemini.WithFrequencyPenalty(0.5),
@@ -108,11 +107,18 @@ client := llmazure.NewLLM(
 ### Bedrock
 
 ```go
-import llmbedrock "github.com/joakimcarlsson/ai/llm/bedrock"
+import (
+    "github.com/joakimcarlsson/ai/llm"
+    llmbedrock "github.com/joakimcarlsson/ai/llm/bedrock"
+)
 
+// Bedrock ships no bundled catalog: pass the AWS model id directly.
 client := llmbedrock.NewLLM(
     llmbedrock.WithRegion("us-east-1"),
-    llmbedrock.WithModel(model.BedrockModels[model.BedrockClaude45Sonnet]),
+    llmbedrock.WithModel(llm.NewCustomModel(
+        llm.WithAPIModel("anthropic.claude-sonnet-4-5-20250929-v1:0"),
+        llm.WithContextWindow(200_000),
+    )),
 )
 ```
 
@@ -123,7 +129,7 @@ import embvoyage "github.com/joakimcarlsson/ai/embeddings/voyage"
 
 embedder := embvoyage.NewEmbedding(
     embvoyage.WithAPIKey(""),
-    embvoyage.WithModel(model.VoyageEmbeddingModels[model.Voyage35]),
+    embvoyage.WithModel(voyage.Models[voyage.Voyage35]),
     embvoyage.WithBatchSize(100),
     embvoyage.WithTimeout(30*time.Second),
     embvoyage.WithInputType("document"),
@@ -143,7 +149,7 @@ import rerankvoyage "github.com/joakimcarlsson/ai/rerankers/voyage"
 
 reranker := rerankvoyage.NewReranker(
     rerankvoyage.WithAPIKey(""),
-    rerankvoyage.WithModel(model.VoyageRerankerModels[model.Rerank25Lite]),
+    rerankvoyage.WithModel(voyage.Models[voyage.Rerank25Lite]),
     rerankvoyage.WithTopK(10),
     rerankvoyage.WithReturnDocuments(true),
     rerankvoyage.WithTruncation(true),
@@ -163,7 +169,7 @@ import (
 // OpenAI
 client := imageopenai.NewGeneration(
     imageopenai.WithAPIKey("your-key"),
-    imageopenai.WithModel(model.OpenAIImageGenerationModels[model.GPTImage15]),
+    imageopenai.WithModel(openai.Models[openai.GPTImage15]),
     imageopenai.WithTimeout(60*time.Second),
     imageopenai.WithBaseURL("custom-endpoint"),
 )
@@ -171,7 +177,7 @@ client := imageopenai.NewGeneration(
 // Gemini / Vertex AI
 client := imagegemini.NewImageGeneration(
     imagegemini.WithAPIKey("your-key"),
-    imagegemini.WithModel(model.GeminiImageGenerationModels[model.Imagen4]),
+    imagegemini.WithModel(gemini.Models[gemini.Imagen4]),
     imagegemini.WithTimeout(60*time.Second),
     imagegemini.WithBackend(genai.BackendVertexAI),
 )
@@ -184,7 +190,7 @@ import ttseleven "github.com/joakimcarlsson/ai/tts/elevenlabs"
 
 client := ttseleven.NewAudioGeneration(
     ttseleven.WithAPIKey("your-key"),
-    ttseleven.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
+    ttseleven.WithModel(elevenlabs.Models[elevenlabs.TurboV2_5]),
     ttseleven.WithTimeout(30*time.Second),
     ttseleven.WithBaseURL("custom-endpoint"),
 )
@@ -197,7 +203,7 @@ import sttopenai "github.com/joakimcarlsson/ai/stt/openai"
 
 client := sttopenai.NewSpeechToText(
     sttopenai.WithAPIKey("your-key"),
-    sttopenai.WithModel(model.OpenAITranscriptionModels[model.GPT4oTranscribe]),
+    sttopenai.WithModel(openai.Models[openai.GPT4oTranscribe]),
     sttopenai.WithTimeout(30*time.Second),
 )
 ```

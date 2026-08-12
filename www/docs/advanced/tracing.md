@@ -274,7 +274,7 @@ otel.SetTracerProvider(tp)
 
 client := llmanthropic.NewLLM(
     llmanthropic.WithAPIKey(os.Getenv("ANTHROPIC_API_KEY")),
-    llmanthropic.WithModel(model.AnthropicModels[model.Claude45Sonnet]),
+    llmanthropic.WithModel(anthropic.Models[anthropic.Claude45Sonnet]),
 )
 
 // This call produces a "generate_content claude-sonnet-4-6-20250514" span
@@ -300,7 +300,6 @@ import (
 
     "github.com/joakimcarlsson/ai/agent"
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
-    "github.com/joakimcarlsson/ai/model"
     "github.com/joakimcarlsson/ai/tool/functiontool"
     "github.com/joakimcarlsson/ai/tracing"
 )
@@ -319,7 +318,7 @@ func main() {
 
     client := llmopenai.NewLLM(
         llmopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-        llmopenai.WithModel(model.OpenAIModels[model.GPT5Nano]),
+        llmopenai.WithModel(llmopenai.Models[llmopenai.GPT5Nano]),
     )
 
     timeTool := functiontool.New(

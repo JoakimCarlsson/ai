@@ -3,9 +3,8 @@ module github.com/joakimcarlsson/ai/examples/image/openrouter
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/image v0.1.4
+	github.com/joakimcarlsson/ai/image v0.2.0
 	github.com/joakimcarlsson/ai/image/openrouter v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/model v0.7.0
 )
 
 require (
@@ -41,6 +40,5 @@ require (
 replace (
 	github.com/joakimcarlsson/ai/image => ../../../image
 	github.com/joakimcarlsson/ai/image/openrouter => ../../../image/openrouter
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/tracing => ../../../tracing
 )

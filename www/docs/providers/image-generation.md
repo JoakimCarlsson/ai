@@ -14,12 +14,11 @@ common shape to support a portable per-call surface.
 import (
     "github.com/joakimcarlsson/ai/image"
     imageopenai "github.com/joakimcarlsson/ai/image/openai"
-    "github.com/joakimcarlsson/ai/model"
 )
 
 client := imageopenai.NewGeneration(
     imageopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-    imageopenai.WithModel(model.OpenAIImageGenerationModels[model.GPTImage15]),
+    imageopenai.WithModel(imageopenai.Models[imageopenai.GPTImage15]),
     imageopenai.WithSize(imageopenai.Size1024x1024),
     imageopenai.WithQuality(imageopenai.QualityHigh),
     imageopenai.WithBackground(imageopenai.BackgroundTransparent),
@@ -73,7 +72,7 @@ client := imageazure.NewGeneration(
     imageazure.WithEndpoint("https://my-resource.openai.azure.com"),
     imageazure.WithAPIVersion("2025-04-01-preview"),
     imageazure.WithAPIKey(os.Getenv("AZURE_OPENAI_API_KEY")),
-    imageazure.WithModel(model.OpenAIImageGenerationModels[model.GPTImage2]),
+    imageazure.WithModel(openai.Models[openai.GPTImage2]),
     imageazure.WithSize(imageazure.Size1024x1024),
     imageazure.WithOutputFormat(imageazure.OutputFormatPNG),
 )
@@ -101,7 +100,7 @@ import imagegemini "github.com/joakimcarlsson/ai/image/gemini"
 
 client := imagegemini.NewGeneration(
     imagegemini.WithAPIKey(os.Getenv("GEMINI_API_KEY")),
-    imagegemini.WithModel(model.GeminiImageGenerationModels[model.Imagen4]),
+    imagegemini.WithModel(gemini.Models[gemini.Imagen4]),
     imagegemini.WithAspectRatio(imagegemini.AspectRatio16x9),
     imagegemini.WithN(2),
 )
@@ -140,7 +139,7 @@ import imagexai "github.com/joakimcarlsson/ai/image/xai"
 
 client := imagexai.NewGeneration(
     imagexai.WithAPIKey(os.Getenv("XAI_API_KEY")),
-    imagexai.WithModel(model.XAIImageGenerationModels[model.XAIGrokImagineImage]),
+    imagexai.WithModel(xai.Models[xai.GrokImagineImage]),
     imagexai.WithAspectRatio(imagexai.AspectRatio16x9),
     imagexai.WithResolution(imagexai.Resolution2K),
     imagexai.WithResponseFormat(imagexai.ResponseFormatBase64),
@@ -171,7 +170,7 @@ import imageopenrouter "github.com/joakimcarlsson/ai/image/openrouter"
 
 client := imageopenrouter.NewGeneration(
     imageopenrouter.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
-    imageopenrouter.WithModel(model.OpenRouterImageGenerationModels[model.OpenRouterSeedream45]),
+    imageopenrouter.WithModel(openrouter.Models[openrouter.Seedream45]),
     imageopenrouter.WithAspectRatio(imageopenrouter.AspectRatio16x9),
 )
 
@@ -217,7 +216,7 @@ for this endpoint and is wired up.
 
 ### Using a model the registry does not define
 
-`model.OpenRouterImageGenerationModels` carries 26 known-good defaults, but
+`openrouter.Models` carries 26 known-good defaults, but
 OpenRouter routes more than that and adds new models weekly. You never have to
 wait for a release to use one. `WithModelID` takes any raw OpenRouter id:
 
@@ -229,8 +228,8 @@ client := imageopenrouter.NewGeneration(
 )
 ```
 
-That is shorthand for `WithModel(model.ImageGenerationModel{APIModel: id,
-Provider: model.ProviderOpenRouter})`, so `Model()` reports the id and provider
+That is shorthand for `WithModel(image.GenerationModel{APIModel: id,
+Provider: "openrouter"})`, so `Model()` reports the id and provider
 and nothing else — no pricing, no supported-value lists. Generation works fine;
 what breaks is anything that reads that metadata, such as a cost estimator or a
 UI offering the caller a list of aspect ratios.
@@ -239,10 +238,10 @@ When you need those, describe the model yourself and it behaves exactly like a
 registered entry, `DefaultAspectRatio` included:
 
 ```go
-riverflowFast := model.ImageGenerationModel{
+riverflowFast := image.GenerationModel{
     ID:       "openrouter.riverflow-v2.5-fast",
     Name:     "OpenRouter – Riverflow V2.5 Fast",
-    Provider: model.ProviderOpenRouter,
+    Provider: "openrouter",
     APIModel: "sourceful/riverflow-v2.5-fast",
     Pricing: map[string]map[string]float64{
         "default": {"default": 0.019},
@@ -265,7 +264,7 @@ client := imageopenrouter.NewGeneration(
 The real capability and pricing data for any id lives at
 `GET /api/v1/images/models/<id>/endpoints`. `stt/openrouter` and
 `tts/openrouter` expose the same `WithModelID` shorthand over
-`model.TranscriptionModel` and `model.AudioModel`.
+`stt.TranscriptionModel` and `tts.AudioModel`.
 
 `examples/image/openrouter` runs all of this, including both custom-model forms.
 
@@ -274,10 +273,10 @@ whose descriptor reports `supports_streaming` (the `gpt-image-*` family today)
 deliver `EventPartialImage` frames before the final `EventCompleted`.
 
 Per-model capability data — including `SupportedAspectRatios` — lives on
-`model.ImageGenerationModel`. Inspect it to know what a given model accepts:
+`image.GenerationModel`. Inspect it to know what a given model accepts:
 
 ```go
-m := model.GeminiImageGenerationModels[model.Imagen4]
+m := gemini.Models[gemini.Imagen4]
 fmt.Println(m.SupportedAspectRatios) // [1:1 3:4 4:3 9:16 16:9]
 ```
 
@@ -286,7 +285,7 @@ fmt.Println(m.SupportedAspectRatios) // [1:1 3:4 4:3 9:16 16:9]
 ```go
 client := imageopenai.NewGeneration(
     imageopenai.WithAPIKey(...),
-    imageopenai.WithModel(model.OpenAIImageGenerationModels[model.GPTImage15]),
+    imageopenai.WithModel(openai.Models[openai.GPTImage15]),
     imageopenai.WithStreamingOptions(imageopenai.StreamingOptions{PartialImages: 3}),
 )
 

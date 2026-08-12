@@ -8,7 +8,6 @@ import (
 
 	"github.com/joakimcarlsson/ai/fim"
 	fimmistral "github.com/joakimcarlsson/ai/fim/mistral"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -20,7 +19,7 @@ func main() {
 	maxTokens := int64(64)
 	client := fimmistral.NewFIM(
 		fimmistral.WithAPIKey(apiKey),
-		fimmistral.WithModel(model.MistralModels[model.Codestral]),
+		fimmistral.WithModel(fimmistral.Models[fimmistral.Codestral]),
 		fimmistral.WithMaxTokens(maxTokens),
 	)
 

@@ -10,11 +10,13 @@ import (
 	"github.com/joakimcarlsson/ai/batch"
 	batchconcurrent "github.com/joakimcarlsson/ai/batch/concurrent"
 	"github.com/joakimcarlsson/ai/llm"
+	"github.com/joakimcarlsson/ai/llm/anthropic"
 	llmanthropic "github.com/joakimcarlsson/ai/llm/anthropic"
+	"github.com/joakimcarlsson/ai/llm/gemini"
 	llmgemini "github.com/joakimcarlsson/ai/llm/gemini"
+	"github.com/joakimcarlsson/ai/llm/openai"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -65,19 +67,19 @@ func newLLM() (llm.LLM, string) {
 	case "anthropic":
 		return llmanthropic.NewLLM(
 			llmanthropic.WithAPIKey(requiredEnv("ANTHROPIC_API_KEY")),
-			llmanthropic.WithModel(model.AnthropicModels[model.Claude45Haiku]),
+			llmanthropic.WithModel(anthropic.Models[anthropic.Claude45Haiku]),
 			llmanthropic.WithMaxTokens(128),
 		), provider
 	case "gemini":
 		return llmgemini.NewLLM(
 			llmgemini.WithAPIKey(requiredEnv("GEMINI_API_KEY")),
-			llmgemini.WithModel(model.GeminiModels[model.Gemini25FlashLite]),
+			llmgemini.WithModel(gemini.Models[gemini.Gemini25FlashLite]),
 			llmgemini.WithMaxTokens(128),
 		), provider
 	case "openai":
 		return llmopenai.NewLLM(
 			llmopenai.WithAPIKey(requiredEnv("OPENAI_API_KEY")),
-			llmopenai.WithModel(model.OpenAIModels[model.GPT54Nano]),
+			llmopenai.WithModel(openai.Models[openai.GPT54Nano]),
 			llmopenai.WithMaxTokens(128),
 		), provider
 	default:

@@ -3,7 +3,6 @@ module github.com/joakimcarlsson/ai/stt/openrouter
 go 1.25.0
 
 require (
-	github.com/joakimcarlsson/ai/model v0.8.0
 	github.com/joakimcarlsson/ai/stt v0.2.5
 	github.com/joakimcarlsson/ai/stt/openai v0.1.5
 )
@@ -44,7 +43,6 @@ require (
 )
 
 replace (
-	github.com/joakimcarlsson/ai/model => ../../model
 	github.com/joakimcarlsson/ai/stt => ../
 	github.com/joakimcarlsson/ai/stt/openai => ../openai
 	github.com/joakimcarlsson/ai/tracing => ../../tracing

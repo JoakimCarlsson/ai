@@ -11,7 +11,6 @@ import (
 
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tool"
 )
 
@@ -117,7 +116,7 @@ func TestToolChoiceOmittedWithoutTools(t *testing.T) {
 // name is rejected before any request is sent.
 func TestToolChoiceSpecificEmptyNameRejected(t *testing.T) {
 	c := &Client{options: optsFrom(
-		WithModel(model.Model{APIModel: "claude"}),
+		WithModel(llm.Model{APIModel: "claude"}),
 		WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceSpecific}),
 	)}
 
@@ -164,7 +163,7 @@ func TestWithHTTPClientTransportUsed(t *testing.T) {
 	var n int
 	client := NewLLM(
 		WithAPIKey("test-key"),
-		WithModel(model.Model{APIModel: "claude"}),
+		WithModel(llm.Model{APIModel: "claude"}),
 		WithHTTPClient(&http.Client{
 			Transport: redirectRT{
 				base: http.DefaultTransport,

@@ -6,13 +6,12 @@ The `rerankers` modality. Vendors under `rerankers/`.
 
 ```go
 import (
-    "github.com/joakimcarlsson/ai/model"
     rrvoyage "github.com/joakimcarlsson/ai/rerankers/voyage"
 )
 
 reranker := rrvoyage.NewReranker(
     rrvoyage.WithAPIKey(os.Getenv("VOYAGE_API_KEY")),
-    rrvoyage.WithModel(model.VoyageRerankerModels[model.Rerank25Lite]),
+    rrvoyage.WithModel(rrvoyage.Models[rrvoyage.Rerank25Lite]),
     rrvoyage.WithTopK(5),
     rrvoyage.WithReturnDocuments(true),
 )
@@ -37,7 +36,7 @@ import rrcohere "github.com/joakimcarlsson/ai/rerankers/cohere"
 
 reranker := rrcohere.NewReranker(
     rrcohere.WithAPIKey(os.Getenv("COHERE_API_KEY")),
-    rrcohere.WithModel(model.CohereRerankerModels[model.RerankV35]),
+    rrcohere.WithModel(cohere.Models[cohere.Rerank35]),
     rrcohere.WithTopK(5),
     rrcohere.WithReturnDocuments(true),
 )
@@ -55,7 +54,7 @@ import rrberget "github.com/joakimcarlsson/ai/rerankers/berget"
 
 reranker := rrberget.NewReranker(
     rrberget.WithAPIKey(os.Getenv("BERGET_API_KEY")),
-    rrberget.WithModel(model.BergetRerankerModels[model.BergetBGERerankerV2M3]),
+    rrberget.WithModel(berget.Models[berget.BGERerankerV2M3]),
     rrberget.WithTopK(5),
     rrberget.WithReturnDocuments(true),
 )

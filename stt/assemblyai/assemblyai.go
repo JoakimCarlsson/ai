@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/stt"
 )
 
@@ -33,7 +32,7 @@ const (
 // Options configures the AssemblyAI client.
 type Options struct {
 	apiKey  string
-	model   model.TranscriptionModel
+	model   stt.TranscriptionModel
 	timeout *time.Duration
 
 	pollInterval                       time.Duration
@@ -62,7 +61,7 @@ func WithAPIKey(
 
 // WithModel selects the transcription model.
 func WithModel(
-	m model.TranscriptionModel,
+	m stt.TranscriptionModel,
 ) Option {
 	return func(o *Options) { o.model = m }
 }
@@ -179,7 +178,7 @@ func NewSpeechToText(opts ...Option) stt.SpeechToText {
 }
 
 // Model returns the configured transcription model.
-func (c *Client) Model() model.TranscriptionModel { return c.options.model }
+func (c *Client) Model() stt.TranscriptionModel { return c.options.model }
 
 // SupportsStreaming reports true; AssemblyAI supports v3 Universal-Streaming.
 func (c *Client) SupportsStreaming() bool { return true }

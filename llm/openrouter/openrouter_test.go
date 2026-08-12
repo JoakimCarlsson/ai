@@ -8,10 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/joakimcarlsson/ai/llm"
+
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 	"github.com/joakimcarlsson/ai/llm/openrouter"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 // TestWireRoutingOptions confirms the OpenRouter-specific options reach the
@@ -34,7 +35,7 @@ func TestWireRoutingOptions(t *testing.T) {
 	client := openrouter.NewLLM(
 		llmopenai.WithAPIKey("test-key"),
 		llmopenai.WithBaseURL(srv.URL),
-		llmopenai.WithModel(model.Model{APIModel: "openai/gpt-4o"}),
+		llmopenai.WithModel(llm.Model{APIModel: "openai/gpt-4o"}),
 		openrouter.WithProviderRouting([]string{"openai", "azure"}, false),
 		openrouter.WithModelFallbacks("anthropic/claude", "google/gemini"),
 		openrouter.WithTopK(50),

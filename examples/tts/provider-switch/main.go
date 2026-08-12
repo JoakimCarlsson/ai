@@ -7,9 +7,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tts"
+	"github.com/joakimcarlsson/ai/tts/elevenlabs"
 	ttselevenlabs "github.com/joakimcarlsson/ai/tts/elevenlabs"
+	"github.com/joakimcarlsson/ai/tts/openai"
 	ttsopenai "github.com/joakimcarlsson/ai/tts/openai"
 )
 
@@ -37,14 +38,14 @@ func newTTS() (tts.Generation, string) {
 		return ttselevenlabs.NewGeneration(
 			ttselevenlabs.WithAPIKey(requiredEnv("ELEVENLABS_API_KEY")),
 			ttselevenlabs.WithModel(
-				model.ElevenLabsAudioModels[model.ElevenMultilingualV2],
+				elevenlabs.Models[elevenlabs.MultilingualV2],
 			),
 			ttselevenlabs.WithOutputFormat("mp3_44100_128"),
 		), provider
 	case "openai":
 		return ttsopenai.NewGeneration(
 			ttsopenai.WithAPIKey(requiredEnv("OPENAI_API_KEY")),
-			ttsopenai.WithModel(model.OpenAIAudioModels[model.OpenAIMiniTTS]),
+			ttsopenai.WithModel(openai.Models[openai.MiniTTS]),
 			ttsopenai.WithVoice("alloy"),
 			ttsopenai.WithOutputFormat("mp3"),
 		), provider

@@ -6,7 +6,6 @@ use (
 	./agent
 	./cmd/llmstxt
 
-	./model
 	./types
 	./tracing
 	./schema

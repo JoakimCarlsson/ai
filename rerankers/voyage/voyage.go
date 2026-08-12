@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/rerankers"
 )
 
@@ -15,7 +14,7 @@ const defaultBaseURL = "https://api.voyageai.com/v1"
 // Options configures the Voyage reranker client.
 type Options struct {
 	apiKey     string
-	model      model.RerankerModel
+	model      rerankers.RerankerModel
 	timeout    *time.Duration
 	topK       *int
 	returnDocs bool
@@ -33,7 +32,7 @@ func WithAPIKey(apiKey string) Option {
 }
 
 // WithModel selects the reranker model.
-func WithModel(m model.RerankerModel) Option {
+func WithModel(m rerankers.RerankerModel) Option {
 	return func(o *Options) {
 		o.model = m
 	}
@@ -98,7 +97,7 @@ func NewReranker(opts ...Option) rerankers.Reranker {
 }
 
 // Model returns the configured reranker model.
-func (c *Client) Model() model.RerankerModel {
+func (c *Client) Model() rerankers.RerankerModel {
 	return c.options.model
 }
 

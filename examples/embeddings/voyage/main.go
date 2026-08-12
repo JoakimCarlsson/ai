@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/joakimcarlsson/ai/embeddings/voyage"
 	embeddingvoyage "github.com/joakimcarlsson/ai/embeddings/voyage"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 	client := embeddingvoyage.NewEmbedding(
 		embeddingvoyage.WithAPIKey(apiKey),
 		embeddingvoyage.WithModel(
-			model.VoyageEmbeddingModels[model.Voyage35Lite],
+			voyage.Models[voyage.Voyage35Lite],
 		),
 		embeddingvoyage.WithInputType("document"),
 	)

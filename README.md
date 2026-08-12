@@ -50,7 +50,6 @@ You install only the modules you use. For an OpenAI chat client:
 go get github.com/joakimcarlsson/ai/llm
 go get github.com/joakimcarlsson/ai/llm/openai
 go get github.com/joakimcarlsson/ai/message
-go get github.com/joakimcarlsson/ai/model
 ```
 
 ## Quick start
@@ -66,13 +65,12 @@ import (
 
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
     "github.com/joakimcarlsson/ai/message"
-    "github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
     client := llmopenai.NewLLM(
         llmopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-        llmopenai.WithModel(model.OpenAIModels[model.GPT4o]),
+        llmopenai.WithModel(llmopenai.Models[llmopenai.GPT4o]),
     )
 
     response, err := client.SendMessages(context.Background(), []message.Message{
@@ -168,7 +166,7 @@ import (
 
 proc := batchopenai.NewProcessor(
     batchopenai.WithAPIKey("your-api-key"),
-    batchopenai.WithModel(model.OpenAIModels[model.GPT4o]),
+    batchopenai.WithModel(openai.Models[openai.GPT4o]),
 )
 
 requests := []batch.Request{
@@ -251,7 +249,7 @@ For example, a `model` change adding new Gemini constants cascades to
 (`agent`, `voice`).
 
 ```bash
-cd llm/gemini && go mod edit -require=github.com/joakimcarlsson/ai/model@v0.2.0 && go mod tidy
+cd llm/gemini && go mod edit -require=github.com/joakimcarlsson/ai/llm@v0.5.4 && go mod tidy
 # ...repeat for each direct consumer, then commit + PR
 ```
 

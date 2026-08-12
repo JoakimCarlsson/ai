@@ -16,7 +16,6 @@ import (
 
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
@@ -38,7 +37,7 @@ const (
 // Options configures the OpenAI LLM client.
 type Options struct {
 	apiKey                 string
-	model                  model.Model
+	model                  llm.Model
 	maxTokens              int64
 	temperature            *float64
 	topP                   *float64
@@ -74,7 +73,7 @@ func WithAPIKey(
 }
 
 // WithModel selects the LLM model.
-func WithModel(m model.Model) Option { return func(o *Options) { o.model = m } }
+func WithModel(m llm.Model) Option { return func(o *Options) { o.model = m } }
 
 // WithMaxTokens sets the maximum number of tokens to generate.
 func WithMaxTokens(
@@ -321,7 +320,7 @@ func NewWithExistingClient(options Options, client openaisdk.Client) *Client {
 }
 
 // Model returns the configured LLM model.
-func (c *Client) Model() model.Model { return c.options.model }
+func (c *Client) Model() llm.Model { return c.options.model }
 
 // SupportsStructuredOutput reports whether the configured model supports structured output.
 func (c *Client) SupportsStructuredOutput() bool {
@@ -352,7 +351,7 @@ func (c *Client) convertMessages(
 
 			for _, binaryContent := range msg.BinaryContent() {
 				imageURL := openaisdk.ChatCompletionContentPartImageImageURLParam{
-					URL: binaryContent.String(model.ProviderOpenAI),
+					URL: binaryContent.String("openai"),
 				}
 				imageBlock := openaisdk.ChatCompletionContentPartImageParam{
 					ImageURL: imageURL,

@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/joakimcarlsson/ai/image"
+	"github.com/joakimcarlsson/ai/image/gemini"
 	imagegemini "github.com/joakimcarlsson/ai/image/gemini"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -20,7 +20,7 @@ func main() {
 	client := imagegemini.NewGeneration(
 		imagegemini.WithAPIKey(apiKey),
 		imagegemini.WithModel(
-			model.GeminiImageGenerationModels[model.Imagen4Fast],
+			gemini.Models[gemini.Imagen4Fast],
 		),
 		imagegemini.WithAspectRatio(imagegemini.AspectRatio1x1),
 	)

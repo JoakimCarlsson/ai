@@ -18,7 +18,6 @@ import (
 
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
@@ -68,7 +67,7 @@ type XSearchOpts struct {
 // ResponsesOptions configures the xAI Responses LLM client.
 type ResponsesOptions struct {
 	apiKey          string
-	model           model.Model
+	model           llm.Model
 	maxOutputTokens int64
 	temperature     *float64
 	topP            *float64
@@ -98,7 +97,7 @@ func WithResponsesAPIKey(k string) ResponsesOption {
 }
 
 // WithResponsesModel selects the xAI model (e.g. grok-4 or grok-4.20-reasoning).
-func WithResponsesModel(m model.Model) ResponsesOption {
+func WithResponsesModel(m llm.Model) ResponsesOption {
 	return func(o *ResponsesOptions) { o.model = m }
 }
 
@@ -265,7 +264,7 @@ func NewResponsesLLM(opts ...ResponsesOption) llm.LLM {
 	})
 }
 
-func (c *xaiResponsesClient) Model() model.Model { return c.options.model }
+func (c *xaiResponsesClient) Model() llm.Model { return c.options.model }
 
 func (c *xaiResponsesClient) SupportsStructuredOutput() bool {
 	return c.options.model.SupportsStructuredOut

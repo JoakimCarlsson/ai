@@ -2,10 +2,7 @@ module github.com/joakimcarlsson/ai/tts/google
 
 go 1.25.0
 
-require (
-	github.com/joakimcarlsson/ai/model v0.8.0
-	github.com/joakimcarlsson/ai/tts v0.2.5
-)
+require github.com/joakimcarlsson/ai/tts v0.2.5
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
@@ -38,7 +35,6 @@ require (
 )
 
 replace (
-	github.com/joakimcarlsson/ai/model => ../../model
 	github.com/joakimcarlsson/ai/tracing => ../../tracing
 	github.com/joakimcarlsson/ai/tts => ../
 )

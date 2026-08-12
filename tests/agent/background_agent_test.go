@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joakimcarlsson/ai/agent"
 	llm "github.com/joakimcarlsson/ai/llm"
+
+	"github.com/joakimcarlsson/ai/agent"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
@@ -1432,7 +1432,7 @@ func (m *blockingMockLLM) StreamResponseWithStructuredOutput(
 	return m.fallback.StreamResponseWithStructuredOutput(ctx, msgs, tools, info)
 }
 
-func (m *blockingMockLLM) Model() model.Model {
+func (m *blockingMockLLM) Model() llm.Model {
 	return m.fallback.Model()
 }
 
@@ -1488,7 +1488,7 @@ func (m *toolCapturingLLM) StreamResponseWithStructuredOutput(
 	return m.base.StreamResponseWithStructuredOutput(ctx, msgs, tools, info)
 }
 
-func (m *toolCapturingLLM) Model() model.Model {
+func (m *toolCapturingLLM) Model() llm.Model {
 	return m.base.Model()
 }
 

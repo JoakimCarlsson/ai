@@ -2,10 +2,7 @@ module github.com/joakimcarlsson/ai/image
 
 go 1.25.0
 
-require (
-	github.com/joakimcarlsson/ai/model v0.8.0
-	github.com/joakimcarlsson/ai/tracing v0.1.1
-)
+require github.com/joakimcarlsson/ai/tracing v0.1.1
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
@@ -36,7 +33,4 @@ require (
 	google.golang.org/protobuf v1.36.11 // indirect
 )
 
-replace (
-	github.com/joakimcarlsson/ai/model => ../model
-	github.com/joakimcarlsson/ai/tracing => ../tracing
-)
+replace github.com/joakimcarlsson/ai/tracing => ../tracing

@@ -9,14 +9,13 @@ import (
 	"strings"
 
 	"github.com/joakimcarlsson/ai/embeddings"
-	"github.com/joakimcarlsson/ai/model"
 	"google.golang.org/genai"
 )
 
 // Options configures the Gemini embeddings client.
 type Options struct {
 	apiKey     string
-	model      model.EmbeddingModel
+	model      embeddings.EmbeddingModel
 	batchSize  int
 	dimensions *int
 	taskType   string
@@ -34,7 +33,7 @@ func WithAPIKey(
 
 // WithModel selects the embedding model.
 func WithModel(
-	m model.EmbeddingModel,
+	m embeddings.EmbeddingModel,
 ) Option {
 	return func(o *Options) { o.model = m }
 }
@@ -90,7 +89,7 @@ func NewEmbedding(opts ...Option) embeddings.Embedding {
 }
 
 // Model returns the configured embedding model.
-func (c *Client) Model() model.EmbeddingModel { return c.options.model }
+func (c *Client) Model() embeddings.EmbeddingModel { return c.options.model }
 
 // GenerateEmbeddings creates vector embeddings from text strings.
 func (c *Client) GenerateEmbeddings(
@@ -248,7 +247,7 @@ func (c *Client) GenerateMultimodalEmbeddings(
 	taskType ...string,
 ) (*embeddings.EmbeddingResponse, error) {
 	switch c.options.model.ID {
-	case model.GeminiEmbedding2:
+	case Embedding2:
 		if len(input) == 0 {
 			return &embeddings.EmbeddingResponse{
 				Embeddings: [][]float32{},

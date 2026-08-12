@@ -7,8 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/joakimcarlsson/ai/llm"
+
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 const responsesOK = `{"id":"resp_1","object":"response","status":"completed",` +
@@ -44,7 +45,7 @@ func TestResponsesWithHTTPClientTransportUsed(t *testing.T) {
 	client := NewResponsesLLM(
 		WithResponsesAPIKey("test-key"),
 		WithResponsesBaseURL(srv.URL),
-		WithResponsesModel(model.Model{APIModel: "grok-4"}),
+		WithResponsesModel(llm.Model{APIModel: "grok-4"}),
 		WithResponsesHTTPClient(&http.Client{
 			Transport: countingRT{RoundTripper: http.DefaultTransport, n: &n},
 		}),

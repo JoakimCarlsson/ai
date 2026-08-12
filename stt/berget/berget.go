@@ -5,8 +5,7 @@
 // its verbose_json response nests segments under a "segments" object
 // (segments.segments and segments.word_segments) rather than the flat arrays
 // OpenAI returns, so this is a dedicated client rather than a thin wrapper over
-// stt/openai. See [github.com/joakimcarlsson/ai/model] for the catalog
-// (BergetTranscriptionModels) and pricing (EUR).
+// stt/openai. [Models] carries the catalog and pricing (EUR).
 package berget
 
 import (
@@ -21,7 +20,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/stt"
 )
 
@@ -31,7 +29,7 @@ const DefaultBaseURL = "https://api.berget.ai/v1"
 // Options configures the Berget speech-to-text client.
 type Options struct {
 	apiKey   string
-	model    model.TranscriptionModel
+	model    stt.TranscriptionModel
 	timeout  *time.Duration
 	baseURL  string
 	language string
@@ -46,7 +44,7 @@ func WithAPIKey(apiKey string) Option {
 }
 
 // WithModel selects the transcription model.
-func WithModel(m model.TranscriptionModel) Option {
+func WithModel(m stt.TranscriptionModel) Option {
 	return func(o *Options) { o.model = m }
 }
 
@@ -103,7 +101,7 @@ func NewSpeechToText(opts ...Option) stt.SpeechToText {
 }
 
 // Model returns the configured transcription model.
-func (c *Client) Model() model.TranscriptionModel { return c.options.model }
+func (c *Client) Model() stt.TranscriptionModel { return c.options.model }
 
 // SupportsStreaming reports false; Berget's transcription endpoint does not
 // support real-time streaming.

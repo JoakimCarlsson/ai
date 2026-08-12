@@ -60,7 +60,6 @@ import (
 
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
     "github.com/joakimcarlsson/ai/message"
-    "github.com/joakimcarlsson/ai/model"
     "github.com/joakimcarlsson/ai/tool"
 )
 
@@ -88,7 +87,7 @@ func main() {
 
     client := llmopenai.NewLLM(
         llmopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-        llmopenai.WithModel(model.OpenAIModels[model.GPT4oMini]),
+        llmopenai.WithModel(llmopenai.Models[llmopenai.GPT4oMini]),
     )
 
     messages := []message.Message{

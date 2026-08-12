@@ -2,10 +2,7 @@ module github.com/joakimcarlsson/ai/examples/rerankers/cohere
 
 go 1.25.0
 
-require (
-	github.com/joakimcarlsson/ai/model v0.1.0
-	github.com/joakimcarlsson/ai/rerankers/cohere v0.0.0-00010101000000-000000000000
-)
+require github.com/joakimcarlsson/ai/rerankers/cohere v0.0.0-00010101000000-000000000000
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
@@ -14,8 +11,8 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
-	github.com/joakimcarlsson/ai/rerankers v0.1.0 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/rerankers v0.2.3 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel v1.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.20.0 // indirect
@@ -48,7 +45,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm => ../../../llm
 	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
 	github.com/joakimcarlsson/ai/rerankers => ../../../rerankers
 	github.com/joakimcarlsson/ai/rerankers/cohere => ../../../rerankers/cohere

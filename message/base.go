@@ -14,8 +14,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"time"
-
-	"github.com/joakimcarlsson/ai/model"
 )
 
 // Role describes who produced a message in a conversation (user, assistant, system, tool, or summary).
@@ -160,9 +158,9 @@ type BinaryContent struct {
 
 // String returns the binary content as a base64-encoded string,
 // formatted according to the specified provider's requirements.
-func (bc BinaryContent) String(provider model.Provider) string {
+func (bc BinaryContent) String(provider string) string {
 	base64Encoded := base64.StdEncoding.EncodeToString(bc.Data)
-	if provider == model.ProviderOpenAI {
+	if provider == "openai" {
 		return "data:" + bc.MIMEType + ";base64," + base64Encoded
 	}
 	return base64Encoded
@@ -178,7 +176,7 @@ type Message struct {
 	// Parts contains the various content components of the message.
 	Parts []ContentPart
 	// Model identifies which AI model this message is associated with.
-	Model model.ID
+	Model string
 	// CreatedAt is a Unix timestamp (nanoseconds) indicating when the message was created.
 	CreatedAt int64
 }
@@ -353,7 +351,7 @@ type contentPartWrapper struct {
 type messageJSON struct {
 	Role      Role                 `json:"role"`
 	Parts     []contentPartWrapper `json:"parts"`
-	Model     model.ID             `json:"model,omitempty"`
+	Model     string               `json:"model,omitempty"`
 	CreatedAt int64                `json:"created_at"`
 }
 

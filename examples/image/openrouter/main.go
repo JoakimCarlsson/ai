@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/joakimcarlsson/ai/image"
+	"github.com/joakimcarlsson/ai/image/openrouter"
 	imageopenrouter "github.com/joakimcarlsson/ai/image/openrouter"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -35,7 +35,7 @@ func generate(apiKey string) {
 	client := imageopenrouter.NewGeneration(
 		imageopenrouter.WithAPIKey(apiKey),
 		imageopenrouter.WithModel(
-			model.OpenRouterImageGenerationModels[model.OpenRouterSeedream45],
+			openrouter.Models[openrouter.Seedream45],
 		),
 		imageopenrouter.WithAspectRatio(imageopenrouter.AspectRatio16x9),
 	)
@@ -66,7 +66,7 @@ func generate(apiKey string) {
 }
 
 // custom is the point of this example: using an OpenRouter image model that
-// model.OpenRouterImageGenerationModels does not catalogue.
+// openrouter.Models does not catalogue.
 //
 // OpenRouter routes more image models than this repo tracks, and it adds new
 // ones weekly. WithModelID takes any raw OpenRouter id, so a model that shipped
@@ -105,7 +105,7 @@ func custom(apiKey string) {
 // customFullyDescribed is the same idea with the capability metadata filled in
 // by hand.
 //
-// WithModelID leaves model.ImageGenerationModel almost empty, which is fine for
+// WithModelID leaves image.GenerationModel almost empty, which is fine for
 // generating but means Model() reports no pricing and no supported-value lists.
 // Anything that reads those — a cost estimator, a UI that offers the caller a
 // list of aspect ratios — wants a fuller value. Build one with WithModel and it
@@ -117,10 +117,10 @@ func custom(apiKey string) {
 // .../endpoints route, which is where any model's real capability and pricing
 // data lives.
 func customFullyDescribed(apiKey string) {
-	riverflowFast := model.ImageGenerationModel{
+	riverflowFast := image.GenerationModel{
 		ID:       "openrouter.riverflow-v2.5-fast",
 		Name:     "OpenRouter – Riverflow V2.5 Fast",
-		Provider: model.ProviderOpenRouter,
+		Provider: "openrouter",
 		APIModel: "sourceful/riverflow-v2.5-fast",
 		Pricing: map[string]map[string]float64{
 			"default": {"default": 0.019},
@@ -174,7 +174,7 @@ func stream(apiKey string) {
 	client := imageopenrouter.NewGeneration(
 		imageopenrouter.WithAPIKey(apiKey),
 		imageopenrouter.WithModel(
-			model.OpenRouterImageGenerationModels[model.OpenRouterGPTImage2],
+			openrouter.Models[openrouter.GPTImage2],
 		),
 		imageopenrouter.WithQuality(imageopenrouter.QualityMedium),
 	)

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
@@ -62,7 +61,7 @@ func (s *stubStreamLLM) StreamResponseWithStructuredOutput(
 	return s.stream()
 }
 
-func (s *stubStreamLLM) Model() model.Model             { return model.Model{} }
+func (s *stubStreamLLM) Model() Model                   { return Model{} }
 func (s *stubStreamLLM) SupportsStructuredOutput() bool { return true }
 
 // twoErrorEvents is the provider+retry double-emission shape that strands the

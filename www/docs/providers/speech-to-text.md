@@ -8,14 +8,13 @@ OpenAI Whisper:
 
 ```go
 import (
-    "github.com/joakimcarlsson/ai/model"
-    "github.com/joakimcarlsson/ai/stt"
     sttopenai "github.com/joakimcarlsson/ai/stt/openai"
+    "github.com/joakimcarlsson/ai/stt"
 )
 
 client := sttopenai.NewSpeechToText(
     sttopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-    sttopenai.WithModel(model.OpenAITranscriptionModels[model.Whisper1]),
+    sttopenai.WithModel(sttopenai.Models[sttopenai.Whisper1]),
 )
 
 audio, _ := os.ReadFile("audio.mp3")
@@ -37,7 +36,7 @@ import sttberget "github.com/joakimcarlsson/ai/stt/berget"
 
 client := sttberget.NewSpeechToText(
     sttberget.WithAPIKey(os.Getenv("BERGET_API_KEY")),
-    sttberget.WithModel(model.BergetTranscriptionModels[model.BergetKBWhisperLarge]),
+    sttberget.WithModel(berget.Models[berget.KBWhisperLarge]),
 )
 ```
 
@@ -49,7 +48,7 @@ import sttopenrouter "github.com/joakimcarlsson/ai/stt/openrouter"
 
 client := sttopenrouter.NewSpeechToText(
     sttopenai.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
-    sttopenai.WithModel(model.OpenRouterTranscriptionModels[model.OpenRouterWhisper1]),
+    sttopenai.WithModel(openrouter.Models[openrouter.Whisper1]),
 )
 ```
 
@@ -59,7 +58,7 @@ upstreams (OpenAI, Groq, Together); the rest answer HTTP 400, so pass
 `stt.WithResponseFormat("json")` when routing elsewhere. And OpenRouter
 publishes no `/audio/translations` route, so `Translate` returns
 `sttopenrouter.ErrTranslationNotSupported` instead of issuing a doomed request.
-`model.OpenRouterTranscriptionModels` carries 13 known-good defaults. OpenRouter
+`openrouter.Models` carries 13 known-good defaults. OpenRouter
 routes more than that, so for anything it does not define, `WithModelID` takes a
 raw id:
 
@@ -73,7 +72,7 @@ resp, err := client.Transcribe(ctx, audio, stt.WithResponseFormat("json"))
 ```
 
 `Model()` then reports only the id and provider — no cost, no capability flags.
-Pass a hand-built `model.TranscriptionModel` to `sttopenai.WithModel` instead
+Pass a hand-built `stt.TranscriptionModel` to `sttopenai.WithModel` instead
 when something downstream reads those fields.
 
 ## Translation (OpenAI only)
@@ -92,7 +91,7 @@ import sttdeepgram "github.com/joakimcarlsson/ai/stt/deepgram"
 
 client := sttdeepgram.NewSpeechToText(
     sttdeepgram.WithAPIKey(os.Getenv("DEEPGRAM_API_KEY")),
-    sttdeepgram.WithModel(model.DeepgramTranscriptionModels[model.DeepgramNova3]),
+    sttdeepgram.WithModel(deepgram.Models[deepgram.Nova3]),
     sttdeepgram.WithSmartFormat(true),
     sttdeepgram.WithStreamInterimResults(true),
 )

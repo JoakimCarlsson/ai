@@ -3,10 +3,10 @@
 #
 # Every module requires its sibling modules by version, e.g.
 #
-#   require github.com/joakimcarlsson/ai/model v0.1.0
+#   require github.com/joakimcarlsson/ai/llm v0.1.0
 #
 # Locally a replace directive masks that version (the workspace builds against
-# the source on disk), so the require line can lag the newest model/vX.Y.Z tag
+# the source on disk), so the require line can lag the newest llm/vX.Y.Z tag
 # for a long time without anyone noticing. But a published consumer of this
 # module gets exactly the version in the require line — the stale one. This
 # script rewrites each intra-repo require to the latest tag for that module so

@@ -9,7 +9,6 @@ require (
 
 require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
-	github.com/joakimcarlsson/ai/model v0.8.0 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.6.1 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
@@ -20,6 +19,5 @@ require (
 
 replace (
 	github.com/joakimcarlsson/ai/message => ../message
-	github.com/joakimcarlsson/ai/model => ../model
 	github.com/joakimcarlsson/ai/tool => ../tool
 )

@@ -9,14 +9,13 @@ ElevenLabs:
 
 ```go
 import (
-    "github.com/joakimcarlsson/ai/model"
-    "github.com/joakimcarlsson/ai/tts"
     ttselevenlabs "github.com/joakimcarlsson/ai/tts/elevenlabs"
+    "github.com/joakimcarlsson/ai/tts"
 )
 
 client := ttselevenlabs.NewGeneration(
     ttselevenlabs.WithAPIKey(os.Getenv("ELEVENLABS_API_KEY")),
-    ttselevenlabs.WithModel(model.ElevenLabsAudioModels[model.ElevenTurboV2_5]),
+    ttselevenlabs.WithModel(ttselevenlabs.Models[ttselevenlabs.TurboV2_5]),
     ttselevenlabs.WithVoiceID("EXAVITQu4vr4xnSDxMaL"),  // Rachel
 )
 
@@ -31,7 +30,7 @@ import ttsopenai "github.com/joakimcarlsson/ai/tts/openai"
 
 client := ttsopenai.NewGeneration(
     ttsopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-    ttsopenai.WithModel(model.OpenAIAudioModels[model.TTS1HD]),
+    ttsopenai.WithModel(openai.Models[openai.TTS1HD]),
     ttsopenai.WithVoice("nova"),
     ttsopenai.WithOutputFormat("mp3"),
 )
@@ -47,7 +46,7 @@ import ttsopenrouter "github.com/joakimcarlsson/ai/tts/openrouter"
 
 client := ttsopenrouter.NewGeneration(
     ttsopenai.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
-    ttsopenai.WithModel(model.OpenRouterAudioModels[model.OpenRouterMAIVoice2]),
+    ttsopenai.WithModel(openrouter.Models[openrouter.MAIVoice2]),
     ttsopenai.WithVoice("en-US-Harper:MAI-Voice-2"),
     ttsopenai.WithOutputFormat("mp3"),
 )
@@ -61,7 +60,7 @@ nothing. `WithProviderRouting` is documented for `/audio/speech` and is wired up
 Two OpenRouter specifics: `response_format` defaults to `pcm` rather than
 OpenAI's `mp3` and the only documented values are `mp3` and `pcm`; and `speed`
 is honored only by upstreams that support it and silently ignored by the rest.
-`model.OpenRouterAudioModels` carries 18 known-good defaults. OpenRouter routes
+`openrouter.Models` carries 18 known-good defaults. OpenRouter routes
 more than that, so for anything it does not define, `WithModelID` takes a raw
 id:
 
@@ -74,7 +73,7 @@ client := ttsopenrouter.NewGeneration(
 ```
 
 `Model()` then reports only the id and provider — no per-character cost, no
-format list. Pass a hand-built `model.AudioModel` to `ttsopenai.WithModel`
+format list. Pass a hand-built `tts.AudioModel` to `ttsopenai.WithModel`
 instead when something downstream reads those fields.
 
 ## Streaming

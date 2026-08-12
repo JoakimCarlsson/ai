@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/joakimcarlsson/ai/llm/anthropic"
 	llmanthropic "github.com/joakimcarlsson/ai/llm/anthropic"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 
 	client := llmanthropic.NewLLM(
 		llmanthropic.WithAPIKey(apiKey),
-		llmanthropic.WithModel(model.AnthropicModels[model.Claude45Haiku]),
+		llmanthropic.WithModel(anthropic.Models[anthropic.Claude45Haiku]),
 		llmanthropic.WithMaxTokens(256),
 	)
 

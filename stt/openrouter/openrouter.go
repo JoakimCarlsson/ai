@@ -30,7 +30,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/stt"
 	sttopenai "github.com/joakimcarlsson/ai/stt/openai"
 )
@@ -49,21 +48,21 @@ var ErrTranslationNotSupported = errors.New(
 type Option = sttopenai.Option
 
 // WithModelID selects a transcription model by raw OpenRouter id, for the models
-// [model.OpenRouterTranscriptionModels] does not catalogue. It is shorthand for
-// [sttopenai.WithModel] with a bare [model.TranscriptionModel], and it is the
+// [Models] does not catalogue. It is shorthand for
+// [sttopenai.WithModel] with a bare [stt.TranscriptionModel], and it is the
 // intended path for anything OpenRouter has routed since this package was last
 // updated:
 //
 //	sttopenrouter.WithModelID("nvidia/parakeet-tdt-0.6b-v3")
 //
 // Nothing is validated locally, so the capability and cost fields a registered
-// [model.TranscriptionModel] carries are zero. In particular, pass
+// [stt.TranscriptionModel] carries are zero. In particular, pass
 // [stt.WithResponseFormat]("json") unless the id routes to an OpenAI-compatible
 // upstream, since the default verbose_json draws an HTTP 400 elsewhere.
 func WithModelID(id string) Option {
-	return sttopenai.WithModel(model.TranscriptionModel{
+	return sttopenai.WithModel(stt.TranscriptionModel{
 		APIModel: id,
-		Provider: model.ProviderOpenRouter,
+		Provider: "openrouter",
 	})
 }
 

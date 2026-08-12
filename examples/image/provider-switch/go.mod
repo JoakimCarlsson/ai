@@ -3,11 +3,10 @@ module github.com/joakimcarlsson/ai/examples/image/provider-switch
 go 1.25.8
 
 require (
-	github.com/joakimcarlsson/ai/image v0.1.0
+	github.com/joakimcarlsson/ai/image v0.2.0
 	github.com/joakimcarlsson/ai/image/gemini v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/image/openai v0.0.0-00010101000000-000000000000
 	github.com/joakimcarlsson/ai/image/xai v0.0.0-00010101000000-000000000000
-	github.com/joakimcarlsson/ai/model v0.2.0
 )
 
 require (
@@ -26,7 +25,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.22.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.1.0 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
 	github.com/openai/openai-go/v3 v3.41.0 // indirect
 	github.com/tidwall/gjson v1.19.0 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
@@ -79,7 +78,6 @@ replace (
 	github.com/joakimcarlsson/ai/llm/openai => ../../../llm/openai
 	github.com/joakimcarlsson/ai/memory => ../../../memory
 	github.com/joakimcarlsson/ai/message => ../../../message
-	github.com/joakimcarlsson/ai/model => ../../../model
 	github.com/joakimcarlsson/ai/prompt => ../../../prompt
 	github.com/joakimcarlsson/ai/rerankers => ../../../rerankers
 	github.com/joakimcarlsson/ai/rerankers/cohere => ../../../rerankers/cohere

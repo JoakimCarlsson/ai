@@ -10,9 +10,9 @@ import (
 
 	"github.com/joakimcarlsson/ai/agent"
 	"github.com/joakimcarlsson/ai/llm"
+	"github.com/joakimcarlsson/ai/llm/openai"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
 )
@@ -77,7 +77,7 @@ func main() {
 
 	llmClient := llmopenai.NewLLM(
 		llmopenai.WithAPIKey(apiKey),
-		llmopenai.WithModel(model.OpenAIModels[model.GPT4oMini]),
+		llmopenai.WithModel(openai.Models[openai.GPT4oMini]),
 		llmopenai.WithMaxTokens(1024),
 	)
 

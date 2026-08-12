@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/tts"
 )
 
@@ -35,7 +34,7 @@ const (
 // Options configures the ElevenLabs TTS client.
 type Options struct {
 	apiKey       string
-	model        model.AudioModel
+	model        tts.AudioModel
 	timeout      *time.Duration
 	baseURL      string
 	voiceID      string
@@ -54,7 +53,7 @@ func WithAPIKey(
 
 // WithModel selects the TTS model.
 func WithModel(
-	m model.AudioModel,
+	m tts.AudioModel,
 ) Option {
 	return func(o *Options) { o.model = m }
 }
@@ -89,7 +88,7 @@ func WithOutputFormat(format string) Option {
 // ElevenLabs API.
 type Client struct {
 	apiKey       string
-	model        model.AudioModel
+	model        tts.AudioModel
 	baseURL      string
 	httpClient   *http.Client
 	modelID      string
@@ -144,7 +143,7 @@ func NewGeneration(opts ...Option) tts.Generation {
 }
 
 // Model returns the configured TTS model.
-func (c *Client) Model() model.AudioModel { return c.model }
+func (c *Client) Model() tts.AudioModel { return c.model }
 
 type ttsRequest struct {
 	Text          string         `json:"text"`

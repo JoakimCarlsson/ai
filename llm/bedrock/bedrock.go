@@ -18,7 +18,6 @@ import (
 	"github.com/joakimcarlsson/ai/llm"
 	llmanthropic "github.com/joakimcarlsson/ai/llm/anthropic"
 	"github.com/joakimcarlsson/ai/message"
-	"github.com/joakimcarlsson/ai/model"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
 	"github.com/joakimcarlsson/ai/types"
@@ -27,7 +26,7 @@ import (
 // Options configures the Bedrock LLM client.
 type Options struct {
 	apiKey        string
-	model         model.Model
+	model         llm.Model
 	maxTokens     int64
 	temperature   *float64
 	topP          *float64
@@ -49,7 +48,7 @@ func WithAPIKey(
 }
 
 // WithModel selects the LLM model.
-func WithModel(m model.Model) Option { return func(o *Options) { o.model = m } }
+func WithModel(m llm.Model) Option { return func(o *Options) { o.model = m } }
 
 // WithMaxTokens sets the max generation tokens.
 func WithMaxTokens(
@@ -196,7 +195,7 @@ func newAnthropicChild(options Options) llm.LLM {
 }
 
 // Model returns the configured LLM model.
-func (c *Client) Model() model.Model { return c.options.model }
+func (c *Client) Model() llm.Model { return c.options.model }
 
 // SupportsStructuredOutput reports whether the underlying child supports it.
 func (c *Client) SupportsStructuredOutput() bool {
