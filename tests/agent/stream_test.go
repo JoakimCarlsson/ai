@@ -437,6 +437,7 @@ func TestBeforeRun_AfterRun_StreamFire_WithTools(t *testing.T) {
 					Type:  "function",
 				},
 			},
+			Delay: measurableDelay,
 		},
 		mockResponse{Content: "done"},
 	)
