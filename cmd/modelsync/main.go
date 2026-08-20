@@ -119,21 +119,17 @@ func checkTargets(providers []provider) error {
 
 func report(res result) {
 	fmt.Printf(
-		"%s: %d updated, %d added, %d removed, %d stale\n",
+		"%s: %d updated, %d added, %d removed\n",
 		res.target.path,
 		res.updated,
 		len(res.added),
 		len(res.removed),
-		len(res.stale),
 	)
 	for _, a := range res.added {
 		fmt.Printf("  + %s\n", a)
 	}
 	for _, r := range res.removed {
 		fmt.Printf("  - %s\n", r)
-	}
-	for _, s := range res.stale {
-		fmt.Printf("  ? %s (kept, not listed by the source)\n", s)
 	}
 }
 

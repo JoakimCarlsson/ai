@@ -101,10 +101,8 @@ var modelsDevCatalogs = []modelsDevCatalog{
 // modelsDev sources the catalogs of providers that publish no pricing of their
 // own from the models.dev index.
 //
-// models.dev indexes providers rather than serving them, so a model missing
-// from it means the index has not caught up, not that the provider withdrew the
-// model. Its catalogs therefore keep stale entries and report them instead of
-// deleting constants other code may import.
+// A model the index stops listing is dropped from the catalog, so a catalog
+// always mirrors what the source currently publishes.
 func modelsDev() provider {
 	targets := make([]target, 0, len(modelsDevCatalogs))
 	for _, c := range modelsDevCatalogs {
@@ -117,16 +115,14 @@ func modelsDev() provider {
 			source:     modelsDevSource,
 			idPrefix:   c.idPrefix,
 			idFull:     c.idFull,
-			keepStale:  true,
 			order:      chatFields,
 			doc: []string{
 				"Rates are USD per 1M tokens, as models.dev indexes them for the",
 				c.provider + " provider.",
 				"",
-				"models.dev indexes providers rather than serving them, so models it",
-				"stops listing are kept here and reported by the sync instead of",
-				"being deleted. Display names are set when a model is first added and",
-				"carried over from then on.",
+				"Models the index stops listing are removed from this catalog.",
+				"Display names are set when a model is first added and carried over",
+				"from then on.",
 			},
 			defaults: map[string]string{"Provider": quote(c.pkg)},
 		})

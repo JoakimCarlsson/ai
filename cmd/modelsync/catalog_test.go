@@ -170,38 +170,6 @@ func TestSyncTargetReportsRemovals(t *testing.T) {
 	}
 }
 
-func TestSyncTargetKeepsStaleEntries(t *testing.T) {
-	cat, err := readCatalog(writeFixture(t))
-	if err != nil {
-		t.Fatalf("readCatalog: %v", err)
-	}
-
-	tgt := demoTarget()
-	tgt.keepStale = true
-
-	fetched := []model{{
-		kind:     kindChat,
-		apiModel: "openai/gpt-5",
-		fields: map[string]string{
-			"Name":     `"Demo – GPT-5"`,
-			"Provider": `"demo"`,
-			"APIModel": `"openai/gpt-5"`,
-			"Currency": `"USD"`,
-		},
-	}}
-
-	src, res, err := syncTarget(tgt, fetched, cat, "2026-01-01")
-	if err != nil {
-		t.Fatalf("syncTarget: %v", err)
-	}
-	if len(res.removed) != 0 || len(res.stale) != 1 {
-		t.Fatalf("removed=%v stale=%v", res.removed, res.stale)
-	}
-	if !strings.Contains(src, "GPT41") {
-		t.Errorf("stale entry dropped from generated source:\n%s", src)
-	}
-}
-
 func TestSyncTargetMatchesDatedSnapshots(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "models.go")
 	dated := strings.ReplaceAll(

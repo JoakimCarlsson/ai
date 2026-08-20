@@ -43,14 +43,11 @@ type target struct {
 	source     string
 	// idFull keeps the provider's whole model ID in the catalog ID instead of
 	// dropping the vendor prefix.
-	idFull bool
-	// keepStale leaves entries the source stopped listing in place instead of
-	// deleting them, for sources that index a provider rather than serve it.
-	keepStale bool
-	doc       []string
-	order     []string
-	defaults  map[string]string
-	idPrefix  string
+	idFull   bool
+	doc      []string
+	order    []string
+	defaults map[string]string
+	idPrefix string
 }
 
 type provider struct {
@@ -141,14 +138,12 @@ type result struct {
 	added   []string
 	updated int
 	removed []string
-	stale   []string
 }
 
 // syncTarget merges the fetched models into the existing catalog and returns
 // the file to write. Existing entries keep their constant name, their ID and
-// every field the API does not describe. Models the source no longer returns
-// are dropped, unless the target keeps stale entries, in which case they are
-// left in place and reported.
+// every field the API does not describe. Models the source no longer
+// returns are dropped.
 func syncTarget(
 	t target,
 	fetched []model,
@@ -199,16 +194,9 @@ func syncTarget(
 		if seen[api] {
 			continue
 		}
-		label := e.constName + " (" + api + ")"
-		if t.keepStale {
-			res.stale = append(res.stale, label)
-			out = append(out, e)
-			continue
-		}
-		res.removed = append(res.removed, label)
+		res.removed = append(res.removed, e.constName+" ("+api+")")
 	}
 	sort.Strings(res.removed)
-	sort.Strings(res.stale)
 	sort.Slice(out, func(i, j int) bool {
 		return out[i].apiModel < out[j].apiModel
 	})
