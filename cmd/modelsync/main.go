@@ -1,14 +1,15 @@
-// Package main regenerates the provider model catalogs from the providers'
-// own model APIs.
+// Package main regenerates the provider model catalogs from model-sync.
 //
-// It takes no arguments: every registered provider is fetched, every catalog it
-// owns is rewritten as a full mirror of what the API returns, and a report of
-// what was added, updated and removed is printed.
+// It takes no arguments: https://github.com/JoakimCarlsson/model-sync publishes
+// one api.json describing every provider and every model it serves, that
+// document is fetched once, every catalog it owns is rewritten as a full mirror
+// of the slice of it that catalog covers, and a report of what was added,
+// updated and removed is printed.
 //
 //	go run ./cmd/modelsync
 //
 // Entries already in a catalog keep their Go constant name, their ID and every
-// field the API does not describe, so regenerating never renames an exported
+// field the source does not describe, so regenerating never renames an exported
 // identifier or drops hand-recorded detail.
 package main
 
@@ -33,86 +34,87 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	if err := checkTargets(targets); err != nil {
+		return err
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	date := time.Now().UTC().Format("2006-01-02")
-	providers := []provider{openRouter(), berget(), modelsDev()}
-	if err := checkTargets(providers); err != nil {
+	fmt.Printf("fetching %s\n", sourceURL)
+	index, err := fetchIndex(ctx, sourceURL)
+	if err != nil {
 		return err
 	}
 
+	date := time.Now().UTC().Format("2006-01-02")
+
 	var failures []error
-	for _, p := range providers {
-		if err := syncProvider(ctx, root, p, date); err != nil {
-			failures = append(failures, fmt.Errorf("%s: %w", p.name, err))
-			fmt.Printf("%s: FAILED: %v\n", p.name, err)
+	for _, t := range targets {
+		if err := syncCatalog(root, t, index, date); err != nil {
+			failures = append(failures, fmt.Errorf("%s: %w", t.path, err))
+			fmt.Printf("%s: FAILED: %v\n", t.path, err)
 		}
 	}
 	return errors.Join(failures...)
 }
 
-func syncProvider(
-	ctx context.Context,
+func syncCatalog(
 	root string,
-	p provider,
+	t target,
+	index *apiIndex,
 	date string,
 ) error {
-	fmt.Printf("\n== %s (%s)\n", p.name, p.source)
+	sourced := index.models(t.provider, string(t.kind))
+	if len(sourced) == 0 {
+		fmt.Printf(
+			"%s: no %s models listed for %s, left untouched\n",
+			t.path,
+			t.kind,
+			t.provider,
+		)
+		return nil
+	}
 
-	models, err := p.fetch(ctx)
+	fetched := make([]model, 0, len(sourced))
+	for _, m := range sourced {
+		fetched = append(fetched, modelFor(t, m))
+	}
+
+	path := filepath.Join(root, filepath.FromSlash(t.path))
+	cat, err := readCatalog(path)
 	if err != nil {
 		return err
 	}
 
-	for _, t := range p.targets {
-		var forTarget []model
-		for _, m := range models {
-			if m.kind == t.kind {
-				forTarget = append(forTarget, m)
-			}
-		}
-		if len(forTarget) == 0 {
-			fmt.Printf("%s: no models returned, left untouched\n", t.path)
-			continue
-		}
-
-		path := filepath.Join(root, filepath.FromSlash(t.path))
-		cat, err := readCatalog(path)
-		if err != nil {
-			return err
-		}
-
-		src, res, err := syncTarget(t, forTarget, cat, date)
-		if err != nil {
-			return err
-		}
-		if err := os.WriteFile(path, []byte(src), 0o644); err != nil {
-			return err
-		}
-		report(res)
+	src, res, err := syncTarget(t, fetched, cat, date)
+	if err != nil {
+		return err
 	}
+	if err := os.WriteFile(path, []byte(src), 0o644); err != nil {
+		return err
+	}
+	report(res)
 	return nil
 }
 
-// checkTargets rejects a registry where two providers write the same catalog.
-// Precedence between sources is a decision to make when registering a provider,
-// not something to discover from whichever one happened to run last.
-func checkTargets(providers []provider) error {
+// checkTargets rejects a registry where two entries write the same catalog.
+// Which slice of the source a catalog mirrors is a decision to make when
+// registering it, not something to discover from whichever entry happened to
+// run last.
+func checkTargets(targets []target) error {
 	owner := make(map[string]string)
-	for _, p := range providers {
-		for _, t := range p.targets {
-			if held, ok := owner[t.path]; ok {
-				return fmt.Errorf(
-					"%s is claimed by both %s and %s",
-					t.path,
-					held,
-					p.name,
-				)
-			}
-			owner[t.path] = p.name
+	for _, t := range targets {
+		claim := t.provider + "/" + string(t.kind)
+		if held, ok := owner[t.path]; ok {
+			return fmt.Errorf(
+				"%s is claimed by both %s and %s",
+				t.path,
+				held,
+				claim,
+			)
 		}
+		owner[t.path] = claim
 	}
 	return nil
 }

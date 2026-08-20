@@ -1,11 +1,8 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
 	"math"
-	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -60,47 +57,43 @@ var (
 	}
 )
 
-func fetchJSON(ctx context.Context, url string, out any) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return err
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("fetching %s: %w", url, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("fetching %s: unexpected status %s", url, resp.Status)
-	}
-	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
-		return fmt.Errorf("decoding %s: %w", url, err)
-	}
-	return nil
-}
-
 func quote(s string) string { return strconv.Quote(s) }
 
 func boolean(b bool) string { return strconv.FormatBool(b) }
 
 func integer(v int64) string { return strconv.FormatInt(v, 10) }
 
-func parseFloat(s string) float64 {
-	v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+// number reads a whole number the source publishes as a string, such as an
+// embedding dimension. A value that is not one reads as zero, which every
+// caller treats as unpublished.
+func number(s string) int64 {
+	v, err := strconv.ParseInt(strings.TrimSpace(s), 10, 64)
 	if err != nil {
 		return 0
 	}
 	return v
 }
 
-// perMillion converts a per-token rate to a per-1M-token one.
-func perMillion(perToken string) string {
-	return amount(parseFloat(perToken) * 1e6)
+var fileSize = regexp.MustCompile(`(?i)^\s*(\d+(?:\.\d+)?)\s*(MB|GB)\s*$`)
+
+// megabytes reads a file size the source writes for people, such as "25MB" or
+// "2 GB", as the megabyte count the catalogs hold.
+func megabytes(s string) int64 {
+	m := fileSize.FindStringSubmatch(s)
+	if m == nil {
+		return 0
+	}
+	v, err := strconv.ParseFloat(m[1], 64)
+	if err != nil {
+		return 0
+	}
+	if strings.EqualFold(m[2], "GB") {
+		v *= 1024
+	}
+	return int64(math.Round(v))
 }
 
-// amount renders a price without the float noise a raw conversion leaves
+// amount renders a price without the float noise a unit conversion leaves
 // behind, matching how the rates are written by hand.
 func amount(v float64) string {
 	rounded := math.Round(v*1e6) / 1e6

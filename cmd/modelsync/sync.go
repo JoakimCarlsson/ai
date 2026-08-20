@@ -1,15 +1,13 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"maps"
 	"sort"
 )
 
-// kind identifies which catalog a model belongs in. One provider endpoint can
-// return several kinds, and one provider can expose one kind through several
-// endpoints, so routing is by kind rather than by request.
+// kind identifies which catalog a model belongs in, using the same names
+// api.json classifies its models with.
 type kind string
 
 const (
@@ -21,42 +19,16 @@ const (
 	kindRerank        kind = "rerank"
 )
 
-// model is a provider model normalized into the Go literals a catalog entry is
-// written with. Only fields the API actually describes are set; everything else
-// is carried over from the existing catalog or filled from target defaults.
+// model is a source model normalized into the Go literals a catalog entry is
+// written with. Only fields the source actually describes are set; everything
+// else is carried over from the existing catalog or filled from target
+// defaults.
 type model struct {
-	kind     kind
 	apiModel string
 	fields   map[string]string
 	// seed holds fields used only when the model is new to the catalog, for
-	// values a provider publishes too poorly to overwrite a curated one with.
+	// values the source publishes too poorly to overwrite a curated one with.
 	seed map[string]string
-}
-
-// target is one generated models.go file.
-type target struct {
-	kind       kind
-	path       string
-	pkg        string
-	importPath string
-	typeExpr   string
-	source     string
-	// idFull keeps the provider's whole model ID in the catalog ID instead of
-	// dropping the vendor prefix.
-	idFull   bool
-	doc      []string
-	order    []string
-	defaults map[string]string
-	idPrefix string
-}
-
-type provider struct {
-	name string
-	// source names where this provider's data comes from, so a run report says
-	// which catalogs were written from which source.
-	source  string
-	fetch   func(ctx context.Context) ([]model, error)
-	targets []target
 }
 
 // matchExisting pairs fetched models with the catalog entries they update.
@@ -142,8 +114,8 @@ type result struct {
 
 // syncTarget merges the fetched models into the existing catalog and returns
 // the file to write. Existing entries keep their constant name, their ID and
-// every field the API does not describe. Models the source no longer
-// returns are dropped.
+// every field the source does not describe. Models the source no longer
+// lists are dropped.
 func syncTarget(
 	t target,
 	fetched []model,

@@ -40,7 +40,7 @@ func newLLM() (llm.LLM, string) {
 				envOrDefault("BASE_URL", "https://api.groq.com/openai/v1"),
 			),
 			llmopenai.WithModel(
-				modelFromEnv(groq.Models[groq.Llama3_3_70BVersatile]),
+				modelFromEnv(groq.Models[groq.GPTOss120B]),
 			),
 			llmopenai.WithMaxTokens(256),
 		), provider
