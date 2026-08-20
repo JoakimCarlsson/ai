@@ -1,15 +1,13 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"maps"
 	"sort"
 )
 
-// kind identifies which catalog a model belongs in. One provider endpoint can
-// return several kinds, and one provider can expose one kind through several
-// endpoints, so routing is by kind rather than by request.
+// kind identifies which catalog a model belongs in, using the same names
+// api.json classifies its models with.
 type kind string
 
 const (
@@ -21,52 +19,24 @@ const (
 	kindRerank        kind = "rerank"
 )
 
-// model is a provider model normalized into the Go literals a catalog entry is
-// written with. Only fields the API actually describes are set; everything else
-// is carried over from the existing catalog or filled from target defaults.
+// model is a source model normalized into the Go literals a catalog entry is
+// written with. Only fields the source actually describes are set; everything
+// else is carried over from the existing catalog or filled from target
+// defaults.
 type model struct {
-	kind     kind
 	apiModel string
 	fields   map[string]string
 	// seed holds fields used only when the model is new to the catalog, for
-	// values a provider publishes too poorly to overwrite a curated one with.
+	// values the source publishes too poorly to overwrite a curated one with.
 	seed map[string]string
 }
 
-// target is one generated models.go file.
-type target struct {
-	kind       kind
-	path       string
-	pkg        string
-	importPath string
-	typeExpr   string
-	source     string
-	// idFull keeps the provider's whole model ID in the catalog ID instead of
-	// dropping the vendor prefix.
-	idFull bool
-	// keepStale leaves entries the source stopped listing in place instead of
-	// deleting them, for sources that index a provider rather than serve it.
-	keepStale bool
-	doc       []string
-	order     []string
-	defaults  map[string]string
-	idPrefix  string
-}
-
-type provider struct {
-	name string
-	// source names where this provider's data comes from, so a run report says
-	// which catalogs were written from which source.
-	source  string
-	fetch   func(ctx context.Context) ([]model, error)
-	targets []target
-}
-
 // matchExisting pairs fetched models with the catalog entries they update.
-// Exact API model matches are paired first; a model the catalog only holds
-// under a dated snapshot slug is paired second, so a provider dropping the date
-// from a slug updates the entry rather than adding a second one beside it. Each
-// entry is claimed once, and seen records which catalog entries survived.
+// Exact API model matches are paired first; a model whose slug differs from the
+// catalog's only by a dated snapshot suffix is paired second, in either
+// direction, so a source that adds or drops the date updates the entry rather
+// than adding a second one beside it. Each entry is claimed once, and seen
+// records which catalog entries survived.
 func matchExisting(
 	fetched []model,
 	cat *catalog,
@@ -85,7 +55,7 @@ func matchExisting(
 	ambiguous := make(map[string]bool)
 	for api, e := range cat.entries {
 		key := undated(api)
-		if key == api || seen[api] {
+		if seen[api] {
 			continue
 		}
 		if _, ok := undatedEntries[key]; ok {
@@ -141,14 +111,12 @@ type result struct {
 	added   []string
 	updated int
 	removed []string
-	stale   []string
 }
 
 // syncTarget merges the fetched models into the existing catalog and returns
 // the file to write. Existing entries keep their constant name, their ID and
-// every field the API does not describe. Models the source no longer returns
-// are dropped, unless the target keeps stale entries, in which case they are
-// left in place and reported.
+// every field the source does not describe. Models the source no longer
+// lists are dropped.
 func syncTarget(
 	t target,
 	fetched []model,
@@ -199,16 +167,9 @@ func syncTarget(
 		if seen[api] {
 			continue
 		}
-		label := e.constName + " (" + api + ")"
-		if t.keepStale {
-			res.stale = append(res.stale, label)
-			out = append(out, e)
-			continue
-		}
-		res.removed = append(res.removed, label)
+		res.removed = append(res.removed, e.constName+" ("+api+")")
 	}
 	sort.Strings(res.removed)
-	sort.Strings(res.stale)
 	sort.Slice(out, func(i, j int) bool {
 		return out[i].apiModel < out[j].apiModel
 	})

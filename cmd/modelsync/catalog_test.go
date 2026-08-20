@@ -42,12 +42,13 @@ func writeFixture(t *testing.T) string {
 
 func demoTarget() target {
 	return target{
+		source:     "demo",
+		provider:   "demo",
 		kind:       kindChat,
 		path:       "demo/models.go",
 		pkg:        "demo",
 		importPath: "github.com/joakimcarlsson/ai/llm",
 		typeExpr:   "llm.Model",
-		source:     "https://example.test/models",
 		idPrefix:   "demo.",
 		order:      chatFields,
 		defaults:   map[string]string{"Provider": `"demo"`},
@@ -93,7 +94,6 @@ func TestSyncTargetPreservesNamesAndUnknownFields(t *testing.T) {
 
 	fetched := []model{
 		{
-			kind:     kindChat,
 			apiModel: "openai/gpt-4.1",
 			fields: map[string]string{
 				"Name":        `"Demo – GPT-4.1"`,
@@ -104,7 +104,6 @@ func TestSyncTargetPreservesNamesAndUnknownFields(t *testing.T) {
 			},
 		},
 		{
-			kind:     kindChat,
 			apiModel: "openai/gpt-5",
 			fields: map[string]string{
 				"Provider": `"demo"`,
@@ -150,7 +149,6 @@ func TestSyncTargetReportsRemovals(t *testing.T) {
 	}
 
 	fetched := []model{{
-		kind:     kindChat,
 		apiModel: "openai/gpt-5",
 		fields: map[string]string{
 			"Name":     `"Demo – GPT-5"`,
@@ -167,38 +165,6 @@ func TestSyncTargetReportsRemovals(t *testing.T) {
 	if len(res.removed) != 1 ||
 		!strings.Contains(res.removed[0], "openai/gpt-4.1") {
 		t.Errorf("removed = %v, want the stale gpt-4.1 entry", res.removed)
-	}
-}
-
-func TestSyncTargetKeepsStaleEntries(t *testing.T) {
-	cat, err := readCatalog(writeFixture(t))
-	if err != nil {
-		t.Fatalf("readCatalog: %v", err)
-	}
-
-	tgt := demoTarget()
-	tgt.keepStale = true
-
-	fetched := []model{{
-		kind:     kindChat,
-		apiModel: "openai/gpt-5",
-		fields: map[string]string{
-			"Name":     `"Demo – GPT-5"`,
-			"Provider": `"demo"`,
-			"APIModel": `"openai/gpt-5"`,
-			"Currency": `"USD"`,
-		},
-	}}
-
-	src, res, err := syncTarget(tgt, fetched, cat, "2026-01-01")
-	if err != nil {
-		t.Fatalf("syncTarget: %v", err)
-	}
-	if len(res.removed) != 0 || len(res.stale) != 1 {
-		t.Fatalf("removed=%v stale=%v", res.removed, res.stale)
-	}
-	if !strings.Contains(src, "GPT41") {
-		t.Errorf("stale entry dropped from generated source:\n%s", src)
 	}
 }
 
@@ -219,7 +185,6 @@ func TestSyncTargetMatchesDatedSnapshots(t *testing.T) {
 	}
 
 	fetched := []model{{
-		kind:     kindChat,
 		apiModel: "openai/gpt-4.1",
 		fields: map[string]string{
 			"Name":     `"Demo – GPT-4.1"`,
@@ -246,12 +211,18 @@ func TestSyncTargetMatchesDatedSnapshots(t *testing.T) {
 }
 
 func TestCheckTargetsRejectsSharedPaths(t *testing.T) {
-	err := checkTargets([]provider{
-		{name: "a", targets: []target{{path: "llm/x/models.go"}}},
-		{name: "b", targets: []target{{path: "llm/x/models.go"}}},
+	err := checkTargets([]target{
+		{source: "a", kind: kindChat, path: "llm/x/models.go"},
+		{source: "b", kind: kindChat, path: "llm/x/models.go"},
 	})
 	if err == nil {
-		t.Fatal("want an error when two providers write the same catalog")
+		t.Fatal("want an error when two entries write the same catalog")
+	}
+}
+
+func TestRegisteredCatalogsAreUnique(t *testing.T) {
+	if err := checkTargets(targets); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -277,11 +248,36 @@ func TestNamingDerivesUniqueIdentifiers(t *testing.T) {
 	}
 }
 
-func TestPerMillionRoundsCleanly(t *testing.T) {
-	if got := perMillion("0.0000005"); got != "0.5" {
-		t.Errorf("perMillion = %q, want 0.5", got)
+func TestMegabytesReadsPublishedSizes(t *testing.T) {
+	for in, want := range map[string]int64{
+		"25MB":  25,
+		"20 MB": 20,
+		"2 GB":  2048,
+		"":      0,
+		"large": 0,
+	} {
+		if got := megabytes(in); got != want {
+			t.Errorf("megabytes(%q) = %d, want %d", in, got, want)
+		}
 	}
-	if got := perMillion("0.000015"); got != "15" {
-		t.Errorf("perMillion = %q, want 15", got)
+}
+
+func TestDedupeKeepsTheFirstListingOfAModelID(t *testing.T) {
+	sourced := []apiModel{
+		{ID: "one", Name: "First", Attrs: map[string]string{"api_id": "dup"}},
+		{ID: "two", Name: "Second", Attrs: map[string]string{"api_id": "dup"}},
+		{ID: "three", Name: "Other", Attrs: map[string]string{"api_id": "own"}},
+	}
+
+	fetched, duplicates := dedupe(demoTarget(), sourced)
+
+	if duplicates != 1 {
+		t.Errorf("duplicates = %d, want 1", duplicates)
+	}
+	if len(fetched) != 2 {
+		t.Fatalf("fetched = %d models, want 2", len(fetched))
+	}
+	if fetched[0].seed["Name"] != `"First"` {
+		t.Errorf("kept %q, want the first listing", fetched[0].seed["Name"])
 	}
 }

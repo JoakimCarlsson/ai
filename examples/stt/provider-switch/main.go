@@ -65,7 +65,7 @@ func newSTT() (stt.SpeechToText, string) {
 			sttazure.WithAPIKey(requiredEnv("AZURE_SPEECH_KEY")),
 			sttazure.WithRegion(envOrDefault("AZURE_SPEECH_REGION", "eastus")),
 			sttazure.WithModel(
-				azure.Models[azure.FastTranscription],
+				azure.Models[azure.GPT4OTranscribe],
 			),
 			sttazure.WithLocales("en-US"),
 		), provider

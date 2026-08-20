@@ -90,7 +90,7 @@ func newLLM() (llm.LLM, string) {
 	case "xai-responses":
 		return llmxai.NewResponsesLLM(
 			llmxai.WithResponsesAPIKey(requiredEnv("XAI_API_KEY")),
-			llmxai.WithResponsesModel(xai.Models[xai.Grok4]),
+			llmxai.WithResponsesModel(xai.Models[xai.Grok46]),
 			llmxai.WithResponsesMaxTokens(1024),
 			llmxai.WithWebSearch(),
 		), provider
