@@ -4,7 +4,7 @@ go 1.25.8
 
 require (
 	github.com/joakimcarlsson/ai/llm v0.6.0
-	github.com/joakimcarlsson/ai/llm/gemini v0.4.0
+	github.com/joakimcarlsson/ai/llm/gemini v0.5.0
 	github.com/joakimcarlsson/ai/message v0.6.0
 	google.golang.org/genai v1.67.0
 )
