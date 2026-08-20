@@ -18,11 +18,14 @@ func catalogID(apiModel string) string {
 	return strings.ReplaceAll(slug, ":", "-")
 }
 
-var datedSnapshot = regexp.MustCompile(`-\d{8}$`)
+// datedSnapshot matches the release stamps providers pin a snapshot with: a
+// full date, or the four-digit year-month and month-day forms.
+var datedSnapshot = regexp.MustCompile(`-(\d{8}|\d{6}|\d{4})$`)
 
 // undated strips the dated-snapshot suffix providers pin releases with, so
 // "claude-haiku-4-5-20251001" and "claude-haiku-4-5" are recognised as the same
-// model and the catalog entry is updated rather than duplicated.
+// model, as are "mistral-embed-2312" and "mistral-embed", and the catalog entry
+// is updated rather than duplicated beside it.
 func undated(apiModel string) string {
 	return datedSnapshot.ReplaceAllString(apiModel, "")
 }

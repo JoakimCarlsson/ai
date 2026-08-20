@@ -42,6 +42,7 @@ func writeFixture(t *testing.T) string {
 
 func demoTarget() target {
 	return target{
+		source:     "demo",
 		provider:   "demo",
 		kind:       kindChat,
 		path:       "demo/models.go",
@@ -211,8 +212,8 @@ func TestSyncTargetMatchesDatedSnapshots(t *testing.T) {
 
 func TestCheckTargetsRejectsSharedPaths(t *testing.T) {
 	err := checkTargets([]target{
-		{provider: "a", kind: kindChat, path: "llm/x/models.go"},
-		{provider: "b", kind: kindChat, path: "llm/x/models.go"},
+		{source: "a", kind: kindChat, path: "llm/x/models.go"},
+		{source: "b", kind: kindChat, path: "llm/x/models.go"},
 	})
 	if err == nil {
 		t.Fatal("want an error when two entries write the same catalog")
@@ -258,5 +259,25 @@ func TestMegabytesReadsPublishedSizes(t *testing.T) {
 		if got := megabytes(in); got != want {
 			t.Errorf("megabytes(%q) = %d, want %d", in, got, want)
 		}
+	}
+}
+
+func TestDedupeKeepsTheFirstListingOfAModelID(t *testing.T) {
+	sourced := []apiModel{
+		{ID: "one", Name: "First", Attrs: map[string]string{"api_id": "dup"}},
+		{ID: "two", Name: "Second", Attrs: map[string]string{"api_id": "dup"}},
+		{ID: "three", Name: "Other", Attrs: map[string]string{"api_id": "own"}},
+	}
+
+	fetched, duplicates := dedupe(demoTarget(), sourced)
+
+	if duplicates != 1 {
+		t.Errorf("duplicates = %d, want 1", duplicates)
+	}
+	if len(fetched) != 2 {
+		t.Fatalf("fetched = %d models, want 2", len(fetched))
+	}
+	if fetched[0].seed["Name"] != `"First"` {
+		t.Errorf("kept %q, want the first listing", fetched[0].seed["Name"])
 	}
 }

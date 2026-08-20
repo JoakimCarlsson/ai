@@ -65,20 +65,24 @@ func syncCatalog(
 	index *apiIndex,
 	date string,
 ) error {
-	sourced := index.models(t.provider, string(t.kind))
+	sourced := index.models(t.source, string(t.kind))
 	if len(sourced) == 0 {
 		fmt.Printf(
 			"%s: no %s models listed for %s, left untouched\n",
 			t.path,
 			t.kind,
-			t.provider,
+			t.source,
 		)
 		return nil
 	}
 
-	fetched := make([]model, 0, len(sourced))
-	for _, m := range sourced {
-		fetched = append(fetched, modelFor(t, m))
+	fetched, duplicates := dedupe(t, sourced)
+	if duplicates > 0 {
+		fmt.Printf(
+			"%s: source repeats %d model ID(s), first listing kept\n",
+			t.path,
+			duplicates,
+		)
 	}
 
 	path := filepath.Join(root, filepath.FromSlash(t.path))
@@ -98,6 +102,27 @@ func syncCatalog(
 	return nil
 }
 
+// dedupe drops repeats of a model ID the source lists more than once, keeping
+// the first. A catalog holds one entry per API model, since that is the key an
+// entry is matched by, so a second entry under the same ID would displace the
+// first the next time the catalog is read.
+func dedupe(t target, sourced []apiModel) ([]model, int) {
+	fetched := make([]model, 0, len(sourced))
+	seen := make(map[string]bool, len(sourced))
+
+	duplicates := 0
+	for _, m := range sourced {
+		id := m.apiID()
+		if seen[id] {
+			duplicates++
+			continue
+		}
+		seen[id] = true
+		fetched = append(fetched, modelFor(t, m))
+	}
+	return fetched, duplicates
+}
+
 // checkTargets rejects a registry where two entries write the same catalog.
 // Which slice of the source a catalog mirrors is a decision to make when
 // registering it, not something to discover from whichever entry happened to
@@ -105,7 +130,7 @@ func syncCatalog(
 func checkTargets(targets []target) error {
 	owner := make(map[string]string)
 	for _, t := range targets {
-		claim := t.provider + "/" + string(t.kind)
+		claim := t.source + "/" + string(t.kind)
 		if held, ok := owner[t.path]; ok {
 			return fmt.Errorf(
 				"%s is claimed by both %s and %s",

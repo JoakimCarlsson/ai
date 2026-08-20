@@ -335,7 +335,7 @@ func withDim(prices []apiPrice, dim, want string) []apiPrice {
 func modelFor(t target, m apiModel) model {
 	currency := m.currency()
 	fields := map[string]string{
-		"Provider": quote(t.pkg),
+		"Provider": quote(t.provider),
 		"APIModel": quote(m.apiID()),
 		"Currency": quote(currency),
 	}

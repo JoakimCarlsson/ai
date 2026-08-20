@@ -32,10 +32,11 @@ type model struct {
 }
 
 // matchExisting pairs fetched models with the catalog entries they update.
-// Exact API model matches are paired first; a model the catalog only holds
-// under a dated snapshot slug is paired second, so a provider dropping the date
-// from a slug updates the entry rather than adding a second one beside it. Each
-// entry is claimed once, and seen records which catalog entries survived.
+// Exact API model matches are paired first; a model whose slug differs from the
+// catalog's only by a dated snapshot suffix is paired second, in either
+// direction, so a source that adds or drops the date updates the entry rather
+// than adding a second one beside it. Each entry is claimed once, and seen
+// records which catalog entries survived.
 func matchExisting(
 	fetched []model,
 	cat *catalog,
@@ -54,7 +55,7 @@ func matchExisting(
 	ambiguous := make(map[string]bool)
 	for api, e := range cat.entries {
 		key := undated(api)
-		if key == api || seen[api] {
+		if seen[api] {
 			continue
 		}
 		if _, ok := undatedEntries[key]; ok {

@@ -28,7 +28,6 @@ import (
 	"github.com/joakimcarlsson/ai/stt/assemblyai"
 	sttassemblyai "github.com/joakimcarlsson/ai/stt/assemblyai"
 	"github.com/joakimcarlsson/ai/tool"
-	"github.com/joakimcarlsson/ai/tts/deepgram"
 	ttsdeepgram "github.com/joakimcarlsson/ai/tts/deepgram"
 	"github.com/joakimcarlsson/ai/voice"
 )
@@ -43,7 +42,7 @@ func main() {
 	openaiKey := requireEnv("OPENAI_API_KEY")
 	assemblyKey := requireEnv("ASSEMBLYAI_API_KEY")
 	deepgramKey := requireEnv("DEEPGRAM_API_KEY")
-	deepgramVoice := envOr("DEEPGRAM_VOICE", string(deepgram.Aura2Thalia))
+	deepgramVoice := envOr("DEEPGRAM_VOICE", "aura-2-thalia-en")
 	addr := envOr("LISTEN_ADDR", ":8080")
 
 	mux := http.NewServeMux()
@@ -94,7 +93,7 @@ func wsHandler(
 		sttClient := sttassemblyai.NewSpeechToText(
 			sttassemblyai.WithAPIKey(assemblyKey),
 			sttassemblyai.WithModel(
-				assemblyai.Models[assemblyai.U3RTPro],
+				assemblyai.Models[assemblyai.UniversalStreamingEnglish],
 			),
 		)
 

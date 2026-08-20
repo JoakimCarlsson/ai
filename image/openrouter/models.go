@@ -3,8 +3,8 @@
 // Source: https://github.com/JoakimCarlsson/model-sync (api.json)
 // Generated: 2026-08-20
 //
-// Pricing is per image, in the currency the provider bills in. The
-// source publishes a single rate per model, so an entry's size and
+// Pricing is per image, in the currency the provider bills in. Where
+// the source publishes a single rate per model, an entry's size and
 // quality table is written only when the model is new to the catalog
 // and is carried over from then on.
 //
