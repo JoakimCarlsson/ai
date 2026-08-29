@@ -484,6 +484,7 @@ func (c *responsesClient) extractOutput(
 	var content strings.Builder
 	var toolCalls []message.ToolCall
 	var citations []map[string]any
+	var searches []map[string]any
 
 	for _, item := range resp.Output {
 		switch item.Type {
@@ -512,6 +513,15 @@ func (c *responsesClient) extractOutput(
 				Type:     "function",
 				Finished: true,
 			})
+		case "web_search_call":
+			// Each item carries its own action (search/open_page/find_in_page)
+			// rather than being summed here.
+			searches = append(searches, map[string]any{
+				"id":      item.ID,
+				"status":  item.Status,
+				"action":  item.Action.Type,
+				"queries": append([]string(nil), item.Action.Queries...),
+			})
 		case "code_interpreter_call":
 			if item.Code != "" {
 				content.WriteString("\n```python\n")
@@ -529,8 +539,14 @@ func (c *responsesClient) extractOutput(
 	}
 
 	var meta map[string]any
-	if len(citations) > 0 {
-		meta = map[string]any{"openai.url_citations": citations}
+	if len(citations) > 0 || len(searches) > 0 {
+		meta = map[string]any{}
+		if len(citations) > 0 {
+			meta["openai.url_citations"] = citations
+		}
+		if len(searches) > 0 {
+			meta["openai.web_search_calls"] = searches
+		}
 	}
 	return content.String(), toolCalls, meta
 }
