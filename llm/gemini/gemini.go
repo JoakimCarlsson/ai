@@ -588,6 +588,9 @@ func (c *Client) SendMessagesWithStructuredOutput(
 		outputSchema.Parameters,
 		outputSchema.Required,
 	)
+	// ResponseSchema requires a compatible ResponseMIMEType alongside it; the
+	// field defaults to text/plain.
+	config.ResponseMIMEType = "application/json"
 
 	chat, err := c.client.Chats.Create(
 		ctx,
@@ -695,6 +698,8 @@ func (c *Client) streamInternal(
 			outputSchema.Parameters,
 			outputSchema.Required,
 		)
+		// This path builds its config independently of SendMessagesWithStructuredOutput.
+		config.ResponseMIMEType = "application/json"
 	}
 
 	chat, err := c.client.Chats.Create(
