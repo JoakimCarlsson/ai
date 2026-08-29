@@ -45,6 +45,10 @@ var (
 		"SupportsTimestamps", "SupportsWordTimestamps", "SupportsDiarization",
 		"SupportsTranslation", "SupportsStreaming", "SupportedResponseFormats",
 	}
+	toolFields = []string{
+		"ID", "Name", "Provider", "APIModel", "Currency",
+		"CostPer1KCalls",
+	}
 	embeddingFields = []string{
 		"ID", "Name", "Provider", "APIModel", "Currency",
 		"CostPer1MTokens", "MaxInputTokens", "EmbeddingDims",

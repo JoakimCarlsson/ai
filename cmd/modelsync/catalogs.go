@@ -8,6 +8,7 @@ const (
 	imageImport      = "github.com/joakimcarlsson/ai/image"
 	ttsImport        = "github.com/joakimcarlsson/ai/tts"
 	sttImport        = "github.com/joakimcarlsson/ai/stt"
+	toolsImport      = "github.com/joakimcarlsson/ai/tools"
 	embeddingsImport = "github.com/joakimcarlsson/ai/embeddings"
 	rerankersImport  = "github.com/joakimcarlsson/ai/rerankers"
 )
@@ -73,6 +74,8 @@ var targets = []target{
 		"openrouter.",
 	)),
 
+	tool("openai", "tools/openai", "openai"),
+
 	speech("openai", "tts/openai", "openai"),
 	speech("elevenlabs", "tts/elevenlabs", "elevenlabs"),
 	billed(speech("google", "tts/google", "google"), "google-cloud"),
@@ -130,6 +133,15 @@ func image(source, dir, pkg string) target {
 			"the source publishes a single rate per model, an entry's size and",
 			"quality table is written only when the model is new to the catalog",
 			"and is carried over from then on.",
+		))
+}
+
+func tool(source, dir, pkg string) target {
+	return newTarget(source, kindTool, dir, pkg, toolsImport,
+		"tools.Tool", toolFields, doc(
+			"Rates are per 1000 invocations, in the currency the provider",
+			"bills in. A tool's own tokens are billed separately, at the",
+			"calling model's rates, and are not included here.",
 		))
 }
 

@@ -190,6 +190,57 @@ func TestModelForTranscriptionPricesByDirection(t *testing.T) {
 	}
 }
 
+// TestModelForToolReadsThePerThousandRate confirms the per-1k-calls rate the
+// source publishes passes through unscaled, and the ordinary tie-break picks
+// the standard rate over an unmarked preview variant.
+func TestModelForToolReadsThePerThousandRate(t *testing.T) {
+	m := apiModel{
+		ID:   "web-search",
+		Name: "Web search",
+		Kind: "tool",
+		Prices: []apiPrice{
+			{
+				Metric: "tool_call", Unit: "per_1k_calls", Amount: 10, Currency: "USD",
+				Dims: map[string]string{"detail": "web search (all models)", "tier": "standard"},
+			},
+			{
+				Metric: "tool_call", Unit: "per_1k_calls", Amount: 25, Currency: "USD",
+				Dims: map[string]string{"detail": "web search preview (non-reasoning models)", "tier": "standard"},
+			},
+		},
+	}
+
+	got := modelFor(tool("demo", "tools/demo", "demo"), m)
+
+	if got.fields["CostPer1KCalls"] != "10" {
+		t.Errorf("CostPer1KCalls = %q, want 10 -- per thousand calls, as published",
+			got.fields["CostPer1KCalls"])
+	}
+	if got.fields["Currency"] != `"USD"` {
+		t.Errorf("Currency = %q, want USD", got.fields["Currency"])
+	}
+}
+
+// TestAToolWithNoPerCallRateWritesNone confirms a tool with no per-call rate
+// leaves CostPer1KCalls absent rather than writing a zero.
+func TestAToolWithNoPerCallRateWritesNone(t *testing.T) {
+	m := apiModel{
+		ID: "agent-kit", Name: "Agent Kit", Kind: "tool",
+		Prices: []apiPrice{
+			{
+				Metric: "storage", Unit: "per_gb_day", Amount: 0.1, Currency: "USD",
+				Dims: map[string]string{"detail": "file storage", "tier": "standard"},
+			},
+		},
+	}
+
+	got := modelFor(tool("demo", "tools/demo", "demo"), m)
+
+	if v, present := got.fields["CostPer1KCalls"]; present {
+		t.Errorf("CostPer1KCalls = %q, want it absent -- this tool publishes no per-call rate", v)
+	}
+}
+
 func TestModelForEmbeddingSortsDimensionsNumerically(t *testing.T) {
 	m := apiModel{
 		ID:    "embed",

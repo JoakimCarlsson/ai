@@ -15,6 +15,7 @@ const (
 	kindImage         kind = "image"
 	kindSpeech        kind = "speech"
 	kindTranscription kind = "transcription"
+	kindTool          kind = "tool"
 	kindEmbedding     kind = "embedding"
 	kindRerank        kind = "rerank"
 )

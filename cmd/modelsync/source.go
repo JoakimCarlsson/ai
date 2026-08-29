@@ -184,6 +184,8 @@ var (
 		"per_hour":   1.0 / 60,
 	}
 	imageUnits = map[string]float64{"per_image": 1}
+	// callUnits keeps the vendor's own per-1k-calls unit; see CostPer1KCalls.
+	callUnits = map[string]float64{"per_1k_calls": 1}
 )
 
 // variantDims mark a rate as belonging to something other than plain
@@ -350,6 +352,8 @@ func modelFor(t target, m apiModel) model {
 		speechFieldsFor(m, currency, fields)
 	case kindTranscription:
 		transcriptionFieldsFor(m, currency, fields)
+	case kindTool:
+		toolFieldsFor(m, currency, fields)
 	case kindEmbedding:
 		embeddingFieldsFor(m, currency, fields)
 	case kindRerank:
@@ -422,6 +426,14 @@ func speechFieldsFor(m apiModel, currency string, fields map[string]string) {
 	setInt(fields, "MaxCharacters", m.limit("character_limit"))
 	setStrings(fields, "SupportedFormats", m.Lists["output_formats"])
 	fields["SupportsStreaming"] = boolean(m.feature("streaming"))
+}
+
+// toolFieldsFor reads what one thousand invocations of a hosted tool cost. A
+// tool may publish several standard rates for the same metric (e.g. web
+// search's preview variant and image-search variant), none of which is
+// marked as a variant dim, so the choice falls to rate's ordinary tie-break.
+func toolFieldsFor(m apiModel, currency string, fields map[string]string) {
+	setRate(fields, "CostPer1KCalls", m.Prices, currency, callUnits, "tool_call")
 }
 
 func transcriptionFieldsFor(
