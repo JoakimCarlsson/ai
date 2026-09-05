@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 
@@ -158,16 +159,11 @@ func TestLiveStructuredOutput(t *testing.T) {
 
 func TestLiveAllChatModels(t *testing.T) {
 	key(t)
-	ids := []string{
-		GPTOSS120B,
-		MistralMedium35,
-		MistralSmall32,
-		GLM47,
-		GLM52,
-		KimiK26,
-		Gemma431B,
-		Llama3370B,
+	ids := make([]string, 0, len(Models))
+	for id := range Models {
+		ids = append(ids, id)
 	}
+	sort.Strings(ids)
 	var ok int
 	for _, id := range ids {
 		c := client(t, id)
