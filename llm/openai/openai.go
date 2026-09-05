@@ -260,6 +260,22 @@ func (e retryableError) GetRetryAfter() string {
 	return ""
 }
 
+// Terminal implements [llm.TerminalError]: OpenAI answers a spent account
+// with the same 429 status an ordinary rate limit uses, distinguished only
+// by the error's type/code.
+func (e retryableError) Terminal() bool {
+	if e.err.Type == "insufficient_quota" {
+		return true
+	}
+	switch e.err.Code {
+	case "credit_balance_exhausted",
+		"billing_hard_limit_reached",
+		"account_deactivated":
+		return true
+	}
+	return false
+}
+
 func wrapError(err error) error {
 	if err == nil {
 		return nil

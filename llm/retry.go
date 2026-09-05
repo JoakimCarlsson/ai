@@ -32,6 +32,18 @@ type RetryableError interface {
 	GetRetryAfter() string
 }
 
+// TerminalError marks an error that must not be retried, whatever its status
+// code says — a status code alone cannot distinguish an ordinary rate limit
+// from an account with no money in it, both HTTP 429. It is optional: an
+// error that does not implement it is judged by status code alone, exactly
+// as before. Vendor packages implement it on the error type they already
+// wrap their SDK errors in, so [ShouldRetry] stays free of any vendor SDK.
+type TerminalError interface {
+	error
+	// Terminal reports whether retrying this error can ever succeed.
+	Terminal() bool
+}
+
 // GenericRetryableError marks an error retryable with a fixed HTTP status code.
 type GenericRetryableError struct {
 	Err        error
@@ -78,13 +90,21 @@ func ShouldRetry(
 	config RetryConfig,
 ) (bool, int64, error) {
 	if attempts > config.MaxRetries {
+		// %w so errors.As downstream can still find the typed cause.
 		return false, 0, fmt.Errorf(
-			"maximum retry attempts reached: %d retries",
+			"maximum retry attempts reached: %d retries: %w",
 			config.MaxRetries,
+			err,
 		)
 	}
 
 	if errors.Is(err, io.EOF) {
+		return false, 0, err
+	}
+
+	// Checked before the status code, since the point is to overrule it.
+	var terminal TerminalError
+	if errors.As(err, &terminal) && terminal.Terminal() {
 		return false, 0, err
 	}
 
