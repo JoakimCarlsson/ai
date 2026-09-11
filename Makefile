@@ -11,7 +11,7 @@ endif
 
 install:
 	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
-	go install golang.org/x/tools/cmd/goimports@latest
+	go install golang.org/x/tools/cmd/goimports@v0.49.0
 	go install github.com/golangci/golines@latest
 
 workspace:
