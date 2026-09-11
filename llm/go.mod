@@ -6,7 +6,7 @@ require (
 	github.com/joakimcarlsson/ai/message v0.6.0
 	github.com/joakimcarlsson/ai/schema v0.2.0
 	github.com/joakimcarlsson/ai/tool v0.1.3
-	github.com/joakimcarlsson/ai/tracing v0.2.0
+	github.com/joakimcarlsson/ai/tracing v0.2.1
 	github.com/joakimcarlsson/ai/types v0.2.0
 	go.opentelemetry.io/otel v1.46.0
 	go.opentelemetry.io/otel/trace v1.46.0

@@ -2,7 +2,7 @@ module github.com/joakimcarlsson/ai/tts
 
 go 1.26.0
 
-require github.com/joakimcarlsson/ai/tracing v0.2.0
+require github.com/joakimcarlsson/ai/tracing v0.2.1
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect

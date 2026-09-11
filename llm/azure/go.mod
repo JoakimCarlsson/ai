@@ -4,8 +4,8 @@ go 1.26.0
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.1
-	github.com/joakimcarlsson/ai/llm v0.6.0
-	github.com/joakimcarlsson/ai/llm/openai v0.7.0
+	github.com/joakimcarlsson/ai/llm v0.6.1
+	github.com/joakimcarlsson/ai/llm/openai v0.8.0
 	github.com/joakimcarlsson/ai/message v0.6.0
 	github.com/openai/openai-go/v3 v3.61.0
 )
@@ -24,7 +24,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.0 // indirect
 	github.com/joakimcarlsson/ai/tool v0.1.3 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.2.0 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.1 // indirect
 	github.com/joakimcarlsson/ai/types v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.7.0 // indirect
