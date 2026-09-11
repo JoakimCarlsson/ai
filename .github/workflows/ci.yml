@@ -120,7 +120,7 @@ jobs:
 
       - name: Check goimports across the workspace
         run: |
-          go install golang.org/x/tools/cmd/goimports@latest
+          go install golang.org/x/tools/cmd/goimports@v0.49.0
           output=$(goimports -l .)
           if [ -n "$output" ]; then
             echo "Files not formatted:"
