@@ -210,7 +210,11 @@ func (p *Processor) pollUntilDone(
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case <-ticker.C:
-			job, err := p.client.Messages.Batches.Get(ctx, batchID)
+			job, err := p.client.Messages.Batches.Get(
+				ctx,
+				batchID,
+				anthropicsdk.MessageBatchGetParams{},
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -244,7 +248,11 @@ func (p *Processor) retrieveResults(
 	results []batch.Result,
 	idxMap map[string]int,
 ) error {
-	stream := p.client.Messages.Batches.ResultsStreaming(ctx, batchID)
+	stream := p.client.Messages.Batches.ResultsStreaming(
+		ctx,
+		batchID,
+		anthropicsdk.MessageBatchResultsParams{},
+	)
 	defer stream.Close()
 
 	for stream.Next() {
