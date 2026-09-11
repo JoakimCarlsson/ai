@@ -1,6 +1,6 @@
 module github.com/joakimcarlsson/ai/examples/model/pricing
 
-go 1.25.8
+go 1.26.0
 
 require (
 	github.com/joakimcarlsson/ai/embeddings/voyage v0.1.6

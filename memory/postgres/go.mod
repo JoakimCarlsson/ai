@@ -1,11 +1,11 @@
 module github.com/joakimcarlsson/ai/memory/postgres
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/joakimcarlsson/ai/message v0.6.0
-	github.com/joakimcarlsson/ai/session v0.1.7
+	github.com/joakimcarlsson/ai/message v0.6.1
+	github.com/joakimcarlsson/ai/session v0.1.8
 	github.com/lib/pq v1.12.3
 )
 
