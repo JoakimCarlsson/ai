@@ -9,7 +9,7 @@ replace github.com/joakimcarlsson/ai/message => ../../../message
 replace github.com/joakimcarlsson/ai/session => ../../../session
 
 require (
-	github.com/joakimcarlsson/ai/memory/postgres v0.1.0
+	github.com/joakimcarlsson/ai/memory/postgres v0.1.8
 	github.com/joakimcarlsson/ai/message v0.5.2
 	github.com/joakimcarlsson/ai/session v0.1.6
 	github.com/stretchr/testify v1.12.1

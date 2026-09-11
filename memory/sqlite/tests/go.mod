@@ -9,7 +9,7 @@ replace github.com/joakimcarlsson/ai/message => ../../../message
 replace github.com/joakimcarlsson/ai/session => ../../../session
 
 require (
-	github.com/joakimcarlsson/ai/memory/sqlite v0.1.0
+	github.com/joakimcarlsson/ai/memory/sqlite v0.1.9
 	github.com/joakimcarlsson/ai/message v0.5.2
 	github.com/stretchr/testify v1.12.1
 	modernc.org/sqlite v1.58.0
