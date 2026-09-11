@@ -33,7 +33,7 @@ func (c countingRT) RoundTrip(r *http.Request) (*http.Response, error) {
 // set): the wrapped transport's counter increments, proving the SDK default
 // client was replaced.
 func TestWithHTTPClientTransportUsed(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(
+	srv := httptest.NewTLSServer(http.HandlerFunc(
 		func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = io.WriteString(w, completionOK)
@@ -47,7 +47,7 @@ func TestWithHTTPClientTransportUsed(t *testing.T) {
 		WithAPIVersion("2024-02-01"),
 		WithDeployment("gpt-4o-mini"),
 		WithHTTPClient(&http.Client{
-			Transport: countingRT{RoundTripper: http.DefaultTransport, n: &n},
+			Transport: countingRT{RoundTripper: srv.Client().Transport, n: &n},
 		}),
 	)
 

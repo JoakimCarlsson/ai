@@ -336,7 +336,7 @@ func (c *responsesClient) convertMessages(
 			for _, result := range msg.ToolResults() {
 				out = append(out, responses.ResponseInputItemUnionParam{
 					OfFunctionCallOutput: &responses.ResponseInputItemFunctionCallOutputParam{
-						CallID: result.ToolCallID,
+						CallID: openaisdk.String(result.ToolCallID),
 						Output: responses.ResponseInputItemFunctionCallOutputOutputUnionParam{
 							OfString: openaisdk.String(result.Content),
 						},
