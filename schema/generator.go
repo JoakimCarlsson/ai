@@ -11,7 +11,9 @@ import (
 // Supported struct tags:
 //   - json: field name in JSON (e.g., `json:"field_name"`)
 //   - desc: field description (e.g., `desc:"The field description"`)
-//   - enum: comma-separated enum values (e.g., `enum:"value1,value2"`)
+//   - enum: comma-separated enum values (e.g., `enum:"value1,value2"`).
+//     On a slice field the values constrain the elements, so they are
+//     emitted on `items` rather than on the array itself.
 //   - required: explicitly mark as required or not (e.g., `required:"true"` or `required:"false"`)
 //
 // Returns the properties map and list of required field names.
@@ -103,6 +105,10 @@ func GenerateSchema(v any) (map[string]any, []string) {
 					items["additionalProperties"] = false
 					items["required"] = nestedReq
 				}
+			}
+			if enum, ok := prop["enum"]; ok {
+				items["enum"] = enum
+				delete(prop, "enum")
 			}
 			prop["items"] = items
 		}
