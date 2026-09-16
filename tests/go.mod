@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/tests
 go 1.26.0
 
 require (
-	github.com/joakimcarlsson/ai/agent v0.5.5
+	github.com/joakimcarlsson/ai/agent v0.5.6
 	github.com/joakimcarlsson/ai/fim v0.3.1
 	github.com/joakimcarlsson/ai/llm v0.6.3
 	github.com/joakimcarlsson/ai/memory v0.2.12
@@ -18,7 +18,7 @@ require (
 	github.com/joakimcarlsson/ai/tracing v0.2.1
 	github.com/joakimcarlsson/ai/tts v0.3.1
 	github.com/joakimcarlsson/ai/types v0.2.1
-	github.com/joakimcarlsson/ai/voice v0.2.12
+	github.com/joakimcarlsson/ai/voice v0.2.13
 	go.opentelemetry.io/otel v1.46.0
 	go.opentelemetry.io/otel/log v0.22.0
 	go.opentelemetry.io/otel/sdk v1.46.0
