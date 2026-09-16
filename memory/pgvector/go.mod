@@ -16,7 +16,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
-	github.com/joakimcarlsson/ai/llm v0.6.2 // indirect
+	github.com/joakimcarlsson/ai/llm v0.6.3 // indirect
 	github.com/joakimcarlsson/ai/message v0.6.1 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.2 // indirect
 	github.com/joakimcarlsson/ai/tool v0.1.4 // indirect

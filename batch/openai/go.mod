@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/joakimcarlsson/ai/batch v0.1.11
 	github.com/joakimcarlsson/ai/embeddings v0.3.1
-	github.com/joakimcarlsson/ai/llm v0.6.2
+	github.com/joakimcarlsson/ai/llm v0.6.3
 	github.com/joakimcarlsson/ai/message v0.6.1
 	github.com/joakimcarlsson/ai/tool v0.1.4
 	github.com/openai/openai-go/v3 v3.61.0
