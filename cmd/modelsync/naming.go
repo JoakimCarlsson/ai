@@ -19,13 +19,21 @@ func catalogID(apiModel string) string {
 }
 
 // datedSnapshot matches the release stamps providers pin a snapshot with: a
-// full date, or the four-digit year-month and month-day forms.
-var datedSnapshot = regexp.MustCompile(`-(\d{8}|\d{6}|\d{4})$`)
+// full date, or the four-digit year-month and month-day forms, each optionally
+// carrying the revision marker Bedrock appends to a stamped snapshot.
+//
+// The revision is only stripped behind a stamp. On its own it is as likely to
+// be part of the model's identity, where "nemotron-nano-12b-v2" names a
+// different model from a v3 beside it, as it is to be a revision of one.
+var datedSnapshot = regexp.MustCompile(
+	`-(\d{8}|\d{6}|\d{4})(-v\d+(:\d+)?)?$`,
+)
 
 // undated strips the dated-snapshot suffix providers pin releases with, so
 // "claude-haiku-4-5-20251001" and "claude-haiku-4-5" are recognised as the same
-// model, as are "mistral-embed-2312" and "mistral-embed", and the catalog entry
-// is updated rather than duplicated beside it.
+// model, as are "mistral-embed-2312" and "mistral-embed" and Bedrock's
+// "anthropic.claude-haiku-4-5-20251001-v1:0" and "anthropic.claude-haiku-4-5",
+// and the catalog entry is updated rather than duplicated beside it.
 func undated(apiModel string) string {
 	return datedSnapshot.ReplaceAllString(apiModel, "")
 }

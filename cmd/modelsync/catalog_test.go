@@ -281,3 +281,71 @@ func TestDedupeKeepsTheFirstListingOfAModelID(t *testing.T) {
 		t.Errorf("kept %q, want the first listing", fetched[0].seed["Name"])
 	}
 }
+
+func TestUndatedStripsStampedRevisions(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"claude-haiku-4-5-20251001", "claude-haiku-4-5"},
+		{"mistral-embed-2312", "mistral-embed"},
+		{
+			"anthropic.claude-haiku-4-5-20251001-v1:0",
+			"anthropic.claude-haiku-4-5",
+		},
+		{"mistral.mistral-large-2402-v1:0", "mistral.mistral-large"},
+		{"nvidia.nemotron-nano-12b-v2", "nvidia.nemotron-nano-12b-v2"},
+		{"anthropic.claude-opus-4-6-v1", "anthropic.claude-opus-4-6-v1"},
+		{
+			"mistral.mistral-7b-instruct-v0:2",
+			"mistral.mistral-7b-instruct-v0:2",
+		},
+	}
+
+	for _, c := range cases {
+		if got := undated(c.in); got != c.want {
+			t.Errorf("undated(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
+func TestSyncTargetMatchesStampedRevisions(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "models.go")
+	stamped := strings.ReplaceAll(
+		fixture,
+		`"openai/gpt-4.1"`,
+		`"openai/gpt-4.1-20250101-v1:0"`,
+	)
+	if err := os.WriteFile(path, []byte(stamped), 0o600); err != nil {
+		t.Fatalf("writing fixture: %v", err)
+	}
+
+	cat, err := readCatalog(path)
+	if err != nil {
+		t.Fatalf("readCatalog: %v", err)
+	}
+
+	fetched := []model{{
+		apiModel: "openai/gpt-4.1",
+		fields: map[string]string{
+			"Name":     `"Demo – GPT-4.1"`,
+			"Provider": `"demo"`,
+			"APIModel": `"openai/gpt-4.1"`,
+			"Currency": `"USD"`,
+		},
+	}}
+
+	src, res, err := syncTarget(demoTarget(), fetched, cat, "2026-01-01")
+	if err != nil {
+		t.Fatalf("syncTarget: %v", err)
+	}
+	if res.updated != 1 || len(res.added) != 0 || len(res.removed) != 0 {
+		t.Fatalf(
+			"updated=%d added=%v removed=%v, want the entry updated in place",
+			res.updated, res.added, res.removed,
+		)
+	}
+	if !strings.Contains(src, `GPT41 string = "demo.gpt-4.1"`) {
+		t.Errorf("constant not preserved:\n%s", src)
+	}
+	if !strings.Contains(src, "DefaultMaxTokens: 20000,") {
+		t.Errorf("preserved field lost:\n%s", src)
+	}
+}
