@@ -6,7 +6,7 @@ require (
 	github.com/joakimcarlsson/ai/llm v0.6.2
 	github.com/joakimcarlsson/ai/memory v0.2.11
 	github.com/joakimcarlsson/ai/message v0.6.1
-	github.com/joakimcarlsson/ai/schema v0.2.1
+	github.com/joakimcarlsson/ai/schema v0.2.2
 	github.com/joakimcarlsson/ai/session v0.1.8
 	github.com/joakimcarlsson/ai/stt v0.3.1
 	github.com/joakimcarlsson/ai/tokens v0.2.9
