@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/joakimcarlsson/ai/llm v0.6.3
-	github.com/joakimcarlsson/ai/memory v0.2.11
+	github.com/joakimcarlsson/ai/memory v0.2.12
 	github.com/joakimcarlsson/ai/message v0.6.1
 	github.com/joakimcarlsson/ai/prompt v0.1.1
 	github.com/joakimcarlsson/ai/session v0.1.8
