@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/joakimcarlsson/ai/agent v0.5.5
 	github.com/joakimcarlsson/ai/fim v0.3.1
-	github.com/joakimcarlsson/ai/llm v0.6.2
+	github.com/joakimcarlsson/ai/llm v0.6.3
 	github.com/joakimcarlsson/ai/memory v0.2.11
 	github.com/joakimcarlsson/ai/message v0.6.1
 	github.com/joakimcarlsson/ai/prompt v0.1.1

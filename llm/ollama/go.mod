@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/llm/ollama
 go 1.26.0
 
 require (
-	github.com/joakimcarlsson/ai/llm v0.6.2
+	github.com/joakimcarlsson/ai/llm v0.6.3
 	github.com/joakimcarlsson/ai/llm/openai v0.8.1
 )
 

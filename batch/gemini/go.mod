@@ -6,7 +6,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/joakimcarlsson/ai/batch v0.1.11
 	github.com/joakimcarlsson/ai/embeddings v0.3.1
-	github.com/joakimcarlsson/ai/llm v0.6.2
+	github.com/joakimcarlsson/ai/llm v0.6.3
 	github.com/joakimcarlsson/ai/message v0.6.1
 	github.com/joakimcarlsson/ai/tool v0.1.4
 	google.golang.org/genai v1.71.0
