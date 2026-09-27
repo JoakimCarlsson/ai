@@ -12,21 +12,6 @@ import (
 	"github.com/joakimcarlsson/ai/types"
 )
 
-// newResponsesServer returns a test server that replies with the given
-// Responses-API JSON, ignoring the request body.
-func newResponsesServer(
-	t *testing.T,
-	_ *map[string]any,
-	response string,
-) *httptest.Server {
-	t.Helper()
-	return httptest.NewServer(http.HandlerFunc(
-		func(w http.ResponseWriter, _ *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = io.WriteString(w, response)
-		}))
-}
-
 // A Responses body whose prompt was mostly served from the cache. The API
 // reports input_tokens as the WHOLE prompt and cached_tokens as the part of
 // it that was a cache hit -- a subset, not an addition.
