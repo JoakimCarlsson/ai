@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/http"
 	"slices"
 	"sort"
@@ -360,7 +361,12 @@ func modelFor(t target, m apiModel) model {
 		rerankFieldsFor(m, currency, fields)
 	}
 
-	return model{apiModel: m.apiID(), fields: fields, seed: seed}
+	return model{
+		apiModel: m.apiID(),
+		fields:   fields,
+		seed:     seed,
+		owned:    sourceOwned[t.kind],
+	}
 }
 
 func chatFieldsFor(
@@ -396,6 +402,41 @@ func chatFieldsFor(
 	)
 	fields["SupportsStructuredOut"] = boolean(m.feature("structured_outputs"))
 	fields["SupportsImageGeneration"] = boolean(m.emitsModality("image"))
+
+	for field, attr := range lifecycleAttrs {
+		setAttr(fields, field, m.Attrs[attr])
+	}
+}
+
+// lifecycleAttrs maps each chat lifecycle field to the api.json attribute it
+// is read from.
+var lifecycleAttrs = map[string]string{
+	"State":          "state",
+	"ReleaseDate":    "release_date",
+	"LastUpdated":    "last_updated",
+	"RetirementDate": "retirement_date",
+	"ReplacedBy":     "recommended_replacement",
+}
+
+// sourceOwned lists, per kind, the fields only the source can know. An
+// existing entry never keeps its own value for one of these: when the source
+// stops publishing it, the field is cleared rather than carried over, so a
+// withdrawn retirement date or replacement does not survive forever, and an
+// alias paired with a dated snapshot does not inherit the snapshot's dates.
+var sourceOwned = map[kind][]string{
+	kindChat: slices.Sorted(maps.Keys(lifecycleAttrs)),
+}
+
+// setAttr writes a string field when the source publishes one, and leaves it
+// out when it does not. An absent field is a different fact from one the
+// source published as empty: the lifecycle attributes are read straight
+// through rather than interpreted, and an empty State would read as "active"
+// rather than "the provider says nothing".
+func setAttr(fields map[string]string, field, value string) {
+	if value == "" {
+		return
+	}
+	fields[field] = quote(value)
 }
 
 func imageFieldsFor(

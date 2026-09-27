@@ -27,6 +27,11 @@ var (
 		"SupportsAttachments",
 		"SupportsStructuredOut",
 		"SupportsImageGeneration",
+		"State",
+		"ReleaseDate",
+		"LastUpdated",
+		"RetirementDate",
+		"ReplacedBy",
 	}
 	imageFields = []string{
 		"ID", "Name", "Provider", "APIModel", "Currency",

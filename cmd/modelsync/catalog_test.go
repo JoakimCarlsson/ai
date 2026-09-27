@@ -349,3 +349,159 @@ func TestSyncTargetMatchesStampedRevisions(t *testing.T) {
 		t.Errorf("preserved field lost:\n%s", src)
 	}
 }
+
+// lifecycleFixture is a catalog whose one entry carries every lifecycle field
+// under a dated snapshot slug, as a regeneration would have written it.
+const lifecycleFixture = `package demo
+
+import (
+	"github.com/joakimcarlsson/ai/llm"
+)
+
+const (
+	GPT41 string = "demo.gpt-4.1"
+)
+
+var Models = map[string]llm.Model{
+	GPT41: {
+		ID:               GPT41,
+		Name:             "Demo – GPT 4.1",
+		Provider:         "demo",
+		APIModel:         "openai/gpt-4.1-20250101",
+		DefaultMaxTokens: 20000,
+		State:            "deprecated",
+		ReleaseDate:      "2025-01-01",
+		LastUpdated:      "2025-02-01",
+		RetirementDate:   "2026-01-01",
+		ReplacedBy:       "openai/gpt-5",
+	},
+}
+`
+
+// syncLifecycle regenerates lifecycleFixture, with its entry's slug replaced
+// by slug, against a single source model published under apiID with attrs,
+// and returns the generated source.
+func syncLifecycle(
+	t *testing.T,
+	slug, apiID string,
+	attrs map[string]string,
+) string {
+	t.Helper()
+
+	src := strings.ReplaceAll(
+		lifecycleFixture,
+		`"openai/gpt-4.1-20250101"`,
+		quote(slug),
+	)
+	path := filepath.Join(t.TempDir(), "models.go")
+	if err := os.WriteFile(path, []byte(src), 0o600); err != nil {
+		t.Fatalf("writing fixture: %v", err)
+	}
+	cat, err := readCatalog(path)
+	if err != nil {
+		t.Fatalf("readCatalog: %v", err)
+	}
+
+	fetched := []model{modelFor(demoTarget(), apiModel{
+		ID: apiID, Name: "GPT-4.1", Kind: "chat", Attrs: attrs,
+	})}
+	out, res, err := syncTarget(demoTarget(), fetched, cat, "2026-01-01")
+	if err != nil {
+		t.Fatalf("syncTarget: %v", err)
+	}
+	if res.updated != 1 || len(res.added) != 0 || len(res.removed) != 0 {
+		t.Fatalf(
+			"updated=%d added=%v removed=%v, want the entry updated in place",
+			res.updated, res.added, res.removed,
+		)
+	}
+	return out
+}
+
+// TestSyncTargetClearsLifecycleFieldsTheSourceDropped confirms a lifecycle
+// field the source stops publishing is removed from the entry rather than
+// carried over, while one it still publishes is updated and a field the
+// source never describes survives.
+func TestSyncTargetClearsLifecycleFieldsTheSourceDropped(t *testing.T) {
+	src := syncLifecycle(
+		t,
+		"openai/gpt-4.1",
+		"openai/gpt-4.1",
+		map[string]string{"state": "active"},
+	)
+
+	for _, want := range []string{
+		`State:            "active",`,
+		"DefaultMaxTokens: 20000,",
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("generated source missing %q:\n%s", want, src)
+		}
+	}
+	for _, stale := range []string{
+		"ReleaseDate",
+		"LastUpdated",
+		"RetirementDate",
+		"ReplacedBy",
+		`"deprecated"`,
+	} {
+		if strings.Contains(src, stale) {
+			t.Errorf("stale %s survived:\n%s", stale, src)
+		}
+	}
+}
+
+// TestSyncTargetClearsEveryLifecycleFieldWhenTheSourcePublishesNone confirms
+// an entry whose source stops publishing any lifecycle attribute ends with
+// none, including State.
+func TestSyncTargetClearsEveryLifecycleFieldWhenTheSourcePublishesNone(
+	t *testing.T,
+) {
+	src := syncLifecycle(t, "openai/gpt-4.1", "openai/gpt-4.1", nil)
+
+	for _, stale := range []string{
+		"State:",
+		"ReleaseDate:",
+		"LastUpdated:",
+		"RetirementDate:",
+		"ReplacedBy:",
+	} {
+		if strings.Contains(src, stale) {
+			t.Errorf("stale %s survived:\n%s", stale, src)
+		}
+	}
+}
+
+// TestSyncTargetAliasDoesNotInheritTheSnapshotsLifecycle confirms an undated
+// alias paired with a dated snapshot entry takes only the lifecycle the source
+// publishes for the alias, not the snapshot's retirement date or replacement.
+func TestSyncTargetAliasDoesNotInheritTheSnapshotsLifecycle(t *testing.T) {
+	src := syncLifecycle(
+		t,
+		"openai/gpt-4.1-20250101",
+		"openai/gpt-4.1",
+		map[string]string{
+			"state":        "active",
+			"last_updated": "2026-03-01",
+		},
+	)
+
+	for _, want := range []string{
+		`APIModel:         "openai/gpt-4.1",`,
+		`State:            "active",`,
+		`LastUpdated:      "2026-03-01",`,
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("generated source missing %q:\n%s", want, src)
+		}
+	}
+	for _, stale := range []string{
+		"ReleaseDate",
+		"RetirementDate",
+		"ReplacedBy",
+	} {
+		if strings.Contains(src, stale) {
+			t.Errorf("snapshot's %s leaked onto the alias:\n%s", stale, src)
+		}
+	}
+}

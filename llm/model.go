@@ -41,4 +41,38 @@ type Model struct {
 	SupportsStructuredOut bool `json:"supports_structured_output"`
 	// SupportsImageGeneration indicates if the model can generate images.
 	SupportsImageGeneration bool `json:"supports_image_generation"`
+
+	// State is the provider's own word for where this model is in its life,
+	// carried verbatim. Each provider has its own vocabulary; values in the
+	// catalogs include "active", "stable", "production", "preview",
+	// "experimental", "eval", "legacy", "deprecated", "retired" and
+	// "shutdown". Empty where the provider publishes nothing. Use
+	// [Model.Deprecated] rather than comparing against a single spelling.
+	State string `json:"state,omitempty"`
+	// ReleaseDate is when the provider published this model, as YYYY-MM-DD.
+	// Empty where the provider publishes no date.
+	ReleaseDate string `json:"release_date,omitempty"`
+	// LastUpdated is when the provider last changed anything it publishes
+	// about this model, as YYYY-MM-DD. A floating alias is released once and
+	// then repointed at snapshot after snapshot, so this is a different fact
+	// from ReleaseDate: the name's own release date versus when what it
+	// currently resolves to last moved.
+	LastUpdated string `json:"last_updated,omitempty"`
+	// RetirementDate is when the provider stops serving this model, as
+	// YYYY-MM-DD. Set only for a model with a published end.
+	RetirementDate string `json:"retirement_date,omitempty"`
+	// ReplacedBy is the model the provider recommends instead, for a
+	// deprecated entry.
+	ReplacedBy string `json:"replaced_by,omitempty"`
+}
+
+// Deprecated reports whether the provider has marked this model as winding
+// down or gone: a State of "deprecated", "legacy", "retired" or "shutdown".
+// An empty State is not a claim either way and reports false.
+func (m Model) Deprecated() bool {
+	switch m.State {
+	case "deprecated", "legacy", "retired", "shutdown":
+		return true
+	}
+	return false
 }
