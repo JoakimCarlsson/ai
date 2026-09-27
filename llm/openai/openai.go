@@ -29,11 +29,16 @@ import (
 // ReasoningEffort controls reasoning depth for OpenAI o-series models.
 type ReasoningEffort string
 
-// ReasoningEffort values.
+// ReasoningEffort values. Which levels a given model accepts is
+// model-dependent; an unsupported level is rejected by the API, not by this
+// package.
 const (
-	ReasoningEffortLow    ReasoningEffort = "low"
-	ReasoningEffortMedium ReasoningEffort = "medium"
-	ReasoningEffortHigh   ReasoningEffort = "high"
+	ReasoningEffortNone    ReasoningEffort = "none"
+	ReasoningEffortMinimal ReasoningEffort = "minimal"
+	ReasoningEffortLow     ReasoningEffort = "low"
+	ReasoningEffortMedium  ReasoningEffort = "medium"
+	ReasoningEffortHigh    ReasoningEffort = "high"
+	ReasoningEffortXhigh   ReasoningEffort = "xhigh"
 )
 
 // Options configures the OpenAI LLM client.
@@ -607,12 +612,18 @@ func (c *Client) preparedParams(
 	}
 	if c.options.model.CanReason && c.options.reasoningEffort != nil {
 		switch *c.options.reasoningEffort {
+		case ReasoningEffortNone:
+			params.ReasoningEffort = shared.ReasoningEffortNone
+		case ReasoningEffortMinimal:
+			params.ReasoningEffort = shared.ReasoningEffortMinimal
 		case ReasoningEffortLow:
 			params.ReasoningEffort = shared.ReasoningEffortLow
 		case ReasoningEffortMedium:
 			params.ReasoningEffort = shared.ReasoningEffortMedium
 		case ReasoningEffortHigh:
 			params.ReasoningEffort = shared.ReasoningEffortHigh
+		case ReasoningEffortXhigh:
+			params.ReasoningEffort = shared.ReasoningEffortXhigh
 		}
 	}
 
@@ -771,6 +782,10 @@ func errorEvent(err error) <-chan llm.Event {
 	return eventChan
 }
 
+// runStream performs one streaming chat-completions attempt, emitting events
+// on eventChan. The top-level and usage extra fields are collected from the
+// chunks themselves because the SDK's accumulator discards them; see
+// providerMetadataFrom.
 func (c *Client) runStream(
 	ctx context.Context,
 	params openaisdk.ChatCompletionNewParams,
@@ -788,8 +803,6 @@ func (c *Client) runStream(
 	thinkingText := ""
 	toolCalls := make([]message.ToolCall, 0)
 
-	// Collected from the chunks because the accumulator discards them; see
-	// providerMetadataFrom.
 	var topExtras, usageExtras map[string]respjson.Field
 
 	for openaiStream.Next() {
@@ -1030,7 +1043,7 @@ func (c *Client) providerMetadataFrom(
 			continue
 		}
 		raw := f.Raw()
-		if raw == "" || raw == "null" {
+		if isEmptyRaw(raw) {
 			continue
 		}
 		var value any
@@ -1061,18 +1074,26 @@ func lookupExtra(
 
 // mergeExtras folds src into dst with later values winning (a streamed usage
 // object arrives on the final chunk), allocating only when there is
-// something to keep.
+// something to keep. A value that is empty or JSON null carries nothing, so it
+// is skipped rather than allowed to erase a value an earlier chunk reported.
 func mergeExtras(dst, src map[string]respjson.Field) map[string]respjson.Field {
-	if len(src) == 0 {
-		return dst
-	}
-	if dst == nil {
-		dst = make(map[string]respjson.Field, len(src))
-	}
 	for k, v := range src {
+		if isEmptyRaw(v.Raw()) {
+			continue
+		}
+		if dst == nil {
+			dst = make(map[string]respjson.Field, len(src))
+		}
 		dst[k] = v
 	}
 	return dst
+}
+
+// isEmptyRaw reports whether a raw JSON value carries nothing: it is empty or
+// the literal null.
+func isEmptyRaw(raw string) bool {
+	trimmed := strings.TrimSpace(raw)
+	return trimmed == "" || trimmed == "null"
 }
 
 func (c *Client) responseFormatForSchema(

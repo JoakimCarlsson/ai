@@ -11,8 +11,8 @@ import (
 	"github.com/joakimcarlsson/ai/types"
 )
 
-// A streamed chat completion, as the wire delivers it: content, then a finish,
-// then a usage-only chunk. usageExtras is spliced into that last chunk's usage
+// sseChunks returns a streamed chat completion as the wire delivers it:
+// content, then a finish, then a usage-only chunk. usageExtras is spliced into that last chunk's usage
 // object and topExtras into the chunk itself, so a test can put a field where
 // a provider would put it.
 func sseChunks(usageExtras, topExtras string) []string {
@@ -27,6 +27,8 @@ func sseChunks(usageExtras, topExtras string) []string {
 	}
 }
 
+// streamServer returns a test server that replies to any request with chunks
+// as a server-sent event stream, terminated by the [DONE] sentinel.
 func streamServer(t *testing.T, chunks []string) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(
@@ -34,7 +36,8 @@ func streamServer(t *testing.T, chunks []string) *httptest.Server {
 			w.Header().Set("Content-Type", "text/event-stream")
 			flusher, ok := w.(http.Flusher)
 			if !ok {
-				t.Fatal("test server cannot flush, so it cannot stream")
+				t.Error("test server cannot flush, so it cannot stream")
+				return
 			}
 			for _, c := range chunks {
 				if _, err := w.Write(
@@ -68,6 +71,8 @@ func drainStream(t *testing.T, events <-chan llm.Event) *llm.Response {
 	return resp
 }
 
+// streamingClient returns a chat-completions client pointed at url that maps
+// the usage-nested and top-level cost fields into ProviderMetadata.
 func streamingClient(t *testing.T, url string) llm.LLM {
 	t.Helper()
 	return NewLLM(
@@ -189,5 +194,31 @@ func TestStreamedMetadataIsSkippedWhenNothingIsConfigured(t *testing.T) {
 	if resp.ProviderMetadata != nil {
 		t.Errorf("ProviderMetadata = %v, want nil when no field was configured",
 			resp.ProviderMetadata)
+	}
+}
+
+// TestStreamedNullDoesNotEraseAnEarlierValue confirms a late chunk reporting
+// a field as JSON null keeps the value an earlier chunk carried, rather than
+// wiping it from ProviderMetadata.
+func TestStreamedNullDoesNotEraseAnEarlierValue(t *testing.T) {
+	early := `{"id":"c1","object":"chat.completion.chunk","created":1,` +
+		`"model":"m","cost":0.5,` +
+		`"choices":[{"index":0,"delta":{"role":"assistant"}}]}`
+	srv := streamServer(
+		t,
+		append([]string{early}, sseChunks(``, `,"cost":null`)...),
+	)
+	defer srv.Close()
+
+	resp := drainStream(t, streamingClient(t, srv.URL).StreamResponse(
+		context.Background(),
+		[]message.Message{message.NewUserMessage("hi")}, nil),
+	)
+
+	if got := resp.ProviderMetadata["toplevel.cost"]; got != 0.5 {
+		t.Errorf(
+			"toplevel.cost = %v, want 0.5 kept from the earlier chunk",
+			got,
+		)
 	}
 }
