@@ -259,6 +259,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         2000,
 		DefaultMaxTokens:      500,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-11-19",
 	},
 	AtheneV2Latest: {
 		ID:                    AtheneV2Latest,
@@ -269,6 +270,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-11-15",
 	},
 	AyaExpanseLatest: {
 		ID:                    AyaExpanseLatest,
@@ -279,6 +281,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-10-25",
 	},
 	AyaLatest: {
 		ID:                    AyaLatest,
@@ -289,6 +292,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-05-23",
 	},
 	BakllavaLatest: {
 		ID:                    BakllavaLatest,
@@ -300,6 +304,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8000,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-13",
 	},
 	BespokeMinicheckLatest: {
 		ID:                    BespokeMinicheckLatest,
@@ -310,6 +315,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-09-18",
 	},
 	CodeboogaLatest: {
 		ID:                    CodeboogaLatest,
@@ -320,6 +326,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         16000,
 		DefaultMaxTokens:      4000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-29",
 	},
 	Codegeex4Latest: {
 		ID:                    Codegeex4Latest,
@@ -330,6 +337,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-07-09",
 	},
 	CodegemmaLatest: {
 		ID:                    CodegemmaLatest,
@@ -340,6 +348,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-07-18",
 	},
 	CodellamaLatest: {
 		ID:                    CodellamaLatest,
@@ -350,6 +359,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         16000,
 		DefaultMaxTokens:      4000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-07-18",
 	},
 	CodeqwenLatest: {
 		ID:                    CodeqwenLatest,
@@ -360,6 +370,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         64000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-06-24",
 	},
 	CodestralLatest: {
 		ID:                    CodestralLatest,
@@ -370,6 +381,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-09-03",
 	},
 	CodeupLatest: {
 		ID:                    CodeupLatest,
@@ -380,6 +392,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-29",
 	},
 	Cogito21Latest: {
 		ID:                    Cogito21Latest,
@@ -390,6 +403,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         160000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-11-19",
 	},
 	CogitoLatest: {
 		ID:                    CogitoLatest,
@@ -400,6 +414,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-04-08",
 	},
 	CommandALatest: {
 		ID:                    CommandALatest,
@@ -410,6 +425,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         16000,
 		DefaultMaxTokens:      4000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-03-13",
 	},
 	CommandRPlusLatest: {
 		ID:                    CommandRPlusLatest,
@@ -420,6 +436,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-08-31",
 	},
 	CommandR7BArabicLatest: {
 		ID:                    CommandR7BArabicLatest,
@@ -430,6 +447,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         16000,
 		DefaultMaxTokens:      4000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-02-28",
 	},
 	CommandR7BLatest: {
 		ID:                    CommandR7BLatest,
@@ -440,6 +458,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-01-16",
 	},
 	CommandRLatest: {
 		ID:                    CommandRLatest,
@@ -450,6 +469,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-08-30",
 	},
 	DbrxLatest: {
 		ID:                    DbrxLatest,
@@ -460,6 +480,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-04-16",
 	},
 	DeepcoderLatest: {
 		ID:                    DeepcoderLatest,
@@ -470,6 +491,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-04-08",
 	},
 	DeepscalerLatest: {
 		ID:                    DeepscalerLatest,
@@ -480,6 +502,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-02-12",
 	},
 	DeepseekCoderV2Latest: {
 		ID:                    DeepseekCoderV2Latest,
@@ -490,6 +513,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         160000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-09-06",
 	},
 	DeepseekCoderLatest: {
 		ID:                    DeepseekCoderLatest,
@@ -500,6 +524,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         16000,
 		DefaultMaxTokens:      4000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-28",
 	},
 	DeepseekLLMLatest: {
 		ID:                    DeepseekLLMLatest,
@@ -510,6 +535,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-11",
 	},
 	DeepseekOcrLatest: {
 		ID:                    DeepseekOcrLatest,
@@ -521,6 +547,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      2000,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-11-19",
 	},
 	DeepseekR1Latest: {
 		ID:                    DeepseekR1Latest,
@@ -532,6 +559,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-07-02",
 	},
 	DeepseekV25Latest: {
 		ID:                    DeepseekV25Latest,
@@ -542,6 +570,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-09-11",
 	},
 	DeepseekV2Latest: {
 		ID:                    DeepseekV2Latest,
@@ -552,6 +581,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         160000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-06-22",
 	},
 	DeepseekV31Latest: {
 		ID:                    DeepseekV31Latest,
@@ -563,6 +593,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-09-27",
 	},
 	DeepseekV3Latest: {
 		ID:                    DeepseekV3Latest,
@@ -573,6 +604,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         160000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-01-13",
 	},
 	DeepseekV4FlashCloud: {
 		ID:                    DeepseekV4FlashCloud,
@@ -587,6 +619,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-08-01",
 	},
 	DeepseekV4ProCloud: {
 		ID:                    DeepseekV4ProCloud,
@@ -601,6 +634,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-08-13",
 	},
 	DeepseekV41FlashCloud: {
 		ID:                    DeepseekV41FlashCloud,
@@ -616,6 +650,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-09-10",
 	},
 	Devstral2Latest: {
 		ID:                    Devstral2Latest,
@@ -626,6 +661,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         256000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-12-12",
 	},
 	DevstralSmall2Latest: {
 		ID:                    DevstralSmall2Latest,
@@ -637,6 +673,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-12-13",
 	},
 	DevstralLatest: {
 		ID:                    DevstralLatest,
@@ -647,6 +684,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-07-04",
 	},
 	DolphinLlama3Latest: {
 		ID:                    DolphinLlama3Latest,
@@ -657,6 +695,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-05-10",
 	},
 	DolphinMistralLatest: {
 		ID:                    DolphinMistralLatest,
@@ -667,6 +706,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-03-31",
 	},
 	DolphinMixtralLatest: {
 		ID:                    DolphinMixtralLatest,
@@ -677,6 +717,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-12-20",
 	},
 	DolphinPhiLatest: {
 		ID:                    DolphinPhiLatest,
@@ -687,6 +728,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         2000,
 		DefaultMaxTokens:      500,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-24",
 	},
 	Dolphin3Latest: {
 		ID:                    Dolphin3Latest,
@@ -697,6 +739,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-01-05",
 	},
 	DolphincoderLatest: {
 		ID:                    DolphincoderLatest,
@@ -707,6 +750,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         16000,
 		DefaultMaxTokens:      4000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-04-09",
 	},
 	DuckdbNsqlLatest: {
 		ID:                    DuckdbNsqlLatest,
@@ -717,6 +761,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         16000,
 		DefaultMaxTokens:      4000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-01-29",
 	},
 	EverythinglmLatest: {
 		ID:                    EverythinglmLatest,
@@ -727,6 +772,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         16000,
 		DefaultMaxTokens:      4000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-27",
 	},
 	ExaoneDeepLatest: {
 		ID:                    ExaoneDeepLatest,
@@ -737,6 +783,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-03-19",
 	},
 	Exaone35Latest: {
 		ID:                    Exaone35Latest,
@@ -747,6 +794,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-12-10",
 	},
 	Falcon2Latest: {
 		ID:                    Falcon2Latest,
@@ -757,6 +805,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         2000,
 		DefaultMaxTokens:      500,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-05-14",
 	},
 	Falcon3Latest: {
 		ID:                    Falcon3Latest,
@@ -767,6 +816,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-12-17",
 	},
 	FalconLatest: {
 		ID:                    FalconLatest,
@@ -777,6 +827,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         2000,
 		DefaultMaxTokens:      500,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-26",
 	},
 	FirefunctionV2Latest: {
 		ID:                    FirefunctionV2Latest,
@@ -787,6 +838,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-07-18",
 	},
 	FunctiongemmaLatest: {
 		ID:                    FunctiongemmaLatest,
@@ -797,6 +849,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-12-18",
 	},
 	Gemma2Latest: {
 		ID:                    Gemma2Latest,
@@ -807,6 +860,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-08-01",
 	},
 	Gemma3Latest: {
 		ID:                    Gemma3Latest,
@@ -818,6 +872,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-08-15",
 	},
 	Gemma3NLatest: {
 		ID:                    Gemma3NLatest,
@@ -828,6 +883,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-06-27",
 	},
 	Gemma4Latest: {
 		ID:                    Gemma4Latest,
@@ -840,6 +896,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-09-22",
 	},
 	GemmaLatest: {
 		ID:                    GemmaLatest,
@@ -850,6 +907,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-04-09",
 	},
 	GLM47FlashLatest: {
 		ID:                    GLM47FlashLatest,
@@ -861,6 +919,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-06-05",
 	},
 	GLM51Cloud: {
 		ID:                    GLM51Cloud,
@@ -875,6 +934,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-04-07",
 	},
 	GLM52Cloud: {
 		ID:                    GLM52Cloud,
@@ -889,6 +949,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-06-16",
 	},
 	GLM53FlashCloud: {
 		ID:                    GLM53FlashCloud,
@@ -904,6 +965,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-08-26",
 	},
 	GLM53Cloud: {
 		ID:                    GLM53Cloud,
@@ -918,6 +980,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-08-28",
 	},
 	GLMOcrLatest: {
 		ID:                    GLMOcrLatest,
@@ -929,6 +992,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-02-02",
 	},
 	GLM4Latest: {
 		ID:                    GLM4Latest,
@@ -939,6 +1003,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-07-09",
 	},
 	GoliathLatest: {
 		ID:                    GoliathLatest,
@@ -949,6 +1014,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-11-17",
 	},
 	GPTOSSSafeguardLatest: {
 		ID:                    GPTOSSSafeguardLatest,
@@ -960,6 +1026,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-10-29",
 	},
 	GPTOSSLatest: {
 		ID:                    GPTOSSLatest,
@@ -971,6 +1038,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-10-09",
 	},
 	GraniteCodeLatest: {
 		ID:                    GraniteCodeLatest,
@@ -981,6 +1049,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         125000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-09-03",
 	},
 	Granite3DenseLatest: {
 		ID:                    Granite3DenseLatest,
@@ -991,6 +1060,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-11-19",
 	},
 	Granite3GuardianLatest: {
 		ID:                    Granite3GuardianLatest,
@@ -1001,6 +1071,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-11-19",
 	},
 	Granite3MoeLatest: {
 		ID:                    Granite3MoeLatest,
@@ -1011,6 +1082,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-11-19",
 	},
 	Granite31DenseLatest: {
 		ID:                    Granite31DenseLatest,
@@ -1021,6 +1093,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-01-17",
 	},
 	Granite31MoeLatest: {
 		ID:                    Granite31MoeLatest,
@@ -1031,6 +1104,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-01-17",
 	},
 	Granite32VisionLatest: {
 		ID:                    Granite32VisionLatest,
@@ -1042,6 +1116,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      4000,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-02-27",
 	},
 	Granite32Latest: {
 		ID:                    Granite32Latest,
@@ -1052,6 +1127,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-02-26",
 	},
 	Granite33Latest: {
 		ID:                    Granite33Latest,
@@ -1062,6 +1138,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-04-16",
 	},
 	Granite41Guardian8B: {
 		ID:                    Granite41Guardian8B,
@@ -1073,6 +1150,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-06-10",
 	},
 	Granite413B: {
 		ID:                    Granite413B,
@@ -1083,6 +1161,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-05-19",
 	},
 	Granite42Latest: {
 		ID:                    Granite42Latest,
@@ -1093,6 +1172,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-08-27",
 	},
 	Granite4Latest: {
 		ID:                    Granite4Latest,
@@ -1103,6 +1183,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-10-29",
 	},
 	Hermes3Latest: {
 		ID:                    Hermes3Latest,
@@ -1113,6 +1194,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-12-16",
 	},
 	Internlm2Latest: {
 		ID:                    Internlm2Latest,
@@ -1123,6 +1205,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-08-16",
 	},
 	KimiK26Cloud: {
 		ID:                    KimiK26Cloud,
@@ -1138,6 +1221,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-04-20",
 	},
 	KimiK27CodeCloud: {
 		ID:                    KimiK27CodeCloud,
@@ -1153,6 +1237,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-06-13",
 	},
 	KimiK3Cloud: {
 		ID:                    KimiK3Cloud,
@@ -1168,6 +1253,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-07-27",
 	},
 	LagunaS21Latest: {
 		ID:                    LagunaS21Latest,
@@ -1179,6 +1265,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-08-28",
 	},
 	LagunaXs21Latest: {
 		ID:                    LagunaXs21Latest,
@@ -1190,6 +1277,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-08-31",
 	},
 	LagunaXs2Latest: {
 		ID:                    LagunaXs2Latest,
@@ -1201,6 +1289,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-07-25",
 	},
 	Lfm25ThinkingLatest: {
 		ID:                    Lfm25ThinkingLatest,
@@ -1212,6 +1301,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-01-20",
 	},
 	Lfm25Latest: {
 		ID:                    Lfm25Latest,
@@ -1223,6 +1313,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-05-31",
 	},
 	Lfm2Latest: {
 		ID:                    Lfm2Latest,
@@ -1233,6 +1324,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-02-24",
 	},
 	LlamaGuard3Latest: {
 		ID:                    LlamaGuard3Latest,
@@ -1243,6 +1335,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-10-11",
 	},
 	LlamaProLatest: {
 		ID:                    LlamaProLatest,
@@ -1253,6 +1346,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-01-09",
 	},
 	Llama2ChineseLatest: {
 		ID:                    Llama2ChineseLatest,
@@ -1263,6 +1357,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-28",
 	},
 	Llama2UncensoredLatest: {
 		ID:                    Llama2UncensoredLatest,
@@ -1273,6 +1368,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         2000,
 		DefaultMaxTokens:      500,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-29",
 	},
 	Llama2Latest: {
 		ID:                    Llama2Latest,
@@ -1283,6 +1379,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-27",
 	},
 	Llama3ChatqaLatest: {
 		ID:                    Llama3ChatqaLatest,
@@ -1293,6 +1390,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-05-10",
 	},
 	Llama3GradientLatest: {
 		ID:                    Llama3GradientLatest,
@@ -1303,6 +1401,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         1000000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-05-05",
 	},
 	Llama3GroqToolUseLatest: {
 		ID:                    Llama3GroqToolUseLatest,
@@ -1313,6 +1412,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-07-25",
 	},
 	Llama31Latest: {
 		ID:                    Llama31Latest,
@@ -1323,6 +1423,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-11-30",
 	},
 	Llama32VisionLatest: {
 		ID:                    Llama32VisionLatest,
@@ -1334,6 +1435,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-05-22",
 	},
 	Llama32Latest: {
 		ID:                    Llama32Latest,
@@ -1344,6 +1446,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-09-25",
 	},
 	Llama33Latest: {
 		ID:                    Llama33Latest,
@@ -1354,6 +1457,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-12-06",
 	},
 	Llama3Latest: {
 		ID:                    Llama3Latest,
@@ -1364,6 +1468,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-05-21",
 	},
 	Llama4Latest: {
 		ID:                    Llama4Latest,
@@ -1375,6 +1480,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-06-16",
 	},
 	LlavaLlama3Latest: {
 		ID:                    LlavaLlama3Latest,
@@ -1386,6 +1492,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      2000,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-05-07",
 	},
 	LlavaPhi3Latest: {
 		ID:                    LlavaPhi3Latest,
@@ -1397,6 +1504,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      1000,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-05-07",
 	},
 	LlavaLatest: {
 		ID:                    LlavaLatest,
@@ -1408,6 +1516,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8000,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-02-01",
 	},
 	MagicoderLatest: {
 		ID:                    MagicoderLatest,
@@ -1418,6 +1527,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         16000,
 		DefaultMaxTokens:      4000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-05",
 	},
 	MagistralLatest: {
 		ID:                    MagistralLatest,
@@ -1429,6 +1539,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-06-16",
 	},
 	MarcoO1Latest: {
 		ID:                    MarcoO1Latest,
@@ -1439,6 +1550,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-12-04",
 	},
 	MathstralLatest: {
 		ID:                    MathstralLatest,
@@ -1449,6 +1561,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-07-16",
 	},
 	Medgemma15Latest: {
 		ID:                    Medgemma15Latest,
@@ -1460,6 +1573,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-04-16",
 	},
 	MedgemmaLatest: {
 		ID:                    MedgemmaLatest,
@@ -1471,6 +1585,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-04-16",
 	},
 	MeditronLatest: {
 		ID:                    MeditronLatest,
@@ -1481,6 +1596,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         2000,
 		DefaultMaxTokens:      500,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-05",
 	},
 	Medllama2Latest: {
 		ID:                    Medllama2Latest,
@@ -1491,6 +1607,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-29",
 	},
 	MegadolphinLatest: {
 		ID:                    MegadolphinLatest,
@@ -1501,6 +1618,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-01-11",
 	},
 	MinicpmV45Latest: {
 		ID:                    MinicpmV45Latest,
@@ -1512,6 +1630,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-06-02",
 	},
 	MinicpmV46Latest: {
 		ID:                    MinicpmV46Latest,
@@ -1523,6 +1642,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-06-02",
 	},
 	MinicpmVLatest: {
 		ID:                    MinicpmVLatest,
@@ -1534,6 +1654,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8000,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-11-18",
 	},
 	MinimaxM27Cloud: {
 		ID:                    MinimaxM27Cloud,
@@ -1548,6 +1669,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-03-18",
 	},
 	MinimaxM3Cloud: {
 		ID:                    MinimaxM3Cloud,
@@ -1563,6 +1685,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-06-01",
 	},
 	Ministral3Latest: {
 		ID:                    Ministral3Latest,
@@ -1574,6 +1697,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-12-13",
 	},
 	MistralLarge3675BCloud: {
 		ID:                    MistralLarge3675BCloud,
@@ -1587,6 +1711,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-12-02",
 	},
 	MistralLargeLatest: {
 		ID:                    MistralLargeLatest,
@@ -1597,6 +1722,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-11-22",
 	},
 	MistralMedium35Latest: {
 		ID:                    MistralMedium35Latest,
@@ -1609,6 +1735,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-05-05",
 	},
 	MistralNemoLatest: {
 		ID:                    MistralNemoLatest,
@@ -1619,6 +1746,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         1000000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-07-23",
 	},
 	MistralOpenorcaLatest: {
 		ID:                    MistralOpenorcaLatest,
@@ -1629,6 +1757,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-11",
 	},
 	MistralSmall31Latest: {
 		ID:                    MistralSmall31Latest,
@@ -1640,6 +1769,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-04-07",
 	},
 	MistralSmall32Latest: {
 		ID:                    MistralSmall32Latest,
@@ -1651,6 +1781,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-06-20",
 	},
 	MistralSmallLatest: {
 		ID:                    MistralSmallLatest,
@@ -1661,6 +1792,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-01-30",
 	},
 	MistralLatest: {
 		ID:                    MistralLatest,
@@ -1671,6 +1803,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-07-13",
 	},
 	MistralliteLatest: {
 		ID:                    MistralliteLatest,
@@ -1681,6 +1814,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-11-02",
 	},
 	MixtralLatest: {
 		ID:                    MixtralLatest,
@@ -1691,6 +1825,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-12-20",
 	},
 	MoondreamLatest: {
 		ID:                    MoondreamLatest,
@@ -1702,6 +1837,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      500,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-05-07",
 	},
 	MuseGlimmerLatest: {
 		ID:                    MuseGlimmerLatest,
@@ -1714,6 +1850,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-08-28",
 	},
 	Nemotron3NanoLatest: {
 		ID:                    Nemotron3NanoLatest,
@@ -1725,6 +1862,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-03-16",
 	},
 	Nemotron3SuperLatest: {
 		ID:                    Nemotron3SuperLatest,
@@ -1736,6 +1874,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-03-11",
 	},
 	Nemotron3UltraCloud: {
 		ID:                    Nemotron3UltraCloud,
@@ -1750,6 +1889,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-06-04",
 	},
 	Nemotron35LightningLatest: {
 		ID:                    Nemotron35LightningLatest,
@@ -1761,6 +1901,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-08-31",
 	},
 	NemotronCascade2Latest: {
 		ID:                    NemotronCascade2Latest,
@@ -1772,6 +1913,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-03-20",
 	},
 	NemotronMiniLatest: {
 		ID:                    NemotronMiniLatest,
@@ -1782,6 +1924,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-09-18",
 	},
 	Nemotron333B: {
 		ID:                    Nemotron333B,
@@ -1794,6 +1937,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-04-27",
 	},
 	NemotronLatest: {
 		ID:                    NemotronLatest,
@@ -1804,6 +1948,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-10-16",
 	},
 	NeuralChatLatest: {
 		ID:                    NeuralChatLatest,
@@ -1814,6 +1959,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-20",
 	},
 	NexusravenLatest: {
 		ID:                    NexusravenLatest,
@@ -1824,6 +1970,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         16000,
 		DefaultMaxTokens:      4000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-01-17",
 	},
 	NorthMiniCode10Latest: {
 		ID:                    NorthMiniCode10Latest,
@@ -1835,6 +1982,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-06-18",
 	},
 	NotusLatest: {
 		ID:                    NotusLatest,
@@ -1845,6 +1993,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-29",
 	},
 	NotuxLatest: {
 		ID:                    NotuxLatest,
@@ -1855,6 +2004,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-29",
 	},
 	NousHermes2MixtralLatest: {
 		ID:                    NousHermes2MixtralLatest,
@@ -1865,6 +2015,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-12-20",
 	},
 	NousHermes2Latest: {
 		ID:                    NousHermes2Latest,
@@ -1875,6 +2026,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-01-02",
 	},
 	NousHermesLatest: {
 		ID:                    NousHermesLatest,
@@ -1885,6 +2037,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-29",
 	},
 	NuextractLatest: {
 		ID:                    NuextractLatest,
@@ -1895,6 +2048,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-07-22",
 	},
 	Olmo31Latest: {
 		ID:                    Olmo31Latest,
@@ -1906,6 +2060,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-12-16",
 	},
 	Olmo3Latest: {
 		ID:                    Olmo3Latest,
@@ -1917,6 +2072,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-12-16",
 	},
 	Olmo2Latest: {
 		ID:                    Olmo2Latest,
@@ -1927,6 +2083,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-01-11",
 	},
 	OpenOrcaPlatypus2Latest: {
 		ID:                    OpenOrcaPlatypus2Latest,
@@ -1937,6 +2094,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-29",
 	},
 	OpenchatLatest: {
 		ID:                    OpenchatLatest,
@@ -1947,6 +2105,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-01-10",
 	},
 	OpencoderLatest: {
 		ID:                    OpencoderLatest,
@@ -1957,6 +2116,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-11-18",
 	},
 	OpenhermesLatest: {
 		ID:                    OpenhermesLatest,
@@ -1967,6 +2127,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-29",
 	},
 	OpenthinkerLatest: {
 		ID:                    OpenthinkerLatest,
@@ -1977,6 +2138,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-04-04",
 	},
 	OrcaMiniLatest: {
 		ID:                    OrcaMiniLatest,
@@ -1987,6 +2149,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         2000,
 		DefaultMaxTokens:      500,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-29",
 	},
 	Orca2Latest: {
 		ID:                    Orca2Latest,
@@ -1997,6 +2160,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-11-22",
 	},
 	Ornith159B: {
 		ID:                    Ornith159B,
@@ -2008,6 +2172,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-08-19",
 	},
 	OrnithLatest: {
 		ID:                    OrnithLatest,
@@ -2018,6 +2183,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         256000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-06-27",
 	},
 	Phi35Latest: {
 		ID:                    Phi35Latest,
@@ -2028,6 +2194,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-09-05",
 	},
 	Phi3Latest: {
 		ID:                    Phi3Latest,
@@ -2038,6 +2205,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-07-30",
 	},
 	Phi4MiniReasoningLatest: {
 		ID:                    Phi4MiniReasoningLatest,
@@ -2048,6 +2216,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-05-01",
 	},
 	Phi4MiniLatest: {
 		ID:                    Phi4MiniLatest,
@@ -2058,6 +2227,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-02-28",
 	},
 	Phi4ReasoningLatest: {
 		ID:                    Phi4ReasoningLatest,
@@ -2068,6 +2238,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-05-01",
 	},
 	Phi4Latest: {
 		ID:                    Phi4Latest,
@@ -2078,6 +2249,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         16000,
 		DefaultMaxTokens:      4000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-01-08",
 	},
 	PhiLatest: {
 		ID:                    PhiLatest,
@@ -2088,6 +2260,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         2000,
 		DefaultMaxTokens:      500,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-01-06",
 	},
 	PhindCodellamaLatest: {
 		ID:                    PhindCodellamaLatest,
@@ -2098,6 +2271,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         16000,
 		DefaultMaxTokens:      4000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-28",
 	},
 	Qwen2MathLatest: {
 		ID:                    Qwen2MathLatest,
@@ -2108,6 +2282,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-08-30",
 	},
 	Qwen25CoderLatest: {
 		ID:                    Qwen25CoderLatest,
@@ -2118,6 +2293,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-05-28",
 	},
 	Qwen25Latest: {
 		ID:                    Qwen25Latest,
@@ -2128,6 +2304,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-09-19",
 	},
 	Qwen25VlLatest: {
 		ID:                    Qwen25VlLatest,
@@ -2139,6 +2316,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-05-22",
 	},
 	Qwen2Latest: {
 		ID:                    Qwen2Latest,
@@ -2149,6 +2327,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-09-11",
 	},
 	Qwen3CoderNextLatest: {
 		ID:                    Qwen3CoderNextLatest,
@@ -2159,6 +2338,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         256000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-02-04",
 	},
 	Qwen3CoderLatest: {
 		ID:                    Qwen3CoderLatest,
@@ -2169,6 +2349,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         256000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-09-23",
 	},
 	Qwen3NextLatest: {
 		ID:                    Qwen3NextLatest,
@@ -2180,6 +2361,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-12-05",
 	},
 	Qwen3VlLatest: {
 		ID:                    Qwen3VlLatest,
@@ -2192,6 +2374,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-10-29",
 	},
 	Qwen35Latest: {
 		ID:                    Qwen35Latest,
@@ -2204,6 +2387,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-09-01",
 	},
 	Qwen36Latest: {
 		ID:                    Qwen36Latest,
@@ -2216,6 +2400,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-09-01",
 	},
 	Qwen38FlashNext125BA6BNvfp4: {
 		ID:                    Qwen38FlashNext125BA6BNvfp4,
@@ -2228,6 +2413,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-09-05",
 	},
 	Qwen38Latest: {
 		ID:                    Qwen38Latest,
@@ -2240,6 +2426,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-08-14",
 	},
 	Qwen3Latest: {
 		ID:                    Qwen3Latest,
@@ -2251,6 +2438,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		CanReason:             true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-10-10",
 	},
 	QwenLatest: {
 		ID:                    QwenLatest,
@@ -2261,6 +2449,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-04-26",
 	},
 	QwqLatest: {
 		ID:                    QwqLatest,
@@ -2271,6 +2460,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         40000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-03-13",
 	},
 	R11776Latest: {
 		ID:                    R11776Latest,
@@ -2281,6 +2471,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-02-21",
 	},
 	ReaderLmLatest: {
 		ID:                    ReaderLmLatest,
@@ -2291,6 +2482,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         250000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-09-11",
 	},
 	ReflectionLatest: {
 		ID:                    ReflectionLatest,
@@ -2301,6 +2493,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-09-09",
 	},
 	Rnj1Latest: {
 		ID:                    Rnj1Latest,
@@ -2311,6 +2504,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2025-12-09",
 	},
 	Sailor2Latest: {
 		ID:                    Sailor2Latest,
@@ -2321,6 +2515,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-12-04",
 	},
 	SamanthaMistralLatest: {
 		ID:                    SamanthaMistralLatest,
@@ -2331,6 +2526,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-15",
 	},
 	ShieldgemmaLatest: {
 		ID:                    ShieldgemmaLatest,
@@ -2341,6 +2537,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-10-11",
 	},
 	SmallthinkerLatest: {
 		ID:                    SmallthinkerLatest,
@@ -2351,6 +2548,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-12-30",
 	},
 	Smollm2Latest: {
 		ID:                    Smollm2Latest,
@@ -2361,6 +2559,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-11-01",
 	},
 	SmollmLatest: {
 		ID:                    SmollmLatest,
@@ -2371,6 +2570,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         2000,
 		DefaultMaxTokens:      500,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-08-20",
 	},
 	SolarProLatest: {
 		ID:                    SolarProLatest,
@@ -2381,6 +2581,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-09-18",
 	},
 	SolarLatest: {
 		ID:                    SolarLatest,
@@ -2391,6 +2592,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-18",
 	},
 	SqlcoderLatest: {
 		ID:                    SqlcoderLatest,
@@ -2401,6 +2603,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-02-01",
 	},
 	StableBelugaLatest: {
 		ID:                    StableBelugaLatest,
@@ -2411,6 +2614,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-29",
 	},
 	StableCodeLatest: {
 		ID:                    StableCodeLatest,
@@ -2421,6 +2625,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         16000,
 		DefaultMaxTokens:      4000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-03-26",
 	},
 	StablelmZephyrLatest: {
 		ID:                    StablelmZephyrLatest,
@@ -2431,6 +2636,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-27",
 	},
 	Stablelm2Latest: {
 		ID:                    Stablelm2Latest,
@@ -2441,6 +2647,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-05-07",
 	},
 	Starcoder2Latest: {
 		ID:                    Starcoder2Latest,
@@ -2451,6 +2658,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         16000,
 		DefaultMaxTokens:      4000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-09-06",
 	},
 	StarcoderLatest: {
 		ID:                    StarcoderLatest,
@@ -2461,6 +2669,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-24",
 	},
 	StarlingLmLatest: {
 		ID:                    StarlingLmLatest,
@@ -2471,6 +2680,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         8000,
 		DefaultMaxTokens:      2000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-04-02",
 	},
 	TinydolphinLatest: {
 		ID:                    TinydolphinLatest,
@@ -2481,6 +2691,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-01-30",
 	},
 	TinyllamaLatest: {
 		ID:                    TinyllamaLatest,
@@ -2491,6 +2702,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         2000,
 		DefaultMaxTokens:      500,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-01-01",
 	},
 	TranslategemmaLatest: {
 		ID:                    TranslategemmaLatest,
@@ -2502,6 +2714,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      8192,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2026-01-16",
 	},
 	Tulu3Latest: {
 		ID:                    Tulu3Latest,
@@ -2512,6 +2725,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-12-21",
 	},
 	VicunaLatest: {
 		ID:                    VicunaLatest,
@@ -2522,6 +2736,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-28",
 	},
 	WizardMathLatest: {
 		ID:                    WizardMathLatest,
@@ -2532,6 +2747,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-12-19",
 	},
 	WizardVicunaUncensoredLatest: {
 		ID:                    WizardVicunaUncensoredLatest,
@@ -2542,6 +2758,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         2000,
 		DefaultMaxTokens:      500,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-28",
 	},
 	WizardVicunaLatest: {
 		ID:                    WizardVicunaLatest,
@@ -2552,6 +2769,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         2000,
 		DefaultMaxTokens:      500,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-28",
 	},
 	WizardcoderLatest: {
 		ID:                    WizardcoderLatest,
@@ -2562,6 +2780,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         16000,
 		DefaultMaxTokens:      4000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-01-05",
 	},
 	WizardlmUncensoredLatest: {
 		ID:                    WizardlmUncensoredLatest,
@@ -2572,6 +2791,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-28",
 	},
 	Wizardlm2Latest: {
 		ID:                    Wizardlm2Latest,
@@ -2582,6 +2802,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-04-16",
 	},
 	Wizardlm7BQ2K: {
 		ID:                    Wizardlm7BQ2K,
@@ -2592,6 +2813,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         2000,
 		DefaultMaxTokens:      500,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-10-30",
 	},
 	XwinlmLatest: {
 		ID:                    XwinlmLatest,
@@ -2602,6 +2824,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-11-04",
 	},
 	YarnLlama2Latest: {
 		ID:                    YarnLlama2Latest,
@@ -2612,6 +2835,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         64000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-11-04",
 	},
 	YarnMistralLatest: {
 		ID:                    YarnMistralLatest,
@@ -2622,6 +2846,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2023-11-04",
 	},
 	YiCoderLatest: {
 		ID:                    YiCoderLatest,
@@ -2632,6 +2857,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         128000,
 		DefaultMaxTokens:      8192,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-09-11",
 	},
 	YiLatest: {
 		ID:                    YiLatest,
@@ -2642,6 +2868,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:         4000,
 		DefaultMaxTokens:      1000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-05-13",
 	},
 	ZephyrLatest: {
 		ID:                    ZephyrLatest,
@@ -2652,5 +2879,6 @@ var Models = map[string]llm.Model{
 		ContextWindow:         32000,
 		DefaultMaxTokens:      8000,
 		SupportsStructuredOut: true,
+		LastUpdated:           "2024-04-16",
 	},
 }

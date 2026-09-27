@@ -64,6 +64,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments: true,
 		State:               "active",
 		ReleaseDate:         "2026-05-19",
+		LastUpdated:         "May 2026",
 		RetirementDate:      "2026-10-05",
 		ReplacedBy:          "antigravity-preview-09-2026",
 	},
@@ -80,6 +81,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:        65536,
 		SupportsAttachments:     true,
 		SupportsImageGeneration: true,
+		LastUpdated:             "April 2026",
 	},
 	DeepResearchPreview042026: {
 		ID:                      DeepResearchPreview042026,
@@ -94,6 +96,7 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:        65536,
 		SupportsAttachments:     true,
 		SupportsImageGeneration: true,
+		LastUpdated:             "April 2026",
 	},
 	Gemini20Flash: {
 		ID:                    Gemini20Flash,
@@ -107,6 +110,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "shutdown",
 		ReleaseDate:           "2025-02-05",
+		LastUpdated:           "February 2025",
 		RetirementDate:        "2026-06-01",
 		ReplacedBy:            "gemini-3.6-flash",
 	},
@@ -122,6 +126,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "shutdown",
 		ReleaseDate:           "2025-02-25",
+		LastUpdated:           "February 2025",
 		RetirementDate:        "2026-06-01",
 		ReplacedBy:            "gemini-3.1-flash-lite",
 	},
@@ -136,6 +141,7 @@ var Models = map[string]llm.Model{
 		ContextWindow:       128000,
 		DefaultMaxTokens:    64000,
 		SupportsAttachments: true,
+		LastUpdated:         "October 2025",
 	},
 	Gemini25Flash: {
 		ID:                    Gemini25Flash,
@@ -153,6 +159,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2025-06-17",
+		LastUpdated:           "June 2025",
 	},
 	Gemini25FlashLite: {
 		ID:                    Gemini25FlashLite,
@@ -170,6 +177,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2025-07-22",
+		LastUpdated:           "July 2025",
 	},
 	Gemini25: {
 		ID:                    Gemini25,
@@ -187,6 +195,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2025-06-17",
+		LastUpdated:           "June 2025",
 	},
 	Gemini3FlashPreview: {
 		ID:                    Gemini3FlashPreview,
@@ -204,6 +213,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "preview",
 		ReleaseDate:           "2025-12-17",
+		LastUpdated:           "December 2025",
 		ReplacedBy:            "gemini-3.6-flash",
 	},
 	Gemini3ProPreview: {
@@ -219,6 +229,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "shutdown",
 		ReleaseDate:           "2025-11-18",
+		LastUpdated:           "November 2025",
 		RetirementDate:        "2026-03-09",
 		ReplacedBy:            "gemini-3.1-pro-preview",
 	},
@@ -238,6 +249,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-05-07",
+		LastUpdated:           "May 2026",
 		RetirementDate:        "2027-05-07",
 		ReplacedBy:            "gemini-3.5-flash-lite",
 	},
@@ -257,6 +269,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "shutdown",
 		ReleaseDate:           "2026-03-03",
+		LastUpdated:           "March 2026",
 		RetirementDate:        "2026-05-25",
 		ReplacedBy:            "gemini-3.1-flash-lite",
 	},
@@ -274,6 +287,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments: true,
 		State:               "preview",
 		ReleaseDate:         "2026-03-11",
+		LastUpdated:         "March 2026",
 		ReplacedBy:          "gemini-3.8-live",
 	},
 	Gemini31Pro: {
@@ -292,6 +306,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "preview",
 		ReleaseDate:           "2026-02-19",
+		LastUpdated:           "February 2026",
 	},
 	Gemini31ProPreviewCustomtools: {
 		ID:                    Gemini31ProPreviewCustomtools,
@@ -307,6 +322,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "February 2026",
 	},
 	Gemini35Flash: {
 		ID:                    Gemini35Flash,
@@ -324,6 +340,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-05-19",
+		LastUpdated:           "May 2026",
 	},
 	Gemini35FlashLite: {
 		ID:                    Gemini35FlashLite,
@@ -341,6 +358,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-07-21",
+		LastUpdated:           "July 2026",
 	},
 	Gemini35LiveTranslatePreview: {
 		ID:                  Gemini35LiveTranslatePreview,
@@ -355,6 +373,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments: true,
 		State:               "preview",
 		ReleaseDate:         "2026-06",
+		LastUpdated:         "June 2026",
 	},
 	Gemini35Transcribe: {
 		ID:                  Gemini35Transcribe,
@@ -365,6 +384,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments: true,
 		State:               "active",
 		ReleaseDate:         "2026-08",
+		LastUpdated:         "August 2026",
 	},
 	Gemini35TranscribeLive: {
 		ID:          Gemini35TranscribeLive,
@@ -391,6 +411,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-07-21",
+		LastUpdated:           "July 2026",
 	},
 	Gemini37Flash: {
 		ID:                    Gemini37Flash,
@@ -408,6 +429,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-08-13",
+		LastUpdated:           "August 2026",
 	},
 	Gemini38Flash: {
 		ID:                    Gemini38Flash,
@@ -422,6 +444,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-09-02",
+		LastUpdated:           "September 2026",
 	},
 	Gemini38Live: {
 		ID:                  Gemini38Live,
@@ -435,6 +458,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments: true,
 		State:               "active",
 		ReleaseDate:         "2026-09-15",
+		LastUpdated:         "September 2026",
 	},
 	Gemini38LiveExtendedThinking: {
 		ID:                  Gemini38LiveExtendedThinking,
@@ -448,6 +472,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments: true,
 		State:               "active",
 		ReleaseDate:         "2026-09-15",
+		LastUpdated:         "September 2026",
 	},
 	GeminiOmni11Flash: {
 		ID:                  GeminiOmni11Flash,
@@ -460,6 +485,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments: true,
 		State:               "active",
 		ReleaseDate:         "2026-08-27",
+		LastUpdated:         "August 2026",
 	},
 	GeminiOmniFlashPreview: {
 		ID:               GeminiOmniFlashPreview,
@@ -491,6 +517,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "preview",
 		ReleaseDate:           "2026-04-14",
+		LastUpdated:           "December 2025",
 		RetirementDate:        "2026-08-31",
 	},
 	GeminiRoboticsEr2Preview: {
@@ -504,6 +531,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "July 2026",
 	},
 	GeminiRoboticsEr2StreamingPreview: {
 		ID:                    GeminiRoboticsEr2StreamingPreview,
@@ -516,6 +544,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
+		LastUpdated:           "July 2026",
 	},
 	Gemma4: {
 		ID:       Gemma4,

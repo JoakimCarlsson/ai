@@ -29,6 +29,7 @@ var (
 		"SupportsImageGeneration",
 		"State",
 		"ReleaseDate",
+		"LastUpdated",
 		"RetirementDate",
 		"ReplacedBy",
 	}

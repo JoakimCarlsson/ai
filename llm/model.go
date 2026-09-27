@@ -48,6 +48,12 @@ type Model struct {
 	// ReleaseDate is when the provider published this model, as YYYY-MM-DD.
 	// Empty where the provider publishes no date.
 	ReleaseDate string `json:"release_date,omitempty"`
+	// LastUpdated is when the provider last changed anything it publishes
+	// about this model, as YYYY-MM-DD. A floating alias is released once and
+	// then repointed at snapshot after snapshot, so this is a different fact
+	// from ReleaseDate: the name's own release date versus when what it
+	// currently resolves to last moved.
+	LastUpdated string `json:"last_updated,omitempty"`
 	// RetirementDate is when the provider stops serving this model, as
 	// YYYY-MM-DD. Set only for a model with a published end.
 	RetirementDate string `json:"retirement_date,omitempty"`
