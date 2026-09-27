@@ -42,8 +42,12 @@ type Model struct {
 	// SupportsImageGeneration indicates if the model can generate images.
 	SupportsImageGeneration bool `json:"supports_image_generation"`
 
-	// State is what the provider says about this model's life: "active",
-	// "deprecated", or empty where the provider publishes nothing.
+	// State is the provider's own word for where this model is in its life,
+	// carried verbatim. Each provider has its own vocabulary; values in the
+	// catalogs include "active", "stable", "production", "preview",
+	// "experimental", "eval", "legacy", "deprecated", "retired" and
+	// "shutdown". Empty where the provider publishes nothing. Use
+	// [Model.Deprecated] rather than comparing against a single spelling.
 	State string `json:"state,omitempty"`
 	// ReleaseDate is when the provider published this model, as YYYY-MM-DD.
 	// Empty where the provider publishes no date.
@@ -62,5 +66,13 @@ type Model struct {
 	ReplacedBy string `json:"replaced_by,omitempty"`
 }
 
-// Deprecated reports whether the provider has marked this model deprecated.
-func (m Model) Deprecated() bool { return m.State == "deprecated" }
+// Deprecated reports whether the provider has marked this model as winding
+// down or gone: a State of "deprecated", "legacy", "retired" or "shutdown".
+// An empty State is not a claim either way and reports false.
+func (m Model) Deprecated() bool {
+	switch m.State {
+	case "deprecated", "legacy", "retired", "shutdown":
+		return true
+	}
+	return false
+}
