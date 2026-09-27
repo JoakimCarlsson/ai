@@ -157,6 +157,10 @@ func WithWebSearch(opts ...WebSearchOpts) ResponsesOption {
 			}
 			if c.UserLocation != nil {
 				p.UserLocation = responses.WebSearchToolUserLocationParam{
+					// Required by the API and the only value it accepts; the
+					// field is `omitzero`, so leaving it unset drops the key
+					// entirely and the request is refused.
+					Type:     "approximate",
 					City:     optString(c.UserLocation.City),
 					Country:  optString(c.UserLocation.Country),
 					Region:   optString(c.UserLocation.Region),
