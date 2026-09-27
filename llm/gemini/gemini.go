@@ -788,9 +788,6 @@ func (c *Client) streamInternal(
 	}
 	geminiMessages, systemMessages := c.convertMessages(messages)
 
-	ctx, cancel := llm.ApplyTimeout(ctx, c.options.timeout)
-	defer cancel()
-
 	if len(geminiMessages) == 0 {
 		return errorEvent(errors.New("gemini: no messages to send"))
 	}
@@ -819,10 +816,12 @@ func (c *Client) streamInternal(
 		return errorEvent(fmt.Errorf("gemini chat create: %w", err))
 	}
 
+	ctx, cancel := llm.ApplyTimeout(ctx, c.options.timeout)
 	eventChan := make(chan llm.Event)
 
 	go func() {
 		defer close(eventChan)
+		defer cancel()
 
 		llm.ExecuteStreamWithRetry(ctx, RetryConfig(), func() error {
 			currentContent := ""
