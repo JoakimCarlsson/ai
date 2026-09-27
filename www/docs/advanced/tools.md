@@ -180,6 +180,7 @@ The keys vary per provider:
 | Gemini | `gemini.grounding` | `map[string]any` — `web_search_queries`, `chunks` (URI/title/domain) |
 | Gemini | `gemini.url_context` | `map[string]any` — retrieved URLs and status |
 | OpenAI | `openai.url_citations` | `[]map[string]any` — URL, title, start/end indices |
+| OpenAI | `openai.web_search_calls` | `[]map[string]any` — one entry per `web_search_call` item: `id`, `status`, `action` (`search`, `open_page`, `find_in_page`), `queries` |
 | Groq | `groq.executed_tools` | `[]map[string]any` — Groq's raw executed-tool entries |
 | xAI | `xai.citations` | `[]map[string]any` — URL, title, start/end indices |
 

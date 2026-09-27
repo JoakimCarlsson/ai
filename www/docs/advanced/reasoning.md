@@ -24,9 +24,16 @@ Each LLM vendor module exports its own `WithReasoningEffort` (or
 
     | Level | Constant |
     |---|---|
+    | None | `llmopenai.ReasoningEffortNone` |
+    | Minimal | `llmopenai.ReasoningEffortMinimal` |
     | Low | `llmopenai.ReasoningEffortLow` |
     | Medium | `llmopenai.ReasoningEffortMedium` |
     | High | `llmopenai.ReasoningEffortHigh` |
+    | Xhigh | `llmopenai.ReasoningEffortXhigh` |
+
+    The same levels apply to the Responses API client through
+    `llmopenai.WithResponsesReasoningEffort`. Which levels a model accepts
+    depends on the model; the level is sent only when the model can reason.
 
     OpenAI's Chat Completions API does not expose thinking content. The
     model reasons internally but `EventThinkingDelta` events are not emitted.
