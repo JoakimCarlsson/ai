@@ -14,7 +14,7 @@
 package openai
 
 import (
-	"github.com/joakimcarlsson/ai/tools"
+	"github.com/joakimcarlsson/ai/hostedtool"
 )
 
 // Model IDs served by this catalog.
@@ -26,7 +26,7 @@ const (
 )
 
 // Models maps model IDs to their configurations.
-var Models = map[string]tools.Tool{
+var Models = map[string]hostedtool.Tool{
 	AgentKit: {
 		ID:       AgentKit,
 		Name:     "Agent Kit",

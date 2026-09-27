@@ -308,34 +308,91 @@ func TestModelForTranscriptionPricesByDirection(t *testing.T) {
 	}
 }
 
+// toolCall is a standard per-1k-calls USD rate told apart by its detail dim,
+// as the source publishes a hosted tool's rates.
+func toolCall(amount float64, detail string) apiPrice {
+	return apiPrice{
+		Metric:   "tool_call",
+		Unit:     "per_1k_calls",
+		Amount:   amount,
+		Currency: "USD",
+		Dims:     map[string]string{"detail": detail, "tier": "standard"},
+	}
+}
+
 // TestModelForToolReadsThePerThousandRate confirms the per-1k-calls rate the
-// source publishes passes through unscaled, and the ordinary tie-break picks
-// the standard rate over an unmarked preview variant.
+// source publishes passes through unscaled.
 func TestModelForToolReadsThePerThousandRate(t *testing.T) {
 	m := apiModel{
 		ID:   "web-search",
 		Name: "Web search",
 		Kind: "tool",
 		Prices: []apiPrice{
-			{
-				Metric: "tool_call", Unit: "per_1k_calls", Amount: 10, Currency: "USD",
-				Dims: map[string]string{"detail": "web search (all models)", "tier": "standard"},
-			},
-			{
-				Metric: "tool_call", Unit: "per_1k_calls", Amount: 25, Currency: "USD",
-				Dims: map[string]string{"detail": "web search preview (non-reasoning models)", "tier": "standard"},
-			},
+			toolCall(10, "web search (all models)"),
+			toolCall(25, "web search preview (non-reasoning models)"),
 		},
 	}
 
-	got := modelFor(tool("demo", "tools/demo", "demo"), m)
+	got := modelFor(hostedTool("demo", "hostedtool/demo", "demo"), m)
 
 	if got.fields["CostPer1KCalls"] != "10" {
-		t.Errorf("CostPer1KCalls = %q, want 10 -- per thousand calls, as published",
-			got.fields["CostPer1KCalls"])
+		t.Errorf(
+			"CostPer1KCalls = %q, want 10 -- per thousand calls, as published",
+			got.fields["CostPer1KCalls"],
+		)
 	}
 	if got.fields["Currency"] != `"USD"` {
 		t.Errorf("Currency = %q, want USD", got.fields["Currency"])
+	}
+}
+
+// TestModelForToolPrefersThePlainWebSearchRate confirms the plain web-search
+// rate is chosen over the image and preview variants the source lists beside
+// it, even when a variant is cheaper or sorts first, so the choice does not
+// rest on rate's tie-break.
+func TestModelForToolPrefersThePlainWebSearchRate(t *testing.T) {
+	m := apiModel{
+		ID:   "web-search",
+		Name: "Web search",
+		Kind: "tool",
+		Prices: []apiPrice{
+			toolCall(8, "image web search (all models)"),
+			toolCall(12, "web search (all models)"),
+			toolCall(25, "web search preview (non-reasoning models)"),
+			toolCall(9, "web search preview (reasoning models)"),
+		},
+	}
+
+	got := modelFor(hostedTool("demo", "hostedtool/demo", "demo"), m)
+
+	if got.fields["CostPer1KCalls"] != "12" {
+		t.Errorf(
+			"CostPer1KCalls = %q, want 12 -- the plain web search rate",
+			got.fields["CostPer1KCalls"],
+		)
+	}
+}
+
+// TestModelForToolFallsBackWithoutAPlainRate confirms a tool whose rates all
+// name a variant still gets one, chosen by rate's ordinary tie-break.
+func TestModelForToolFallsBackWithoutAPlainRate(t *testing.T) {
+	m := apiModel{
+		ID:   "web-search",
+		Name: "Web search",
+		Kind: "tool",
+		Prices: []apiPrice{
+			toolCall(25, "web search preview (non-reasoning models)"),
+			toolCall(10, "web search preview (reasoning models)"),
+		},
+	}
+
+	got := modelFor(hostedTool("demo", "hostedtool/demo", "demo"), m)
+
+	if got.fields["CostPer1KCalls"] != "10" {
+		t.Errorf(
+			"CostPer1KCalls = %q, want 10 from the tie-break",
+			got.fields["CostPer1KCalls"],
+		)
 	}
 }
 
@@ -346,16 +403,25 @@ func TestAToolWithNoPerCallRateWritesNone(t *testing.T) {
 		ID: "agent-kit", Name: "Agent Kit", Kind: "tool",
 		Prices: []apiPrice{
 			{
-				Metric: "storage", Unit: "per_gb_day", Amount: 0.1, Currency: "USD",
-				Dims: map[string]string{"detail": "file storage", "tier": "standard"},
+				Metric:   "storage",
+				Unit:     "per_gb_day",
+				Amount:   0.1,
+				Currency: "USD",
+				Dims: map[string]string{
+					"detail": "file storage",
+					"tier":   "standard",
+				},
 			},
 		},
 	}
 
-	got := modelFor(tool("demo", "tools/demo", "demo"), m)
+	got := modelFor(hostedTool("demo", "hostedtool/demo", "demo"), m)
 
 	if v, present := got.fields["CostPer1KCalls"]; present {
-		t.Errorf("CostPer1KCalls = %q, want it absent -- this tool publishes no per-call rate", v)
+		t.Errorf(
+			"CostPer1KCalls = %q, want it absent -- no per-call rate",
+			v,
+		)
 	}
 }
 

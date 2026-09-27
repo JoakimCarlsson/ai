@@ -470,11 +470,53 @@ func speechFieldsFor(m apiModel, currency string, fields map[string]string) {
 }
 
 // toolFieldsFor reads what one thousand invocations of a hosted tool cost. A
-// tool may publish several standard rates for the same metric (e.g. web
-// search's preview variant and image-search variant), none of which is
-// marked as a variant dim, so the choice falls to rate's ordinary tie-break.
+// tool may publish several standard rates for the same metric, told apart
+// only by their detail dim (web search lists "web search", "image web
+// search" and two "web search preview" rates), so the rate is read from the
+// plain ones first; see plainToolRates.
 func toolFieldsFor(m apiModel, currency string, fields map[string]string) {
-	setRate(fields, "CostPer1KCalls", m.Prices, currency, callUnits, "tool_call")
+	setRate(
+		fields,
+		"CostPer1KCalls",
+		plainToolRates(m),
+		currency,
+		callUnits,
+		"tool_call",
+	)
+}
+
+// plainToolRates narrows a hosted tool's rates to the ones that price the
+// tool itself: a rate with no detail dim, or one whose detail, ignoring a
+// trailing parenthetical such as "(all models)", is the tool's own name or
+// the generic "tool call". A detail naming a variant, such as "image web
+// search" or "web search preview", is not plain. A tool publishing no plain
+// rate keeps all of its rates, for rate's ordinary tie-break to choose from.
+func plainToolRates(m apiModel) []apiPrice {
+	plain := map[string]bool{
+		"tool call":                             true,
+		strings.ToLower(m.Name):                 true,
+		strings.ReplaceAll(m.ID, "-", " "):      true,
+		strings.ReplaceAll(m.apiID(), "-", " "): true,
+	}
+
+	out := make([]apiPrice, 0, len(m.Prices))
+	for _, p := range m.Prices {
+		detail, ok := p.Dims["detail"]
+		if !ok || plain[unqualified(detail)] {
+			out = append(out, p)
+		}
+	}
+	if len(out) == 0 {
+		return m.Prices
+	}
+	return out
+}
+
+// unqualified lowercases a detail dim and drops a trailing parenthetical, so
+// "Web search (all models)" reads as "web search".
+func unqualified(detail string) string {
+	base, _, _ := strings.Cut(detail, "(")
+	return strings.ToLower(strings.TrimSpace(base))
 }
 
 func transcriptionFieldsFor(
