@@ -44,7 +44,7 @@ type Options struct {
 	timeout          *time.Duration
 	disableCache     bool
 	cachedContent    string
-	cacheTTL         *time.Duration
+	cacheTTL         time.Duration
 	frequencyPenalty *float64
 	presencePenalty  *float64
 	seed             *int64
@@ -112,12 +112,20 @@ func WithHTTPClient(c *http.Client) Option {
 	return func(o *Options) { o.httpClient = c }
 }
 
-// WithDisableCache disables response caching.
-func WithDisableCache() Option { return func(o *Options) { o.disableCache = true } }
+// WithDisableCache disables explicit context caching, matching what the
+// option means for Anthropic prompt caching: a cache attached with
+// [WithCachedContent] is ignored and requests carry their system instructions
+// and tools inline. Gemini's implicit caching is server-side and unaffected.
+func WithDisableCache() Option {
+	return func(o *Options) { o.disableCache = true }
+}
 
 // WithCachedContent attaches a previously created Gemini context cache (the
-// resource name returned by [Client.CreateCache]) to every request, in place
-// of inline system instructions and tools. WithDisableCache overrides this.
+// resource name returned by [Client.CreateCache]) to every request. The cache
+// carries the system instruction, tools and tool config, and the API rejects a
+// request that also sends them inline, so a request that passes system
+// messages or tools while a cache is attached fails with
+// [ErrCachedContentConflict]. [WithDisableCache] overrides this option.
 func WithCachedContent(name string) Option {
 	return func(o *Options) { o.cachedContent = name }
 }
@@ -125,8 +133,16 @@ func WithCachedContent(name string) Option {
 // WithCacheTTL sets the time-to-live used when creating a context cache via
 // [Client.CreateCache]. A zero or unset TTL lets the API apply its default.
 func WithCacheTTL(d time.Duration) Option {
-	return func(o *Options) { o.cacheTTL = &d }
+	return func(o *Options) { o.cacheTTL = d }
 }
+
+// ErrCachedContentConflict is returned when a request passes system messages
+// or tools while a context cache is attached with [WithCachedContent]. Put
+// them in the cache through [Client.CreateCache] instead.
+var ErrCachedContentConflict = errors.New(
+	"gemini: system messages and tools belong in the context cache, " +
+		"not in a request that uses it",
+)
 
 // WithFrequencyPenalty sets the frequency penalty.
 func WithFrequencyPenalty(
@@ -415,10 +431,14 @@ func (c *Client) applyThinkingConfig(config *genai.GenerateContentConfig) {
 	config.ThinkingConfig = tc
 }
 
+// buildConfig assembles the generation config for a request. With a context
+// cache attached it references the cache instead of sending the system
+// instruction and tools, and fails with [ErrCachedContentConflict] when the
+// request carries either.
 func (c *Client) buildConfig(
 	systemMessages []string,
 	tools []tool.BaseTool,
-) *genai.GenerateContentConfig {
+) (*genai.GenerateContentConfig, error) {
 	config := &genai.GenerateContentConfig{
 		MaxOutputTokens: int32(c.options.maxTokens),
 	}
@@ -442,66 +462,83 @@ func (c *Client) buildConfig(
 		config.StopSequences = c.options.stopSequences
 	}
 
-	// genai rejects a cache combined with inline system instructions or tools.
-	if c.options.cachedContent != "" && !c.options.disableCache {
+	if c.usesCachedContent() {
+		if len(systemMessages) > 0 || len(tools) > 0 {
+			return nil, ErrCachedContentConflict
+		}
 		config.CachedContent = c.options.cachedContent
-		return config
+		return config, nil
 	}
 
-	if len(systemMessages) > 0 {
-		config.SystemInstruction = &genai.Content{
-			Parts: []*genai.Part{{Text: strings.Join(systemMessages, "\n\n")}},
-		}
-	}
+	config.SystemInstruction = systemInstruction(systemMessages)
+	config.Tools, config.ToolConfig = c.toolsAndConfig(tools)
 
-	if len(tools) > 0 || len(c.options.builtinTools) > 0 {
-		config.Tools = c.convertTools(tools)
-		if c.options.toolChoice != nil {
-			config.ToolConfig = toolConfigParam(*c.options.toolChoice)
-		}
-	}
+	return config, nil
+}
 
-	return config
+// usesCachedContent reports whether requests reference a context cache.
+func (c *Client) usesCachedContent() bool {
+	return c.options.cachedContent != "" && !c.options.disableCache
+}
+
+// systemInstruction joins the system messages into a single Gemini system
+// instruction, or returns nil when there are none.
+func systemInstruction(systemMessages []string) *genai.Content {
+	if len(systemMessages) == 0 {
+		return nil
+	}
+	return &genai.Content{
+		Parts: []*genai.Part{{Text: strings.Join(systemMessages, "\n\n")}},
+	}
+}
+
+// toolsAndConfig converts the function tools plus the configured built-in
+// tools, and builds the tool config for the configured tool choice. Both are
+// nil when there are no tools; the tool config is nil without a tool choice.
+func (c *Client) toolsAndConfig(
+	tools []tool.BaseTool,
+) ([]*genai.Tool, *genai.ToolConfig) {
+	if len(tools) == 0 && len(c.options.builtinTools) == 0 {
+		return nil, nil
+	}
+	if c.options.toolChoice == nil {
+		return c.convertTools(tools), nil
+	}
+	return c.convertTools(tools), toolConfigParam(*c.options.toolChoice)
 }
 
 // CreateCache creates a Gemini context cache from the given messages and
 // tools and returns its resource name for use with [WithCachedContent]. The
-// TTL comes from [WithCacheTTL].
+// cache also carries the client's built-in tools and the tool config for
+// [WithToolChoice], since requests that use the cache cannot send them. The
+// TTL comes from [WithCacheTTL]. CreateCache implements
+// [llm.ContextCacheProvider], so it is reachable through the [llm.LLM] that
+// [NewLLM] returns.
 func (c *Client) CreateCache(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
 ) (string, error) {
+	if err := c.validateToolChoice(); err != nil {
+		return "", err
+	}
 	contents, systemMessages := c.convertMessages(messages)
 
+	ctx, cancel := llm.ApplyTimeout(ctx, c.options.timeout)
+	defer cancel()
+
 	cfg := &genai.CreateCachedContentConfig{
-		Contents: contents,
-		TTL:      derefOr(c.options.cacheTTL),
+		Contents:          contents,
+		TTL:               c.options.cacheTTL,
+		SystemInstruction: systemInstruction(systemMessages),
 	}
-	if len(systemMessages) > 0 {
-		cfg.SystemInstruction = &genai.Content{
-			Parts: []*genai.Part{{Text: strings.Join(systemMessages, "\n\n")}},
-		}
-	}
-	if len(tools) > 0 || len(c.options.builtinTools) > 0 {
-		cfg.Tools = c.convertTools(tools)
-	}
+	cfg.Tools, cfg.ToolConfig = c.toolsAndConfig(tools)
 
 	cc, err := c.client.Caches.Create(ctx, c.options.model.APIModel, cfg)
 	if err != nil {
 		return "", fmt.Errorf("gemini cache create: %w", err)
 	}
 	return cc.Name, nil
-}
-
-// derefOr returns the pointed-to value, or the zero value when the pointer is
-// nil.
-func derefOr[T any](p *T) T {
-	if p == nil {
-		var zero T
-		return zero
-	}
-	return *p
 }
 
 // toolConfigParam maps a vendor-neutral [llm.ToolChoice] to Gemini's
@@ -550,7 +587,10 @@ func (c *Client) SendMessages(
 	}
 	history := geminiMessages[:len(geminiMessages)-1]
 	lastMsg := geminiMessages[len(geminiMessages)-1]
-	config := c.buildConfig(systemMessages, tools)
+	config, err := c.buildConfig(systemMessages, tools)
+	if err != nil {
+		return nil, err
+	}
 
 	chat, err := c.client.Chats.Create(
 		ctx,
@@ -644,13 +684,14 @@ func (c *Client) SendMessagesWithStructuredOutput(
 	}
 	history := geminiMessages[:len(geminiMessages)-1]
 	lastMsg := geminiMessages[len(geminiMessages)-1]
-	config := c.buildConfig(systemMessages, tools)
+	config, err := c.buildConfig(systemMessages, tools)
+	if err != nil {
+		return nil, err
+	}
 	config.ResponseSchema = c.convertSchemaToGenai(
 		outputSchema.Parameters,
 		outputSchema.Required,
 	)
-	// ResponseSchema requires a compatible ResponseMIMEType alongside it; the
-	// field defaults to text/plain.
 	config.ResponseMIMEType = "application/json"
 
 	chat, err := c.client.Chats.Create(
@@ -727,6 +768,15 @@ func (c *Client) StreamResponseWithStructuredOutput(
 	return c.streamInternal(ctx, messages, tools, outputSchema)
 }
 
+// errorEvent returns a closed channel carrying a single error event, for
+// streams that fail before a request is sent.
+func errorEvent(err error) <-chan llm.Event {
+	eventChan := make(chan llm.Event, 1)
+	eventChan <- llm.Event{Type: types.EventError, Error: err}
+	close(eventChan)
+	return eventChan
+}
+
 func (c *Client) streamInternal(
 	ctx context.Context,
 	messages []message.Message,
@@ -734,10 +784,7 @@ func (c *Client) streamInternal(
 	outputSchema *schema.StructuredOutputInfo,
 ) <-chan llm.Event {
 	if err := c.validateToolChoice(); err != nil {
-		eventChan := make(chan llm.Event, 1)
-		eventChan <- llm.Event{Type: types.EventError, Error: err}
-		close(eventChan)
-		return eventChan
+		return errorEvent(err)
 	}
 	geminiMessages, systemMessages := c.convertMessages(messages)
 
@@ -745,21 +792,20 @@ func (c *Client) streamInternal(
 	defer cancel()
 
 	if len(geminiMessages) == 0 {
-		eventChan := make(chan llm.Event, 1)
-		eventChan <- llm.Event{Type: types.EventError, Error: errors.New("gemini: no messages to send")}
-		close(eventChan)
-		return eventChan
+		return errorEvent(errors.New("gemini: no messages to send"))
 	}
 
 	history := geminiMessages[:len(geminiMessages)-1]
 	lastMsg := geminiMessages[len(geminiMessages)-1]
-	config := c.buildConfig(systemMessages, tools)
+	config, err := c.buildConfig(systemMessages, tools)
+	if err != nil {
+		return errorEvent(err)
+	}
 	if outputSchema != nil {
 		config.ResponseSchema = c.convertSchemaToGenai(
 			outputSchema.Parameters,
 			outputSchema.Required,
 		)
-		// This path builds its config independently of SendMessagesWithStructuredOutput.
 		config.ResponseMIMEType = "application/json"
 	}
 
@@ -770,10 +816,7 @@ func (c *Client) streamInternal(
 		history,
 	)
 	if err != nil {
-		eventChan := make(chan llm.Event, 1)
-		eventChan <- llm.Event{Type: types.EventError, Error: fmt.Errorf("gemini chat create: %w", err)}
-		close(eventChan)
-		return eventChan
+		return errorEvent(fmt.Errorf("gemini chat create: %w", err))
 	}
 
 	eventChan := make(chan llm.Event)
@@ -1060,10 +1103,11 @@ func (c *Client) convertSchemaToGenai(
 }
 
 // convertPropertyToGenai is the recursive node converter for the
-// structured-output path. It mirrors convertToSchema (the tool-param path) and
-// handles the JSON Schema shapes the [schema] generator emits: nested
+// structured-output path. Unlike convertToSchema (the tool-param path) it
+// handles every JSON Schema shape the [schema] generator emits: nested
 // properties/required, array items, enums, and the ["type","null"] unions used
-// for optional fields.
+// for optional fields. Gemini accepts enum only on STRING, so an enum on any
+// other type is dropped.
 func (c *Client) convertPropertyToGenai(propMap map[string]any) *genai.Schema {
 	s := &genai.Schema{}
 
@@ -1076,7 +1120,8 @@ func (c *Client) convertPropertyToGenai(propMap map[string]any) *genai.Schema {
 	if desc, ok := propMap["description"].(string); ok {
 		s.Description = desc
 	}
-	if enum, ok := schemaStringSlice(propMap["enum"]); ok {
+	if enum, ok := schemaStringSlice(propMap["enum"]); ok &&
+		s.Type == genai.TypeString {
 		s.Enum = enum
 	}
 	if props, ok := propMap["properties"].(map[string]any); ok {
@@ -1123,35 +1168,21 @@ func schemaStringSlice(v any) ([]string, bool) {
 // flag indicating whether "null" was present (the field is nullable), and
 // whether a usable type was found at all.
 func schemaTypeOf(typeVal any) (typeStr string, nullable bool, ok bool) {
-	switch t := typeVal.(type) {
-	case string:
+	if t, isStr := typeVal.(string); isStr {
 		return t, false, true
-	case []string:
-		for _, v := range t {
-			if v == "null" {
-				nullable = true
-				continue
-			}
-			if typeStr == "" {
-				typeStr = v
-			}
-		}
-		return typeStr, nullable, typeStr != ""
-	case []any:
-		for _, raw := range t {
-			v, isStr := raw.(string)
-			if !isStr {
-				continue
-			}
-			if v == "null" {
-				nullable = true
-				continue
-			}
-			if typeStr == "" {
-				typeStr = v
-			}
-		}
-		return typeStr, nullable, typeStr != ""
 	}
-	return "", false, false
+	members, isList := schemaStringSlice(typeVal)
+	if !isList {
+		return "", false, false
+	}
+	for _, v := range members {
+		if v == "null" {
+			nullable = true
+			continue
+		}
+		if typeStr == "" {
+			typeStr = v
+		}
+	}
+	return typeStr, nullable, typeStr != ""
 }

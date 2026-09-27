@@ -27,6 +27,8 @@ type redirectRT struct {
 	n    *int
 }
 
+// RoundTrip counts the request, points it at the test server and delegates it
+// to the wrapped transport.
 func (c redirectRT) RoundTrip(r *http.Request) (*http.Response, error) {
 	*c.n++
 	r.URL.Scheme = "http"

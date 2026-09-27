@@ -1,6 +1,7 @@
 package gemini
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/joakimcarlsson/ai/schema"
@@ -65,7 +66,8 @@ func TestConvertSchemaToGenaiNested(t *testing.T) {
 	if _, ok := addr.Properties["city"]; !ok {
 		t.Errorf("expected address.Properties[city], got %v", addr.Properties)
 	}
-	if !contains(addr.Required, "city") || !contains(addr.Required, "zip") {
+	if !slices.Contains(addr.Required, "city") ||
+		!slices.Contains(addr.Required, "zip") {
 		t.Errorf("address.Required = %v, want city and zip", addr.Required)
 	}
 
@@ -105,11 +107,11 @@ func TestConvertSchemaToGenaiNested(t *testing.T) {
 	if len(status.Enum) != 3 {
 		t.Errorf("status.Enum = %v, want 3 values", status.Enum)
 	}
-	if !contains(status.Enum, "active") || !contains(status.Enum, "pending") {
+	if !slices.Contains(status.Enum, "active") ||
+		!slices.Contains(status.Enum, "pending") {
 		t.Errorf("status.Enum = %v, want active/inactive/pending", status.Enum)
 	}
 
-	// A ["string","null"] union collapses to the non-null type with Nullable set.
 	nick, ok := got.Properties["nickname"]
 	if !ok {
 		t.Fatal("expected 'nickname' property")
@@ -136,7 +138,7 @@ func TestConvertSchemaToGenaiTopLevelRequired(t *testing.T) {
 	)
 	got := (&Client{}).convertSchemaToGenai(info.Parameters, info.Required)
 	for _, name := range []string{"status", "address", "items", "nickname"} {
-		if !contains(got.Required, name) {
+		if !slices.Contains(got.Required, name) {
 			t.Errorf(
 				"top-level Required missing %q; got %v",
 				name,
@@ -146,12 +148,36 @@ func TestConvertSchemaToGenaiTopLevelRequired(t *testing.T) {
 	}
 }
 
-// contains reports whether s contains v.
-func contains(s []string, v string) bool {
-	for _, x := range s {
-		if x == v {
-			return true
-		}
+// enumTypesFixture puts an enum tag on a string and on an integer field; the
+// generator emits both as string values.
+type enumTypesFixture struct {
+	Color    string `json:"color"    enum:"red,green"`
+	Priority int    `json:"priority" enum:"1,2,3"`
+}
+
+// TestConvertSchemaToGenaiEnumOnlyOnStrings verifies an enum reaches Gemini
+// only on a STRING field: Gemini rejects enum on any other type, and the
+// generator renders an integer field's enum as strings.
+func TestConvertSchemaToGenaiEnumOnlyOnStrings(t *testing.T) {
+	info := schema.NewStructuredOutputFromStruct(
+		"fixture",
+		"enum types fixture",
+		enumTypesFixture{},
+	)
+	got := (&Client{}).convertSchemaToGenai(info.Parameters, info.Required)
+
+	if color := got.Properties["color"]; len(color.Enum) != 2 {
+		t.Errorf("color.Enum = %v, want red and green", color.Enum)
 	}
-	return false
+	priority := got.Properties["priority"]
+	if priority.Type != genai.TypeInteger {
+		t.Errorf(
+			"priority.Type = %v, want %v",
+			priority.Type,
+			genai.TypeInteger,
+		)
+	}
+	if priority.Enum != nil {
+		t.Errorf("priority.Enum = %v, want none on an integer", priority.Enum)
+	}
 }

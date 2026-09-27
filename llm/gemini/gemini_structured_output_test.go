@@ -15,15 +15,29 @@ import (
 	"github.com/joakimcarlsson/ai/types"
 )
 
-// capturingRT redirects every request to the test server, like redirectRT in
-// gemini_httpclient_test.go, and decodes the outgoing body so a test can
-// assert on what actually crossed the wire rather than on an internal struct.
+// capturingRT wraps redirectRT, decoding each outgoing body into body first so
+// a test can assert on what actually crossed the wire rather than on an
+// internal struct.
 type capturingRT struct {
-	base http.RoundTripper
-	host string
-	body *map[string]any
+	redirect redirectRT
+	body     *map[string]any
 }
 
+// newCapturingRT returns a capturingRT that sends every request to host and
+// decodes its body into body.
+func newCapturingRT(host string, body *map[string]any) capturingRT {
+	return capturingRT{
+		redirect: redirectRT{
+			base: http.DefaultTransport,
+			host: host,
+			n:    new(int),
+		},
+		body: body,
+	}
+}
+
+// RoundTrip decodes the request body into c.body, restores it, and hands the
+// request to the wrapped redirectRT.
 func (c capturingRT) RoundTrip(r *http.Request) (*http.Response, error) {
 	if r.Body != nil {
 		raw, _ := io.ReadAll(r.Body)
@@ -31,9 +45,7 @@ func (c capturingRT) RoundTrip(r *http.Request) (*http.Response, error) {
 		r.Body = io.NopCloser(bytes.NewReader(raw))
 		r.ContentLength = int64(len(raw))
 	}
-	r.URL.Scheme = "http"
-	r.URL.Host = c.host
-	return c.base.RoundTrip(r)
+	return c.redirect.RoundTrip(r)
 }
 
 // generateContentStreamOK is generateContentOK in the SSE framing the
@@ -60,15 +72,13 @@ func structuredOutputClient(
 		WithAPIKey("test-key"),
 		WithModel(llm.Model{APIModel: "gemini-2.0-flash"}),
 		WithHTTPClient(&http.Client{
-			Transport: capturingRT{
-				base: http.DefaultTransport,
-				host: srv.Listener.Addr().String(),
-				body: body,
-			},
+			Transport: newCapturingRT(srv.Listener.Addr().String(), body),
 		}),
 	)
 }
 
+// trivialSchema returns a one-field structured-output schema, enough to put a
+// request on the structured-output path.
 func trivialSchema() *schema.StructuredOutputInfo {
 	return &schema.StructuredOutputInfo{
 		Name:       "answer",

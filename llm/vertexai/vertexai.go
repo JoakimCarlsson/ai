@@ -24,6 +24,8 @@ type Options struct {
 	stopSequences []string
 	timeout       *time.Duration
 	thinkingLevel *llmgemini.ThinkingLevel
+	cachedContent string
+	cacheTTL      time.Duration
 	project       string
 	location      string
 	httpClient    *http.Client
@@ -74,6 +76,18 @@ func WithThinkingLevel(level llmgemini.ThinkingLevel) Option {
 	return func(o *Options) { o.thinkingLevel = &level }
 }
 
+// WithCachedContent attaches a previously created context cache to every
+// request. See [llmgemini.WithCachedContent].
+func WithCachedContent(name string) Option {
+	return func(o *Options) { o.cachedContent = name }
+}
+
+// WithCacheTTL sets the time-to-live used when creating a context cache. See
+// [llmgemini.WithCacheTTL].
+func WithCacheTTL(d time.Duration) Option {
+	return func(o *Options) { o.cacheTTL = d }
+}
+
 // WithHTTPClient injects a custom *http.Client, set on the genai ClientConfig's
 // HTTPClient field. Use it for outbound proxies, custom TLS (private CAs, mTLS),
 // connection-pool tuning, or transport-level instrumentation. A nil client is a
@@ -99,7 +113,8 @@ func WithLocation(
 }
 
 // Client implements [llm.LLM] against Vertex AI by embedding [llm/gemini].Client
-// constructed with a Vertex-AI-backed [genai.Client].
+// constructed with a Vertex-AI-backed [genai.Client]. It also implements
+// [llm.ContextCacheProvider] through the embedded client.
 type Client struct {
 	*llmgemini.Client
 }
@@ -166,5 +181,7 @@ func buildGeminiOptions(o Options) llmgemini.Options {
 	if o.thinkingLevel != nil {
 		llmgemini.WithThinkingLevel(*o.thinkingLevel)(&dst)
 	}
+	llmgemini.WithCachedContent(o.cachedContent)(&dst)
+	llmgemini.WithCacheTTL(o.cacheTTL)(&dst)
 	return dst
 }

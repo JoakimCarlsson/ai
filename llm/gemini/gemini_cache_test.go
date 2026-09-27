@@ -1,9 +1,8 @@
 package gemini
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,18 +11,29 @@ import (
 
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
-
+	"github.com/joakimcarlsson/ai/tool"
 	"google.golang.org/genai"
 )
 
-// TestWithCachedContentSetsConfig verifies WithCachedContent populates
-// config.CachedContent and suppresses inline SystemInstruction/Tools (genai
-// rejects a cache combined with either).
-func TestWithCachedContentSetsConfig(t *testing.T) {
-	c := &Client{}
-	WithCachedContent("cachedContents/x")(&c.options)
+// mustBuildConfig is buildConfig for tests that expect it to succeed.
+func (c *Client) mustBuildConfig(
+	t *testing.T,
+	systemMessages []string,
+	tools []tool.BaseTool,
+) *genai.GenerateContentConfig {
+	t.Helper()
+	cfg, err := c.buildConfig(systemMessages, tools)
+	if err != nil {
+		t.Fatalf("buildConfig: %v", err)
+	}
+	return cfg
+}
 
-	cfg := c.buildConfig([]string{"you are a helpful assistant"}, nil)
+// TestWithCachedContentSetsConfig verifies WithCachedContent populates
+// config.CachedContent and leaves SystemInstruction and Tools unset.
+func TestWithCachedContentSetsConfig(t *testing.T) {
+	cfg := clientWith(WithCachedContent("cachedContents/x")).
+		mustBuildConfig(t, nil, nil)
 
 	if cfg.CachedContent != "cachedContents/x" {
 		t.Errorf(
@@ -40,15 +50,36 @@ func TestWithCachedContentSetsConfig(t *testing.T) {
 	}
 }
 
-// TestWithCachedContentDisabledLeavesEmpty verifies WithDisableCache overrides a
-// configured cache: CachedContent stays empty and the inline system
-// instruction is still emitted.
-func TestWithCachedContentDisabledLeavesEmpty(t *testing.T) {
-	c := &Client{}
-	WithCachedContent("cachedContents/x")(&c.options)
-	WithDisableCache()(&c.options)
+// TestWithCachedContentRejectsInlineContent verifies a request that passes
+// system messages or tools alongside a cache fails instead of silently
+// dropping them.
+func TestWithCachedContentRejectsInlineContent(t *testing.T) {
+	cases := map[string]struct {
+		system []string
+		tools  []tool.BaseTool
+	}{
+		"system messages": {system: []string{"you are a helpful assistant"}},
+		"tools":           {tools: []tool.BaseTool{stubTool{name: "lookup"}}},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			_, err := clientWith(WithCachedContent("cachedContents/x")).
+				buildConfig(tc.system, tc.tools)
+			if !errors.Is(err, ErrCachedContentConflict) {
+				t.Errorf("err = %v, want ErrCachedContentConflict", err)
+			}
+		})
+	}
+}
 
-	cfg := c.buildConfig([]string{"you are a helpful assistant"}, nil)
+// TestWithDisableCacheIgnoresCachedContent verifies WithDisableCache overrides
+// a configured cache: CachedContent stays empty and the system instruction is
+// sent inline.
+func TestWithDisableCacheIgnoresCachedContent(t *testing.T) {
+	cfg := clientWith(
+		WithCachedContent("cachedContents/x"),
+		WithDisableCache(),
+	).mustBuildConfig(t, []string{"you are a helpful assistant"}, nil)
 
 	if cfg.CachedContent != "" {
 		t.Errorf(
@@ -64,81 +95,66 @@ func TestWithCachedContentDisabledLeavesEmpty(t *testing.T) {
 // TestBuildConfigNoCacheLeavesEmpty verifies the default path leaves
 // CachedContent empty.
 func TestBuildConfigNoCacheLeavesEmpty(t *testing.T) {
-	cfg := (&Client{options: Options{model: llm.Model{}}}).buildConfig(nil, nil)
+	cfg := clientWith().mustBuildConfig(t, nil, nil)
 	if cfg.CachedContent != "" {
 		t.Errorf("CachedContent = %q, want empty by default", cfg.CachedContent)
 	}
 }
 
-// cacheClient builds a *Client (not the traced llm.LLM NewLLM returns, since
-// CreateCache is not on that interface) whose requests are captured into body
-// and answered with status/reply.
+// cacheClient builds a client through NewLLM whose requests are captured into
+// body and answered with status and reply, and returns it as the
+// [llm.ContextCacheProvider] the tracing wrapper must preserve.
 func cacheClient(
 	t *testing.T,
 	body *map[string]any,
 	status int,
 	reply string,
 	opts ...Option,
-) *Client {
+) llm.ContextCacheProvider {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			raw, _ := io.ReadAll(r.Body)
-			_ = json.Unmarshal(raw, body)
+		func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(status)
 			_, _ = io.WriteString(w, reply)
 		}))
 	t.Cleanup(srv.Close)
 
-	options := Options{model: llm.Model{APIModel: "gemini-2.0-flash"}}
-	for _, o := range opts {
-		o(&options)
+	opts = append([]Option{
+		WithAPIKey("test-key"),
+		WithModel(llm.Model{APIModel: "gemini-2.0-flash"}),
+		WithHTTPClient(&http.Client{
+			Transport: newCapturingRT(srv.Listener.Addr().String(), body),
+		}),
+	}, opts...)
+	ccp, ok := NewLLM(opts...).(llm.ContextCacheProvider)
+	if !ok {
+		t.Fatal("NewLLM result does not implement llm.ContextCacheProvider")
 	}
-
-	var n int
-	gc, err := genai.NewClient(context.Background(), &genai.ClientConfig{
-		APIKey:  "test-key",
-		Backend: genai.BackendGeminiAPI,
-		HTTPClient: &http.Client{
-			Transport: rewriteBody{
-				base: redirectRT{
-					base: http.DefaultTransport,
-					host: srv.Listener.Addr().String(),
-					n:    &n,
-				},
-			},
-		},
-	})
-	if err != nil {
-		t.Fatalf("genai.NewClient: %v", err)
-	}
-	return &Client{options: options, client: gc}
+	return ccp
 }
 
-// rewriteBody restores a request body after the capturing handler has drained
-// it, so the wrapped transport still has something to send.
-type rewriteBody struct{ base http.RoundTripper }
-
-func (w rewriteBody) RoundTrip(r *http.Request) (*http.Response, error) {
-	if r.Body != nil {
-		raw, _ := io.ReadAll(r.Body)
-		r.Body = io.NopCloser(bytes.NewReader(raw))
-		r.ContentLength = int64(len(raw))
-	}
-	return w.base.RoundTrip(r)
+// createCache asks ccp to cache a single user message and the given tools.
+func createCache(
+	ccp llm.ContextCacheProvider,
+	tools ...tool.BaseTool,
+) (string, error) {
+	return ccp.CreateCache(
+		context.Background(),
+		[]message.Message{message.NewUserMessage("remember this")},
+		tools,
+	)
 }
 
 // TestCreateCacheSendsTheTTLAndReturnsItsName confirms WithCacheTTL reaches
 // the request and CreateCache returns the API's resource name.
 func TestCreateCacheSendsTheTTLAndReturnsItsName(t *testing.T) {
 	var body map[string]any
-	c := cacheClient(t, &body, http.StatusOK,
+	ccp := cacheClient(t, &body, http.StatusOK,
 		`{"name":"cachedContents/abc123"}`,
 		WithCacheTTL(90*time.Second))
 
-	name, err := c.CreateCache(context.Background(),
-		[]message.Message{message.NewUserMessage("remember this")}, nil)
+	name, err := createCache(ccp)
 	if err != nil {
 		t.Fatalf("CreateCache: %v", err)
 	}
@@ -159,25 +175,34 @@ func TestCreateCacheSendsTheTTLAndReturnsItsName(t *testing.T) {
 // request rather than sent as a zero value.
 func TestCreateCacheWithNoTTLSendsNone(t *testing.T) {
 	var body map[string]any
-	c := cacheClient(
-		t,
-		&body,
-		http.StatusOK,
-		`{"name":"cachedContents/abc123"}`,
-	)
+	ccp := cacheClient(t, &body, http.StatusOK,
+		`{"name":"cachedContents/abc123"}`)
 
-	if _, err := c.CreateCache(
-		context.Background(),
-		[]message.Message{
-			message.NewUserMessage("remember this"),
-		},
-		nil,
-	); err != nil {
+	if _, err := createCache(ccp); err != nil {
 		t.Fatalf("CreateCache: %v", err)
 	}
 
-	if got, present := body["ttl"]; present && got != "" {
+	if got, present := body["ttl"]; present {
 		t.Errorf("ttl = %v, want it absent when the caller set none", got)
+	}
+}
+
+// TestCreateCacheCarriesToolChoice confirms WithToolChoice is stored in the
+// cache, since a request that uses the cache cannot send a tool config.
+func TestCreateCacheCarriesToolChoice(t *testing.T) {
+	var body map[string]any
+	ccp := cacheClient(t, &body, http.StatusOK,
+		`{"name":"cachedContents/abc123"}`,
+		WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceRequired}))
+
+	if _, err := createCache(ccp, stubTool{name: "lookup"}); err != nil {
+		t.Fatalf("CreateCache: %v", err)
+	}
+
+	toolConfig, _ := body["toolConfig"].(map[string]any)
+	fc, _ := toolConfig["functionCallingConfig"].(map[string]any)
+	if got := fc["mode"]; got != "ANY" {
+		t.Errorf("toolConfig.functionCallingConfig.mode = %v, want ANY", got)
 	}
 }
 
@@ -185,11 +210,10 @@ func TestCreateCacheWithNoTTLSendsNone(t *testing.T) {
 // an empty name, never an empty name alone.
 func TestCreateCacheReportsAFailure(t *testing.T) {
 	var body map[string]any
-	c := cacheClient(t, &body, http.StatusBadRequest,
+	ccp := cacheClient(t, &body, http.StatusBadRequest,
 		`{"error":{"code":400,"message":"nope"}}`)
 
-	name, err := c.CreateCache(context.Background(),
-		[]message.Message{message.NewUserMessage("remember this")}, nil)
+	name, err := createCache(ccp)
 	if err == nil {
 		t.Fatal("CreateCache returned no error on a 400")
 	}
