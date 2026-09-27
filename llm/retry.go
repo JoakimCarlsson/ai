@@ -84,13 +84,17 @@ func DefaultRetryConfig() RetryConfig {
 // and configuration. The error is matched against [RetryableError] via
 // [errors.As], so vendor packages wrap their SDK errors in a type that
 // satisfies the interface.
+//
+// A [TerminalError] reporting itself terminal is checked before the status
+// code, since its point is to overrule it. Once MaxRetries is exceeded the
+// returned error wraps err, so [errors.As] downstream still finds the typed
+// cause.
 func ShouldRetry(
 	attempts int,
 	err error,
 	config RetryConfig,
 ) (bool, int64, error) {
 	if attempts > config.MaxRetries {
-		// %w so errors.As downstream can still find the typed cause.
 		return false, 0, fmt.Errorf(
 			"maximum retry attempts reached: %d retries: %w",
 			config.MaxRetries,
@@ -102,7 +106,6 @@ func ShouldRetry(
 		return false, 0, err
 	}
 
-	// Checked before the status code, since the point is to overrule it.
 	var terminal TerminalError
 	if errors.As(err, &terminal) && terminal.Terminal() {
 		return false, 0, err
