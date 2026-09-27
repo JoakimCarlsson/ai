@@ -986,41 +986,106 @@ func (c *Client) convertSchemaToGenai(
 
 	for name, prop := range parameters {
 		if propMap, ok := prop.(map[string]any); ok {
-			propSchema := &genai.Schema{}
-
-			if typeVal, ok := propMap["type"].(string); ok {
-				propSchema.Type = mapJSONTypeToGenAI(typeVal)
-			}
-			if desc, ok := propMap["description"].(string); ok {
-				propSchema.Description = desc
-			}
-			if items, ok := propMap["items"].(map[string]any); ok {
-				propSchema.Items = c.convertPropertyToGenai(items)
-			}
-			if enum, ok := propMap["enum"].([]any); ok {
-				enumStrings := make([]string, len(enum))
-				for i, v := range enum {
-					if str, ok := v.(string); ok {
-						enumStrings[i] = str
-					}
-				}
-				propSchema.Enum = enumStrings
-			}
-
-			s.Properties[name] = propSchema
+			s.Properties[name] = c.convertPropertyToGenai(propMap)
 		}
 	}
 
 	return s
 }
 
+// convertPropertyToGenai is the recursive node converter for the
+// structured-output path. It mirrors convertToSchema (the tool-param path) and
+// handles the JSON Schema shapes the [schema] generator emits: nested
+// properties/required, array items, enums, and the ["type","null"] unions used
+// for optional fields.
 func (c *Client) convertPropertyToGenai(propMap map[string]any) *genai.Schema {
 	s := &genai.Schema{}
-	if typeVal, ok := propMap["type"].(string); ok {
-		s.Type = mapJSONTypeToGenAI(typeVal)
+
+	if typeStr, nullable, ok := schemaTypeOf(propMap["type"]); ok {
+		s.Type = mapJSONTypeToGenAI(typeStr)
+		if nullable {
+			s.Nullable = genai.Ptr(true)
+		}
 	}
 	if desc, ok := propMap["description"].(string); ok {
 		s.Description = desc
 	}
+	if enum, ok := schemaStringSlice(propMap["enum"]); ok {
+		s.Enum = enum
+	}
+	if props, ok := propMap["properties"].(map[string]any); ok {
+		s.Properties = make(map[string]*genai.Schema, len(props))
+		for name, prop := range props {
+			if childMap, ok := prop.(map[string]any); ok {
+				s.Properties[name] = c.convertPropertyToGenai(childMap)
+			}
+		}
+	}
+	if req, ok := schemaStringSlice(propMap["required"]); ok {
+		s.Required = req
+	}
+	if items, ok := propMap["items"].(map[string]any); ok {
+		s.Items = c.convertPropertyToGenai(items)
+	}
+
 	return s
+}
+
+// schemaStringSlice coerces a JSON Schema list value (e.g. "enum" or
+// "required") into a []string. The [schema] generator emits these as []string,
+// while a schema deserialized from JSON yields []any; both are handled. The
+// bool reports whether the value was a recognized slice (an empty but present
+// slice still returns true).
+func schemaStringSlice(v any) ([]string, bool) {
+	switch s := v.(type) {
+	case []string:
+		return s, true
+	case []any:
+		out := make([]string, 0, len(s))
+		for _, raw := range s {
+			if str, ok := raw.(string); ok {
+				out = append(out, str)
+			}
+		}
+		return out, true
+	}
+	return nil, false
+}
+
+// schemaTypeOf resolves a JSON Schema "type" value that may be a plain string or
+// a union list (e.g. ["string","null"]). It returns the non-"null" member, a
+// flag indicating whether "null" was present (the field is nullable), and
+// whether a usable type was found at all.
+func schemaTypeOf(typeVal any) (typeStr string, nullable bool, ok bool) {
+	switch t := typeVal.(type) {
+	case string:
+		return t, false, true
+	case []string:
+		for _, v := range t {
+			if v == "null" {
+				nullable = true
+				continue
+			}
+			if typeStr == "" {
+				typeStr = v
+			}
+		}
+		return typeStr, nullable, typeStr != ""
+	case []any:
+		for _, raw := range t {
+			v, isStr := raw.(string)
+			if !isStr {
+				continue
+			}
+			if v == "null" {
+				nullable = true
+				continue
+			}
+			if typeStr == "" {
+				typeStr = v
+			}
+		}
+		return typeStr, nullable, typeStr != ""
+	}
+	return "", false, false
 }
