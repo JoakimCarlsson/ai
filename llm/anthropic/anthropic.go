@@ -1038,7 +1038,7 @@ func copyMap(m map[string]any) map[string]any {
 // relaxNullableUnions deep-copies an OpenAI-strict property set (every field
 // in required, optionals as nullable unions ["T","null"]) into Anthropic's
 // standard-optionality form, recursing into nested objects and
-// array-of-object items. The input is never mutated.
+// array items at any depth. The input is never mutated.
 func relaxNullableUnions(
 	properties map[string]any,
 	required []string,
@@ -1055,33 +1055,10 @@ func relaxNullableUnions(
 			out[name] = raw
 			continue
 		}
-		cp := make(map[string]any, len(prop))
-		for k, v := range prop {
-			cp[k] = v
-		}
+		cp := relaxNode(prop)
 		if base, wasNullable := denull(cp["type"]); wasNullable {
 			cp["type"] = base
 			nullable[name] = true
-		}
-		if nested, ok := cp["properties"].(map[string]any); ok {
-			np, nr := relaxNullableUnions(nested, asStrings(cp["required"]))
-			cp["properties"] = np
-			setRequired(cp, nr)
-		}
-		if items, ok := cp["items"].(map[string]any); ok {
-			ic := make(map[string]any, len(items))
-			for k, v := range items {
-				ic[k] = v
-			}
-			if itemProps, ok := ic["properties"].(map[string]any); ok {
-				ip, ir := relaxNullableUnions(
-					itemProps,
-					asStrings(ic["required"]),
-				)
-				ic["properties"] = ip
-				setRequired(ic, ir)
-			}
-			cp["items"] = ic
 		}
 		out[name] = cp
 	}
@@ -1093,6 +1070,22 @@ func relaxNullableUnions(
 		}
 	}
 	return out, kept
+}
+
+// relaxNode copies a schema node, relaxing the nullable unions of its nested
+// object properties and recursing into its array items, so arrays of arrays
+// are relaxed at every depth. The node's own type is left untouched.
+func relaxNode(node map[string]any) map[string]any {
+	cp := copyMap(node)
+	if nested, ok := cp["properties"].(map[string]any); ok {
+		np, nr := relaxNullableUnions(nested, asStrings(cp["required"]))
+		cp["properties"] = np
+		setRequired(cp, nr)
+	}
+	if items, ok := cp["items"].(map[string]any); ok {
+		cp["items"] = relaxNode(items)
+	}
+	return cp
 }
 
 // setRequired sets a non-empty required list, or deletes the key when every

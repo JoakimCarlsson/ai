@@ -230,6 +230,7 @@ func hasNullType(v any) bool {
 	return false
 }
 
+// asAnySlice widens a "type" value to []any, or nil when it is not a list.
 func asAnySlice(t any) []any {
 	switch v := t.(type) {
 	case []string:
@@ -313,6 +314,43 @@ func TestRelaxNullableUnions_StripsNullAndOptionalizesEverywhere(t *testing.T) {
 		want,
 	) {
 		t.Errorf("input required slice was mutated: %v", required)
+	}
+}
+
+// TestRelaxNullableUnions_RelaxesArraysOfArrays confirms the object items of
+// an array nested inside another array are relaxed too.
+func TestRelaxNullableUnions_RelaxesArraysOfArrays(t *testing.T) {
+	props := map[string]any{
+		"grid": map[string]any{
+			"type": "array",
+			"items": map[string]any{
+				"type": "array",
+				"items": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"label": map[string]any{
+							"type": []any{"string", "null"},
+						},
+					},
+					"required":             []string{"label"},
+					"additionalProperties": false,
+				},
+			},
+		},
+	}
+
+	got, _ := relaxNullableUnions(props, []string{"grid"})
+
+	if hasNullType(got) {
+		t.Errorf("nested array items still carry a nullable union: %#v", got)
+	}
+	grid := got["grid"].(map[string]any)
+	cell := grid["items"].(map[string]any)["items"].(map[string]any)
+	if _, has := cell["required"]; has {
+		t.Errorf("nullable cell field should be optional: %#v", cell)
+	}
+	if !hasNullType(props) {
+		t.Error("input schema was mutated")
 	}
 }
 
