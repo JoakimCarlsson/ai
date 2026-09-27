@@ -66,8 +66,8 @@ use (
 	./tts/deepgram
 	./tts/openrouter
 
-	./tools
-	./tools/openai
+	./hostedtool
+	./hostedtool/openai
 
 	./llm
 	./llm/anthropic

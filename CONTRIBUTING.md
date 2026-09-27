@@ -69,8 +69,8 @@ region describes a corner of its pricing table. Rates for fine-tunes, training
 runs, promotions and tiers other than the standard one are ignored.
 
 Every `models.go` in the repository is generated this way, across `llm`,
-`image`, `embeddings`, `rerankers`, `stt` and `tts`. The exception is `fim`,
-which the source publishes no kind for.
+`image`, `embeddings`, `rerankers`, `stt`, `tts` and `hostedtool`. The
+exception is `fim`, which the source publishes no kind for.
 
 Adding a catalog means adding one entry to `targets` in
 `cmd/modelsync/catalogs.go`, naming the provider and kind in `api.json` it

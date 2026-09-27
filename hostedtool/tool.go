@@ -1,4 +1,4 @@
-// Package tools carries what a provider's hosted tools cost.
+// Package hostedtool carries what a provider's hosted tools cost.
 //
 // A hosted tool -- web search, file search -- is billed separately from the
 // model that called it, per invocation rather than per token, at a rate every
@@ -6,30 +6,33 @@
 // "+ Search content tokens billed at model rates", so a call that searched is
 // billed twice over: once here, per call, and once through the model's own
 // catalog for the text it read.
-package tools
+//
+// This is a price catalog for tools a provider runs on its side. The tool
+// module is unrelated: it defines the tools an agent runs itself.
+package hostedtool
 
 // Tool is one hosted tool, with what a provider charges to invoke it. The
 // rates are a default, not an authority; an operator-supplied rate should
 // win.
 type Tool struct {
 	// ID is the catalog key, as the provider names the tool.
-	ID string
+	ID string `json:"id"`
 	// Name is the human-readable name, for a chooser or a report.
-	Name string
+	Name string `json:"name"`
 	// Provider is the service this tool is served by.
-	Provider string
+	Provider string `json:"provider"`
 	// APIModel is the id the provider's own API uses, which is not always the
 	// catalog key.
-	APIModel string
+	APIModel string `json:"api_model"`
 
 	// Currency is the ISO 4217 code the cost fields are denominated in.
-	Currency string
+	Currency string `json:"currency"`
 
 	// CostPer1KCalls is the cost of one thousand invocations, in Currency --
 	// the unit the provider publishes rates in. Zero means the source
 	// publishes no per-call rate for this tool, not that invoking it is
 	// free; see CallRate.
-	CostPer1KCalls float64
+	CostPer1KCalls float64 `json:"cost_per_1k_calls"`
 }
 
 // CallRate returns what one thousand invocations cost, and whether the

@@ -1,4 +1,4 @@
-package tools
+package hostedtool
 
 import "testing"
 
@@ -11,10 +11,17 @@ func TestAToolWithNoPublishedRateIsNotFree(t *testing.T) {
 	}{
 		{"nothing published", Tool{ID: "web-search"}},
 		{"an explicit zero", Tool{ID: "web-search", CostPer1KCalls: 0}},
-		{"a negative, which is not a price", Tool{ID: "web-search", CostPer1KCalls: -1}},
+		{
+			"a negative, which is not a price",
+			Tool{ID: "web-search", CostPer1KCalls: -1},
+		},
 	} {
 		if rate, ok := tc.tool.CallRate(); ok {
-			t.Errorf("%s: CallRate() = (%v, true), want it reported as unpublished", tc.name, rate)
+			t.Errorf(
+				"%s: CallRate() = (%v, true), want it reported as unpublished",
+				tc.name,
+				rate,
+			)
 		}
 	}
 }
@@ -28,6 +35,9 @@ func TestAPublishedRateIsReturnedInTheUnitItWasPublishedIn(t *testing.T) {
 		t.Fatal("CallRate() reported a published rate as missing")
 	}
 	if rate != 10 {
-		t.Errorf("CallRate() = %v, want 10 -- the unit is per thousand calls", rate)
+		t.Errorf(
+			"CallRate() = %v, want 10 -- the unit is per thousand calls",
+			rate,
+		)
 	}
 }
