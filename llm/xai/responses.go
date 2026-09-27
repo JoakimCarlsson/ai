@@ -450,14 +450,18 @@ func (c *xaiResponsesClient) extractOutput(
 	return content.String(), toolCalls, meta
 }
 
+// usage maps the Responses usage block onto llm.TokenUsage. The API reports
+// input_tokens as the whole prompt and cached_tokens as the cache-hit subset
+// of it, so InputTokens carries the uncached remainder, clamped at zero.
 func (c *xaiResponsesClient) usage(resp *responses.Response) llm.TokenUsage {
 	if resp == nil {
 		return llm.TokenUsage{}
 	}
+	cached := resp.Usage.InputTokensDetails.CachedTokens
 	return llm.TokenUsage{
-		InputTokens:     resp.Usage.InputTokens,
+		InputTokens:     max(resp.Usage.InputTokens-cached, 0),
 		OutputTokens:    resp.Usage.OutputTokens,
-		CacheReadTokens: resp.Usage.InputTokensDetails.CachedTokens,
+		CacheReadTokens: cached,
 	}
 }
 
