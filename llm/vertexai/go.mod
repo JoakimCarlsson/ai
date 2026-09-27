@@ -3,8 +3,8 @@ module github.com/joakimcarlsson/ai/llm/vertexai
 go 1.26.0
 
 require (
-	github.com/joakimcarlsson/ai/llm v0.6.3
-	github.com/joakimcarlsson/ai/llm/gemini v0.7.0
+	github.com/joakimcarlsson/ai/llm v0.7.0
+	github.com/joakimcarlsson/ai/llm/gemini v0.7.1
 	github.com/joakimcarlsson/ai/message v0.6.1
 	google.golang.org/genai v1.71.0
 )
