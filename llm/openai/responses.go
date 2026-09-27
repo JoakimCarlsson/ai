@@ -398,12 +398,18 @@ func (c *responsesClient) preparedParams(
 	}
 	if c.options.model.CanReason && c.options.reasoningEffort != nil {
 		switch *c.options.reasoningEffort {
+		case ReasoningEffortNone:
+			params.Reasoning.Effort = shared.ReasoningEffortNone
+		case ReasoningEffortMinimal:
+			params.Reasoning.Effort = shared.ReasoningEffortMinimal
 		case ReasoningEffortLow:
 			params.Reasoning.Effort = shared.ReasoningEffortLow
 		case ReasoningEffortMedium:
 			params.Reasoning.Effort = shared.ReasoningEffortMedium
 		case ReasoningEffortHigh:
 			params.Reasoning.Effort = shared.ReasoningEffortHigh
+		case ReasoningEffortXhigh:
+			params.Reasoning.Effort = shared.ReasoningEffortXhigh
 		}
 	}
 	return params
