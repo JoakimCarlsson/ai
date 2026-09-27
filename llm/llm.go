@@ -266,6 +266,22 @@ type LLM interface {
 	SupportsStructuredOutput() bool
 }
 
+// ContextCacheProvider is an optional sub-interface for providers that can
+// store a conversation prefix server-side and reference it from later requests
+// (e.g. Gemini context caching). CreateCache stores the messages and tools and
+// returns the provider's resource name for the cache.
+//
+// Detect support via type assertion on the [LLM] returned from a vendor's
+// NewLLM constructor. The [WithTracing] wrapper preserves this interface when
+// the inner client implements it.
+type ContextCacheProvider interface {
+	CreateCache(
+		ctx context.Context,
+		messages []message.Message,
+		tools []tool.BaseTool,
+	) (string, error)
+}
+
 // TracingAttrs are construction-time attributes vendor packages forward to the
 // [WithTracing] wrapper so they appear on every span produced for the wrapped
 // client.
@@ -277,9 +293,15 @@ type TracingAttrs struct {
 
 // WithTracing wraps an LLM client so every call records OpenTelemetry spans and metrics.
 // Vendor sub-packages return their concrete client wrapped in this so consumers always
-// get tracing without thinking about it.
+// get tracing without thinking about it. If the inner client also implements
+// [ContextCacheProvider], the returned wrapper preserves that interface: type
+// assertions on the wrapper succeed and the call is traced and forwarded.
 func WithTracing(inner LLM, attrs TracingAttrs) LLM {
-	return &tracingLLM{inner: inner, attrs: attrs}
+	base := &tracingLLM{inner: inner, attrs: attrs}
+	if ccp, ok := inner.(ContextCacheProvider); ok {
+		return &tracingLLMWithContextCache{tracingLLM: base, ccp: ccp}
+	}
+	return base
 }
 
 type tracingLLM struct {
@@ -574,4 +596,39 @@ func (t *tracingLLM) StreamResponseWithStructuredOutput(
 		}
 	}()
 	return outCh
+}
+
+// tracingLLMWithContextCache is the tracing wrapper used when the inner LLM
+// also implements [ContextCacheProvider].
+type tracingLLMWithContextCache struct {
+	*tracingLLM
+	ccp ContextCacheProvider
+}
+
+// CreateCache traces the cache creation and forwards it to the inner client.
+func (t *tracingLLMWithContextCache) CreateCache(
+	ctx context.Context,
+	messages []message.Message,
+	tools []tool.BaseTool,
+) (string, error) {
+	m := t.inner.Model()
+	start := time.Now()
+	ctx, span := tracing.StartSpan(
+		ctx,
+		"create_cache "+m.APIModel,
+		tracing.AttrOperationName.String("create_cache"),
+		tracing.AttrSystem.String(m.Provider),
+		tracing.AttrRequestModel.String(m.APIModel),
+	)
+	defer span.End()
+
+	name, err := t.ccp.CreateCache(ctx, cleanMessages(messages), tools)
+	if err != nil {
+		tracing.SetError(span, err)
+	}
+	tracing.RecordMetrics(
+		ctx, "create_cache", m.APIModel, m.Provider,
+		time.Since(start), 0, 0, err,
+	)
+	return name, err
 }

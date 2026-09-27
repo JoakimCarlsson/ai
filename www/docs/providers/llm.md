@@ -165,6 +165,32 @@ llmgemini.WithFrequencyPenalty(0.5)
 llmgemini.WithSeed(42)
 ```
 
+Gemini context caching stores a system instruction, tools and history once
+and bills later requests that reference it at the cached rate. Create the
+cache through `llm.ContextCacheProvider`, which the clients from
+`llmgemini.NewLLM` and `llmvertexai.NewLLM` implement, then attach it to a
+client. Requests that use a cache must not pass system messages or tools of
+their own; they fail with `llmgemini.ErrCachedContentConflict`.
+
+```go
+creator := llmgemini.NewLLM(
+    llmgemini.WithAPIKey(os.Getenv("GEMINI_API_KEY")),
+    llmgemini.WithModel(model),
+    llmgemini.WithCacheTTL(time.Hour),
+    llmgemini.WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceAuto}),
+)
+name, err := creator.(llm.ContextCacheProvider).CreateCache(
+    ctx, []message.Message{message.NewSystemMessage(longPrompt)}, tools,
+)
+
+client := llmgemini.NewLLM(
+    llmgemini.WithAPIKey(os.Getenv("GEMINI_API_KEY")),
+    llmgemini.WithModel(model),
+    llmgemini.WithCachedContent(name),
+)
+resp, err := client.SendMessages(ctx, userMessages, nil)
+```
+
 ## Provider built-in tools
 
 Server-side built-in tools (web search, code execution, file search) run

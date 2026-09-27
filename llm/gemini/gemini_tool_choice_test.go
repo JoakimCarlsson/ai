@@ -50,7 +50,7 @@ func functionCallingConfig(
 func TestToolChoiceRequired(t *testing.T) {
 	cfg := clientWith(
 		WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceRequired}),
-	).buildConfig(nil, []tool.BaseTool{stubTool{name: "get_weather"}})
+	).mustBuildConfig(t, nil, []tool.BaseTool{stubTool{name: "get_weather"}})
 
 	fc := functionCallingConfig(t, cfg)
 	if fc.Mode != genai.FunctionCallingConfigModeAny {
@@ -68,7 +68,7 @@ func TestToolChoiceRequired(t *testing.T) {
 func TestToolChoiceNone(t *testing.T) {
 	cfg := clientWith(
 		WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceNone}),
-	).buildConfig(nil, []tool.BaseTool{stubTool{name: "get_weather"}})
+	).mustBuildConfig(t, nil, []tool.BaseTool{stubTool{name: "get_weather"}})
 
 	if fc := functionCallingConfig(
 		t,
@@ -86,7 +86,7 @@ func TestToolChoiceSpecific(t *testing.T) {
 			Mode: llm.ToolChoiceSpecific,
 			Name: "get_weather",
 		}),
-	).buildConfig(nil, []tool.BaseTool{stubTool{name: "get_weather"}})
+	).mustBuildConfig(t, nil, []tool.BaseTool{stubTool{name: "get_weather"}})
 
 	fc := functionCallingConfig(t, cfg)
 	if fc.Mode != genai.FunctionCallingConfigModeAny {
@@ -104,7 +104,7 @@ func TestToolChoiceSpecific(t *testing.T) {
 func TestToolChoiceOmittedWithoutTools(t *testing.T) {
 	cfg := clientWith(
 		WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceRequired}),
-	).buildConfig(nil, nil)
+	).mustBuildConfig(t, nil, nil)
 
 	if cfg.ToolConfig != nil {
 		t.Errorf("toolConfig should be omitted with no tools, got %v",

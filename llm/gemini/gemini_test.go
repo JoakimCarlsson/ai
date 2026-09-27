@@ -17,7 +17,9 @@ func reasoningClient(opts ...Option) *Client {
 // TestThinkingBudgetSetsConfig verifies WithThinkingBudget populates
 // ThinkingConfig.ThinkingBudget on the built config.
 func TestThinkingBudgetSetsConfig(t *testing.T) {
-	cfg := reasoningClient(WithThinkingBudget(2048)).buildConfig(nil, nil)
+	cfg := reasoningClient(
+		WithThinkingBudget(2048),
+	).mustBuildConfig(t, nil, nil)
 	if cfg.ThinkingConfig == nil {
 		t.Fatal("expected ThinkingConfig to be set")
 	}
@@ -32,7 +34,7 @@ func TestThinkingBudgetSetsConfig(t *testing.T) {
 // TestThinkingBudgetZeroDisables verifies a budget of 0 is sent as an explicit
 // 0 (disable thinking), not omitted.
 func TestThinkingBudgetZeroDisables(t *testing.T) {
-	cfg := reasoningClient(WithThinkingBudget(0)).buildConfig(nil, nil)
+	cfg := reasoningClient(WithThinkingBudget(0)).mustBuildConfig(t, nil, nil)
 	if cfg.ThinkingConfig == nil || cfg.ThinkingConfig.ThinkingBudget == nil {
 		t.Fatal("expected ThinkingBudget to be set to 0")
 	}
@@ -45,7 +47,7 @@ func TestThinkingBudgetZeroDisables(t *testing.T) {
 // the SDK ThinkingLevel and combines with a budget.
 func TestThinkingLevelStillWorks(t *testing.T) {
 	cfg := reasoningClient(WithThinkingLevel(ThinkingLevelHigh)).
-		buildConfig(nil, nil)
+		mustBuildConfig(t, nil, nil)
 	if cfg.ThinkingConfig == nil {
 		t.Fatal("expected ThinkingConfig to be set")
 	}
@@ -62,7 +64,7 @@ func TestThinkingLevelStillWorks(t *testing.T) {
 func TestThinkingDisabledWithoutReasoning(t *testing.T) {
 	c := &Client{options: Options{model: llm.Model{CanReason: false}}}
 	WithThinkingBudget(1024)(&c.options)
-	cfg := c.buildConfig(nil, nil)
+	cfg := c.mustBuildConfig(t, nil, nil)
 	if cfg.ThinkingConfig != nil {
 		t.Error("expected no ThinkingConfig when model cannot reason")
 	}
