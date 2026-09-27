@@ -148,6 +148,63 @@ func TestModelForChat(t *testing.T) {
 	}
 }
 
+// TestModelForChatCarriesTheLifecycleTheProviderPublishes confirms all four
+// lifecycle fields the source publishes reach the catalog entry.
+func TestModelForChatCarriesTheLifecycleTheProviderPublishes(t *testing.T) {
+	m := apiModel{
+		ID: "old-model", Name: "Old", Kind: "chat",
+		Attrs: map[string]string{
+			"state":                   "deprecated",
+			"release_date":            "2024-05-13",
+			"retirement_date":         "2026-09-28",
+			"recommended_replacement": "new-model",
+		},
+	}
+
+	got := modelFor(chat("demo", "llm/demo", "demo"), m)
+
+	for _, want := range []struct{ field, value string }{
+		{"State", `"deprecated"`},
+		{"ReleaseDate", `"2024-05-13"`},
+		{"RetirementDate", `"2026-09-28"`},
+		{"ReplacedBy", `"new-model"`},
+	} {
+		if got.fields[want.field] != want.value {
+			t.Errorf(
+				"%s = %q, want %q",
+				want.field,
+				got.fields[want.field],
+				want.value,
+			)
+		}
+	}
+}
+
+// TestALifecycleFieldTheSourceOmitsIsLeftOut confirms a lifecycle field the
+// source does not publish stays absent from the catalog entry rather than
+// being written as an empty string.
+func TestALifecycleFieldTheSourceOmitsIsLeftOut(t *testing.T) {
+	m := apiModel{
+		ID: "quiet-model", Name: "Quiet", Kind: "chat",
+		Attrs: map[string]string{"state": "active"},
+	}
+
+	got := modelFor(chat("demo", "llm/demo", "demo"), m)
+
+	if got.fields["State"] != `"active"` {
+		t.Errorf("State = %q, want active", got.fields["State"])
+	}
+	for _, field := range []string{"ReleaseDate", "RetirementDate", "ReplacedBy"} {
+		if v, present := got.fields[field]; present {
+			t.Errorf(
+				"%s = %q, want it absent -- the source publishes none",
+				field,
+				v,
+			)
+		}
+	}
+}
+
 func TestModelForTranscriptionPricesByDirection(t *testing.T) {
 	m := apiModel{
 		ID:   "whisper",
