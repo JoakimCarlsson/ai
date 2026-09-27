@@ -262,6 +262,7 @@ var Models = map[string]llm.Model{
 		CanReason:             true,
 		SupportsStructuredOut: true,
 		ReleaseDate:           "2025-08-04",
+		LastUpdated:           "2025-08-18",
 	},
 	Inkling: {
 		ID:                    Inkling,

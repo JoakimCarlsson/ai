@@ -122,6 +122,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-05-05",
+		LastUpdated:           "2026-08-06",
 	},
 	ComputerUsePreview: {
 		ID:                  ComputerUsePreview,
@@ -137,6 +138,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments: true,
 		State:               "active",
 		ReleaseDate:         "2025-03-11",
+		LastUpdated:         "2025-03-11",
 	},
 	Davinci002: {
 		ID:               Davinci002,
@@ -336,6 +338,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 		State:                 "active",
+		LastUpdated:           "2025-04-14",
 	},
 	GPT41Mini: {
 		ID:                    GPT41Mini,
@@ -351,6 +354,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 		State:                 "active",
+		LastUpdated:           "2025-04-14",
 	},
 	GPT41Nano: {
 		ID:                    GPT41Nano,
@@ -366,6 +370,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 		State:                 "active",
+		LastUpdated:           "2025-04-14",
 	},
 	GPT4o: {
 		ID:                    GPT4o,
@@ -382,6 +387,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2024-05-13",
+		LastUpdated:           "2024-12-17",
 	},
 	GPT4O20240513: {
 		ID:               GPT4O20240513,
@@ -412,6 +418,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2024-07-18",
+		LastUpdated:           "2024-12-17",
 	},
 	GPT4OMiniSearchPreview: {
 		ID:                    GPT4OMiniSearchPreview,
@@ -427,6 +434,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2025-03-11",
+		LastUpdated:           "2025-03-11",
 	},
 	GPT4OSearchPreview: {
 		ID:                    GPT4OSearchPreview,
@@ -442,6 +450,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2025-03-11",
+		LastUpdated:           "2025-03-11",
 	},
 	GPT5: {
 		ID:                    GPT5,
@@ -539,6 +548,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2025-10-06",
+		LastUpdated:           "2025-10-06",
 	},
 	GPT5Pro20251006: {
 		ID:             GPT5Pro20251006,
@@ -578,6 +588,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2025-11-13",
+		LastUpdated:           "2025-11-13",
 	},
 	GPT52: {
 		ID:                    GPT52,
@@ -595,6 +606,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2025-12-11",
+		LastUpdated:           "2026-02-03",
 	},
 	GPT52Pro: {
 		ID:                  GPT52Pro,
@@ -626,6 +638,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-02-24",
+		LastUpdated:           "2026-02-24",
 	},
 	GPT54: {
 		ID:                    GPT54,
@@ -643,6 +656,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-03-05",
+		LastUpdated:           "2026-06-01",
 	},
 	GPT54Cyber: {
 		ID:             GPT54Cyber,
@@ -670,6 +684,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-03-17",
+		LastUpdated:           "2026-03-17",
 	},
 	GPT54Nano: {
 		ID:                    GPT54Nano,
@@ -687,6 +702,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-03-17",
+		LastUpdated:           "2026-03-17",
 	},
 	GPT54Pro: {
 		ID:                  GPT54Pro,
@@ -702,6 +718,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments: true,
 		State:               "active",
 		ReleaseDate:         "2026-03-05",
+		LastUpdated:         "2026-03-05",
 	},
 	GPT55: {
 		ID:                    GPT55,
@@ -719,6 +736,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-04-24",
+		LastUpdated:           "2026-06-01",
 	},
 	GPT55Cyber: {
 		ID:                GPT55Cyber,
@@ -745,6 +763,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-04-24",
+		LastUpdated:           "2026-04-24",
 	},
 	GPT56Cyber: {
 		ID:                    GPT56Cyber,
@@ -762,6 +781,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 		State:                 "active",
+		LastUpdated:           "2026-08-07",
 	},
 	GPT56Luna: {
 		ID:                    GPT56Luna,
@@ -780,6 +800,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-07-09",
+		LastUpdated:           "2026-08-05",
 	},
 	GPT56Sol: {
 		ID:                    GPT56Sol,
@@ -798,6 +819,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-07-09",
+		LastUpdated:           "2026-08-21",
 	},
 	GPT56Terra: {
 		ID:                    GPT56Terra,
@@ -816,6 +838,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-07-09",
+		LastUpdated:           "2026-08-05",
 	},
 	GPT6Astra: {
 		ID:                    GPT6Astra,
@@ -834,6 +857,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-09-03",
+		LastUpdated:           "2026-09-03",
 	},
 	GPT6Luna: {
 		ID:                    GPT6Luna,
@@ -852,6 +876,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-09-22",
+		LastUpdated:           "2026-09-22",
 	},
 	GPT6Sol: {
 		ID:                    GPT6Sol,
@@ -870,6 +895,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2026-09-22",
+		LastUpdated:           "2026-09-22",
 	},
 	GPTDaybreakBlueLatest: {
 		ID:                    GPTDaybreakBlueLatest,
@@ -887,6 +913,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 		State:                 "active",
+		LastUpdated:           "2026-08-07",
 	},
 	GPTDaybreakRedLatest: {
 		ID:                    GPTDaybreakRedLatest,
@@ -904,6 +931,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments:   true,
 		SupportsStructuredOut: true,
 		State:                 "active",
+		LastUpdated:           "2026-08-07",
 	},
 	GPTLive1: {
 		ID:                  GPTLive1,
@@ -913,6 +941,7 @@ var Models = map[string]llm.Model{
 		Currency:            "USD",
 		SupportsAttachments: true,
 		State:               "active",
+		LastUpdated:         "2026-09-10",
 	},
 	GPTOSS120B: {
 		ID:                    GPTOSS120B,
@@ -947,6 +976,7 @@ var Models = map[string]llm.Model{
 		CostPer1MIn:       5,
 		CostPer1MOut:      25,
 		CostPer1MInCached: 0.5,
+		LastUpdated:       "2026-09-08",
 	},
 	O1: {
 		ID:                    O1,
@@ -964,6 +994,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2024-12-17",
+		LastUpdated:           "2025-01-21",
 	},
 	O1Pro: {
 		ID:                    O1Pro,
@@ -980,6 +1011,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2025-03-19",
+		LastUpdated:           "2025-03-19",
 	},
 	O3: {
 		ID:                    O3,
@@ -1022,6 +1054,7 @@ var Models = map[string]llm.Model{
 		SupportsAttachments: true,
 		State:               "active",
 		ReleaseDate:         "2025-06-24",
+		LastUpdated:         "2025-06-24",
 	},
 	O3Mini: {
 		ID:                    O3Mini,
@@ -1038,6 +1071,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2025-01-31",
+		LastUpdated:           "2025-01-31",
 	},
 	O3Pro: {
 		ID:                    O3Pro,
@@ -1054,6 +1088,7 @@ var Models = map[string]llm.Model{
 		SupportsStructuredOut: true,
 		State:                 "active",
 		ReleaseDate:           "2025-06-10",
+		LastUpdated:           "2025-06-10",
 	},
 	O3Pro20250610: {
 		ID:             O3Pro20250610,
@@ -1096,5 +1131,6 @@ var Models = map[string]llm.Model{
 		SupportsAttachments: true,
 		State:               "active",
 		ReleaseDate:         "2025-06-24",
+		LastUpdated:         "2025-06-24",
 	},
 }
