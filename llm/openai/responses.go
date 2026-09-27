@@ -137,7 +137,10 @@ func WithResponsesReasoningEffort(e ReasoningEffort) ResponsesOption {
 }
 
 // WithWebSearch enables the web_search built-in tool. Pass a [WebSearchOpts]
-// to tune context size, allowed domains, or user location.
+// to tune context size, allowed domains, or user location. A configured user
+// location is always sent with type "approximate": the API requires the field
+// and accepts no other value, and leaving it unset would drop the key entirely
+// and get the request refused.
 func WithWebSearch(opts ...WebSearchOpts) ResponsesOption {
 	return func(o *ResponsesOptions) {
 		p := responses.WebSearchToolParam{
@@ -157,9 +160,6 @@ func WithWebSearch(opts ...WebSearchOpts) ResponsesOption {
 			}
 			if c.UserLocation != nil {
 				p.UserLocation = responses.WebSearchToolUserLocationParam{
-					// Required by the API and the only value it accepts; the
-					// field is `omitzero`, so leaving it unset drops the key
-					// entirely and the request is refused.
 					Type:     "approximate",
 					City:     optString(c.UserLocation.City),
 					Country:  optString(c.UserLocation.Country),
@@ -353,7 +353,8 @@ func (c *responsesClient) convertMessages(
 // userInputContent builds the Responses-API content for a user message. A
 // text-only message keeps the simple string form; a message that also
 // carries image parts is emitted as a content list of input_text +
-// input_image items instead.
+// input_image items instead. BinaryContent has no detail hint of its own, so
+// it is sent with "auto" and the model decides.
 func userInputContent(
 	msg message.Message,
 ) responses.EasyInputMessageContentUnionParam {
@@ -380,7 +381,6 @@ func userInputContent(
 		})
 	}
 	for _, bin := range binaries {
-		// BinaryContent has no detail hint of its own; "auto" lets the model decide.
 		parts = append(parts, responses.ResponseInputContentUnionParam{
 			OfInputImage: &responses.ResponseInputImageParam{
 				ImageURL: openaisdk.String(bin.String("openai")),
@@ -484,7 +484,6 @@ func (c *responsesClient) extractOutput(
 	var content strings.Builder
 	var toolCalls []message.ToolCall
 	var citations []map[string]any
-	var searches []map[string]any
 
 	for _, item := range resp.Output {
 		switch item.Type {
@@ -513,15 +512,6 @@ func (c *responsesClient) extractOutput(
 				Type:     "function",
 				Finished: true,
 			})
-		case "web_search_call":
-			// Each item carries its own action (search/open_page/find_in_page)
-			// rather than being summed here.
-			searches = append(searches, map[string]any{
-				"id":      item.ID,
-				"status":  item.Status,
-				"action":  item.Action.Type,
-				"queries": append([]string(nil), item.Action.Queries...),
-			})
 		case "code_interpreter_call":
 			if item.Code != "" {
 				content.WriteString("\n```python\n")
@@ -538,26 +528,66 @@ func (c *responsesClient) extractOutput(
 		}
 	}
 
-	var meta map[string]any
-	if len(citations) > 0 || len(searches) > 0 {
-		meta = map[string]any{}
-		if len(citations) > 0 {
-			meta["openai.url_citations"] = citations
-		}
-		if len(searches) > 0 {
-			meta["openai.web_search_calls"] = searches
-		}
-	}
+	meta := webSearchMetadata(citations, webSearchCalls(resp.Output))
 	return content.String(), toolCalls, meta
 }
 
+// webSearchCall flattens a web_search_call output item into the entry reported
+// under openai.web_search_calls. Each item carries its own action (search,
+// open_page, find_in_page) rather than being summed. The queries fall back to
+// the deprecated singular query field when the plural list is empty, so a
+// reply that only fills the old field still reports what was searched.
+func webSearchCall(item responses.ResponseOutputItemUnion) map[string]any {
+	queries := append([]string(nil), item.Action.Queries...)
+	if len(queries) == 0 && item.Action.Query != "" {
+		queries = []string{item.Action.Query}
+	}
+	return map[string]any{
+		"id":      item.ID,
+		"status":  item.Status,
+		"action":  item.Action.Type,
+		"queries": queries,
+	}
+}
+
+// webSearchCalls collects every web_search_call item in output, in order.
+func webSearchCalls(
+	output []responses.ResponseOutputItemUnion,
+) []map[string]any {
+	var searches []map[string]any
+	for _, item := range output {
+		if item.Type == "web_search_call" {
+			searches = append(searches, webSearchCall(item))
+		}
+	}
+	return searches
+}
+
+// webSearchMetadata builds the provider metadata shared by the streaming and
+// non-streaming paths: openai.url_citations and openai.web_search_calls, each
+// present only when non-empty. It returns nil when both are empty.
+func webSearchMetadata(citations, searches []map[string]any) map[string]any {
+	if len(citations) == 0 && len(searches) == 0 {
+		return nil
+	}
+	meta := map[string]any{}
+	if len(citations) > 0 {
+		meta["openai.url_citations"] = citations
+	}
+	if len(searches) > 0 {
+		meta["openai.web_search_calls"] = searches
+	}
+	return meta
+}
+
+// usage maps a Response's token usage onto [llm.TokenUsage]. The API reports
+// input_tokens as the whole prompt and cached_tokens as the part of it that hit
+// the cache, a subset rather than an addition, so InputTokens holds the
+// uncached remainder, matching Client.usage's chat-completions mapping.
 func (c *responsesClient) usage(resp *responses.Response) llm.TokenUsage {
 	if resp == nil {
 		return llm.TokenUsage{}
 	}
-	// input_tokens is the whole prompt and cached_tokens is the part of it
-	// that hit the cache -- a subset, not an addition. InputTokens holds the
-	// uncached remainder, matching Client.usage's chat-completions mapping.
 	cached := resp.Usage.InputTokensDetails.CachedTokens
 	return llm.TokenUsage{
 		InputTokens:     max(resp.Usage.InputTokens-cached, 0),
@@ -810,10 +840,10 @@ func (c *responsesClient) runStream(
 						eventChan <- llm.Event{Type: types.EventContentStop}
 					}
 					contentStr := content.String()
-					var meta map[string]any
-					if len(citations) > 0 {
-						meta = map[string]any{"openai.url_citations": citations}
-					}
+					meta := webSearchMetadata(
+						citations,
+						webSearchCalls(event.Response.Output),
+					)
 					finalResp := &llm.Response{
 						Content:            contentStr,
 						ToolCalls:          toolCalls,
