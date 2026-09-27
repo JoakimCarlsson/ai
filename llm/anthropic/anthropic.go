@@ -801,20 +801,16 @@ func (c *Client) usage(msg anthropicsdk.Message) llm.TokenUsage {
 	}
 }
 
+// buildOutputConfig converts a structured-output schema into Anthropic's
+// output format, relaxing nullable unions to standard optionality and
+// factoring repeated nested objects into shared definitions.
 func (c *Client) buildOutputConfig(
 	outputSchema *schema.StructuredOutputInfo,
 ) anthropicsdk.OutputConfigParam {
-	// Anthropic caps a schema at 16 union-typed parameters; relax to standard
-	// optionality so a large nullable-heavy schema stays under it.
 	properties, required := relaxNullableUnions(
 		outputSchema.Parameters,
 		outputSchema.Required,
 	)
-
-	// Anthropic ALSO caps a schema at 24 optional parameters. Our generator INLINES nested structs,
-	// so a type used N times (e.g. the duration object at prep/cook/total_time + step timers) multiplies
-	// its optional fields N-fold. Factor structurally-identical nested objects into a shared "$defs"
-	// block referenced by "$ref", collapsing repeated types to a single occurrence.
 	defs, properties := factorSharedObjectDefs(properties)
 
 	schemaMap := map[string]any{
@@ -833,79 +829,84 @@ func (c *Client) buildOutputConfig(
 	}
 }
 
+const defsRefPrefix = "#/$defs/"
+
 // factorSharedObjectDefs hoists structurally-identical nested object schemas
 // into a shared "$defs" block and replaces each occurrence with a "$ref".
 // Structural identity ignores each field's "description", which is preserved
 // next to the emitted "$ref". Only object subtrees used two or more times are
-// hoisted. The input maps are never mutated.
+// hoisted, references nested inside a definition are rewritten too, and only
+// definitions reachable from the properties are returned. The input maps are
+// never mutated.
 func factorSharedObjectDefs(
 	properties map[string]any,
 ) (map[string]any, map[string]any) {
 	counts := map[string]int{}
 	cores := map[string]map[string]any{}
-	collectObjectCores(properties, counts, cores)
+	for _, raw := range properties {
+		if prop, ok := raw.(map[string]any); ok {
+			collectObjectCores(prop, counts, cores)
+		}
+	}
 
+	names := sharedDefNames(counts)
+	if len(names) == 0 {
+		return nil, properties
+	}
+	defs := make(map[string]any, len(names))
+	for key, name := range names {
+		defs[name] = rewriteChildren(cores[key], names)
+	}
+	rewritten := rewriteWithRefs(properties, names)
+	return referencedDefs(rewritten, defs), rewritten
+}
+
+// sharedDefNames assigns a deterministic definition name to every structural
+// key seen at least twice, ordered by the key itself.
+func sharedDefNames(counts map[string]int) map[string]string {
 	var shared []string
 	for key, n := range counts {
 		if n >= 2 {
 			shared = append(shared, key)
 		}
 	}
-	if len(shared) == 0 {
-		return nil, properties
-	}
-	sort.Strings(shared) // stable, deterministic $def names
-	name := make(map[string]string, len(shared))
-	defs := make(map[string]any, len(shared))
+	sort.Strings(shared)
+	names := make(map[string]string, len(shared))
 	for i, key := range shared {
-		nm := fmt.Sprintf("shared%d", i+1)
-		name[key] = nm
-		defs[nm] = cores[key]
+		names[key] = fmt.Sprintf("shared%d", i+1)
 	}
-	return defs, rewriteWithRefs(properties, name)
+	return names
 }
 
-// collectObjectCores tallies, over the whole property tree, how often each object schema's structural
-// core (its shape minus the per-site description) appears. Recurses nested object properties and
-// array-of-object items.
+// collectObjectCores tallies how often each object schema's structural core
+// (its shape minus the per-site description) appears in the subtree rooted
+// at node, recursing into nested object properties and array items.
 func collectObjectCores(
-	properties map[string]any,
+	node map[string]any,
 	counts map[string]int,
 	cores map[string]map[string]any,
 ) {
-	for _, raw := range properties {
-		prop, ok := raw.(map[string]any)
-		if !ok {
-			continue
-		}
-		if isObjectSchema(prop) {
-			core := structuralCore(prop)
-			key := canonicalJSON(core)
-			counts[key]++
-			cores[key] = core
-			if nested, ok := prop["properties"].(map[string]any); ok {
-				collectObjectCores(nested, counts, cores)
-			}
-		}
-		if items, ok := prop["items"].(map[string]any); ok &&
-			isObjectSchema(items) {
-			core := structuralCore(items)
-			key := canonicalJSON(core)
-			counts[key]++
-			cores[key] = core
-			if nested, ok := items["properties"].(map[string]any); ok {
-				collectObjectCores(nested, counts, cores)
+	if isObjectSchema(node) {
+		core := structuralCore(node)
+		key := canonicalJSON(core)
+		counts[key]++
+		cores[key] = core
+		for _, raw := range node["properties"].(map[string]any) {
+			if child, ok := raw.(map[string]any); ok {
+				collectObjectCores(child, counts, cores)
 			}
 		}
 	}
+	if items, ok := node["items"].(map[string]any); ok {
+		collectObjectCores(items, counts, cores)
+	}
 }
 
-// rewriteWithRefs deep-copies the property tree, replacing every object whose structural core is shared
-// (present in name) with a {"$ref": "#/$defs/<name>"} — preserving that site's description — and leaving
-// unshared objects inline (but rewriting their own nested properties/items).
+// rewriteWithRefs deep-copies a property map, rewriting every schema node in
+// it with rewriteNode.
 func rewriteWithRefs(
 	properties map[string]any,
-	name map[string]string,
+	names map[string]string,
 ) map[string]any {
 	out := make(map[string]any, len(properties))
 	for k, raw := range properties {
@@ -914,34 +915,93 @@ func rewriteWithRefs(
 			out[k] = raw
 			continue
 		}
-		out[k] = rewriteNode(prop, name)
+		out[k] = rewriteNode(prop, names)
 	}
 	return out
 }
 
-func rewriteNode(node map[string]any, name map[string]string) any {
+// rewriteNode replaces an object whose structural core is shared (present in
+// names) with a {"$ref": "#/$defs/<name>"} that keeps the site's description,
+// and otherwise returns a copy of node with its children rewritten.
+func rewriteNode(node map[string]any, names map[string]string) any {
 	if isObjectSchema(node) {
-		if defName, ok := name[canonicalJSON(structuralCore(node))]; ok {
-			ref := map[string]any{"$ref": "#/$defs/" + defName}
+		key := canonicalJSON(structuralCore(node))
+		if name, ok := names[key]; ok {
+			ref := map[string]any{"$ref": defsRefPrefix + name}
 			if d, ok := node["description"]; ok {
 				ref["description"] = d
 			}
 			return ref
 		}
-		cp := copyMap(node)
-		if nested, ok := cp["properties"].(map[string]any); ok {
-			cp["properties"] = rewriteWithRefs(nested, name)
-		}
-		return cp
 	}
+	return rewriteChildren(node, names)
+}
+
+// rewriteChildren copies node, rewriting its nested properties and array
+// items with rewriteNode while leaving node itself inline. Applied to a
+// definition body, it rewrites the references inside the definition without
+// replacing the definition with a reference to itself.
+func rewriteChildren(
+	node map[string]any,
+	names map[string]string,
+) map[string]any {
 	cp := copyMap(node)
+	if nested, ok := cp["properties"].(map[string]any); ok {
+		cp["properties"] = rewriteWithRefs(nested, names)
+	}
 	if items, ok := cp["items"].(map[string]any); ok {
-		cp["items"] = rewriteNode(items, name)
+		cp["items"] = rewriteNode(items, names)
 	}
 	return cp
 }
 
-// isObjectSchema reports whether a schema node is an inline object (type "object" with a properties map).
+// referencedDefs returns the subset of defs reachable from properties,
+// following references inside each reached definition transitively.
+func referencedDefs(
+	properties map[string]any,
+	defs map[string]any,
+) map[string]any {
+	used := make(map[string]any, len(defs))
+	pending := collectRefs(properties, nil)
+	for len(pending) > 0 {
+		name := pending[len(pending)-1]
+		pending = pending[:len(pending)-1]
+		if _, seen := used[name]; seen {
+			continue
+		}
+		def, ok := defs[name]
+		if !ok {
+			continue
+		}
+		used[name] = def
+		pending = collectRefs(def, pending)
+	}
+	return used
+}
+
+// collectRefs appends the definition name of every local "$ref" found
+// anywhere in v to refs and returns the extended slice.
+func collectRefs(v any, refs []string) []string {
+	switch node := v.(type) {
+	case map[string]any:
+		if ref, ok := node["$ref"].(string); ok {
+			if name, ok := strings.CutPrefix(ref, defsRefPrefix); ok {
+				refs = append(refs, name)
+			}
+		}
+		for _, child := range node {
+			refs = collectRefs(child, refs)
+		}
+	case []any:
+		for _, child := range node {
+			refs = collectRefs(child, refs)
+		}
+	}
+	return refs
+}
+
+// isObjectSchema reports whether a schema node is an inline object (type
+// "object" with a properties map).
 func isObjectSchema(node map[string]any) bool {
 	if node["type"] != "object" {
 		return false
@@ -950,25 +1010,23 @@ func isObjectSchema(node map[string]any) bool {
 	return ok
 }
 
-// structuralCore copies an object-schema node WITHOUT its field-level "description", so two uses of the
-// same struct that differ only in their per-site description share one definition.
+// structuralCore copies an object-schema node without its field-level
+// "description", so two uses of the same struct that differ only in their
+// per-site description share one definition.
 func structuralCore(node map[string]any) map[string]any {
-	core := make(map[string]any, len(node))
-	for k, v := range node {
-		if k == "description" {
-			continue
-		}
-		core[k] = v
-	}
+	core := copyMap(node)
+	delete(core, "description")
 	return core
 }
 
-// canonicalJSON is a stable serialization (json.Marshal sorts map keys) used as a structural identity key.
+// canonicalJSON is a stable serialization (json.Marshal sorts map keys) used
+// as a structural identity key.
 func canonicalJSON(v any) string {
 	b, _ := json.Marshal(v)
 	return string(b)
 }
 
+// copyMap returns a shallow copy of m.
 func copyMap(m map[string]any) map[string]any {
 	c := make(map[string]any, len(m))
 	for k, v := range m {

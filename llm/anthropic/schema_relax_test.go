@@ -2,38 +2,54 @@ package anthropic
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/joakimcarlsson/ai/schema"
 )
 
+// durationSchema returns an inline duration object schema carrying desc as
+// its per-site description.
+func durationSchema(desc string) map[string]any {
+	return map[string]any{
+		"type":        "object",
+		"description": desc,
+		"properties": map[string]any{
+			"canonical": map[string]any{"type": "number"},
+			"display":   map[string]any{"type": "string"},
+		},
+		"required":             []string{"display"},
+		"additionalProperties": false,
+	}
+}
+
+// refName returns the definition name node references, or "" when node is
+// not a map carrying a local $ref.
+func refName(node any) string {
+	m, _ := node.(map[string]any)
+	ref, _ := m["$ref"].(string)
+	name, ok := strings.CutPrefix(ref, defsRefPrefix)
+	if !ok {
+		return ""
+	}
+	return name
+}
+
 // TestFactorSharedObjectDefs_HoistsRepeatedTypes confirms a repeated object
 // type is hoisted into a single shared $def and referenced by $ref at every
 // site, keeping each site's own description.
 func TestFactorSharedObjectDefs_HoistsRepeatedTypes(t *testing.T) {
-	duration := func(desc string) map[string]any {
-		return map[string]any{
-			"type":        "object",
-			"description": desc,
-			"properties": map[string]any{
-				"canonical": map[string]any{"type": "number"},
-				"display":   map[string]any{"type": "string"},
-			},
-			"required":             []string{"display"},
-			"additionalProperties": false,
-		}
-	}
 	props := map[string]any{
 		"title":      map[string]any{"type": "string"},
-		"prep_time":  duration("prep"),
-		"cook_time":  duration("cook"),
-		"total_time": duration("total"),
+		"prep_time":  durationSchema("prep"),
+		"cook_time":  durationSchema("cook"),
+		"total_time": durationSchema("total"),
 		"steps": map[string]any{
 			"type": "array",
 			"items": map[string]any{
 				"type": "object",
 				"properties": map[string]any{
-					"timer": duration("step timer"),
+					"timer": durationSchema("step timer"),
 				},
 				"required":             []string{},
 				"additionalProperties": false,
@@ -46,7 +62,12 @@ func TestFactorSharedObjectDefs_HoistsRepeatedTypes(t *testing.T) {
 	if len(defs) != 1 {
 		t.Fatalf("defs = %d, want exactly 1 shared duration def", len(defs))
 	}
-	for field, wantDesc := range map[string]string{"prep_time": "prep", "cook_time": "cook", "total_time": "total"} {
+	wantDescs := map[string]string{
+		"prep_time":  "prep",
+		"cook_time":  "cook",
+		"total_time": "total",
+	}
+	for field, wantDesc := range wantDescs {
 		ref, ok := out[field].(map[string]any)
 		if !ok || ref["$ref"] == nil {
 			t.Errorf("%s = %v, want a $ref", field, out[field])
@@ -72,15 +93,81 @@ func TestFactorSharedObjectDefs_HoistsRepeatedTypes(t *testing.T) {
 		t.Error("shared def lost the duration properties")
 	}
 	stepItems := out["steps"].(map[string]any)["items"].(map[string]any)
-	timer, ok := stepItems["properties"].(map[string]any)["timer"].(map[string]any)
-	if !ok || timer["$ref"] == nil {
+	stepProps := stepItems["properties"].(map[string]any)
+	if refName(stepProps["timer"]) == "" {
 		t.Errorf(
 			"step timer = %v, want a $ref to the shared duration",
-			stepItems["properties"],
+			stepProps,
 		)
 	}
 	if out["title"].(map[string]any)["type"] != "string" {
 		t.Error("unshared scalar field should stay inline")
+	}
+}
+
+// TestFactorSharedObjectDefs_RewritesRefsInsideDefs confirms a shared object
+// nested inside another shared object is referenced from the outer
+// definition rather than inlined into it, and that every emitted definition
+// is actually referenced.
+func TestFactorSharedObjectDefs_RewritesRefsInsideDefs(t *testing.T) {
+	step := func(desc string) map[string]any {
+		return map[string]any{
+			"type":        "object",
+			"description": desc,
+			"properties": map[string]any{
+				"a": durationSchema("a"),
+				"b": durationSchema("b"),
+			},
+			"additionalProperties": false,
+		}
+	}
+	props := map[string]any{"x": step("x"), "y": step("y")}
+
+	defs, out := factorSharedObjectDefs(props)
+
+	if len(defs) != 2 {
+		t.Fatalf("defs = %d, want 2 (step and duration): %#v", len(defs), defs)
+	}
+	stepName := refName(out["x"])
+	if stepName == "" || refName(out["y"]) != stepName {
+		t.Fatalf("x and y = %v, %v, want one shared $ref", out["x"], out["y"])
+	}
+	stepDef := defs[stepName].(map[string]any)
+	stepProps := stepDef["properties"].(map[string]any)
+	durName := refName(stepProps["a"])
+	if durName == "" || refName(stepProps["b"]) != durName {
+		t.Fatalf(
+			"step def still inlines its duration fields: %#v",
+			stepProps,
+		)
+	}
+	durDef, ok := defs[durName].(map[string]any)
+	if !ok {
+		t.Fatalf("step def references %q, which is not emitted", durName)
+	}
+	if refName(durDef) != "" {
+		t.Error("duration def was replaced with a reference to itself")
+	}
+	if _, ok := durDef["properties"].(map[string]any)["canonical"]; !ok {
+		t.Error("duration def lost its properties")
+	}
+}
+
+// TestFactorSharedObjectDefs_DropsUnreferencedDefs confirms a definition no
+// schema node references after rewriting is not emitted.
+func TestFactorSharedObjectDefs_DropsUnreferencedDefs(t *testing.T) {
+	defs := map[string]any{
+		"used":   map[string]any{"type": "object"},
+		"unused": map[string]any{"type": "object"},
+	}
+	props := map[string]any{
+		"x": map[string]any{"$ref": defsRefPrefix + "used"},
+	}
+
+	got := referencedDefs(props, defs)
+
+	if len(got) != 1 || got["used"] == nil {
+		t.Errorf("referencedDefs = %#v, want only the used def", got)
 	}
 }
 
@@ -116,7 +203,8 @@ func strictSchema() (map[string]any, []string) {
 	return props, []string{"title", "servings", "prep_time", "components"}
 }
 
-// hasNullType reports whether any "type" anywhere in the schema tree still lists "null".
+// hasNullType reports whether any "type" anywhere in the schema tree still
+// lists "null".
 func hasNullType(v any) bool {
 	switch node := v.(type) {
 	case map[string]any:
@@ -245,7 +333,8 @@ func TestBuildOutputConfigSendsTheRelaxedSchema(t *testing.T) {
 	}
 	if hasNullType(sent) {
 		t.Errorf(
-			"the schema actually sent still carries a nullable union -- relaxNullableUnions is not wired in:\n%#v",
+			"the schema actually sent still carries a nullable union -- "+
+				"relaxNullableUnions is not wired in:\n%#v",
 			sent,
 		)
 	}
@@ -271,24 +360,11 @@ func TestBuildOutputConfigSendsTheRelaxedSchema(t *testing.T) {
 // actually calls factorSharedObjectDefs, not just that the helper works in
 // isolation.
 func TestBuildOutputConfigSendsTheFactoredSchema(t *testing.T) {
-	duration := func(desc string) map[string]any {
-		return map[string]any{
-			"type":        "object",
-			"description": desc,
-			"properties": map[string]any{
-				"canonical": map[string]any{"type": "number"},
-				"display":   map[string]any{"type": "string"},
-			},
-			"required":             []string{"display"},
-			"additionalProperties": false,
-		}
-	}
-
 	cfg := (&Client{}).buildOutputConfig(&schema.StructuredOutputInfo{
 		Parameters: map[string]any{
-			"prep_time":  duration("prep"),
-			"cook_time":  duration("cook"),
-			"total_time": duration("total"),
+			"prep_time":  durationSchema("prep"),
+			"cook_time":  durationSchema("cook"),
+			"total_time": durationSchema("total"),
 		},
 		Required: []string{"prep_time", "cook_time", "total_time"},
 	})
@@ -297,13 +373,15 @@ func TestBuildOutputConfigSendsTheFactoredSchema(t *testing.T) {
 	defs, ok := sent["$defs"].(map[string]any)
 	if !ok || len(defs) == 0 {
 		t.Fatalf(
-			"sent schema carries no $defs -- factorSharedObjectDefs is not wired in:\n%#v",
+			"sent schema carries no $defs -- "+
+				"factorSharedObjectDefs is not wired in:\n%#v",
 			sent,
 		)
 	}
 	if len(defs) != 1 {
 		t.Errorf(
-			"$defs holds %d entries, want 1 -- the three sites share one shape",
+			"$defs holds %d entries, want 1 -- "+
+				"the three sites share one shape",
 			len(defs),
 		)
 	}
@@ -313,7 +391,8 @@ func TestBuildOutputConfigSendsTheFactoredSchema(t *testing.T) {
 		node, _ := props[site].(map[string]any)
 		if node["$ref"] == nil {
 			t.Errorf(
-				"%s was left inlined rather than referencing the shared def: %#v",
+				"%s was left inlined rather than "+
+					"referencing the shared def: %#v",
 				site,
 				node,
 			)
