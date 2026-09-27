@@ -392,6 +392,24 @@ func chatFieldsFor(
 	)
 	fields["SupportsStructuredOut"] = boolean(m.feature("structured_outputs"))
 	fields["SupportsImageGeneration"] = boolean(m.emitsModality("image"))
+
+	// What the provider says about the model's life, read straight through
+	// rather than interpreted. Written only when published: an empty string
+	// would read as "active" rather than "the provider says nothing".
+	setAttr(fields, "State", m.Attrs["state"])
+	setAttr(fields, "ReleaseDate", m.Attrs["release_date"])
+	setAttr(fields, "RetirementDate", m.Attrs["retirement_date"])
+	setAttr(fields, "ReplacedBy", m.Attrs["recommended_replacement"])
+}
+
+// setAttr writes a string field when the source publishes one, and leaves it
+// out when it does not -- an absent field is a different fact from one the
+// source published as empty.
+func setAttr(fields map[string]string, field, value string) {
+	if value == "" {
+		return
+	}
+	fields[field] = quote(value)
 }
 
 func imageFieldsFor(
