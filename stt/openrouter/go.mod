@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/joakimcarlsson/ai/stt v0.3.1
-	github.com/joakimcarlsson/ai/stt/openai v0.3.2
+	github.com/joakimcarlsson/ai/stt/openai v0.3.3
 )
 
 require (

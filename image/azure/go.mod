@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.1
 	github.com/joakimcarlsson/ai/image v0.3.1
-	github.com/joakimcarlsson/ai/image/openai v0.5.0
+	github.com/joakimcarlsson/ai/image/openai v0.5.1
 	github.com/openai/openai-go/v3 v3.61.0
 )
 
