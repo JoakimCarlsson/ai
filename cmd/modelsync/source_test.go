@@ -196,7 +196,12 @@ func TestALifecycleFieldTheSourceOmitsIsLeftOut(t *testing.T) {
 	if got.fields["State"] != `"active"` {
 		t.Errorf("State = %q, want active", got.fields["State"])
 	}
-	for _, field := range []string{"ReleaseDate", "LastUpdated", "RetirementDate", "ReplacedBy"} {
+	for _, field := range []string{
+		"ReleaseDate",
+		"LastUpdated",
+		"RetirementDate",
+		"ReplacedBy",
+	} {
 		if v, present := got.fields[field]; present {
 			t.Errorf(
 				"%s = %q, want it absent -- the source publishes none",
@@ -216,9 +221,27 @@ func TestTheTwoDatesAreCarriedSeparately(t *testing.T) {
 		attrs            map[string]string
 		release, updated string
 	}{
-		{"only a release date", map[string]string{"release_date": "2023-11-06"}, `"2023-11-06"`, ""},
-		{"only an update date", map[string]string{"last_updated": "2025-04-14"}, "", `"2025-04-14"`},
-		{"both", map[string]string{"release_date": "2024-05-13", "last_updated": "2024-12-17"}, `"2024-05-13"`, `"2024-12-17"`},
+		{
+			"only a release date",
+			map[string]string{"release_date": "2023-11-06"},
+			`"2023-11-06"`,
+			"",
+		},
+		{
+			"only an update date",
+			map[string]string{"last_updated": "2025-04-14"},
+			"",
+			`"2025-04-14"`,
+		},
+		{
+			"both",
+			map[string]string{
+				"release_date": "2024-05-13",
+				"last_updated": "2024-12-17",
+			},
+			`"2024-05-13"`,
+			`"2024-12-17"`,
+		},
 		{"neither", map[string]string{}, "", ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

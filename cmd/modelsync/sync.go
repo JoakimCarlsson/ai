@@ -30,6 +30,10 @@ type model struct {
 	// seed holds fields used only when the model is new to the catalog, for
 	// values the source publishes too poorly to overwrite a curated one with.
 	seed map[string]string
+	// owned names fields only the source can know. An existing entry's value
+	// for one is dropped before fields is applied, so a field the source
+	// stops publishing is cleared rather than carried over.
+	owned []string
 }
 
 // matchExisting pairs fetched models with the catalog entries they update.
@@ -116,8 +120,9 @@ type result struct {
 
 // syncTarget merges the fetched models into the existing catalog and returns
 // the file to write. Existing entries keep their constant name, their ID and
-// every field the source does not describe. Models the source no longer
-// lists are dropped.
+// every field the source does not describe, except the fields a model marks
+// as owned by the source, which are cleared when the source stops publishing
+// them. Models the source no longer lists are dropped.
 func syncTarget(
 	t target,
 	fetched []model,
@@ -158,6 +163,9 @@ func syncTarget(
 			res.added = append(res.added, m.apiModel)
 		}
 
+		for _, field := range m.owned {
+			delete(e.fields, field)
+		}
 		maps.Copy(e.fields, m.fields)
 		e.fields["ID"] = e.constName
 
