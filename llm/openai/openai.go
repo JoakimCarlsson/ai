@@ -758,12 +758,12 @@ func (c *Client) StreamResponse(
 	}
 
 	ctx, cancel := llm.ApplyTimeout(ctx, c.options.timeout)
-	defer cancel()
 
 	eventChan := make(chan llm.Event)
 
 	go func() {
 		defer close(eventChan)
+		defer cancel()
 		llm.ExecuteStreamWithRetry(ctx, RetryConfig(), func() error {
 			return c.runStream(ctx, params, eventChan, false)
 		}, eventChan)
@@ -1208,12 +1208,12 @@ func (c *Client) StreamResponseWithStructuredOutput(
 	}
 
 	ctx, cancel := llm.ApplyTimeout(ctx, c.options.timeout)
-	defer cancel()
 
 	eventChan := make(chan llm.Event)
 
 	go func() {
 		defer close(eventChan)
+		defer cancel()
 		llm.ExecuteStreamWithRetry(ctx, RetryConfig(), func() error {
 			return c.runStream(ctx, params, eventChan, true)
 		}, eventChan)
