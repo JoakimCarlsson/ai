@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/joakimcarlsson/ai/llm"
@@ -21,6 +22,7 @@ import (
 	"github.com/joakimcarlsson/ai/types"
 	openaisdk "github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
+	"github.com/openai/openai-go/v3/packages/respjson"
 	"github.com/openai/openai-go/v3/shared"
 )
 
@@ -220,11 +222,15 @@ func WithRequestJSONField(key string, value any) Option {
 	}
 }
 
-// WithResponseMetadataField surfaces a top-level response field into
+// WithResponseMetadataField surfaces a response field into
 // [llm.Response].ProviderMetadata. responseField is read from the completion's
 // JSON extra fields (fields the OpenAI SDK does not model natively, such as
 // Perplexity's citations) and stored under metaKey, which callers should
 // namespace per provider (e.g. "perplexity.citations").
+//
+// A responseField prefixed "usage." is read from the usage object's own
+// extra fields instead — e.g. "usage.cost", which is where an
+// OpenAI-compatible gateway reports what it actually charged.
 func WithResponseMetadataField(responseField, metaKey string) Option {
 	return func(o *Options) {
 		if o.metadataFields == nil {
@@ -782,9 +788,18 @@ func (c *Client) runStream(
 	thinkingText := ""
 	toolCalls := make([]message.ToolCall, 0)
 
+	// Collected from the chunks because the accumulator discards them; see
+	// providerMetadataFrom.
+	var topExtras, usageExtras map[string]respjson.Field
+
 	for openaiStream.Next() {
 		chunk := openaiStream.Current()
 		acc.AddChunk(chunk)
+
+		if len(c.options.metadataFields) > 0 {
+			topExtras = mergeExtras(topExtras, chunk.JSON.ExtraFields)
+			usageExtras = mergeExtras(usageExtras, chunk.Usage.JSON.ExtraFields)
+		}
 
 		for _, choice := range chunk.Choices {
 			for _, key := range []string{"reasoning", "reasoning_content"} {
@@ -835,7 +850,7 @@ func (c *Client) runStream(
 			ToolCalls:        toolCalls,
 			Usage:            c.usage(acc.ChatCompletion),
 			FinishReason:     finishReason,
-			ProviderMetadata: c.providerMetadata(acc.ChatCompletion),
+			ProviderMetadata: c.providerMetadataFrom(topExtras, usageExtras),
 		}
 		applyResponseHeaders(resp, raw)
 		if structured {
@@ -993,12 +1008,24 @@ func extraUsageInt(usage openaisdk.CompletionUsage, key string) int64 {
 func (c *Client) providerMetadata(
 	completion openaisdk.ChatCompletion,
 ) map[string]any {
+	return c.providerMetadataFrom(
+		completion.JSON.ExtraFields, completion.Usage.JSON.ExtraFields)
+}
+
+// providerMetadataFrom resolves the configured fields from the two extras
+// maps a response carries, rather than from a ChatCompletion. A streamed
+// response has no ChatCompletion to read them from — the SDK's accumulator
+// never assigns Usage.JSON — so runStream collects the extras from the
+// chunks themselves and calls this directly.
+func (c *Client) providerMetadataFrom(
+	top, usage map[string]respjson.Field,
+) map[string]any {
 	if len(c.options.metadataFields) == 0 {
 		return nil
 	}
 	var meta map[string]any
 	for field, key := range c.options.metadataFields {
-		f, ok := completion.JSON.ExtraFields[field]
+		f, ok := lookupExtra(top, usage, field)
 		if !ok {
 			continue
 		}
@@ -1016,6 +1043,36 @@ func (c *Client) providerMetadata(
 		meta[key] = value
 	}
 	return meta
+}
+
+// lookupExtra is the one place the "usage."-prefix rule lives, so the streaming
+// and non-streaming paths cannot disagree about where a configured field is
+// read from.
+func lookupExtra(
+	top, usage map[string]respjson.Field, field string,
+) (respjson.Field, bool) {
+	if nested, ok := strings.CutPrefix(field, "usage."); ok {
+		f, ok := usage[nested]
+		return f, ok
+	}
+	f, ok := top[field]
+	return f, ok
+}
+
+// mergeExtras folds src into dst with later values winning (a streamed usage
+// object arrives on the final chunk), allocating only when there is
+// something to keep.
+func mergeExtras(dst, src map[string]respjson.Field) map[string]respjson.Field {
+	if len(src) == 0 {
+		return dst
+	}
+	if dst == nil {
+		dst = make(map[string]respjson.Field, len(src))
+	}
+	for k, v := range src {
+		dst[k] = v
+	}
+	return dst
 }
 
 func (c *Client) responseFormatForSchema(
