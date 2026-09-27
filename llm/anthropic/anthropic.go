@@ -802,16 +802,143 @@ func (c *Client) usage(msg anthropicsdk.Message) llm.TokenUsage {
 func (c *Client) buildOutputConfig(
 	outputSchema *schema.StructuredOutputInfo,
 ) anthropicsdk.OutputConfigParam {
+	// Anthropic caps a schema at 16 union-typed parameters; relax to standard
+	// optionality so a large nullable-heavy schema stays under it.
+	properties, required := relaxNullableUnions(
+		outputSchema.Parameters,
+		outputSchema.Required,
+	)
+
 	schemaMap := map[string]any{
 		"type":                 "object",
-		"properties":           outputSchema.Parameters,
+		"properties":           properties,
 		"additionalProperties": false,
 	}
-	if len(outputSchema.Required) > 0 {
-		schemaMap["required"] = outputSchema.Required
+	if len(required) > 0 {
+		schemaMap["required"] = required
 	}
 	return anthropicsdk.OutputConfigParam{
 		Format: anthropicsdk.JSONOutputFormatParam{Schema: schemaMap},
+	}
+}
+
+// relaxNullableUnions deep-copies an OpenAI-strict property set (every field
+// in required, optionals as nullable unions ["T","null"]) into Anthropic's
+// standard-optionality form, recursing into nested objects and
+// array-of-object items. The input is never mutated.
+func relaxNullableUnions(
+	properties map[string]any,
+	required []string,
+) (map[string]any, []string) {
+	if properties == nil {
+		return nil, required
+	}
+	out := make(map[string]any, len(properties))
+	nullable := make(map[string]bool)
+
+	for name, raw := range properties {
+		prop, ok := raw.(map[string]any)
+		if !ok {
+			out[name] = raw
+			continue
+		}
+		cp := make(map[string]any, len(prop))
+		for k, v := range prop {
+			cp[k] = v
+		}
+		if base, wasNullable := denull(cp["type"]); wasNullable {
+			cp["type"] = base
+			nullable[name] = true
+		}
+		if nested, ok := cp["properties"].(map[string]any); ok {
+			np, nr := relaxNullableUnions(nested, asStrings(cp["required"]))
+			cp["properties"] = np
+			setRequired(cp, nr)
+		}
+		if items, ok := cp["items"].(map[string]any); ok {
+			ic := make(map[string]any, len(items))
+			for k, v := range items {
+				ic[k] = v
+			}
+			if itemProps, ok := ic["properties"].(map[string]any); ok {
+				ip, ir := relaxNullableUnions(
+					itemProps,
+					asStrings(ic["required"]),
+				)
+				ic["properties"] = ip
+				setRequired(ic, ir)
+			}
+			cp["items"] = ic
+		}
+		out[name] = cp
+	}
+
+	kept := make([]string, 0, len(required))
+	for _, name := range required {
+		if !nullable[name] {
+			kept = append(kept, name)
+		}
+	}
+	return out, kept
+}
+
+// setRequired sets a non-empty required list, or deletes the key when every
+// field became optional.
+func setRequired(node map[string]any, required []string) {
+	if len(required) > 0 {
+		node["required"] = required
+	} else {
+		delete(node, "required")
+	}
+}
+
+// denull collapses a nullable-union type (["T","null"]) to its single base
+// type. Returns (base, true) when "null" was present.
+func denull(t any) (any, bool) {
+	var elems []any
+	switch v := t.(type) {
+	case []string:
+		for _, s := range v {
+			elems = append(elems, s)
+		}
+	case []any:
+		elems = v
+	default:
+		return t, false
+	}
+	hasNull := false
+	base := make([]any, 0, len(elems))
+	for _, e := range elems {
+		if s, ok := e.(string); ok && s == "null" {
+			hasNull = true
+			continue
+		}
+		base = append(base, e)
+	}
+	if !hasNull {
+		return t, false
+	}
+	if len(base) == 1 {
+		return base[0], true
+	}
+	return base, true
+}
+
+// asStrings coerces a required-list value ([]string or []any) to []string.
+func asStrings(v any) []string {
+	switch s := v.(type) {
+	case []string:
+		return s
+	case []any:
+		out := make([]string, 0, len(s))
+		for _, e := range s {
+			if str, ok := e.(string); ok {
+				out = append(out, str)
+			}
+		}
+		return out
+	default:
+		return nil
 	}
 }
 
