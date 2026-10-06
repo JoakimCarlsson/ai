@@ -71,3 +71,50 @@ func TestWireSearchControlsAndMetadata(t *testing.T) {
 		t.Errorf("search_results metadata = %v", resp.ProviderMetadata)
 	}
 }
+
+func TestIntegrationHeader(t *testing.T) {
+	tests := []struct {
+		name string
+		opts []perplexity.Option
+		want []string
+	}{
+		{name: "default", want: []string{perplexity.IntegrationSlug}},
+		{
+			name: "caller override",
+			opts: []perplexity.Option{llmopenai.WithExtraHeaders(
+				map[string]string{"x-pplx-integration": "custom"})},
+			want: []string{"custom"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var got []string
+			srv := httptest.NewServer(http.HandlerFunc(
+				func(w http.ResponseWriter, r *http.Request) {
+					got = r.Header.Values(perplexity.IntegrationHeader)
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = io.WriteString(w, `{"id":"x",`+
+						`"object":"chat.completion","choices":[{"index":0,`+
+						`"message":{"role":"assistant","content":"hi"},`+
+						`"finish_reason":"stop"}]}`)
+				}))
+			defer srv.Close()
+
+			client := perplexity.NewLLM(append([]perplexity.Option{
+				llmopenai.WithAPIKey("test-key"),
+				llmopenai.WithBaseURL(srv.URL),
+				llmopenai.WithModel(llm.Model{APIModel: "sonar"}),
+			}, tt.opts...)...)
+
+			_, err := client.SendMessages(context.Background(),
+				[]message.Message{message.NewUserMessage("hi")}, nil)
+			if err != nil {
+				t.Fatalf("SendMessages: %v", err)
+			}
+			if len(got) != len(tt.want) || got[0] != tt.want[0] {
+				t.Errorf("%s = %v, want %v",
+					perplexity.IntegrationHeader, got, tt.want)
+			}
+		})
+	}
+}

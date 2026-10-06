@@ -17,6 +17,13 @@ import (
 // DefaultBaseURL is the canonical Perplexity API endpoint.
 const DefaultBaseURL = "https://api.perplexity.ai"
 
+// IntegrationHeader identifies requests made through this library to
+// Perplexity. It is sent with the value [IntegrationSlug] by default.
+const (
+	IntegrationHeader = "X-Pplx-Integration"
+	IntegrationSlug   = "joakimcarlsson-ai"
+)
+
 // ProviderMetadata keys under which Perplexity search data is surfaced on
 // [llm.Response].ProviderMetadata.
 const (
@@ -29,12 +36,15 @@ type Option = llmopenai.Option
 
 // NewLLM constructs a Perplexity LLM client.
 //
-// [llmopenai.WithBaseURL] is prepended with [DefaultBaseURL]; pass it again in
+// [llmopenai.WithBaseURL] is prepended with [DefaultBaseURL] and
+// [llmopenai.WithExtraHeaders] with [IntegrationHeader]; pass either again in
 // opts to override. The client always surfaces the response citations and
 // search_results into [llm.Response].ProviderMetadata.
 func NewLLM(opts ...Option) llm.LLM {
 	base := []Option{
 		llmopenai.WithBaseURL(DefaultBaseURL),
+		llmopenai.WithExtraHeaders(
+			map[string]string{IntegrationHeader: IntegrationSlug}),
 		llmopenai.WithResponseMetadataField("citations", MetadataKeyCitations),
 		llmopenai.WithResponseMetadataField(
 			"search_results", MetadataKeySearchResults),
