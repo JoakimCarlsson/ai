@@ -26,3 +26,10 @@ func NewLLM(opts ...Option) llm.LLM {
 	return llmopenai.NewLLM(
 		append([]Option{llmopenai.WithBaseURL(DefaultBaseURL)}, opts...)...)
 }
+
+// WithThinking toggles reasoning for models that support it. False sends
+// reasoning.enabled=false to disable thinking. Unset uses the provider default;
+// models without CanReason ignore this option.
+func WithThinking(enabled bool) Option {
+	return llmopenai.WithReasoningJSONField("reasoning.enabled", enabled)
+}

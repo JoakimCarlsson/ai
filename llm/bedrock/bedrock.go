@@ -25,16 +25,18 @@ import (
 
 // Options configures the Bedrock LLM client.
 type Options struct {
-	apiKey        string
-	model         llm.Model
-	maxTokens     int64
-	temperature   *float64
-	topP          *float64
-	topK          *int64
-	stopSequences []string
-	timeout       *time.Duration
-	disableCache  bool
-	httpClient    *http.Client
+	apiKey          string
+	model           llm.Model
+	maxTokens       int64
+	temperature     *float64
+	topP            *float64
+	topK            *int64
+	stopSequences   []string
+	timeout         *time.Duration
+	disableCache    bool
+	reasoningEffort *llmanthropic.ReasoningEffort
+	thinkingBudget  *int64
+	httpClient      *http.Client
 }
 
 // Option configures Options.
@@ -82,6 +84,20 @@ func WithTimeout(
 	timeout time.Duration,
 ) Option {
 	return func(o *Options) { o.timeout = &timeout }
+}
+
+// WithReasoningEffort sets Claude thinking effort. Low is the lowest adaptive
+// effort and may still think; use WithThinkingBudget(0) to disable thinking.
+// Unset preserves the provider default. Models without CanReason ignore it.
+func WithReasoningEffort(effort llmanthropic.ReasoningEffort) Option {
+	return func(o *Options) { o.reasoningEffort = &effort }
+}
+
+// WithThinkingBudget sets Claude's thinking budget. Zero disables thinking;
+// positive budgets enable manual thinking on models that support it and must
+// be at least 1024 and less than max tokens. Unset sends no budget.
+func WithThinkingBudget(tokens int64) Option {
+	return func(o *Options) { o.thinkingBudget = &tokens }
 }
 
 // WithHTTPClient injects a custom *http.Client, passed through to the
@@ -152,11 +168,24 @@ func NewLLM(opts ...Option) llm.LLM {
 	})
 }
 
+// newAnthropicChild constructs the Claude client with Bedrock routing.
 func newAnthropicChild(options Options) llm.LLM {
 	anthOpts := []llmanthropic.Option{
 		llmanthropic.WithModel(options.model),
 		llmanthropic.WithMaxTokens(options.maxTokens),
 		llmanthropic.WithBedrock(true),
+	}
+	if options.reasoningEffort != nil {
+		anthOpts = append(
+			anthOpts,
+			llmanthropic.WithReasoningEffort(*options.reasoningEffort),
+		)
+	}
+	if options.thinkingBudget != nil {
+		anthOpts = append(
+			anthOpts,
+			llmanthropic.WithThinkingBudget(*options.thinkingBudget),
+		)
 	}
 	if options.disableCache {
 		anthOpts = append(anthOpts, llmanthropic.WithDisableCache())

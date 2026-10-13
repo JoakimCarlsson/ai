@@ -39,6 +39,7 @@ const (
 	ReasoningEffortMedium  ReasoningEffort = "medium"
 	ReasoningEffortHigh    ReasoningEffort = "high"
 	ReasoningEffortXhigh   ReasoningEffort = "xhigh"
+	ReasoningEffortMax     ReasoningEffort = "max"
 )
 
 // Options configures the OpenAI LLM client.
@@ -61,12 +62,14 @@ type Options struct {
 	parallelToolCalls      *bool
 	toolChoice             *llm.ToolChoice
 	extraBodyFields        map[string]any
+	reasoningBodyFields    map[string]any
 	metadataFields         map[string]string
 	httpClient             *http.Client
 	logitBias              map[string]int
 	topLogprobs            *int
 	n                      *int64
 	reasoningContentReplay bool
+	separateReasoningUsage bool
 }
 
 // Option configures Options.
@@ -149,7 +152,9 @@ func WithHTTPClient(c *http.Client) Option {
 // WithDisableCache disables response caching for OpenAI requests.
 func WithDisableCache() Option { return func(o *Options) { o.disableCache = true } }
 
-// WithReasoningEffort sets the reasoning effort level for OpenAI o-series models.
+// WithReasoningEffort sets effort for reasoning models. None disables reasoning
+// on models that accept it; supported values vary by model. Unset uses the
+// provider default, and models without CanReason ignore this option.
 func WithReasoningEffort(effort ReasoningEffort) Option {
 	return func(o *Options) { o.reasoningEffort = &effort }
 }
@@ -220,11 +225,35 @@ func WithToolChoice(choice llm.ToolChoice) Option {
 // custom base URL targets a provider that accepts them.
 func WithRequestJSONField(key string, value any) Option {
 	return func(o *Options) {
-		if o.extraBodyFields == nil {
-			o.extraBodyFields = make(map[string]any)
-		}
-		o.extraBodyFields[key] = value
+		o.extraBodyFields = setJSONField(o.extraBodyFields, key, value)
 	}
+}
+
+// WithSeparateReasoningUsage marks a compatible provider whose top-level
+// reasoning_tokens are additional to completion_tokens. They are folded into
+// OutputTokens once, preserving ReasoningTokens as a subset of total output.
+// Providers with a different reasoning price require provider billing data
+// rather than a single output-token rate to calculate exact costs.
+func WithSeparateReasoningUsage() Option {
+	return func(o *Options) { o.separateReasoningUsage = true }
+}
+
+// WithReasoningJSONField sets a provider-specific reasoning field, emitted
+// only when the selected model has CanReason. Like WithRequestJSONField, it
+// accepts SDK JSON paths, such as "reasoning.enabled". Unset sends nothing.
+func WithReasoningJSONField(key string, value any) Option {
+	return func(o *Options) {
+		o.reasoningBodyFields = setJSONField(o.reasoningBodyFields, key, value)
+	}
+}
+
+// setJSONField allocates fields when needed and stores a JSON path value.
+func setJSONField(fields map[string]any, key string, value any) map[string]any {
+	if fields == nil {
+		fields = make(map[string]any)
+	}
+	fields[key] = value
+	return fields
 }
 
 // WithResponseMetadataField surfaces a response field into
@@ -624,6 +653,8 @@ func (c *Client) preparedParams(
 			params.ReasoningEffort = shared.ReasoningEffortHigh
 		case ReasoningEffortXhigh:
 			params.ReasoningEffort = shared.ReasoningEffortXhigh
+		case ReasoningEffortMax:
+			params.ReasoningEffort = shared.ReasoningEffortMax
 		}
 	}
 
@@ -646,6 +677,11 @@ func (c *Client) requestOptions() []option.RequestOption {
 	}
 	for k, v := range c.options.extraBodyFields {
 		opts = append(opts, option.WithJSONSet(k, v))
+	}
+	if c.options.model.CanReason {
+		for k, v := range c.options.reasoningBodyFields {
+			opts = append(opts, option.WithJSONSet(k, v))
+		}
 	}
 	return opts
 }
@@ -808,11 +844,15 @@ func (c *Client) runStream(
 	for openaiStream.Next() {
 		chunk := openaiStream.Current()
 		acc.AddChunk(chunk)
+		if chunk.Usage.CompletionTokensDetails.JSON.ReasoningTokens.Valid() {
+			acc.Usage.CompletionTokensDetails.JSON.ReasoningTokens =
+				chunk.Usage.CompletionTokensDetails.JSON.ReasoningTokens
+		}
 
 		if len(c.options.metadataFields) > 0 {
 			topExtras = mergeExtras(topExtras, chunk.JSON.ExtraFields)
-			usageExtras = mergeExtras(usageExtras, chunk.Usage.JSON.ExtraFields)
 		}
+		usageExtras = mergeExtras(usageExtras, chunk.Usage.JSON.ExtraFields)
 
 		for _, choice := range chunk.Choices {
 			for _, key := range []string{"reasoning", "reasoning_content"} {
@@ -857,6 +897,7 @@ func (c *Client) runStream(
 			finishReason = message.FinishReasonToolUse
 		}
 
+		acc.Usage.JSON.ExtraFields = usageExtras
 		resp := &llm.Response{
 			Content:          currentContent,
 			Reasoning:        thinkingText,
@@ -975,24 +1016,32 @@ func (c *Client) buildChoices(
 	return choices
 }
 
+// usage maps completion totals and reported reasoning-token details.
 func (c *Client) usage(completion openaisdk.ChatCompletion) llm.TokenUsage {
 	cachedTokens := completion.Usage.PromptTokensDetails.CachedTokens
 	if cachedTokens == 0 {
-		// DeepSeek reports cache hits as a top-level usage field rather than in
-		// prompt_tokens_details; the SDK captures it as an extra field.
 		cachedTokens = extraUsageInt(
 			completion.Usage,
 			"prompt_cache_hit_tokens",
 		)
 	}
+	reasoningTokens := completion.Usage.CompletionTokensDetails.ReasoningTokens
+	if !completion.Usage.CompletionTokensDetails.JSON.ReasoningTokens.Valid() {
+		reasoningTokens = extraUsageInt(completion.Usage, "reasoning_tokens")
+	}
+	outputTokens := completion.Usage.CompletionTokens
+	if c.options.separateReasoningUsage &&
+		!completion.Usage.CompletionTokensDetails.JSON.ReasoningTokens.Valid() {
+		outputTokens += reasoningTokens
+	}
 	inputTokens := completion.Usage.PromptTokens - cachedTokens
 
 	return llm.TokenUsage{
 		InputTokens:         inputTokens,
-		OutputTokens:        completion.Usage.CompletionTokens,
+		OutputTokens:        outputTokens,
 		CacheCreationTokens: 0,
 		CacheReadTokens:     cachedTokens,
-		ReasoningTokens:     completion.Usage.CompletionTokensDetails.ReasoningTokens,
+		ReasoningTokens:     reasoningTokens,
 	}
 }
 

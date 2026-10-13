@@ -42,6 +42,7 @@ type Option = llmopenai.Option
 // search_results into [llm.Response].ProviderMetadata.
 func NewLLM(opts ...Option) llm.LLM {
 	base := []Option{
+		llmopenai.WithSeparateReasoningUsage(),
 		llmopenai.WithBaseURL(DefaultBaseURL),
 		llmopenai.WithExtraHeaders(
 			map[string]string{IntegrationHeader: IntegrationSlug}),
