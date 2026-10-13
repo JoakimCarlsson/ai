@@ -6,10 +6,10 @@ require (
 	github.com/coder/websocket v1.8.15
 	github.com/joakimcarlsson/ai/llm/openai v0.4.8
 	github.com/joakimcarlsson/ai/prompt v0.1.0
-	github.com/joakimcarlsson/ai/session v0.1.6
+	github.com/joakimcarlsson/ai/session v0.1.8
 	github.com/joakimcarlsson/ai/stt/assemblyai v0.2.5
 	github.com/joakimcarlsson/ai/tokens/sliding v0.1.8
-	github.com/joakimcarlsson/ai/tool v0.1.2
+	github.com/joakimcarlsson/ai/tool v0.1.4
 	github.com/joakimcarlsson/ai/tts/deepgram v0.2.5
 	github.com/joakimcarlsson/ai/voice v0.2.9
 )
@@ -22,48 +22,48 @@ require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
-	github.com/joakimcarlsson/ai/embeddings v0.2.5 // indirect
-	github.com/joakimcarlsson/ai/llm v0.5.3 // indirect
-	github.com/joakimcarlsson/ai/memory v0.2.8 // indirect
-	github.com/joakimcarlsson/ai/message v0.5.2 // indirect
-	github.com/joakimcarlsson/ai/schema v0.2.0 // indirect
-	github.com/joakimcarlsson/ai/stt v0.2.5 // indirect
-	github.com/joakimcarlsson/ai/tokens v0.2.7 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
-	github.com/joakimcarlsson/ai/tts v0.2.5 // indirect
-	github.com/joakimcarlsson/ai/types v0.2.0 // indirect
-	github.com/modelcontextprotocol/go-sdk v1.7.0 // indirect
-	github.com/openai/openai-go/v3 v3.61.0 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.31.0 // indirect
+	github.com/joakimcarlsson/ai/embeddings v0.3.1 // indirect
+	github.com/joakimcarlsson/ai/llm v0.7.0 // indirect
+	github.com/joakimcarlsson/ai/memory v0.2.13 // indirect
+	github.com/joakimcarlsson/ai/message v0.6.1 // indirect
+	github.com/joakimcarlsson/ai/schema v0.2.2 // indirect
+	github.com/joakimcarlsson/ai/stt v0.3.1 // indirect
+	github.com/joakimcarlsson/ai/tokens v0.2.9 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.1 // indirect
+	github.com/joakimcarlsson/ai/tts v0.3.1 // indirect
+	github.com/joakimcarlsson/ai/types v0.2.1 // indirect
+	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
+	github.com/openai/openai-go/v3 v3.77.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
-	github.com/tidwall/gjson v1.19.0 // indirect
+	github.com/tidwall/gjson v1.20.0 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
-	github.com/tidwall/pretty v1.2.1 // indirect
+	github.com/tidwall/pretty v1.2.2 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
-	go.opentelemetry.io/otel v1.46.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.22.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.46.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.46.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.46.0 // indirect
-	go.opentelemetry.io/otel/log v0.22.0 // indirect
-	go.opentelemetry.io/otel/metric v1.46.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.46.0 // indirect
-	go.opentelemetry.io/otel/sdk/log v0.22.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.46.0 // indirect
-	go.opentelemetry.io/otel/trace v1.46.0 // indirect
-	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
-	golang.org/x/net v0.59.0 // indirect
-	golang.org/x/oauth2 v0.36.0 // indirect
-	golang.org/x/sync v0.23.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
-	golang.org/x/time v0.15.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260908043556-f8649ddbbfe6 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260908043556-f8649ddbbfe6 // indirect
-	google.golang.org/grpc v1.83.2 // indirect
+	go.opentelemetry.io/otel v1.47.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.23.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.47.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.47.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.47.0 // indirect
+	go.opentelemetry.io/otel/log v1.47.0 // indirect
+	go.opentelemetry.io/otel/metric v1.47.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.47.0 // indirect
+	go.opentelemetry.io/otel/sdk/log v1.47.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.47.0 // indirect
+	go.opentelemetry.io/otel/trace v1.47.0 // indirect
+	go.opentelemetry.io/proto/otlp v1.11.1 // indirect
+	golang.org/x/net v0.61.0 // indirect
+	golang.org/x/oauth2 v0.37.0 // indirect
+	golang.org/x/sync v0.24.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
+	golang.org/x/time v0.16.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20261012220534-4341edf3f941 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20261012220534-4341edf3f941 // indirect
+	google.golang.org/grpc v1.84.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 )
 

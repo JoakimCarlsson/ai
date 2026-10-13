@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"go.opentelemetry.io/otel"
-	logglobal "go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/sdk/resource"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
@@ -56,7 +55,7 @@ func (p *Providers) SetGlobal() {
 		otel.SetMeterProvider(p.MeterProvider)
 	}
 	if p.LoggerProvider != nil {
-		logglobal.SetLoggerProvider(p.LoggerProvider)
+		otel.SetLoggerProvider(p.LoggerProvider)
 	}
 }
 

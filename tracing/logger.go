@@ -5,15 +5,15 @@ import (
 	"os"
 	"strings"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/log"
-	logglobal "go.opentelemetry.io/otel/log/global"
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 // Logger returns the OpenTelemetry logger instance.
 func Logger() log.Logger {
-	return logglobal.GetLoggerProvider().Logger(instrumentationName)
+	return otel.GetLoggerProvider().Logger(instrumentationName)
 }
 
 func shouldCaptureContent() bool {
