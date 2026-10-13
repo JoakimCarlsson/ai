@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/joakimcarlsson/ai/llm"
+	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 	"github.com/joakimcarlsson/ai/message"
 	"github.com/joakimcarlsson/ai/schema"
 	"github.com/joakimcarlsson/ai/tool"
@@ -77,6 +78,7 @@ type ResponsesOptions struct {
 	reasoningEffort *ReasoningEffort
 	builtinTools    []map[string]any
 	httpClient      *http.Client
+	store           *bool
 }
 
 // ReasoningEffort controls reasoning depth for xAI reasoning models.
@@ -131,6 +133,16 @@ func WithResponsesBaseURL(u string) ResponsesOption {
 // WithResponsesExtraHeaders adds custom HTTP headers to API requests.
 func WithResponsesExtraHeaders(h map[string]string) ResponsesOption {
 	return func(o *ResponsesOptions) { o.extraHeaders = h }
+}
+
+// WithResponsesStore sets response storage; when unset the API default
+// applies. False requests encrypted reasoning for reasoning-capable models
+// with include reasoning.encrypted_content, retains the completed reasoning
+// items in [llm.Response].ReasoningItems and replays them from message history
+// before their assistant output and function calls. Items without encrypted
+// content are dropped; previous_response_id is never used.
+func WithResponsesStore(store bool) ResponsesOption {
+	return func(o *ResponsesOptions) { o.store = &store }
 }
 
 // WithResponsesReasoningEffort sets effort for reasoning models. Low is the
@@ -299,6 +311,9 @@ func (c *xaiResponsesClient) convertMessages(
 				},
 			})
 		case message.Assistant:
+			if c.options.store != nil && !*c.options.store {
+				out = append(out, llmopenai.ReasoningInputItems(msg)...)
+			}
 			if msg.Content().String() != "" {
 				out = append(out, responses.ResponseInputItemUnionParam{
 					OfMessage: &responses.EasyInputMessageParam{
@@ -367,6 +382,14 @@ func (c *xaiResponsesClient) preparedParams(
 		Model: shared.ResponsesModel(c.options.model.APIModel),
 		Input: responses.ResponseNewParamsInputUnion{OfInputItemList: input},
 		Tools: tools,
+	}
+	if c.options.store != nil {
+		params.Store = openaisdk.Bool(*c.options.store)
+		if !*c.options.store && c.options.model.CanReason {
+			params.Include = []responses.ResponseIncludable{
+				responses.ResponseIncludableReasoningEncryptedContent,
+			}
+		}
 	}
 	if c.options.maxOutputTokens > 0 {
 		params.MaxOutputTokens = openaisdk.Int(c.options.maxOutputTokens)
@@ -501,7 +524,18 @@ func (c *xaiResponsesClient) buildResponse(
 		Usage:            c.usage(resp),
 		FinishReason:     c.finishReason(resp),
 		ProviderMetadata: meta,
+		ReasoningItems:   c.extractReasoning(resp.Output),
 	}
+}
+
+// extractReasoning retains completed reasoning items for stateless replay.
+func (c *xaiResponsesClient) extractReasoning(
+	output []responses.ResponseOutputItemUnion,
+) []message.ReasoningContent {
+	if c.options.store == nil || *c.options.store {
+		return nil
+	}
+	return llmopenai.ReasoningFromOutput(output)
 }
 
 // SendMessages sends a conversation and returns the complete response.
@@ -629,6 +663,7 @@ func (c *xaiResponsesClient) runStream(
 			stream := c.client.Responses.NewStreaming(ctx, params, reqOpts...)
 			var content strings.Builder
 			var citations []map[string]any
+			var reasoningOutput []responses.ResponseOutputItemUnion
 			pendingCalls := map[string]*streamingFunctionCall{}
 			contentStarted := false
 
@@ -665,6 +700,11 @@ func (c *xaiResponsesClient) runStream(
 								Name: event.Item.Name,
 							},
 						}
+					}
+
+				case "response.output_item.done":
+					if event.Item.Type == "reasoning" {
+						reasoningOutput = append(reasoningOutput, event.Item)
 					}
 
 				case "response.function_call_arguments.delta":
@@ -717,6 +757,12 @@ func (c *xaiResponsesClient) runStream(
 						Usage:            c.usage(&event.Response),
 						FinishReason:     c.finishReason(&event.Response),
 						ProviderMetadata: meta,
+						ReasoningItems:   c.extractReasoning(reasoningOutput),
+					}
+					if len(finalResp.ReasoningItems) == 0 {
+						finalResp.ReasoningItems = c.extractReasoning(
+							event.Response.Output,
+						)
 					}
 					if structured {
 						finalResp.StructuredOutput = &contentStr

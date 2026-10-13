@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -63,6 +64,8 @@ func TestToolLoopPreservesReasoningItems(t *testing.T) {
 					ID:               "rs_1",
 					EncryptedContent: "opaque",
 					Summary:          []string{"plan"},
+					Field:            "reasoning",
+					Details:          json.RawMessage(`[{"type":"reasoning.encrypted","data":"blob"}]`),
 				}
 				model := &replayLLM{mockLLM: newMockLLM(
 					mockResponse{

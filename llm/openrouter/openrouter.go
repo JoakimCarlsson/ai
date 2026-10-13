@@ -4,6 +4,11 @@
 // chat-completions wire format, so this package is a thin wrapper over
 // [llm/openai] that fixes the base URL to https://openrouter.ai/api/v1.
 //
+// The chat client preserves each response's complete reasoning_details array,
+// including signatures and encrypted data, in message history and replays it
+// unchanged on later assistant turns. [NewResponsesLLM] targets the stateless
+// Responses API with encrypted reasoning replay.
+//
 // OpenRouter exposes far more models than the [model] package catalogues; pass
 // any OpenRouter model id via [llmopenai.WithModel] even without a registered
 // entry in [model].
@@ -26,7 +31,26 @@ type Option = llmopenai.Option
 // opts to override (e.g. to point at a regional endpoint).
 func NewLLM(opts ...Option) llm.LLM {
 	return llmopenai.NewLLM(
-		append([]Option{llmopenai.WithBaseURL(DefaultBaseURL)}, opts...)...)
+		append([]Option{
+			llmopenai.WithBaseURL(DefaultBaseURL),
+			llmopenai.WithReasoningDetailsReplay(true),
+		}, opts...)...)
+}
+
+// NewResponsesLLM constructs an OpenRouter client targeting the stateless
+// Responses API, reusing the OpenAI Responses implementation with OpenRouter's
+// endpoint. Storage defaults to false, which requests encrypted reasoning for
+// models with CanReason and replays it from message history; previous_response_id
+// is never sent. OpenRouter's Responses API is stateless-only and rejects
+// store=true with an API error, so do not pass
+// [llmopenai.WithResponsesStore] with true. Pass the API key with
+// [llmopenai.WithResponsesAPIKey]; other options may override the defaults.
+func NewResponsesLLM(opts ...llmopenai.ResponsesOption) llm.LLM {
+	return llmopenai.NewResponsesLLM(
+		append([]llmopenai.ResponsesOption{
+			llmopenai.WithResponsesBaseURL(DefaultBaseURL),
+			llmopenai.WithResponsesStore(false),
+		}, opts...)...)
 }
 
 // WithProviderRouting sets OpenRouter's provider routing object. order lists

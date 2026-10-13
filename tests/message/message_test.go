@@ -530,3 +530,33 @@ func TestJSON_RoundTrip_ReasoningContent(t *testing.T) {
 		t.Errorf("expected 'thinking very hard...', got %v", reasoning)
 	}
 }
+
+func TestJSON_RoundTrip_ReasoningReplayData(t *testing.T) {
+	details := json.RawMessage(
+		`[{"type":"reasoning.text","text":"a","signature":"sig","index":0},` +
+			`{"type":"reasoning.encrypted","data":"blob","index":1}]`,
+	)
+	original := message.NewAssistantMessage()
+	original.Parts = append(
+		original.Parts,
+		message.ReasoningContent{
+			Text:    "think",
+			Field:   "reasoning",
+			Details: details,
+		},
+	)
+
+	data, err := json.Marshal(original)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded message.Message
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	got := decoded.ReasoningContent()
+	if len(got) != 1 || got[0].Field != "reasoning" ||
+		string(got[0].Details) != string(details) {
+		t.Errorf("reasoning = %+v", got)
+	}
+}

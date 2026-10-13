@@ -24,11 +24,19 @@ type Option = llmopenai.Option
 // NewLLM constructs a DeepSeek LLM client.
 //
 // [llmopenai.WithBaseURL] is prepended with [DefaultBaseURL]; pass it again in
-// opts to override.
+// opts to override. Models with CanReason replay each assistant turn's
+// reasoning_content unchanged, as thinking-mode conversations with tools
+// require; [llmopenai.WithReasoningContentReplay] overrides this.
 func NewLLM(opts ...Option) llm.LLM {
 	return llmopenai.NewLLM(
-		append([]Option{llmopenai.WithBaseURL(DefaultBaseURL)}, opts...)...)
+		append([]Option{
+			llmopenai.WithBaseURL(DefaultBaseURL),
+			llmopenai.WithReasoningReplayDefault(canReason),
+		}, opts...)...)
 }
+
+// canReason reports whether the model is a thinking model.
+func canReason(m llm.Model) bool { return m.CanReason }
 
 // ReasoningEffort controls DeepSeek thinking depth.
 type ReasoningEffort string

@@ -426,6 +426,28 @@ Every vendor's `NewLLM(...)` returns a tracing-wrapped client. Spans + metrics
 are emitted automatically via OpenTelemetry. See [Tracing](../advanced/tracing.md)
 for setup.
 
+## Reasoning history across providers
+
+Reasoning state travels in the `message.Message` history: keep
+`response.ReasoningItems` in the assistant message's parts (the agent does this
+in chat and streaming tool loops). Items serialize to JSON unchanged, and the
+client keeps no hidden conversation state. Encrypted Responses replay and
+plaintext Chat replay are separate capabilities.
+
+| Provider | Mechanism | Configuration |
+| --- | --- | --- |
+| xAI Responses | Encrypted items, `store: false` plus `include: ["reasoning.encrypted_content"]`, replayed before the matching output and function calls | `xai.WithResponsesStore(false)`; built-in tools are unaffected |
+| OpenRouter Responses | Same encrypted replay on the shared OpenAI Responses client | `openrouter.NewResponsesLLM`; storage defaults to false and `previous_response_id` is never sent. The API is stateless-only and rejects `store: true` |
+| OpenRouter Chat | The complete, ordered `reasoning_details` array, including signatures and encrypted data, replayed unchanged instead of plain reasoning | On by default; `openai.WithReasoningDetailsReplay(false)` disables it |
+| DeepSeek | `reasoning_content` on every assistant turn of tool-enabled thinking conversations, with content and tool calls | On for models with `CanReason` |
+| Fireworks | `reasoning_content` for interleaved or preserved thinking; encrypted reasoning is never sent | On for models with `CanReason`; `fireworks.WithReasoningHistory(fireworks.ReasoningHistoryPreserved)` |
+| Together | Reasoning under the field the model returned it in, `reasoning` or `reasoning_content` | On for models with `CanReason`; `together.WithPreservedThinking(true)` sends `chat_template_kwargs.clear_thinking=false` |
+| Cerebras | The assistant `reasoning` field, for Qwen models only | On for Qwen models; `cerebras.WithClearThinking(bool)` sets `clear_thinking` and is ignored for other families |
+
+`openai.WithReasoningContentReplay` always overrides a provider's default.
+Groq, Ollama, Perplexity, Mistral and Berget receive no reasoning-history
+fields.
+
 ## Reasoning effort and usage
 
 Leaving effort and thinking options unset sends no reasoning parameter; the

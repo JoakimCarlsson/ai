@@ -8,6 +8,8 @@
 package cerebras
 
 import (
+	"strings"
+
 	"github.com/joakimcarlsson/ai/llm"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 )
@@ -21,8 +23,26 @@ type Option = llmopenai.Option
 // NewLLM constructs a Cerebras LLM client.
 //
 // [llmopenai.WithBaseURL] is prepended with [DefaultBaseURL]; pass it again in
-// opts to override.
+// opts to override. Qwen models replay each assistant turn's reasoning field,
+// which their historical-thinking behavior uses; other model families receive
+// no reasoning history. [llmopenai.WithReasoningContentReplay] overrides this.
 func NewLLM(opts ...Option) llm.LLM {
 	return llmopenai.NewLLM(
-		append([]Option{llmopenai.WithBaseURL(DefaultBaseURL)}, opts...)...)
+		append([]Option{
+			llmopenai.WithBaseURL(DefaultBaseURL),
+			llmopenai.WithReasoningReplayDefault(isQwen),
+		}, opts...)...)
+}
+
+// isQwen reports whether the model belongs to the Qwen family.
+func isQwen(m llm.Model) bool {
+	return strings.HasPrefix(strings.ToLower(m.APIModel), "qwen")
+}
+
+// WithClearThinking sets clear_thinking for Qwen models. True removes
+// historical assistant reasoning before the model is prompted; false preserves
+// it, which is the provider default. Other model families ignore it. Unset
+// sends nothing.
+func WithClearThinking(clearHistory bool) Option {
+	return llmopenai.WithModelRequestJSONField(isQwen, "clear_thinking", clearHistory)
 }
