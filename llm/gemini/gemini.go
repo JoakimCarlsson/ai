@@ -161,14 +161,16 @@ func WithPresencePenalty(
 // WithSeed sets a random seed for deterministic generation.
 func WithSeed(seed int64) Option { return func(o *Options) { o.seed = &seed } }
 
-// WithThinkingLevel sets the thinking level for Gemini models that support reasoning.
+// WithThinkingLevel sets thinking depth for reasoning models. Minimal is the
+// lowest level; some models still think at that level. Unset uses the default.
 func WithThinkingLevel(level ThinkingLevel) Option {
 	return func(o *Options) { o.thinkingLevel = &level }
 }
 
 // WithThinkingBudget sets the Gemini 2.5 thinking budget in tokens via
 // thinkingConfig.thinkingBudget: -1 lets the model decide dynamically, 0
-// disables thinking, and a positive value caps the reasoning tokens. It applies
+// disables thinking where the model supports it (not Gemini 2.5 Pro), and a
+// positive value caps the reasoning tokens. It applies
 // only to models that can reason and can be combined with WithThinkingLevel.
 func WithThinkingBudget(tokens int) Option {
 	return func(o *Options) {
@@ -996,13 +998,15 @@ func groundingMetadata(resp *genai.GenerateContentResponse) map[string]any {
 	return out
 }
 
+// usage combines candidate and thought tokens into billed output usage.
 func (c *Client) usage(resp *genai.GenerateContentResponse) llm.TokenUsage {
 	if resp == nil || resp.UsageMetadata == nil {
 		return llm.TokenUsage{}
 	}
 	return llm.TokenUsage{
-		InputTokens:         int64(resp.UsageMetadata.PromptTokenCount),
-		OutputTokens:        int64(resp.UsageMetadata.CandidatesTokenCount),
+		InputTokens: int64(resp.UsageMetadata.PromptTokenCount),
+		OutputTokens: int64(resp.UsageMetadata.CandidatesTokenCount) +
+			int64(resp.UsageMetadata.ThoughtsTokenCount),
 		CacheCreationTokens: 0,
 		CacheReadTokens:     int64(resp.UsageMetadata.CachedContentTokenCount),
 		ReasoningTokens:     int64(resp.UsageMetadata.ThoughtsTokenCount),

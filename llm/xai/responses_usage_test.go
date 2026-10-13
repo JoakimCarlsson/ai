@@ -17,7 +17,7 @@ const responsesCachedBody = `{"id":"resp_c","object":"response",` +
 	`"content":[{"type":"output_text","text":"hi"}]}],` +
 	`"usage":{"input_tokens":1000,` +
 	`"input_tokens_details":{"cached_tokens":800},"output_tokens":50,` +
-	`"output_tokens_details":{"reasoning_tokens":0},"total_tokens":1050}}`
+	`"output_tokens_details":{"reasoning_tokens":12},"total_tokens":1050}}`
 
 // newUsageServer returns a test server that replies to every request with
 // the given body under the given content type.
@@ -55,6 +55,9 @@ func checkCachedUsage(t *testing.T, u llm.TokenUsage) {
 	}
 	if u.CacheReadTokens != 800 {
 		t.Errorf("CacheReadTokens = %d, want 800", u.CacheReadTokens)
+	}
+	if u.ReasoningTokens != 12 {
+		t.Errorf("ReasoningTokens = %d, want 12", u.ReasoningTokens)
 	}
 	if u.OutputTokens != 50 {
 		t.Errorf("OutputTokens = %d, want 50", u.OutputTokens)

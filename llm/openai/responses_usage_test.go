@@ -19,7 +19,7 @@ const responsesCachedBody = `{"id":"resp_c","object":"response","status":"comple
 	`"output":[{"type":"message","role":"assistant",` +
 	`"content":[{"type":"output_text","text":"hi"}]}],` +
 	`"usage":{"input_tokens":1000,"input_tokens_details":{"cached_tokens":800},` +
-	`"output_tokens":50,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":1050}}`
+	`"output_tokens":50,"output_tokens_details":{"reasoning_tokens":12},"total_tokens":1050}}`
 
 // TestResponsesUsageExcludesCachedFromInput confirms the Responses mapping
 // matches the chat-completions contract: InputTokens is the uncached input,
@@ -36,6 +36,9 @@ func TestResponsesUsageExcludesCachedFromInput(t *testing.T) {
 		}
 		if u.CacheReadTokens != 800 {
 			t.Errorf("CacheReadTokens = %d, want 800", u.CacheReadTokens)
+		}
+		if u.ReasoningTokens != 12 {
+			t.Errorf("ReasoningTokens = %d, want 12", u.ReasoningTokens)
 		}
 		if u.OutputTokens != 50 {
 			t.Errorf("OutputTokens = %d, want 50", u.OutputTokens)

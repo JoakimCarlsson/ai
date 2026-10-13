@@ -103,8 +103,17 @@ type TokenUsage struct {
 	CacheCreationTokens int64
 	CacheReadTokens     int64
 	// ReasoningTokens counts tokens spent on internal reasoning/thinking, as
-	// reported by providers that surface it (OpenAI o-series, Gemini, DeepSeek).
-	// These are billed within OutputTokens, not in addition to them.
+	// a subset of OutputTokens. OpenAI and Azure (Chat and Responses where
+	// available), xAI (Chat and Responses), Anthropic and Claude on Bedrock,
+	// Gemini and Vertex AI, DeepSeek, Groq, Cerebras, OpenRouter and Perplexity
+	// expose a breakdown when supplied by the model/API.
+	// Together, Fireworks, Mistral, Ollama's compatible endpoint and Berget
+	// do not document a separate count; it remains zero if absent. Bedrock's
+	// non-Claude catalog entries are not implemented by this client.
+	// These tokens must not be added to OutputTokens when calculating costs.
+	// Perplexity Sonar Deep Research bills reasoning at a separate rate:
+	// its separate counter is included in OutputTokens once, but exact costs
+	// require the provider's billing data rather than a single output rate.
 	ReasoningTokens int64
 }
 

@@ -16,19 +16,20 @@ import (
 
 // Options configures the Vertex AI LLM client.
 type Options struct {
-	model         llm.Model
-	maxTokens     int64
-	temperature   *float64
-	topP          *float64
-	topK          *int64
-	stopSequences []string
-	timeout       *time.Duration
-	thinkingLevel *llmgemini.ThinkingLevel
-	cachedContent string
-	cacheTTL      time.Duration
-	project       string
-	location      string
-	httpClient    *http.Client
+	model          llm.Model
+	maxTokens      int64
+	temperature    *float64
+	topP           *float64
+	topK           *int64
+	stopSequences  []string
+	timeout        *time.Duration
+	thinkingLevel  *llmgemini.ThinkingLevel
+	thinkingBudget *int
+	cachedContent  string
+	cacheTTL       time.Duration
+	project        string
+	location       string
+	httpClient     *http.Client
 }
 
 // Option configures Options.
@@ -71,9 +72,17 @@ func WithTimeout(
 	return func(o *Options) { o.timeout = &timeout }
 }
 
-// WithThinkingLevel sets the thinking level for Gemini models that support reasoning.
+// WithThinkingLevel sets thinking depth for reasoning models. Minimal is the
+// lowest level; some models still think at that level. Unset uses the default.
 func WithThinkingLevel(level llmgemini.ThinkingLevel) Option {
 	return func(o *Options) { o.thinkingLevel = &level }
+}
+
+// WithThinkingBudget sets the Gemini thinking budget. Zero disables thinking
+// on models that support it, -1 selects a dynamic budget, and positive values
+// cap thinking tokens. Models without CanReason ignore this option.
+func WithThinkingBudget(tokens int) Option {
+	return func(o *Options) { o.thinkingBudget = &tokens }
 }
 
 // WithCachedContent attaches a previously created context cache to every
@@ -159,6 +168,7 @@ func NewLLM(opts ...Option) llm.LLM {
 	})
 }
 
+// buildGeminiOptions forwards Vertex AI options to the Gemini client.
 func buildGeminiOptions(o Options) llmgemini.Options {
 	var dst llmgemini.Options
 	llmgemini.WithModel(o.model)(&dst)
@@ -180,6 +190,9 @@ func buildGeminiOptions(o Options) llmgemini.Options {
 	}
 	if o.thinkingLevel != nil {
 		llmgemini.WithThinkingLevel(*o.thinkingLevel)(&dst)
+	}
+	if o.thinkingBudget != nil {
+		llmgemini.WithThinkingBudget(*o.thinkingBudget)(&dst)
 	}
 	llmgemini.WithCachedContent(o.cachedContent)(&dst)
 	llmgemini.WithCacheTTL(o.cacheTTL)(&dst)

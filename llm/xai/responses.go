@@ -84,8 +84,10 @@ type ReasoningEffort string
 
 // ReasoningEffort values.
 const (
-	ReasoningEffortLow  ReasoningEffort = "low"
-	ReasoningEffortHigh ReasoningEffort = "high"
+	ReasoningEffortLow    ReasoningEffort = "low"
+	ReasoningEffortMedium ReasoningEffort = "medium"
+	ReasoningEffortXhigh  ReasoningEffort = "xhigh"
+	ReasoningEffortHigh   ReasoningEffort = "high"
 )
 
 // ResponsesOption configures [ResponsesOptions].
@@ -131,7 +133,9 @@ func WithResponsesExtraHeaders(h map[string]string) ResponsesOption {
 	return func(o *ResponsesOptions) { o.extraHeaders = h }
 }
 
-// WithResponsesReasoningEffort sets the reasoning effort for reasoning models.
+// WithResponsesReasoningEffort sets effort for reasoning models. Low is the
+// lowest effort; xAI reasoning models cannot turn reasoning off. Accepted levels
+// vary by model. Unset uses the provider default.
 // Note: xAI's grok-4 ignores this parameter.
 func WithResponsesReasoningEffort(e ReasoningEffort) ResponsesOption {
 	return func(o *ResponsesOptions) { o.reasoningEffort = &e }
@@ -379,6 +383,10 @@ func (c *xaiResponsesClient) preparedParams(
 			params.Reasoning.Effort = shared.ReasoningEffortLow
 		case ReasoningEffortHigh:
 			params.Reasoning.Effort = shared.ReasoningEffortHigh
+		case ReasoningEffortMedium:
+			params.Reasoning.Effort = shared.ReasoningEffortMedium
+		case ReasoningEffortXhigh:
+			params.Reasoning.Effort = shared.ReasoningEffortXhigh
 		}
 	}
 	return params
@@ -462,6 +470,7 @@ func (c *xaiResponsesClient) usage(resp *responses.Response) llm.TokenUsage {
 		InputTokens:     max(resp.Usage.InputTokens-cached, 0),
 		OutputTokens:    resp.Usage.OutputTokens,
 		CacheReadTokens: cached,
+		ReasoningTokens: resp.Usage.OutputTokensDetails.ReasoningTokens,
 	}
 }
 
