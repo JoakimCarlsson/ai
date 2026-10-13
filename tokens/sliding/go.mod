@@ -3,8 +3,8 @@ module github.com/joakimcarlsson/ai/tokens/sliding
 go 1.26.0
 
 require (
-	github.com/joakimcarlsson/ai/message v0.6.1
-	github.com/joakimcarlsson/ai/tokens v0.2.9
+	github.com/joakimcarlsson/ai/message v0.7.0
+	github.com/joakimcarlsson/ai/tokens v0.2.10
 )
 
 require (

@@ -5,12 +5,12 @@ go 1.26.0
 require (
 	github.com/coder/websocket v1.8.15
 	github.com/joakimcarlsson/ai/embeddings/openai v0.1.6
-	github.com/joakimcarlsson/ai/llm/openai v0.4.8
-	github.com/joakimcarlsson/ai/memory v0.2.13
-	github.com/joakimcarlsson/ai/session v0.1.8
+	github.com/joakimcarlsson/ai/llm/openai v0.13.0
+	github.com/joakimcarlsson/ai/memory v0.2.14
+	github.com/joakimcarlsson/ai/session v0.1.9
 	github.com/joakimcarlsson/ai/stt/assemblyai v0.2.5
 	github.com/joakimcarlsson/ai/tts/deepgram v0.2.5
-	github.com/joakimcarlsson/ai/voice v0.2.9
+	github.com/joakimcarlsson/ai/voice v0.2.15
 )
 
 require (
@@ -23,13 +23,13 @@ require (
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.31.0 // indirect
 	github.com/joakimcarlsson/ai/embeddings v0.3.1 // indirect
-	github.com/joakimcarlsson/ai/llm v0.7.0 // indirect
-	github.com/joakimcarlsson/ai/message v0.6.1 // indirect
+	github.com/joakimcarlsson/ai/llm v0.8.0 // indirect
+	github.com/joakimcarlsson/ai/message v0.7.0 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.2 // indirect
 	github.com/joakimcarlsson/ai/stt v0.3.1 // indirect
-	github.com/joakimcarlsson/ai/tokens v0.2.9 // indirect
+	github.com/joakimcarlsson/ai/tokens v0.2.10 // indirect
 	github.com/joakimcarlsson/ai/tool v0.1.4 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.2.1 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.2 // indirect
 	github.com/joakimcarlsson/ai/tts v0.3.1 // indirect
 	github.com/joakimcarlsson/ai/types v0.2.1 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect

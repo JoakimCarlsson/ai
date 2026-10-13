@@ -3,8 +3,8 @@ module github.com/joakimcarlsson/ai/examples/llm/anthropic-stream
 go 1.26.0
 
 require (
-	github.com/joakimcarlsson/ai/llm/anthropic v0.3.8
-	github.com/joakimcarlsson/ai/message v0.6.1
+	github.com/joakimcarlsson/ai/llm/anthropic v0.9.0
+	github.com/joakimcarlsson/ai/message v0.7.0
 )
 
 require (
@@ -34,10 +34,10 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.31.0 // indirect
 	github.com/invopop/jsonschema v0.14.0 // indirect
-	github.com/joakimcarlsson/ai/llm v0.7.0 // indirect
+	github.com/joakimcarlsson/ai/llm v0.8.0 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.2 // indirect
 	github.com/joakimcarlsson/ai/tool v0.1.4 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.2.1 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.2 // indirect
 	github.com/joakimcarlsson/ai/types v0.2.1 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
 	github.com/pb33f/go-yaml v0.1.1 // indirect
