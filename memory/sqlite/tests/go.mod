@@ -9,8 +9,8 @@ replace github.com/joakimcarlsson/ai/message => ../../../message
 replace github.com/joakimcarlsson/ai/session => ../../../session
 
 require (
-	github.com/joakimcarlsson/ai/memory/sqlite v0.1.10
-	github.com/joakimcarlsson/ai/message v0.6.1
+	github.com/joakimcarlsson/ai/memory/sqlite v0.1.11
+	github.com/joakimcarlsson/ai/message v0.7.0
 	github.com/stretchr/testify v1.12.1
 	modernc.org/sqlite v1.60.1
 )
@@ -19,7 +19,7 @@ require (
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/google/pprof v0.0.0-20261012231050-2af12c3f4d87 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/joakimcarlsson/ai/session v0.1.8 // indirect
+	github.com/joakimcarlsson/ai/session v0.1.9 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/ncruces/go-strftime v1.1.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect

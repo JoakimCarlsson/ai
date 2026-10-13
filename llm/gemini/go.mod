@@ -4,8 +4,8 @@ go 1.26.0
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/joakimcarlsson/ai/llm v0.7.0
-	github.com/joakimcarlsson/ai/message v0.6.1
+	github.com/joakimcarlsson/ai/llm v0.8.0
+	github.com/joakimcarlsson/ai/message v0.7.0
 	github.com/joakimcarlsson/ai/schema v0.2.2
 	github.com/joakimcarlsson/ai/tool v0.1.4
 	github.com/joakimcarlsson/ai/types v0.2.1
@@ -28,7 +28,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.26.2 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.31.0 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.2.1 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.2 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect

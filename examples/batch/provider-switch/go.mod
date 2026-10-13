@@ -3,13 +3,13 @@ module github.com/joakimcarlsson/ai/examples/batch/provider-switch
 go 1.26.0
 
 require (
-	github.com/joakimcarlsson/ai/batch v0.1.13
-	github.com/joakimcarlsson/ai/batch/concurrent v0.1.8
-	github.com/joakimcarlsson/ai/llm v0.7.0
-	github.com/joakimcarlsson/ai/llm/anthropic v0.3.8
-	github.com/joakimcarlsson/ai/llm/gemini v0.3.7
-	github.com/joakimcarlsson/ai/llm/openai v0.4.8
-	github.com/joakimcarlsson/ai/message v0.6.1
+	github.com/joakimcarlsson/ai/batch v0.1.14
+	github.com/joakimcarlsson/ai/batch/concurrent v0.1.14
+	github.com/joakimcarlsson/ai/llm v0.8.0
+	github.com/joakimcarlsson/ai/llm/anthropic v0.9.0
+	github.com/joakimcarlsson/ai/llm/gemini v0.10.1
+	github.com/joakimcarlsson/ai/llm/openai v0.13.0
+	github.com/joakimcarlsson/ai/message v0.7.0
 )
 
 require (
@@ -52,7 +52,7 @@ require (
 	github.com/joakimcarlsson/ai/embeddings v0.3.1 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.2 // indirect
 	github.com/joakimcarlsson/ai/tool v0.1.4 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.2.1 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.2 // indirect
 	github.com/joakimcarlsson/ai/types v0.2.1 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
 	github.com/openai/openai-go/v3 v3.77.0 // indirect

@@ -5,8 +5,8 @@ go 1.26.0
 require (
 	github.com/joakimcarlsson/ai/embeddings/voyage v0.1.6
 	github.com/joakimcarlsson/ai/image/gemini v0.1.7
-	github.com/joakimcarlsson/ai/llm v0.5.3
-	github.com/joakimcarlsson/ai/llm/openai v0.4.8
+	github.com/joakimcarlsson/ai/llm v0.8.0
+	github.com/joakimcarlsson/ai/llm/openai v0.13.0
 	github.com/joakimcarlsson/ai/tts/elevenlabs v0.2.5
 )
 
@@ -30,11 +30,11 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.31.0 // indirect
 	github.com/joakimcarlsson/ai/embeddings v0.2.5 // indirect
 	github.com/joakimcarlsson/ai/image v0.2.0 // indirect
-	github.com/joakimcarlsson/ai/message v0.5.2 // indirect
+	github.com/joakimcarlsson/ai/message v0.7.0 // indirect
 	github.com/joakimcarlsson/ai/model v0.8.0 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.0 // indirect
 	github.com/joakimcarlsson/ai/tool v0.1.2 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.1.1 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.2 // indirect
 	github.com/joakimcarlsson/ai/tts v0.2.5 // indirect
 	github.com/joakimcarlsson/ai/types v0.2.0 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect

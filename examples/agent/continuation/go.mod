@@ -3,10 +3,10 @@ module github.com/joakimcarlsson/ai/examples/agent/continuation
 go 1.26.0
 
 require (
-	github.com/joakimcarlsson/ai/agent v0.5.2
-	github.com/joakimcarlsson/ai/llm v0.7.0
-	github.com/joakimcarlsson/ai/llm/openai v0.4.8
-	github.com/joakimcarlsson/ai/message v0.6.1
+	github.com/joakimcarlsson/ai/agent v0.5.8
+	github.com/joakimcarlsson/ai/llm v0.8.0
+	github.com/joakimcarlsson/ai/llm/openai v0.13.0
+	github.com/joakimcarlsson/ai/message v0.7.0
 	github.com/joakimcarlsson/ai/tool v0.1.4
 	github.com/joakimcarlsson/ai/types v0.2.1
 )
@@ -21,12 +21,12 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.31.0 // indirect
 	github.com/joakimcarlsson/ai/embeddings v0.3.1 // indirect
-	github.com/joakimcarlsson/ai/memory v0.2.13 // indirect
+	github.com/joakimcarlsson/ai/memory v0.2.14 // indirect
 	github.com/joakimcarlsson/ai/prompt v0.1.1 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.2 // indirect
-	github.com/joakimcarlsson/ai/session v0.1.8 // indirect
-	github.com/joakimcarlsson/ai/tokens v0.2.9 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.2.1 // indirect
+	github.com/joakimcarlsson/ai/session v0.1.9 // indirect
+	github.com/joakimcarlsson/ai/tokens v0.2.10 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.2 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
 	github.com/openai/openai-go/v3 v3.77.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
