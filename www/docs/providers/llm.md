@@ -425,3 +425,48 @@ For a managed registry of these, see [BYOM](../advanced/byom.md).
 Every vendor's `NewLLM(...)` returns a tracing-wrapped client. Spans + metrics
 are emitted automatically via OpenTelemetry. See [Tracing](../advanced/tracing.md)
 for setup.
+
+## Reasoning effort and usage
+
+Leaving effort and thinking options unset sends no reasoning parameter; the
+provider default applies. Options are sent only for models with `CanReason`.
+Accepted values depend on the model, including whether thinking can be disabled.
+OpenAI-compatible wrappers accept `openai.Option`, so their effort control is
+`openai.WithReasoningEffort` unless a provider option is listed below.
+
+`Usage.ReasoningTokens` is part of `Usage.OutputTokens`, including during
+streaming. Add output tokens to a total only once. Gemini and Vertex AI return
+candidate and thought counts separately; the client combines them into output
+usage. Perplexity Sonar Deep Research also reports a separate reasoning count,
+which is included once in output usage, but charges it at a different rate.
+Its exact bill requires the provider's cost breakdown rather than pricing all
+output tokens at the model's one output rate.
+
+| Provider | Control and lowest/off setting | Reasoning-token count |
+| --- | --- | --- |
+| [OpenAI](https://github.com/openai/openai-go/blob/main/responses/response.go) | `WithReasoningEffort` / `WithResponsesReasoningEffort`; `ReasoningEffortNone` disables reasoning where supported | Chat `completion_tokens_details.reasoning_tokens`; Responses `output_tokens_details.reasoning_tokens` |
+| [Azure](https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/reasoning) | `WithReasoningEffort(openai.ReasoningEffortNone)`; inferred deployment capabilities or `WithReasoning(true)` gate it | Inherits OpenAI Chat usage |
+| [xAI](https://docs.x.ai/developers/model-capabilities/text/reasoning) | Chat uses OpenAI effort; Responses uses `WithResponsesReasoningEffort(xai.ReasoningEffortLow)`. Supports medium/high/xhigh where accepted; reasoning cannot be disabled | Inherits Chat details; Responses `output_tokens_details.reasoning_tokens` |
+| [Anthropic](https://github.com/anthropics/anthropic-sdk-go/blob/main/message.go) | `WithReasoningEffort(ReasoningEffortLow)` minimizes adaptive thinking; `WithThinkingBudget(0)` explicitly disables it. Positive budgets enable manual thinking on supported models and override adaptive effort | `output_tokens_details.thinking_tokens`, including the final streaming message delta |
+| [Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/claude-messages-extended-thinking.html) | Claude forwards `WithReasoningEffort` and `WithThinkingBudget` to Anthropic; budget zero disables thinking | Inherits Claude's thinking count when Bedrock supplies it. Other catalog vendors are not implemented by this client |
+| [Gemini](https://ai.google.dev/gemini-api/docs/thinking) | `WithThinkingLevel(ThinkingLevelMinimal)` is the lowest level; `WithThinkingBudget(0)` disables thinking on supported models (not 2.5 Pro). Budget `-1` is dynamic | `thoughtsTokenCount`; output combines candidates and thoughts |
+| [Vertex AI](https://cloud.google.com/vertex-ai/generative-ai/docs/thinking) | Forwards `WithThinkingLevel` and `WithThinkingBudget` to Gemini | Inherits Gemini usage |
+| [DeepSeek](https://api-docs.deepseek.com/guides/thinking_mode/) | `WithReasoningEffort(ReasoningEffortNone)` / `WithThinking(false)` disables thinking; low/high/max set depth on models that accept them | Inherits Chat details; top-level `reasoning_tokens` is also recognized when details are absent |
+| [Groq](https://console.groq.com/docs/api-reference) | OpenAI effort; none disables supported Qwen models, low is the lowest GPT-OSS level | `completion_tokens_details.reasoning_tokens` through the OpenAI client |
+| [Cerebras](https://inference-docs.cerebras.ai/capabilities/reasoning) | OpenAI effort; none disables supported models, low minimizes GPT-OSS reasoning; always-thinking models can ignore the control | `completion_tokens_details.reasoning_tokens` through the OpenAI client |
+| [OpenRouter](https://openrouter.ai/docs/api/api-reference/chat/send-chat-completion-request) | OpenAI effort shorthand maps to `reasoning.effort`; none requests no reasoning where the routed model supports it | `completion_tokens_details.reasoning_tokens` through the OpenAI client |
+| [Perplexity](https://github.com/perplexityai/perplexity-py/blob/main/src/perplexity/types/shared/usage_info.py) | OpenAI effort; minimal/low minimize reasoning where supported; no documented off value for Sonar Deep Research | Top-level `reasoning_tokens`; [Sonar Deep Research bills it separately](https://docs.perplexity.ai/docs/getting-started/pricing) |
+| [Together](https://docs.together.ai/reference/chat-completions) | OpenAI effort low/medium/high; `WithThinking(false)` sends `reasoning.enabled=false` on models supporting the toggle | No separate reasoning count in the documented completion usage |
+| [Fireworks](https://docs.fireworks.ai/api-reference/post-chatcompletions) | OpenAI effort; none disables reasoning on supported models, low minimizes always-thinking models | No separate reasoning count in the documented completion usage |
+| [Mistral](https://docs.mistral.ai/studio/conversations/reasoning) | OpenAI effort; none minimizes thinking and omits the trace on supported Mistral models; hosted models may require low instead | No separate reasoning count in the documented completion usage |
+| [Ollama](https://github.com/ollama/ollama/blob/main/docs/api/openai-compatibility.mdx) | OpenAI effort; none maps to disabled thinking where supported, low is the lowest GPT-OSS level | The compatible endpoint reports completion totals without a separate thinking count |
+| [Berget](https://api.berget.ai/) | The documented compatible API has no effort/thinking control; model defaults apply | No documented separate reasoning count |
+
+Providers without a documented breakdown leave `ReasoningTokens` at zero.
+The compatible client still maps standard reasoning details if an endpoint
+supplies them; it does not estimate counts from reasoning text.
+
+Azure Responses effort forwarding depends on the Azure Responses constructor
+in [#294](https://github.com/JoakimCarlsson/ai/issues/294), which is not present
+in this checkout. OpenAI Responses usage and effort handling are ready for
+that constructor to reuse.

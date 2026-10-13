@@ -61,12 +61,22 @@ func NewResponsesLLM(opts ...Option) llm.LLM {
 	if options.timeout != nil {
 		llmopenai.WithResponsesTimeout(*options.timeout)(&responsesOptions)
 	}
+	if options.reasoningEffort != nil {
+		llmopenai.WithResponsesReasoningEffort(
+			*options.reasoningEffort,
+		)(
+			&responsesOptions,
+		)
+	}
 	for _, opt := range options.responsesOptions {
 		opt(&responsesOptions)
 	}
 	llmopenai.WithResponsesModel(modelFromOptions(options))(&responsesOptions)
 
-	v1 := strings.HasSuffix(strings.TrimRight(options.endpoint, "/"), "/openai/v1") ||
+	v1 := strings.HasSuffix(
+		strings.TrimRight(options.endpoint, "/"),
+		"/openai/v1",
+	) ||
 		options.apiVersion == "" ||
 		options.apiVersion == "v1"
 	if v1 {

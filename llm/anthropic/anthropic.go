@@ -52,6 +52,7 @@ type Options struct {
 	useBedrock      bool
 	disableCache    bool
 	reasoningEffort *ReasoningEffort
+	thinkingBudget  *int64
 	toolChoice      *llm.ToolChoice
 	builtinTools    []anthropicsdk.ToolUnionParam
 	httpClient      *http.Client
@@ -122,7 +123,17 @@ func WithHTTPClient(c *http.Client) Option {
 // WithDisableCache disables prompt caching for Anthropic requests.
 func WithDisableCache() Option { return func(o *Options) { o.disableCache = true } }
 
-// WithReasoningEffort sets the reasoning/thinking effort level.
+// WithThinkingBudget sets a manual thinking budget on reasoning models that
+// support it. Zero sends thinking.type=disabled, overriding any effort; positive
+// values must be at least 1024 and less than max tokens. A positive budget takes
+// precedence over adaptive effort. Unset sends no budget.
+func WithThinkingBudget(tokens int64) Option {
+	return func(o *Options) { o.thinkingBudget = &tokens }
+}
+
+// WithReasoningEffort sets adaptive thinking effort. Low is the lowest effort
+// and may still think; WithThinkingBudget(0) disables thinking. Legacy models
+// use a manual budget instead. Unset preserves the provider default.
 func WithReasoningEffort(effort ReasoningEffort) Option {
 	return func(o *Options) { o.reasoningEffort = &effort }
 }
@@ -435,6 +446,7 @@ func (c *Client) finishReason(reason string) message.FinishReason {
 	}
 }
 
+// usesLegacyExtendedThinking recognizes Claude models with manual thinking.
 func usesLegacyExtendedThinking(apiModel string) bool {
 	for _, legacy := range []string{
 		"claude-sonnet-4-20",
@@ -443,18 +455,23 @@ func usesLegacyExtendedThinking(apiModel string) bool {
 		"claude-opus-4-5",
 		"claude-haiku-4-5",
 	} {
-		if strings.HasPrefix(apiModel, legacy) {
+		if strings.Contains(apiModel, legacy) {
 			return true
 		}
 	}
 	return false
 }
 
+// preparedMessages applies generation and thinking options to a message request.
 func (c *Client) preparedMessages(
 	messages []anthropicsdk.MessageParam,
 	tools []anthropicsdk.ToolUnionParam,
 	systemMessages []string,
 ) anthropicsdk.MessageNewParams {
+	maxTokens := c.options.maxTokens
+	if maxTokens == 0 {
+		maxTokens = c.options.model.DefaultMaxTokens
+	}
 	var thinkingParam anthropicsdk.ThinkingConfigParamUnion
 	var outputConfig anthropicsdk.OutputConfigParam
 	var temperature param.Opt[float64]
@@ -467,12 +484,13 @@ func (c *Client) preparedMessages(
 		func(t *float64) { temperature = anthropicsdk.Float(*t) },
 	)
 
-	if c.options.reasoningEffort != nil && c.options.model.CanReason {
+	if c.options.reasoningEffort != nil && c.options.model.CanReason &&
+		c.options.thinkingBudget == nil {
 		if usesLegacyExtendedThinking(c.options.model.APIModel) {
 			temperature = anthropicsdk.Float(1)
 			thinkingParam = anthropicsdk.ThinkingConfigParamUnion{
 				OfEnabled: &anthropicsdk.ThinkingConfigEnabledParam{
-					BudgetTokens: int64(float64(c.options.maxTokens) * 0.8),
+					BudgetTokens: int64(float64(maxTokens) * 0.8),
 				},
 			}
 		} else {
@@ -492,9 +510,19 @@ func (c *Client) preparedMessages(
 		}
 	}
 
-	maxTokens := c.options.maxTokens
-	if maxTokens == 0 {
-		maxTokens = c.options.model.DefaultMaxTokens
+	if c.options.thinkingBudget != nil && c.options.model.CanReason {
+		if *c.options.thinkingBudget == 0 {
+			thinkingParam = anthropicsdk.ThinkingConfigParamUnion{
+				OfDisabled: &anthropicsdk.ThinkingConfigDisabledParam{},
+			}
+		} else {
+			temperature = anthropicsdk.Float(1)
+			thinkingParam = anthropicsdk.ThinkingConfigParamUnion{
+				OfEnabled: &anthropicsdk.ThinkingConfigEnabledParam{
+					BudgetTokens: *c.options.thinkingBudget,
+				},
+			}
+		}
 	}
 
 	params := anthropicsdk.MessageNewParams{
@@ -792,12 +820,14 @@ func (c *Client) toolCalls(msg anthropicsdk.Message) []message.ToolCall {
 	return toolCalls
 }
 
+// usage maps billed output and its thinking-token subset.
 func (c *Client) usage(msg anthropicsdk.Message) llm.TokenUsage {
 	return llm.TokenUsage{
 		InputTokens:         msg.Usage.InputTokens,
 		OutputTokens:        msg.Usage.OutputTokens,
 		CacheCreationTokens: msg.Usage.CacheCreationInputTokens,
 		CacheReadTokens:     msg.Usage.CacheReadInputTokens,
+		ReasoningTokens:     msg.Usage.OutputTokensDetails.ThinkingTokens,
 	}
 }
 

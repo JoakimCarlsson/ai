@@ -143,8 +143,9 @@ func WithResponsesHTTPClient(c *http.Client) ResponsesOption {
 	return func(o *ResponsesOptions) { o.httpClient = c }
 }
 
-// WithResponsesReasoningEffort sets the reasoning effort for o-series / gpt-5
-// reasoning models.
+// WithResponsesReasoningEffort sets effort for reasoning models. None disables
+// reasoning on models that accept it. Unset uses the provider default, and
+// models without CanReason ignore this option.
 func WithResponsesReasoningEffort(e ReasoningEffort) ResponsesOption {
 	return func(o *ResponsesOptions) { o.reasoningEffort = &e }
 }
@@ -538,6 +539,8 @@ func (c *ResponsesClient) preparedParams(
 			params.Reasoning.Effort = shared.ReasoningEffortHigh
 		case ReasoningEffortXhigh:
 			params.Reasoning.Effort = shared.ReasoningEffortXhigh
+		case ReasoningEffortMax:
+			params.Reasoning.Effort = shared.ReasoningEffortMax
 		}
 	}
 	return params
@@ -686,6 +689,7 @@ func (c *ResponsesClient) usage(resp *responses.Response) llm.TokenUsage {
 		InputTokens:     max(resp.Usage.InputTokens-cached, 0),
 		OutputTokens:    resp.Usage.OutputTokens,
 		CacheReadTokens: cached,
+		ReasoningTokens: resp.Usage.OutputTokensDetails.ReasoningTokens,
 	}
 }
 
@@ -793,7 +797,7 @@ func (c *ResponsesClient) SendMessagesWithStructuredOutput(
 	)
 }
 
-// structuredTextConfig builds the native JSON schema response constraint.
+// structuredTextConfig builds a closed object schema for strict Responses output.
 func (c *ResponsesClient) structuredTextConfig(
 	outputSchema *schema.StructuredOutputInfo,
 ) responses.ResponseTextConfigParam {

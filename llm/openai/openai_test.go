@@ -817,7 +817,7 @@ func TestUsageMetadataField(t *testing.T) {
 	}
 }
 
-// TestWireReasoningEffortLevels confirms each of the six ReasoningEffort
+// TestWireReasoningEffortLevels confirms each of the seven ReasoningEffort
 // levels maps to the expected reasoning_effort wire value on the
 // chat-completions path.
 func TestWireReasoningEffortLevels(t *testing.T) {
@@ -832,6 +832,7 @@ func TestWireReasoningEffortLevels(t *testing.T) {
 		{"medium", ReasoningEffortMedium, "medium"},
 		{"high", ReasoningEffortHigh, "high"},
 		{"xhigh", ReasoningEffortXhigh, "xhigh"},
+		{"max", ReasoningEffortMax, "max"},
 	}
 
 	for _, tt := range tests {
@@ -873,7 +874,7 @@ func TestWireReasoningEffortLevels(t *testing.T) {
 func TestWireReasoningEffortOmittedWhenModelCannotReason(t *testing.T) {
 	levels := []ReasoningEffort{
 		ReasoningEffortNone, ReasoningEffortMinimal, ReasoningEffortLow,
-		ReasoningEffortMedium, ReasoningEffortHigh, ReasoningEffortXhigh,
+		ReasoningEffortMedium, ReasoningEffortHigh, ReasoningEffortXhigh, ReasoningEffortMax,
 	}
 
 	for _, effort := range levels {

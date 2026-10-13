@@ -61,14 +61,20 @@ func TestResponsesDeploymentRouting(t *testing.T) {
 				WithMaxTokens(
 					42,
 				),
+				WithReasoningEffort(llmopenai.ReasoningEffortHigh),
 				WithResponsesOptions(llmopenai.WithResponsesStore(tc.store)),
 			)
 			if _, err := client.SendMessages(context.Background(), []message.Message{message.NewUserMessage("hi")}, nil); err != nil {
 				t.Fatal(err)
 			}
-			if body["model"] != "gpt-6.1-sol-prod" || body["store"] != tc.store ||
+			if body["model"] != "gpt-6.1-sol-prod" ||
+				body["store"] != tc.store ||
 				body["max_output_tokens"] != float64(42) {
 				t.Fatalf("body = %v", body)
+			}
+			reasoning, ok := body["reasoning"].(map[string]any)
+			if !ok || reasoning["effort"] != "high" {
+				t.Fatalf("reasoning = %v", body["reasoning"])
 			}
 			include, ok := body["include"].([]any)
 			if (tc.store && ok) || (!tc.store && (!ok || len(include) != 1 ||
