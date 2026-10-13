@@ -7,7 +7,6 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/log/global"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
@@ -107,10 +106,10 @@ func setupLogs(t *testing.T) *logCapture {
 	lp := sdklog.NewLoggerProvider(
 		sdklog.WithProcessor(capture),
 	)
-	prev := global.GetLoggerProvider()
-	global.SetLoggerProvider(lp)
+	prev := otel.GetLoggerProvider()
+	otel.SetLoggerProvider(lp)
 	t.Cleanup(func() {
-		global.SetLoggerProvider(prev)
+		otel.SetLoggerProvider(prev)
 		_ = lp.Shutdown(context.Background())
 	})
 	return capture
