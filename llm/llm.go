@@ -145,8 +145,12 @@ type Choice struct {
 
 // Response represents the complete response from an LLM provider.
 type Response struct {
-	Content                    string
-	Reasoning                  string
+	Content   string
+	Reasoning string
+	// ReasoningItems carries provider reasoning items into message history.
+	// Append these parts to the assistant message before text and tool calls
+	// when retaining history for a stateless Responses conversation.
+	ReasoningItems             []message.ReasoningContent
 	ToolCalls                  []message.ToolCall
 	Usage                      TokenUsage
 	FinishReason               message.FinishReason

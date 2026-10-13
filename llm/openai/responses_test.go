@@ -224,7 +224,7 @@ func TestWireReasoningEffortLevels_Responses(t *testing.T) {
 }
 
 // TestWireReasoningEffortOmittedWhenModelCannotReason_Responses confirms the
-// CanReason gate in responsesClient.preparedParams omits the whole reasoning
+// CanReason gate in ResponsesClient.preparedParams omits the whole reasoning
 // object when the model can't reason, for every level.
 func TestWireReasoningEffortOmittedWhenModelCannotReason_Responses(
 	t *testing.T,

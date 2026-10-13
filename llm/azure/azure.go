@@ -34,6 +34,7 @@ type Options struct {
 	supportsStructuredOut *bool
 	attachments           *bool
 	httpClient            *http.Client
+	responsesOptions      []llmopenai.ResponsesOption
 }
 
 // Option configures Options.
@@ -214,17 +215,7 @@ func NewLLM(opts ...Option) llm.LLM {
 		return llmopenai.NewLLM(openaiOpts...)
 	}
 
-	reqOpts := []option.RequestOption{
-		azure.WithEndpoint(options.endpoint, options.apiVersion),
-	}
-	if options.httpClient != nil {
-		reqOpts = append(reqOpts, option.WithHTTPClient(options.httpClient))
-	}
-	if options.apiKey != "" {
-		reqOpts = append(reqOpts, azure.WithAPIKey(options.apiKey))
-	} else if cred, err := azidentity.NewDefaultAzureCredential(nil); err == nil {
-		reqOpts = append(reqOpts, azure.WithTokenCredential(cred))
-	}
+	reqOpts := azureClientOptions(options)
 
 	// Build a fully-configured openai.Client with Azure auth, then hand it to the
 	// openai package's bare Client implementation. Wrap in tracing here.
@@ -328,4 +319,21 @@ func buildOpenAIOptions(o Options) llmopenai.Options {
 		llmopenai.WithTimeout(*o.timeout)(&dst)
 	}
 	return dst
+}
+
+// azureClientOptions configures the shared Azure endpoint and authentication.
+func azureClientOptions(options Options) []option.RequestOption {
+	reqOpts := []option.RequestOption{
+		azure.WithEndpoint(options.endpoint, options.apiVersion),
+	}
+	if options.httpClient != nil {
+		reqOpts = append(reqOpts, option.WithHTTPClient(options.httpClient))
+	}
+	if options.apiKey != "" {
+		reqOpts = append(reqOpts, azure.WithAPIKey(options.apiKey))
+	} else if cred, err := azidentity.NewDefaultAzureCredential(nil); err == nil {
+		reqOpts = append(reqOpts, azure.WithTokenCredential(cred))
+	}
+
+	return reqOpts
 }

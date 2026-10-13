@@ -574,9 +574,11 @@ func (a *Agent) runLoopStream(
 						if fullContent != "" {
 							assistantMsg.AppendContent(fullContent)
 						}
-						if fullReasoning != "" {
-							assistantMsg.AppendReasoningContent(fullReasoning)
-						}
+						appendResponseReasoning(
+							&assistantMsg,
+							finalResponse,
+							fullReasoning,
+						)
 						assistantMsg.AppendToolCalls(toolCalls)
 
 						toolMsg := message.Message{
@@ -638,9 +640,7 @@ func (a *Agent) runLoopStream(
 					if fullContent != "" {
 						assistantMsg.AppendContent(fullContent)
 					}
-					if fullReasoning != "" {
-						assistantMsg.AppendReasoningContent(fullReasoning)
-					}
+					appendResponseReasoning(&assistantMsg, finalResponse, fullReasoning)
 					assistantMsg.AppendToolCalls(toolCalls)
 
 					toolMsg := message.Message{
@@ -692,13 +692,9 @@ func (a *Agent) runLoopStream(
 						if finalResp.Content != "" {
 							finalAssistantMsg.AppendContent(finalResp.Content)
 						}
-						if finalResp.Reasoning != "" {
-							finalAssistantMsg.AppendReasoningContent(
-								finalResp.Reasoning,
-							)
-						}
+						appendResponseReasoning(&finalAssistantMsg, finalResp, finalResp.Reasoning)
 						if finalResp.Content != "" ||
-							finalResp.Reasoning != "" {
+							finalResp.Reasoning != "" || len(finalResp.ReasoningItems) > 0 {
 							if err := activeAgent.session.AddMessages(
 								ctx,
 								[]message.Message{finalAssistantMsg},
@@ -741,13 +737,16 @@ func (a *Agent) runLoopStream(
 				if fullContent != "" {
 					assistantMsg.AppendContent(fullContent)
 				}
-				if fullReasoning != "" {
-					assistantMsg.AppendReasoningContent(fullReasoning)
-				}
+				appendResponseReasoning(
+					&assistantMsg,
+					finalResponse,
+					fullReasoning,
+				)
 				if len(toolCalls) > 0 && !activeAgent.autoExecute {
 					assistantMsg.AppendToolCalls(toolCalls)
 				}
 				if fullContent != "" || fullReasoning != "" ||
+					(finalResponse != nil && len(finalResponse.ReasoningItems) > 0) ||
 					len(toolCalls) > 0 && !activeAgent.autoExecute {
 					if err := activeAgent.session.AddMessages(
 						ctx,
@@ -809,9 +808,7 @@ func (a *Agent) runLoopStream(
 		if fullContent != "" {
 			assistantMsg.AppendContent(fullContent)
 		}
-		if fullReasoning != "" {
-			assistantMsg.AppendReasoningContent(fullReasoning)
-		}
+		appendResponseReasoning(&assistantMsg, finalResponse, fullReasoning)
 		assistantMsg.AppendToolCalls(toolCalls)
 		messages = append(messages, assistantMsg)
 

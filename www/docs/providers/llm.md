@@ -261,6 +261,58 @@ client := llmgroq.NewCompoundLLM(
 The regular `llmgroq.NewLLM` wrapper stays available for OpenAI-compatible
 chat without built-ins.
 
+### Stateless Responses and Azure
+
+Set `llmopenai.WithResponsesStore(false)` on an OpenAI Responses client to
+request encrypted reasoning for reasoning models. Storage is omitted by default.
+Keep `response.ReasoningItems` in the assistant message's parts when resending
+history, including after tool results; streaming exposes the same items on the
+completion event's response. Items without encrypted content are dropped when
+replaying history, and no `previous_response_id` is sent. The agent preserves
+these items automatically in both chat and streaming tool loops.
+
+Azure uses the same Responses implementation with Azure authentication and
+model metadata resolved from the deployment name:
+
+```go
+import (
+    llmazure "github.com/joakimcarlsson/ai/llm/azure"
+    llmopenai "github.com/joakimcarlsson/ai/llm/openai"
+)
+
+client := llmazure.NewResponsesLLM(
+    llmazure.WithEndpoint(os.Getenv("AZURE_OPENAI_ENDPOINT")),
+    llmazure.WithAPIKey(os.Getenv("AZURE_OPENAI_API_KEY")),
+    llmazure.WithDeployment("gpt-6.1-sol-prod"),
+    llmazure.WithResponsesStore(false),
+    llmazure.WithMaxTokens(1024),
+    llmazure.WithResponsesOptions(
+        llmopenai.WithResponsesReasoningEffort(llmopenai.ReasoningEffortMedium),
+    ),
+)
+```
+
+Omit the API key to use `DefaultAzureCredential`. A resource endpoint defaults to
+`/openai/v1/responses`; an endpoint already ending in `/openai/v1` also works.
+Encrypted reasoning requires **v1**, without an `api-version` query parameter;
+dated previews through `2025-04-01-preview` lack it, as documented in the
+[Azure API version lifecycle](https://learn.microsoft.com/en-us/azure/foundry/openai/api-version-lifecycle).
+An explicit dated `WithAPIVersion` uses `/openai/responses` with that version.
+
+For direct LLM calls, retain the returned items alongside the output:
+
+```go
+assistant := message.NewAssistantMessage()
+for _, item := range response.ReasoningItems {
+    assistant.Parts = append(assistant.Parts, item)
+}
+assistant.AppendContent(response.Content)
+assistant.AppendToolCalls(response.ToolCalls)
+messages = append(messages, assistant)
+```
+
+### xAI built-in tools
+
 xAI — `web_search`, `x_search`, `code_execution` via the Responses API (use
 `NewResponsesLLM` instead of `NewLLM`):
 

@@ -116,6 +116,7 @@ const (
 	GPT56SolShcoFl         string = "azure.gpt-56sol-shco-fl"
 	GPT56TerraLocoFl       string = "azure.gpt-56terra-loco-fl"
 	GPT56TerraShcoFl       string = "azure.gpt-56terra-shco-fl"
+	GPT61Sol               string = "azure.gpt-6.1-sol"
 	GPTChatLatest05052026  string = "azure.gpt-chat-latest-05052026"
 	GPTChatLatest05282026  string = "azure.gpt-chat-latest-05282026"
 	GPTChatLatest07012026  string = "azure.gpt-chat-latest-07012026"
@@ -1574,6 +1575,25 @@ var Models = map[string]llm.Model{
 		CostPer1MOut:       6,
 		CostPer1MInCached:  0.1,
 		CostPer1MOutCached: 1.25,
+	},
+	GPT61Sol: {
+		ID:                    GPT61Sol,
+		Name:                  "GPT-6.1 Sol",
+		Provider:              "azure",
+		APIModel:              "gpt-6.1-sol",
+		Currency:              "USD",
+		CostPer1MIn:           2,
+		CostPer1MOut:          10,
+		CostPer1MInCached:     0.1,
+		CostPer1MOutCached:    2.5,
+		ContextWindow:         1050000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+		State:                 "active",
+		ReleaseDate:           "2026-09-29",
+		LastUpdated:           "2026-09-29",
 	},
 	GPTChatLatest05052026: {
 		ID:                    GPTChatLatest05052026,
