@@ -346,33 +346,7 @@ func (c *ResponsesClient) convertMessages(
 			})
 		case message.Assistant:
 			if c.options.store != nil && !*c.options.store {
-				for _, item := range msg.ReasoningContent() {
-					if item.EncryptedContent == "" {
-						continue
-					}
-					summary := make(
-						[]responses.ResponseReasoningItemSummaryParam,
-						0,
-						len(item.Summary),
-					)
-					for _, text := range item.Summary {
-						summary = append(
-							summary,
-							responses.ResponseReasoningItemSummaryParam{
-								Text: text,
-							},
-						)
-					}
-					out = append(out, responses.ResponseInputItemUnionParam{
-						OfReasoning: &responses.ResponseReasoningItemParam{
-							ID: item.ID,
-							EncryptedContent: openaisdk.String(
-								item.EncryptedContent,
-							),
-							Summary: summary,
-						},
-					})
-				}
+				out = append(out, ReasoningInputItems(msg)...)
 			}
 			if msg.Content().String() != "" {
 				out = append(out, responses.ResponseInputItemUnionParam{
@@ -610,6 +584,47 @@ func (c *ResponsesClient) extractReasoning(
 	if c.options.store == nil || *c.options.store {
 		return nil
 	}
+	return ReasoningFromOutput(output)
+}
+
+// ReasoningInputItems converts the encrypted reasoning parts of an assistant
+// message into Responses input items, in message order. Parts without
+// encrypted content cannot be replayed statelessly and are dropped.
+func ReasoningInputItems(
+	msg message.Message,
+) []responses.ResponseInputItemUnionParam {
+	var out []responses.ResponseInputItemUnionParam
+	for _, item := range msg.ReasoningContent() {
+		if item.EncryptedContent == "" {
+			continue
+		}
+		summary := make(
+			[]responses.ResponseReasoningItemSummaryParam,
+			0,
+			len(item.Summary),
+		)
+		for _, text := range item.Summary {
+			summary = append(
+				summary,
+				responses.ResponseReasoningItemSummaryParam{Text: text},
+			)
+		}
+		out = append(out, responses.ResponseInputItemUnionParam{
+			OfReasoning: &responses.ResponseReasoningItemParam{
+				ID:               item.ID,
+				EncryptedContent: openaisdk.String(item.EncryptedContent),
+				Summary:          summary,
+			},
+		})
+	}
+	return out
+}
+
+// ReasoningFromOutput collects the reasoning items of a completed Responses
+// output in order, keeping their IDs, encrypted content and summaries.
+func ReasoningFromOutput(
+	output []responses.ResponseOutputItemUnion,
+) []message.ReasoningContent {
 	var items []message.ReasoningContent
 	for _, item := range output {
 		if item.Type != "reasoning" {
