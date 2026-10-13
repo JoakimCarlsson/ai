@@ -701,12 +701,14 @@ func (c *responsesClient) SendMessagesWithStructuredOutput(
 	)
 }
 
+// structuredTextConfig builds a closed object schema for strict Responses output.
 func (c *responsesClient) structuredTextConfig(
 	outputSchema *schema.StructuredOutputInfo,
 ) responses.ResponseTextConfigParam {
 	schemaMap := map[string]any{
-		"type":       "object",
-		"properties": outputSchema.Parameters,
+		"type":                 "object",
+		"properties":           outputSchema.Parameters,
+		"additionalProperties": false,
 	}
 	if len(outputSchema.Required) > 0 {
 		schemaMap["required"] = outputSchema.Required
