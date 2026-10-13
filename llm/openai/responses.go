@@ -74,6 +74,7 @@ type ResponsesOptions struct {
 	reasoningEffort *ReasoningEffort
 	builtinTools    []responses.ToolUnionParam
 	httpClient      *http.Client
+	store           *bool
 }
 
 // ResponsesOption configures [ResponsesOptions].
@@ -87,6 +88,18 @@ func WithResponsesAPIKey(k string) ResponsesOption {
 // WithResponsesModel selects the LLM model.
 func WithResponsesModel(m llm.Model) ResponsesOption {
 	return func(o *ResponsesOptions) { o.model = m }
+}
+
+// WithResponsesStore sets response storage; when unset the API default applies.
+// False requests encrypted reasoning for reasoning-capable models and replays
+// it from message history. Items without encrypted content are dropped rather
+// than fetched by ID; previous_response_id is never used.
+// Azure encrypted reasoning requires api-version v1 via /openai/v1/responses,
+// without an api-version query parameter. Dated previews through
+// 2025-04-01-preview do not support it. See
+// https://learn.microsoft.com/en-us/azure/foundry/openai/api-version-lifecycle.
+func WithResponsesStore(store bool) ResponsesOption {
+	return func(o *ResponsesOptions) { o.store = &store }
 }
 
 // WithResponsesMaxTokens sets the maximum number of output tokens.
@@ -235,6 +248,7 @@ func WithCodeInterpreter() ResponsesOption {
 	}
 }
 
+// optString omits empty optional string parameters.
 func optString(s string) param.Opt[string] {
 	if s == "" {
 		return param.Opt[string]{}
@@ -242,8 +256,8 @@ func optString(s string) param.Opt[string] {
 	return openaisdk.String(s)
 }
 
-// responsesClient implements [llm.LLM] against the OpenAI Responses API.
-type responsesClient struct {
+// ResponsesClient implements [llm.LLM] against the OpenAI Responses API.
+type ResponsesClient struct {
 	options ResponsesOptions
 	client  openaisdk.Client
 }
@@ -274,26 +288,41 @@ func NewResponsesLLM(opts ...ResponsesOption) llm.LLM {
 		)
 	}
 
-	return llm.WithTracing(&responsesClient{
-		options: options,
-		client:  openaisdk.NewClient(clientOpts...),
-	}, llm.TracingAttrs{
-		MaxTokens:   options.maxOutputTokens,
-		Temperature: options.temperature,
-		TopP:        options.topP,
-	})
+	return llm.WithTracing(
+		NewResponsesWithExistingClient(
+			options,
+			openaisdk.NewClient(clientOpts...),
+		),
+		llm.TracingAttrs{
+			MaxTokens:   options.maxOutputTokens,
+			Temperature: options.temperature,
+			TopP:        options.topP,
+		},
+	)
+}
+
+// NewResponsesWithExistingClient constructs a bare Responses client with a
+// preconfigured SDK client, allowing providers to supply authentication and
+// endpoint routing while sharing request building and response handling.
+// The caller is responsible for wrapping it with llm.WithTracing.
+func NewResponsesWithExistingClient(
+	options ResponsesOptions,
+	client openaisdk.Client,
+) *ResponsesClient {
+	return &ResponsesClient{options: options, client: client}
 }
 
 // Model returns the configured LLM model.
-func (c *responsesClient) Model() llm.Model { return c.options.model }
+func (c *ResponsesClient) Model() llm.Model { return c.options.model }
 
 // SupportsStructuredOutput reports whether the configured model supports
 // structured output.
-func (c *responsesClient) SupportsStructuredOutput() bool {
+func (c *ResponsesClient) SupportsStructuredOutput() bool {
 	return c.options.model.SupportsStructuredOut
 }
 
-func (c *responsesClient) convertMessages(
+// convertMessages builds stateless Responses input from conversation history.
+func (c *ResponsesClient) convertMessages(
 	messages []message.Message,
 ) []responses.ResponseInputItemUnionParam {
 	out := make([]responses.ResponseInputItemUnionParam, 0, len(messages))
@@ -316,6 +345,35 @@ func (c *responsesClient) convertMessages(
 				},
 			})
 		case message.Assistant:
+			if c.options.store != nil && !*c.options.store {
+				for _, item := range msg.ReasoningContent() {
+					if item.EncryptedContent == "" {
+						continue
+					}
+					summary := make(
+						[]responses.ResponseReasoningItemSummaryParam,
+						0,
+						len(item.Summary),
+					)
+					for _, text := range item.Summary {
+						summary = append(
+							summary,
+							responses.ResponseReasoningItemSummaryParam{
+								Text: text,
+							},
+						)
+					}
+					out = append(out, responses.ResponseInputItemUnionParam{
+						OfReasoning: &responses.ResponseReasoningItemParam{
+							ID: item.ID,
+							EncryptedContent: openaisdk.String(
+								item.EncryptedContent,
+							),
+							Summary: summary,
+						},
+					})
+				}
+			}
 			if msg.Content().String() != "" {
 				out = append(out, responses.ResponseInputItemUnionParam{
 					OfMessage: &responses.EasyInputMessageParam{
@@ -409,7 +467,8 @@ func inputImageDetail(detail string) responses.ResponseInputImageDetail {
 	}
 }
 
-func (c *responsesClient) convertTools(
+// convertTools combines function definitions with configured built-in tools.
+func (c *ResponsesClient) convertTools(
 	tools []tool.BaseTool,
 ) []responses.ToolUnionParam {
 	out := make(
@@ -438,7 +497,8 @@ func (c *responsesClient) convertTools(
 	return append(out, c.options.builtinTools...)
 }
 
-func (c *responsesClient) preparedParams(
+// preparedParams applies request options to Responses input and tools.
+func (c *ResponsesClient) preparedParams(
 	input []responses.ResponseInputItemUnionParam,
 	tools []responses.ToolUnionParam,
 ) responses.ResponseNewParams {
@@ -448,6 +508,14 @@ func (c *responsesClient) preparedParams(
 		Tools: tools,
 	}
 
+	if c.options.store != nil {
+		params.Store = openaisdk.Bool(*c.options.store)
+		if !*c.options.store && c.options.model.CanReason {
+			params.Include = []responses.ResponseIncludable{
+				responses.ResponseIncludableReasoningEncryptedContent,
+			}
+		}
+	}
 	if c.options.maxOutputTokens > 0 {
 		params.MaxOutputTokens = openaisdk.Int(c.options.maxOutputTokens)
 	}
@@ -481,7 +549,7 @@ func (c *responsesClient) preparedParams(
 // extractOutput walks a completed Response and returns assistant content,
 // function tool calls, and provider metadata (citations from output_text
 // annotations).
-func (c *responsesClient) extractOutput(
+func (c *ResponsesClient) extractOutput(
 	resp *responses.Response,
 ) (string, []message.ToolCall, map[string]any) {
 	var content strings.Builder
@@ -533,6 +601,31 @@ func (c *responsesClient) extractOutput(
 
 	meta := webSearchMetadata(citations, webSearchCalls(resp.Output))
 	return content.String(), toolCalls, meta
+}
+
+// extractReasoning retains completed reasoning items for stateless replay.
+func (c *ResponsesClient) extractReasoning(
+	output []responses.ResponseOutputItemUnion,
+) []message.ReasoningContent {
+	if c.options.store == nil || *c.options.store {
+		return nil
+	}
+	var items []message.ReasoningContent
+	for _, item := range output {
+		if item.Type != "reasoning" {
+			continue
+		}
+		reasoning := message.ReasoningContent{
+			ID:               item.ID,
+			EncryptedContent: item.EncryptedContent,
+		}
+		for _, summary := range item.Summary {
+			reasoning.Summary = append(reasoning.Summary, summary.Text)
+		}
+		reasoning.Text = strings.Join(reasoning.Summary, "\n")
+		items = append(items, reasoning)
+	}
+	return items
 }
 
 // webSearchCall flattens a web_search_call output item into the entry reported
@@ -587,7 +680,7 @@ func webSearchMetadata(citations, searches []map[string]any) map[string]any {
 // input_tokens as the whole prompt and cached_tokens as the part of it that hit
 // the cache, a subset rather than an addition, so InputTokens holds the
 // uncached remainder, matching Client.usage's chat-completions mapping.
-func (c *responsesClient) usage(resp *responses.Response) llm.TokenUsage {
+func (c *ResponsesClient) usage(resp *responses.Response) llm.TokenUsage {
 	if resp == nil {
 		return llm.TokenUsage{}
 	}
@@ -600,7 +693,8 @@ func (c *responsesClient) usage(resp *responses.Response) llm.TokenUsage {
 	}
 }
 
-func (c *responsesClient) finishReason(
+// finishReason maps the response status and output items to a finish reason.
+func (c *ResponsesClient) finishReason(
 	resp *responses.Response,
 ) message.FinishReason {
 	if resp == nil {
@@ -618,7 +712,7 @@ func (c *responsesClient) finishReason(
 }
 
 // SendMessages sends a conversation and returns the complete response.
-func (c *responsesClient) SendMessages(
+func (c *ResponsesClient) SendMessages(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
@@ -650,6 +744,7 @@ func (c *responsesClient) SendMessages(
 				FinishReason:       c.finishReason(resp),
 				ProviderMetadata:   meta,
 				ProviderResponseID: resp.ID,
+				ReasoningItems:     c.extractReasoning(resp.Output),
 			}
 			applyResponseHeaders(out, raw)
 			return out, nil
@@ -658,7 +753,7 @@ func (c *responsesClient) SendMessages(
 }
 
 // SendMessagesWithStructuredOutput sends with a JSON schema constraint.
-func (c *responsesClient) SendMessagesWithStructuredOutput(
+func (c *ResponsesClient) SendMessagesWithStructuredOutput(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
@@ -694,6 +789,7 @@ func (c *responsesClient) SendMessagesWithStructuredOutput(
 				UsedNativeStructuredOutput: true,
 				ProviderMetadata:           meta,
 				ProviderResponseID:         resp.ID,
+				ReasoningItems:             c.extractReasoning(resp.Output),
 			}
 			applyResponseHeaders(out, raw)
 			return out, nil
@@ -702,7 +798,7 @@ func (c *responsesClient) SendMessagesWithStructuredOutput(
 }
 
 // structuredTextConfig builds a closed object schema for strict Responses output.
-func (c *responsesClient) structuredTextConfig(
+func (c *ResponsesClient) structuredTextConfig(
 	outputSchema *schema.StructuredOutputInfo,
 ) responses.ResponseTextConfigParam {
 	schemaMap := map[string]any{
@@ -725,7 +821,7 @@ func (c *responsesClient) structuredTextConfig(
 }
 
 // StreamResponse sends a conversation and returns a channel of streaming events.
-func (c *responsesClient) StreamResponse(
+func (c *ResponsesClient) StreamResponse(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
@@ -738,7 +834,7 @@ func (c *responsesClient) StreamResponse(
 }
 
 // StreamResponseWithStructuredOutput streams with a JSON schema constraint.
-func (c *responsesClient) StreamResponseWithStructuredOutput(
+func (c *ResponsesClient) StreamResponseWithStructuredOutput(
 	ctx context.Context,
 	messages []message.Message,
 	tools []tool.BaseTool,
@@ -752,7 +848,8 @@ func (c *responsesClient) StreamResponseWithStructuredOutput(
 	return c.runStream(ctx, params, true)
 }
 
-func (c *responsesClient) runStream(
+// runStream translates Responses stream events and retains completed reasoning.
+func (c *ResponsesClient) runStream(
 	ctx context.Context,
 	params responses.ResponseNewParams,
 	structured bool,
@@ -771,6 +868,7 @@ func (c *responsesClient) runStream(
 			)
 			var content strings.Builder
 			var citations []map[string]any
+			var reasoningOutput []responses.ResponseOutputItemUnion
 			pendingCalls := map[string]*streamingFunctionCall{}
 			contentStarted := false
 
@@ -804,6 +902,11 @@ func (c *responsesClient) runStream(
 								Name: event.Item.Name,
 							},
 						}
+					}
+
+				case "response.output_item.done":
+					if event.Item.Type == "reasoning" {
+						reasoningOutput = append(reasoningOutput, event.Item)
 					}
 
 				case "response.function_call_arguments.delta":
@@ -857,6 +960,12 @@ func (c *responsesClient) runStream(
 						FinishReason:       c.finishReason(&event.Response),
 						ProviderMetadata:   meta,
 						ProviderResponseID: event.Response.ID,
+						ReasoningItems:     c.extractReasoning(reasoningOutput),
+					}
+					if len(finalResp.ReasoningItems) == 0 {
+						finalResp.ReasoningItems = c.extractReasoning(
+							event.Response.Output,
+						)
 					}
 					applyResponseHeaders(finalResp, raw)
 					if structured {
@@ -889,7 +998,7 @@ type streamingFunctionCall struct {
 }
 
 // urlCitationFromAnnotation extracts a url_citation streaming annotation into
-// the same flat shape produced by [responsesClient.extractOutput], so
+// the same flat shape produced by [ResponsesClient.extractOutput], so
 // streaming and non-streaming consumers see identical citation entries.
 func urlCitationFromAnnotation(a any) (map[string]any, bool) {
 	b, err := json.Marshal(a)

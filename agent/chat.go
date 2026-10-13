@@ -417,9 +417,11 @@ func (a *Agent) runLoop(
 						if resp.Content != "" {
 							assistantMsg.AppendContent(resp.Content)
 						}
-						if resp.Reasoning != "" {
-							assistantMsg.AppendReasoningContent(resp.Reasoning)
-						}
+						appendResponseReasoning(
+							&assistantMsg,
+							resp,
+							resp.Reasoning,
+						)
 						assistantMsg.AppendToolCalls(resp.ToolCalls)
 
 						toolMsg := message.Message{
@@ -480,9 +482,7 @@ func (a *Agent) runLoop(
 					if resp.Content != "" {
 						assistantMsg.AppendContent(resp.Content)
 					}
-					if resp.Reasoning != "" {
-						assistantMsg.AppendReasoningContent(resp.Reasoning)
-					}
+					appendResponseReasoning(&assistantMsg, resp, resp.Reasoning)
 					assistantMsg.AppendToolCalls(resp.ToolCalls)
 
 					toolMsg := message.Message{
@@ -531,13 +531,9 @@ func (a *Agent) runLoop(
 						if finalResp.Content != "" {
 							finalAssistantMsg.AppendContent(finalResp.Content)
 						}
-						if finalResp.Reasoning != "" {
-							finalAssistantMsg.AppendReasoningContent(
-								finalResp.Reasoning,
-							)
-						}
+						appendResponseReasoning(&finalAssistantMsg, finalResp, finalResp.Reasoning)
 						if finalResp.Content != "" ||
-							finalResp.Reasoning != "" {
+							finalResp.Reasoning != "" || len(finalResp.ReasoningItems) > 0 {
 							if err := activeAgent.session.AddMessages(
 								ctx,
 								[]message.Message{finalAssistantMsg},
@@ -575,13 +571,12 @@ func (a *Agent) runLoop(
 				if resp.Content != "" {
 					assistantMsg.AppendContent(resp.Content)
 				}
-				if resp.Reasoning != "" {
-					assistantMsg.AppendReasoningContent(resp.Reasoning)
-				}
+				appendResponseReasoning(&assistantMsg, resp, resp.Reasoning)
 				if len(resp.ToolCalls) > 0 && !activeAgent.autoExecute {
 					assistantMsg.AppendToolCalls(resp.ToolCalls)
 				}
 				if resp.Content != "" || resp.Reasoning != "" ||
+					len(resp.ReasoningItems) > 0 ||
 					len(resp.ToolCalls) > 0 && !activeAgent.autoExecute {
 					if err := activeAgent.session.AddMessages(
 						ctx,
@@ -635,9 +630,7 @@ func (a *Agent) runLoop(
 		if resp.Content != "" {
 			assistantMsg.AppendContent(resp.Content)
 		}
-		if resp.Reasoning != "" {
-			assistantMsg.AppendReasoningContent(resp.Reasoning)
-		}
+		appendResponseReasoning(&assistantMsg, resp, resp.Reasoning)
 		assistantMsg.AppendToolCalls(resp.ToolCalls)
 		messages = append(messages, assistantMsg)
 
@@ -702,5 +695,22 @@ func (a *Agent) runLoop(
 		}
 
 		iteration++
+	}
+}
+
+// appendResponseReasoning preserves replayable items or the provider's text.
+func appendResponseReasoning(
+	msg *message.Message,
+	resp *llm.Response,
+	text string,
+) {
+	if resp != nil && len(resp.ReasoningItems) > 0 {
+		for _, item := range resp.ReasoningItems {
+			msg.Parts = append(msg.Parts, item)
+		}
+		return
+	}
+	if text != "" {
+		msg.AppendReasoningContent(text)
 	}
 }
