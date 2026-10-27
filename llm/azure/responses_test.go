@@ -57,7 +57,7 @@ func TestResponsesDeploymentRouting(t *testing.T) {
 					"test-key",
 				),
 				WithHTTPClient(server.Client()),
-				WithDeployment("gpt-5.6-sol-prod"),
+				WithDeployment("gpt-6.1-sol-prod"),
 				WithMaxTokens(
 					42,
 				),
@@ -67,7 +67,7 @@ func TestResponsesDeploymentRouting(t *testing.T) {
 			if _, err := client.SendMessages(context.Background(), []message.Message{message.NewUserMessage("hi")}, nil); err != nil {
 				t.Fatal(err)
 			}
-			if body["model"] != "gpt-5.6-sol-prod" ||
+			if body["model"] != "gpt-6.1-sol-prod" ||
 				body["store"] != tc.store ||
 				body["max_output_tokens"] != float64(42) {
 				t.Fatalf("body = %v", body)
@@ -90,10 +90,10 @@ func TestResponsesDeploymentRouting(t *testing.T) {
 	}
 }
 
-// TestGPT56SolDeploymentMetadata verifies exact and custom deployment names
+// TestGPT61SolDeploymentMetadata verifies exact and custom deployment names
 // share model pricing and capabilities across both Azure constructors.
-func TestGPT56SolDeploymentMetadata(t *testing.T) {
-	for _, deployment := range []string{"gpt-5.6-sol", "gpt-5.6-sol-prod"} {
+func TestGPT61SolDeploymentMetadata(t *testing.T) {
+	for _, deployment := range []string{"gpt-6.1-sol", "gpt-6.1-sol-prod"} {
 		chat := NewLLM(WithDeployment(deployment)).Model()
 		responses := NewResponsesLLM(
 			WithDeployment(deployment),
@@ -108,7 +108,7 @@ func TestGPT56SolDeploymentMetadata(t *testing.T) {
 			{responses.CanReason, responses.APIModel, responses.CostPer1MIn},
 		} {
 			if !m.canReason || m.apiModel != deployment ||
-				m.cost != Models[GPT56Sol].CostPer1MIn {
+				m.cost != Models[GPT61Sol].CostPer1MIn {
 				t.Fatalf("deployment %s: %+v", deployment, m)
 			}
 		}

@@ -18,16 +18,7 @@ import (
 
 // Model IDs served by this catalog.
 const (
-	M6Astra                   string = "azure.6-astra"
-	M6AstraFlex               string = "azure.6-astra-flex"
-	M6Luna                    string = "azure.6-luna"
-	M6LunaFlex                string = "azure.6-luna-flex"
-	M6Sol                     string = "azure.6-sol"
-	M6SolFlex                 string = "azure.6-sol-flex"
-	M61Sol                    string = "azure.6.1-sol"
-	M61SolFlex                string = "azure.6.1-sol-flex"
 	Babbage002                string = "azure.babbage-002"
-	ChatLatest10072026        string = "azure.chat-latest-10072026"
 	Codestral                 string = "azure.codestral"
 	CodexMini                 string = "azure.codex-mini"
 	CommandA                  string = "azure.command-a"
@@ -148,10 +139,19 @@ const (
 	GPT56SolShcoFl            string = "azure.gpt-56sol-shco-fl"
 	GPT56TerraLocoFl          string = "azure.gpt-56terra-loco-fl"
 	GPT56TerraShcoFl          string = "azure.gpt-56terra-shco-fl"
+	GPT6Astra                 string = "azure.gpt-6-astra"
+	GPT6AstraFlex             string = "azure.gpt-6-astra-flex"
+	GPT6Luna                  string = "azure.gpt-6-luna"
+	GPT6LunaFlex              string = "azure.gpt-6-luna-flex"
+	GPT6Sol                   string = "azure.gpt-6-sol"
+	GPT6SolFlex               string = "azure.gpt-6-sol-flex"
+	GPT61Sol                  string = "azure.gpt-6.1-sol"
+	GPT61SolFlex              string = "azure.gpt-6.1-sol-flex"
 	GPTChatLatest05052026     string = "azure.gpt-chat-latest-05052026"
 	GPTChatLatest05282026     string = "azure.gpt-chat-latest-05282026"
 	GPTChatLatest07012026     string = "azure.gpt-chat-latest-07012026"
 	GPTChatLatest08062026     string = "azure.gpt-chat-latest-08062026"
+	GPTChatLatest10072026     string = "azure.gpt-chat-latest-10072026"
 	GPTLive1                  string = "azure.gpt-live-1"
 	GPTOSS120B                string = "azure.gpt-oss-120b"
 	GPTOSS120BSft             string = "azure.gpt-oss-120b-sft"
@@ -229,94 +229,6 @@ const (
 
 // Models maps model IDs to their configurations.
 var Models = map[string]llm.Model{
-	M6Astra: {
-		ID:                 M6Astra,
-		Name:               "",
-		Provider:           "azure",
-		APIModel:           "6-astra",
-		Currency:           "USD",
-		CostPer1MIn:        10,
-		CostPer1MOut:       50,
-		CostPer1MInCached:  1,
-		CostPer1MOutCached: 12.5,
-	},
-	M6AstraFlex: {
-		ID:                 M6AstraFlex,
-		Name:               "",
-		Provider:           "azure",
-		APIModel:           "6-astra-flex",
-		Currency:           "USD",
-		CostPer1MIn:        5,
-		CostPer1MOut:       25,
-		CostPer1MInCached:  0.5,
-		CostPer1MOutCached: 6.25,
-	},
-	M6Luna: {
-		ID:                 M6Luna,
-		Name:               "",
-		Provider:           "azure",
-		APIModel:           "6-luna",
-		Currency:           "USD",
-		CostPer1MIn:        0.1,
-		CostPer1MOut:       0.5,
-		CostPer1MInCached:  0.01,
-		CostPer1MOutCached: 0.125,
-	},
-	M6LunaFlex: {
-		ID:                 M6LunaFlex,
-		Name:               "",
-		Provider:           "azure",
-		APIModel:           "6-luna-flex",
-		Currency:           "USD",
-		CostPer1MIn:        0.05,
-		CostPer1MOut:       0.25,
-		CostPer1MInCached:  0.005,
-		CostPer1MOutCached: 0.0625,
-	},
-	M6Sol: {
-		ID:                 M6Sol,
-		Name:               "",
-		Provider:           "azure",
-		APIModel:           "6-sol",
-		Currency:           "USD",
-		CostPer1MIn:        2,
-		CostPer1MOut:       10,
-		CostPer1MInCached:  0.2,
-		CostPer1MOutCached: 2.5,
-	},
-	M6SolFlex: {
-		ID:                 M6SolFlex,
-		Name:               "",
-		Provider:           "azure",
-		APIModel:           "6-sol-flex",
-		Currency:           "USD",
-		CostPer1MIn:        1,
-		CostPer1MOut:       5,
-		CostPer1MInCached:  0.1,
-		CostPer1MOutCached: 1.25,
-	},
-	M61Sol: {
-		ID:                 M61Sol,
-		Name:               "",
-		Provider:           "azure",
-		APIModel:           "6.1-sol",
-		Currency:           "USD",
-		CostPer1MIn:        2,
-		CostPer1MOut:       10,
-		CostPer1MInCached:  0.1,
-		CostPer1MOutCached: 2.5,
-	},
-	M61SolFlex: {
-		ID:                 M61SolFlex,
-		Name:               "",
-		Provider:           "azure",
-		APIModel:           "6.1-sol-flex",
-		Currency:           "USD",
-		CostPer1MIn:        1,
-		CostPer1MOut:       5,
-		CostPer1MInCached:  0.05,
-		CostPer1MOutCached: 1.25,
-	},
 	Babbage002: {
 		ID:          Babbage002,
 		Name:        "babbage-002",
@@ -324,16 +236,6 @@ var Models = map[string]llm.Model{
 		APIModel:    "babbage-002",
 		Currency:    "USD",
 		CostPer1MIn: 0.4,
-	},
-	ChatLatest10072026: {
-		ID:                ChatLatest10072026,
-		Name:              "",
-		Provider:          "azure",
-		APIModel:          "chat-latest-10072026",
-		Currency:          "USD",
-		CostPer1MIn:       5,
-		CostPer1MOut:      30,
-		CostPer1MInCached: 0.5,
 	},
 	Codestral: {
 		ID:               Codestral,
@@ -1873,6 +1775,150 @@ var Models = map[string]llm.Model{
 		CostPer1MInCached:  0.1,
 		CostPer1MOutCached: 1.25,
 	},
+	GPT6Astra: {
+		ID:                    GPT6Astra,
+		Name:                  "OpenAI gpt-6-astra",
+		Provider:              "azure",
+		APIModel:              "gpt-6-astra",
+		Currency:              "USD",
+		CostPer1MIn:           10,
+		CostPer1MOut:          50,
+		CostPer1MInCached:     1,
+		CostPer1MOutCached:    12.5,
+		ContextWindow:         1050000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+		State:                 "active",
+		ReleaseDate:           "2026-09-03",
+	},
+	GPT6AstraFlex: {
+		ID:                    GPT6AstraFlex,
+		Name:                  "OpenAI gpt-6-astra",
+		Provider:              "azure",
+		APIModel:              "gpt-6-astra-flex",
+		Currency:              "USD",
+		CostPer1MIn:           5,
+		CostPer1MOut:          25,
+		CostPer1MInCached:     0.5,
+		CostPer1MOutCached:    6.25,
+		ContextWindow:         1050000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+		State:                 "active",
+		ReleaseDate:           "2026-09-03",
+	},
+	GPT6Luna: {
+		ID:                    GPT6Luna,
+		Name:                  "OpenAI gpt-6-luna",
+		Provider:              "azure",
+		APIModel:              "gpt-6-luna",
+		Currency:              "USD",
+		CostPer1MIn:           0.1,
+		CostPer1MOut:          0.5,
+		CostPer1MInCached:     0.01,
+		CostPer1MOutCached:    0.125,
+		ContextWindow:         1050000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+		State:                 "active",
+		ReleaseDate:           "2026-09-22",
+	},
+	GPT6LunaFlex: {
+		ID:                    GPT6LunaFlex,
+		Name:                  "OpenAI gpt-6-luna",
+		Provider:              "azure",
+		APIModel:              "gpt-6-luna-flex",
+		Currency:              "USD",
+		CostPer1MIn:           0.05,
+		CostPer1MOut:          0.25,
+		CostPer1MInCached:     0.005,
+		CostPer1MOutCached:    0.0625,
+		ContextWindow:         1050000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+		State:                 "active",
+		ReleaseDate:           "2026-09-22",
+	},
+	GPT6Sol: {
+		ID:                    GPT6Sol,
+		Name:                  "OpenAI gpt-6-sol",
+		Provider:              "azure",
+		APIModel:              "gpt-6-sol",
+		Currency:              "USD",
+		CostPer1MIn:           2,
+		CostPer1MOut:          10,
+		CostPer1MInCached:     0.2,
+		CostPer1MOutCached:    2.5,
+		ContextWindow:         1050000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+		State:                 "active",
+		ReleaseDate:           "2026-09-22",
+	},
+	GPT6SolFlex: {
+		ID:                    GPT6SolFlex,
+		Name:                  "OpenAI gpt-6-sol",
+		Provider:              "azure",
+		APIModel:              "gpt-6-sol-flex",
+		Currency:              "USD",
+		CostPer1MIn:           1,
+		CostPer1MOut:          5,
+		CostPer1MInCached:     0.1,
+		CostPer1MOutCached:    1.25,
+		ContextWindow:         1050000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+		State:                 "active",
+		ReleaseDate:           "2026-09-22",
+	},
+	GPT61Sol: {
+		ID:                    GPT61Sol,
+		Name:                  "OpenAI gpt-6.1-sol",
+		Provider:              "azure",
+		APIModel:              "gpt-6.1-sol",
+		Currency:              "USD",
+		CostPer1MIn:           2,
+		CostPer1MOut:          10,
+		CostPer1MInCached:     0.1,
+		CostPer1MOutCached:    2.5,
+		ContextWindow:         1050000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+		State:                 "active",
+		ReleaseDate:           "2026-09-29",
+	},
+	GPT61SolFlex: {
+		ID:                    GPT61SolFlex,
+		Name:                  "OpenAI gpt-6.1-sol",
+		Provider:              "azure",
+		APIModel:              "gpt-6.1-sol-flex",
+		Currency:              "USD",
+		CostPer1MIn:           1,
+		CostPer1MOut:          5,
+		CostPer1MInCached:     0.05,
+		CostPer1MOutCached:    1.25,
+		ContextWindow:         1050000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+		State:                 "active",
+		ReleaseDate:           "2026-09-29",
+	},
 	GPTChatLatest05052026: {
 		ID:                    GPTChatLatest05052026,
 		Name:                  "gpt-chat-latest",
@@ -1932,6 +1978,24 @@ var Models = map[string]llm.Model{
 		Name:                  "gpt-chat-latest",
 		Provider:              "azure",
 		APIModel:              "gpt-chat-latest-08062026",
+		Currency:              "USD",
+		CostPer1MIn:           5,
+		CostPer1MOut:          30,
+		CostPer1MInCached:     0.5,
+		ContextWindow:         200000,
+		DefaultMaxTokens:      128000,
+		CanReason:             true,
+		SupportsAttachments:   true,
+		SupportsStructuredOut: true,
+		State:                 "preview",
+		ReleaseDate:           "2026-10-07",
+		RetirementDate:        "2027-05-18",
+	},
+	GPTChatLatest10072026: {
+		ID:                    GPTChatLatest10072026,
+		Name:                  "gpt-chat-latest",
+		Provider:              "azure",
+		APIModel:              "gpt-chat-latest-10072026",
 		Currency:              "USD",
 		CostPer1MIn:           5,
 		CostPer1MOut:          30,

@@ -42,6 +42,8 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      131072,
 		SupportsStructuredOut: true,
 		State:                 "production",
+		RetirementDate:        "2026-08-16",
+		ReplacedBy:            "openai/gpt-oss-20b",
 	},
 	Llama3370BVersatile: {
 		ID:                    Llama3370BVersatile,
@@ -53,6 +55,8 @@ var Models = map[string]llm.Model{
 		DefaultMaxTokens:      32768,
 		SupportsStructuredOut: true,
 		State:                 "production",
+		RetirementDate:        "2026-08-16",
+		ReplacedBy:            "openai/gpt-oss-120b or qwen/qwen3.6-27b",
 	},
 	LlamaPromptGuard222M: {
 		ID:               LlamaPromptGuard222M,
