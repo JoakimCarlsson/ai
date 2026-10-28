@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/joakimcarlsson/ai/llm v0.8.0
-	github.com/joakimcarlsson/ai/llm/openai v0.14.0
+	github.com/joakimcarlsson/ai/llm/openai v0.15.0
 )
 
 require (
