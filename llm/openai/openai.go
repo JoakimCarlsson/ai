@@ -198,8 +198,10 @@ func WithDisableCache() Option { return func(o *Options) { o.disableCache = true
 // on models that accept it; supported values vary by model. Unset uses the
 // provider default, and models without CanReason ignore this option.
 //
-// Some models, such as gpt-6-luna, reject function tools on Chat Completions
-// unless the effort is [ReasoningEffortNone]. Set it, or use [NewResponsesLLM].
+// Several models (the gpt-5.6 and gpt-6 families) reject function tools on Chat
+// Completions at their default effort. Use [NewResponsesLLM] for tools with
+// them. [ReasoningEffortNone] also works on most, but not on models that do not
+// accept it, such as gpt-6-astra and gpt-6.1-sol.
 func WithReasoningEffort(effort ReasoningEffort) Option {
 	return func(o *Options) { o.reasoningEffort = &effort }
 }
