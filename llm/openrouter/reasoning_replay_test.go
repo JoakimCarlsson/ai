@@ -14,9 +14,6 @@ import (
 	"github.com/joakimcarlsson/ai/message"
 )
 
-const orDetails = `[{"type":"reasoning.text","text":"a","signature":"sig","format":"anthropic-claude-v1","index":0},` +
-	`{"type":"reasoning.encrypted","data":"blob","format":"anthropic-claude-v1","index":1}]`
-
 // TestNewLLM verifies the endpoint, stateless request and replay.
 func TestNewLLM(t *testing.T) {
 	var path string
