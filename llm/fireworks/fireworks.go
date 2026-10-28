@@ -26,7 +26,7 @@ type Option = llmopenai.Option
 // results; [llmopenai.WithReasoningContentReplay] overrides this. Encrypted
 // reasoning is not sent: Fireworks does not support reasoning.encrypted_content.
 func NewLLM(opts ...Option) llm.LLM {
-	return llmopenai.NewLLM(
+	return llmopenai.NewChatCompletionsLLM(
 		append([]Option{
 			llmopenai.WithBaseURL(DefaultBaseURL),
 			llmopenai.WithReasoningReplayDefault(canReason),

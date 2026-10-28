@@ -50,7 +50,7 @@ func TestResponsesDeploymentRouting(t *testing.T) {
 				}),
 			)
 			defer server.Close()
-			client := NewResponsesLLM(
+			client := NewLLM(
 				WithEndpoint(server.URL+tc.endpointSuffix),
 				WithAPIVersion(tc.version),
 				WithAPIKey(
@@ -62,7 +62,7 @@ func TestResponsesDeploymentRouting(t *testing.T) {
 					42,
 				),
 				WithReasoningEffort(llmopenai.ReasoningEffortHigh),
-				WithResponsesOptions(llmopenai.WithResponsesStore(tc.store)),
+				WithOpenAIOptions(llmopenai.WithStore(tc.store)),
 			)
 			if _, err := client.SendMessages(context.Background(), []message.Message{message.NewUserMessage("hi")}, nil); err != nil {
 				t.Fatal(err)
@@ -95,9 +95,9 @@ func TestResponsesDeploymentRouting(t *testing.T) {
 func TestGPT61SolDeploymentMetadata(t *testing.T) {
 	for _, deployment := range []string{"gpt-6.1-sol", "gpt-6.1-sol-prod"} {
 		chat := NewLLM(WithDeployment(deployment)).Model()
-		responses := NewResponsesLLM(
+		responses := NewLLM(
 			WithDeployment(deployment),
-			WithResponsesStore(false),
+			WithStore(false),
 		).Model()
 		for _, m := range []struct {
 			canReason bool

@@ -34,10 +34,10 @@ func searchClient(t *testing.T, contentType, body string) llm.LLM {
 			_, _ = w.Write([]byte(body))
 		}))
 	t.Cleanup(srv.Close)
-	return NewResponsesLLM(
-		WithResponsesAPIKey("test-key"),
-		WithResponsesBaseURL(srv.URL),
-		WithResponsesModel(llm.Model{APIModel: "gpt-test"}),
+	return NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(llm.Model{APIModel: "gpt-test"}),
 	)
 }
 

@@ -75,7 +75,7 @@ func drainStream(t *testing.T, events <-chan llm.Event) *llm.Response {
 // the usage-nested and top-level cost fields into ProviderMetadata.
 func streamingClient(t *testing.T, url string) llm.LLM {
 	t.Helper()
-	return NewLLM(
+	return NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(url),
 		WithModel(llm.Model{APIModel: "m"}),
@@ -180,7 +180,7 @@ func TestStreamedMetadataIsSkippedWhenNothingIsConfigured(t *testing.T) {
 	srv := streamServer(t, sseChunks(`,"cost":0.00031`, ``))
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "m"}),

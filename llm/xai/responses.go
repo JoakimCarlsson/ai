@@ -65,20 +65,22 @@ type XSearchOpts struct {
 	EnableVideoUnderstanding bool
 }
 
-// ResponsesOptions configures the xAI Responses LLM client.
-type ResponsesOptions struct {
-	apiKey          string
-	model           llm.Model
-	maxOutputTokens int64
-	temperature     *float64
-	topP            *float64
-	timeout         *time.Duration
-	baseURL         string
-	extraHeaders    map[string]string
-	reasoningEffort *ReasoningEffort
-	builtinTools    []map[string]any
-	httpClient      *http.Client
-	store           *bool
+// Options configures the xAI LLM client.
+type Options struct {
+	apiKey            string
+	model             llm.Model
+	maxTokens         int64
+	temperature       *float64
+	topP              *float64
+	timeout           *time.Duration
+	baseURL           string
+	extraHeaders      map[string]string
+	reasoningEffort   *ReasoningEffort
+	builtinTools      []map[string]any
+	httpClient        *http.Client
+	store             *bool
+	toolChoice        *llm.ToolChoice
+	parallelToolCalls *bool
 }
 
 // ReasoningEffort controls reasoning depth for xAI reasoning models.
@@ -92,81 +94,93 @@ const (
 	ReasoningEffortHigh   ReasoningEffort = "high"
 )
 
-// ResponsesOption configures [ResponsesOptions].
-type ResponsesOption func(*ResponsesOptions)
+// Option configures [Options].
+type Option func(*Options)
 
-// WithResponsesAPIKey sets the API key used to authenticate.
-func WithResponsesAPIKey(k string) ResponsesOption {
-	return func(o *ResponsesOptions) { o.apiKey = k }
+// WithAPIKey sets the API key used to authenticate.
+func WithAPIKey(k string) Option {
+	return func(o *Options) { o.apiKey = k }
 }
 
-// WithResponsesModel selects the xAI model (e.g. grok-4 or grok-4.20-reasoning).
-func WithResponsesModel(m llm.Model) ResponsesOption {
-	return func(o *ResponsesOptions) { o.model = m }
+// WithModel selects the xAI model (e.g. grok-4 or grok-4.20-reasoning).
+func WithModel(m llm.Model) Option {
+	return func(o *Options) { o.model = m }
 }
 
-// WithResponsesMaxTokens sets the maximum number of output tokens.
-func WithResponsesMaxTokens(n int64) ResponsesOption {
-	return func(o *ResponsesOptions) { o.maxOutputTokens = n }
+// WithMaxTokens sets the maximum number of output tokens.
+func WithMaxTokens(n int64) Option {
+	return func(o *Options) { o.maxTokens = n }
 }
 
-// WithResponsesTemperature controls randomness.
-func WithResponsesTemperature(t float64) ResponsesOption {
-	return func(o *ResponsesOptions) { o.temperature = &t }
+// WithTemperature controls randomness.
+func WithTemperature(t float64) Option {
+	return func(o *Options) { o.temperature = &t }
 }
 
-// WithResponsesTopP sets nucleus sampling probability mass.
-func WithResponsesTopP(p float64) ResponsesOption {
-	return func(o *ResponsesOptions) { o.topP = &p }
+// WithTopP sets nucleus sampling probability mass.
+func WithTopP(p float64) Option {
+	return func(o *Options) { o.topP = &p }
 }
 
-// WithResponsesTimeout sets the maximum duration to wait for API responses.
-func WithResponsesTimeout(d time.Duration) ResponsesOption {
-	return func(o *ResponsesOptions) { o.timeout = &d }
+// WithTimeout sets the maximum duration to wait for API responses.
+func WithTimeout(d time.Duration) Option {
+	return func(o *Options) { o.timeout = &d }
 }
 
-// WithResponsesBaseURL overrides xAI's default Responses endpoint.
-func WithResponsesBaseURL(u string) ResponsesOption {
-	return func(o *ResponsesOptions) { o.baseURL = u }
+// WithBaseURL overrides xAI's default Responses endpoint.
+func WithBaseURL(u string) Option {
+	return func(o *Options) { o.baseURL = u }
 }
 
-// WithResponsesExtraHeaders adds custom HTTP headers to API requests.
-func WithResponsesExtraHeaders(h map[string]string) ResponsesOption {
-	return func(o *ResponsesOptions) { o.extraHeaders = h }
+// WithExtraHeaders adds custom HTTP headers to API requests.
+func WithExtraHeaders(h map[string]string) Option {
+	return func(o *Options) { o.extraHeaders = h }
 }
 
-// WithResponsesStore sets response storage; when unset the API default
+// WithStore sets response storage; when unset the API default
 // applies. False requests encrypted reasoning for reasoning-capable models
 // with include reasoning.encrypted_content, retains the completed reasoning
 // items in [llm.Response].ReasoningItems and replays them from message history
 // before their assistant output and function calls. Items without encrypted
 // content are dropped; previous_response_id is never used.
-func WithResponsesStore(store bool) ResponsesOption {
-	return func(o *ResponsesOptions) { o.store = &store }
+func WithStore(store bool) Option {
+	return func(o *Options) { o.store = &store }
 }
 
-// WithResponsesReasoningEffort sets effort for reasoning models. Low is the
+// WithReasoningEffort sets effort for reasoning models. Low is the
 // lowest effort; xAI reasoning models cannot turn reasoning off. Accepted levels
 // vary by model. Unset uses the provider default.
 // Note: xAI's grok-4 ignores this parameter.
-func WithResponsesReasoningEffort(e ReasoningEffort) ResponsesOption {
-	return func(o *ResponsesOptions) { o.reasoningEffort = &e }
+func WithReasoningEffort(e ReasoningEffort) Option {
+	return func(o *Options) { o.reasoningEffort = &e }
 }
 
-// WithResponsesHTTPClient injects a custom *http.Client, threaded into the
+// WithHTTPClient injects a custom *http.Client, threaded into the
 // OpenAI SDK via option.WithHTTPClient. Use it for outbound proxies, custom TLS
 // (private CAs, mTLS), connection-pool tuning, or transport-level
 // instrumentation. A nil client is a no-op, leaving the SDK default client in
-// place. The per-request context timeout from WithResponsesTimeout still
+// place. The per-request context timeout from WithTimeout still
 // applies on top of the injected client's transport: the two compose and the
 // shorter deadline wins.
-func WithResponsesHTTPClient(c *http.Client) ResponsesOption {
-	return func(o *ResponsesOptions) { o.httpClient = c }
+func WithHTTPClient(c *http.Client) Option {
+	return func(o *Options) { o.httpClient = c }
+}
+
+// WithToolChoice controls whether and which tool the model may call. It maps to
+// tool_choice and is emitted only when tools are sent.
+func WithToolChoice(choice llm.ToolChoice) Option {
+	return func(o *Options) { o.toolChoice = &choice }
+}
+
+// WithParallelToolCalls toggles whether the model may return several tool calls
+// in one response.
+func WithParallelToolCalls(enabled bool) Option {
+	return func(o *Options) { o.parallelToolCalls = &enabled }
 }
 
 // WithWebSearch enables the web_search built-in tool.
-func WithWebSearch(opts ...WebSearchOpts) ResponsesOption {
-	return func(o *ResponsesOptions) {
+func WithWebSearch(opts ...WebSearchOpts) Option {
+	return func(o *Options) {
 		entry := map[string]any{"type": "web_search"}
 		if len(opts) > 0 {
 			cfg := opts[0]
@@ -187,8 +201,8 @@ func WithWebSearch(opts ...WebSearchOpts) ResponsesOption {
 }
 
 // WithXSearch enables the x_search built-in tool for searching X posts.
-func WithXSearch(opts ...XSearchOpts) ResponsesOption {
-	return func(o *ResponsesOptions) {
+func WithXSearch(opts ...XSearchOpts) Option {
+	return func(o *Options) {
 		entry := map[string]any{"type": "x_search"}
 		if len(opts) > 0 {
 			cfg := opts[0]
@@ -216,8 +230,8 @@ func WithXSearch(opts ...XSearchOpts) ResponsesOption {
 }
 
 // WithCodeExecution enables the code_execution built-in tool.
-func WithCodeExecution() ResponsesOption {
-	return func(o *ResponsesOptions) {
+func WithCodeExecution() Option {
+	return func(o *Options) {
 		o.builtinTools = append(o.builtinTools, map[string]any{
 			"type": "code_execution",
 		})
@@ -243,15 +257,15 @@ func userLocationMap(loc *UserLocation) map[string]any {
 
 // xaiResponsesClient implements [llm.LLM] against xAI's Responses API.
 type xaiResponsesClient struct {
-	options ResponsesOptions
+	options Options
 	client  openaisdk.Client
 }
 
-// NewResponsesLLM constructs an xAI client targeting the Responses API.
+// NewLLM constructs an xAI client targeting the Responses API.
 // Pair with [WithWebSearch], [WithXSearch], and [WithCodeExecution] to enable
 // xAI's server-side built-in tools.
-func NewResponsesLLM(opts ...ResponsesOption) llm.LLM {
-	options := ResponsesOptions{baseURL: DefaultBaseURL}
+func NewLLM(opts ...Option) llm.LLM {
+	options := Options{baseURL: DefaultBaseURL}
 	for _, o := range opts {
 		o(&options)
 	}
@@ -274,7 +288,7 @@ func NewResponsesLLM(opts ...ResponsesOption) llm.LLM {
 		options: options,
 		client:  openaisdk.NewClient(clientOpts...),
 	}, llm.TracingAttrs{
-		MaxTokens:   options.maxOutputTokens,
+		MaxTokens:   options.maxTokens,
 		Temperature: options.temperature,
 		TopP:        options.topP,
 	})
@@ -391,8 +405,18 @@ func (c *xaiResponsesClient) preparedParams(
 			}
 		}
 	}
-	if c.options.maxOutputTokens > 0 {
-		params.MaxOutputTokens = openaisdk.Int(c.options.maxOutputTokens)
+	if len(tools) > 0 {
+		if c.options.parallelToolCalls != nil {
+			params.ParallelToolCalls = openaisdk.Bool(
+				*c.options.parallelToolCalls,
+			)
+		}
+		if c.options.toolChoice != nil {
+			params.ToolChoice = toolChoiceParam(*c.options.toolChoice)
+		}
+	}
+	if c.options.maxTokens > 0 {
+		params.MaxOutputTokens = openaisdk.Int(c.options.maxTokens)
 	}
 	if c.options.temperature != nil {
 		params.Temperature = openaisdk.Float(*c.options.temperature)
@@ -544,6 +568,9 @@ func (c *xaiResponsesClient) SendMessages(
 	messages []message.Message,
 	tools []tool.BaseTool,
 ) (*llm.Response, error) {
+	if err := c.validate(); err != nil {
+		return nil, err
+	}
 	convertedTools := c.convertTools(tools)
 	params := c.preparedParams(c.convertMessages(messages), convertedTools)
 	reqOpts := c.requestOptions(convertedTools)
@@ -571,6 +598,9 @@ func (c *xaiResponsesClient) SendMessagesWithStructuredOutput(
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
 ) (*llm.Response, error) {
+	if err := c.validate(); err != nil {
+		return nil, err
+	}
 	convertedTools := c.convertTools(tools)
 	params := c.preparedParams(c.convertMessages(messages), convertedTools)
 	params.Text = c.structuredTextConfig(outputSchema)
@@ -622,6 +652,9 @@ func (c *xaiResponsesClient) StreamResponse(
 	messages []message.Message,
 	tools []tool.BaseTool,
 ) <-chan llm.Event {
+	if err := c.validate(); err != nil {
+		return errorEvent(err)
+	}
 	convertedTools := c.convertTools(tools)
 	params := c.preparedParams(c.convertMessages(messages), convertedTools)
 	return c.runStream(ctx, params, c.requestOptions(convertedTools), false)
@@ -634,6 +667,9 @@ func (c *xaiResponsesClient) StreamResponseWithStructuredOutput(
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
 ) <-chan llm.Event {
+	if err := c.validate(); err != nil {
+		return errorEvent(err)
+	}
 	convertedTools := c.convertTools(tools)
 	params := c.preparedParams(c.convertMessages(messages), convertedTools)
 	params.Text = c.structuredTextConfig(outputSchema)
@@ -812,4 +848,50 @@ func urlCitationFromAnnotation(a any) (map[string]any, bool) {
 		"start_index": raw.StartIndex,
 		"end_index":   raw.EndIndex,
 	}, true
+}
+
+// validate rejects a malformed tool choice before a request is sent.
+func (c *xaiResponsesClient) validate() error {
+	if c.options.toolChoice == nil {
+		return nil
+	}
+	return c.options.toolChoice.Validate()
+}
+
+// errorEvent returns a closed channel carrying a single error event, used to
+// surface pre-flight failures on the streaming API.
+func errorEvent(err error) <-chan llm.Event {
+	ch := make(chan llm.Event, 1)
+	ch <- llm.Event{Type: types.EventError, Error: err}
+	close(ch)
+	return ch
+}
+
+// toolChoiceParam maps a vendor-neutral [llm.ToolChoice] onto the Responses
+// API tool_choice union.
+func toolChoiceParam(
+	choice llm.ToolChoice,
+) responses.ResponseNewParamsToolChoiceUnion {
+	switch choice.Mode {
+	case llm.ToolChoiceNone:
+		return responses.ResponseNewParamsToolChoiceUnion{
+			OfToolChoiceMode: openaisdk.Opt(responses.ToolChoiceOptionsNone),
+		}
+	case llm.ToolChoiceRequired:
+		return responses.ResponseNewParamsToolChoiceUnion{
+			OfToolChoiceMode: openaisdk.Opt(
+				responses.ToolChoiceOptionsRequired,
+			),
+		}
+	case llm.ToolChoiceSpecific:
+		return responses.ResponseNewParamsToolChoiceUnion{
+			OfFunctionTool: &responses.ToolChoiceFunctionParam{
+				Name: choice.Name,
+			},
+		}
+	default:
+		return responses.ResponseNewParamsToolChoiceUnion{
+			OfToolChoiceMode: openaisdk.Opt(responses.ToolChoiceOptionsAuto),
+		}
+	}
 }

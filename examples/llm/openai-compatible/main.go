@@ -34,7 +34,7 @@ func main() {
 func newLLM() (llm.LLM, string) {
 	switch provider := providerName(); provider {
 	case "groq":
-		return llmopenai.NewLLM(
+		return llmopenai.NewChatCompletionsLLM(
 			llmopenai.WithAPIKey(requiredFirstEnv("GROQ_API_KEY", "API_KEY")),
 			llmopenai.WithBaseURL(
 				envOrDefault("BASE_URL", "https://api.groq.com/openai/v1"),
@@ -45,7 +45,7 @@ func newLLM() (llm.LLM, string) {
 			llmopenai.WithMaxTokens(256),
 		), provider
 	case "ollama":
-		return llmopenai.NewLLM(
+		return llmopenai.NewChatCompletionsLLM(
 			llmopenai.WithAPIKey(os.Getenv("API_KEY")),
 			llmopenai.WithBaseURL(
 				envOrDefault("BASE_URL", "http://localhost:11434/v1"),
@@ -56,7 +56,7 @@ func newLLM() (llm.LLM, string) {
 			llmopenai.WithMaxTokens(256),
 		), provider
 	case "openrouter":
-		return llmopenai.NewLLM(
+		return llmopenai.NewChatCompletionsLLM(
 			llmopenai.WithAPIKey(
 				requiredFirstEnv("OPENROUTER_API_KEY", "API_KEY"),
 			),
@@ -71,7 +71,7 @@ func newLLM() (llm.LLM, string) {
 			llmopenai.WithMaxTokens(256),
 		), provider
 	case "custom":
-		return llmopenai.NewLLM(
+		return llmopenai.NewChatCompletionsLLM(
 			llmopenai.WithAPIKey(os.Getenv("API_KEY")),
 			llmopenai.WithBaseURL(requiredEnv("BASE_URL")),
 			llmopenai.WithModel(
@@ -89,6 +89,7 @@ func newLLM() (llm.LLM, string) {
 		}
 		if baseURL := os.Getenv("BASE_URL"); baseURL != "" {
 			opts = append(opts, llmopenai.WithBaseURL(baseURL))
+			return llmopenai.NewChatCompletionsLLM(opts...), provider
 		}
 		return llmopenai.NewLLM(opts...), provider
 	default:

@@ -13,7 +13,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/joakimcarlsson/ai/llm"
 	llmopenai "github.com/joakimcarlsson/ai/llm/openai"
-	openaisdk "github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/azure"
 	"github.com/openai/openai-go/v3/option"
 )
@@ -35,7 +34,7 @@ type Options struct {
 	supportsStructuredOut *bool
 	attachments           *bool
 	httpClient            *http.Client
-	responsesOptions      []llmopenai.ResponsesOption
+	openaiOptions         []llmopenai.Option
 }
 
 // Option configures Options.
@@ -147,101 +146,59 @@ func WithAttachments(supportsAttachments bool) Option {
 	return func(o *Options) { o.attachments = &supportsAttachments }
 }
 
-// Client implements [llm.LLM] against Azure OpenAI by delegating request handling
-// to [llm/openai].Client constructed with Azure-specific SDK options.
-type Client struct {
-	*llmopenai.Client
-}
-
-// NewLLM constructs an Azure OpenAI LLM client.
+// NewLLM constructs an Azure OpenAI LLM client targeting the Responses API,
+// using deployment-based model resolution and Azure API-key or
+// DefaultAzureCredential authentication. An endpoint ending in /openai/v1 uses
+// v1 without an api-version query. A resource endpoint also defaults to v1 when
+// WithAPIVersion is unset or v1; an explicit dated version uses
+// /openai/responses?api-version=<version>. Without an endpoint the client talks
+// to OpenAI directly. Built-in tools and other OpenAI options can be passed
+// with [WithOpenAIOptions].
 func NewLLM(opts ...Option) llm.LLM {
 	options := Options{}
 	for _, o := range opts {
 		o(&options)
 	}
 
-	resolvedModel := modelFromOptions(options)
-
-	openaiOpts := []llmopenai.Option{
-		llmopenai.WithModel(resolvedModel),
-		llmopenai.WithMaxTokens(options.maxTokens),
-	}
-	if options.reasoningEffort != nil {
-		openaiOpts = append(
-			openaiOpts,
-			llmopenai.WithReasoningEffort(*options.reasoningEffort),
+	if options.endpoint == "" {
+		openaiOpts := append(
+			openAIOptionList(options),
+			llmopenai.WithAPIKey(options.apiKey),
 		)
-	}
-	if options.temperature != nil {
-		openaiOpts = append(
-			openaiOpts,
-			llmopenai.WithTemperature(*options.temperature),
-		)
-	}
-	if options.topP != nil {
-		openaiOpts = append(openaiOpts, llmopenai.WithTopP(*options.topP))
-	}
-	if options.topK != nil {
-		openaiOpts = append(openaiOpts, llmopenai.WithTopK(*options.topK))
-	}
-	if len(options.stopSequences) > 0 {
-		openaiOpts = append(
-			openaiOpts,
-			llmopenai.WithStopSequences(options.stopSequences...),
-		)
-	}
-	if options.timeout != nil {
-		openaiOpts = append(openaiOpts, llmopenai.WithTimeout(*options.timeout))
-	}
-	if options.httpClient != nil {
-		openaiOpts = append(
-			openaiOpts,
-			llmopenai.WithHTTPClient(options.httpClient),
-		)
-	}
-
-	// If Azure-specific endpoint+apiVersion aren't set, fall through to plain OpenAI.
-	if options.endpoint == "" || options.apiVersion == "" {
-		if options.apiKey != "" {
-			openaiOpts = append(
-				openaiOpts,
-				llmopenai.WithAPIKey(options.apiKey),
-			)
-		}
 		return llmopenai.NewLLM(openaiOpts...)
 	}
+	return newResponsesClient(options)
+}
 
-	// Azure's v1 endpoint (".../openai/v1") is OpenAI-compatible: it does not
-	// accept the api-version query param and uses /chat/completions directly,
-	// not /openai/deployments/<name>/chat/completions. Route via the plain
-	// OpenAI client with WithBaseURL.
-	if strings.Contains(options.endpoint, "/openai/v1") {
-		openaiOpts = append(
-			openaiOpts,
-			llmopenai.WithBaseURL(strings.TrimRight(options.endpoint, "/")),
-		)
-		if options.apiKey != "" {
-			openaiOpts = append(
-				openaiOpts,
-				llmopenai.WithAPIKey(options.apiKey),
-			)
-		}
-		return llmopenai.NewLLM(openaiOpts...)
+// openAIOptionList converts the Azure options into [llmopenai] options,
+// followed by any options passed through [WithOpenAIOptions].
+func openAIOptionList(o Options) []llmopenai.Option {
+	opts := []llmopenai.Option{
+		llmopenai.WithModel(modelFromOptions(o)),
+		llmopenai.WithMaxTokens(o.maxTokens),
 	}
-
-	reqOpts := azureClientOptions(options)
-
-	// Build a fully-configured openai.Client with Azure auth, then hand it to the
-	// openai package's bare Client implementation. Wrap in tracing here.
-	bare := llmopenai.NewWithExistingClient(
-		buildOpenAIOptions(options),
-		openaisdk.NewClient(reqOpts...),
-	)
-	return llm.WithTracing(&Client{Client: bare}, llm.TracingAttrs{
-		MaxTokens:   options.maxTokens,
-		Temperature: options.temperature,
-		TopP:        options.topP,
-	})
+	if o.reasoningEffort != nil {
+		opts = append(opts, llmopenai.WithReasoningEffort(*o.reasoningEffort))
+	}
+	if o.temperature != nil {
+		opts = append(opts, llmopenai.WithTemperature(*o.temperature))
+	}
+	if o.topP != nil {
+		opts = append(opts, llmopenai.WithTopP(*o.topP))
+	}
+	if o.topK != nil {
+		opts = append(opts, llmopenai.WithTopK(*o.topK))
+	}
+	if len(o.stopSequences) > 0 {
+		opts = append(opts, llmopenai.WithStopSequences(o.stopSequences...))
+	}
+	if o.timeout != nil {
+		opts = append(opts, llmopenai.WithTimeout(*o.timeout))
+	}
+	if o.httpClient != nil {
+		opts = append(opts, llmopenai.WithHTTPClient(o.httpClient))
+	}
+	return append(opts, o.openaiOptions...)
 }
 
 // resolveDeployment maps an Azure deployment name to a [llm.Model] carrying
@@ -309,34 +266,6 @@ func findAzureModel(deployment string, exact bool) (llm.Model, bool) {
 		}
 	}
 	return best, found
-}
-
-// buildOpenAIOptions converts our Options to the embedded openai package's
-// Options. The openai package keeps its options struct unexported, so we go
-// through the option-func ladder.
-func buildOpenAIOptions(o Options) llmopenai.Options {
-	var dst llmopenai.Options
-	llmopenai.WithModel(modelFromOptions(o))(&dst)
-	llmopenai.WithMaxTokens(o.maxTokens)(&dst)
-	if o.reasoningEffort != nil {
-		llmopenai.WithReasoningEffort(*o.reasoningEffort)(&dst)
-	}
-	if o.temperature != nil {
-		llmopenai.WithTemperature(*o.temperature)(&dst)
-	}
-	if o.topP != nil {
-		llmopenai.WithTopP(*o.topP)(&dst)
-	}
-	if o.topK != nil {
-		llmopenai.WithTopK(*o.topK)(&dst)
-	}
-	if len(o.stopSequences) > 0 {
-		llmopenai.WithStopSequences(o.stopSequences...)(&dst)
-	}
-	if o.timeout != nil {
-		llmopenai.WithTimeout(*o.timeout)(&dst)
-	}
-	return dst
 }
 
 // azureClientOptions configures the shared Azure endpoint and authentication.

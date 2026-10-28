@@ -70,10 +70,10 @@ func newLLM() (llm.LLM, string) {
 		), provider
 
 	case "openai-responses":
-		return llmopenai.NewResponsesLLM(
-			llmopenai.WithResponsesAPIKey(requiredEnv("OPENAI_API_KEY")),
-			llmopenai.WithResponsesModel(openai.Models[openai.GPT5]),
-			llmopenai.WithResponsesMaxTokens(1024),
+		return llmopenai.NewLLM(
+			llmopenai.WithAPIKey(requiredEnv("OPENAI_API_KEY")),
+			llmopenai.WithModel(openai.Models[openai.GPT5]),
+			llmopenai.WithMaxTokens(1024),
 			llmopenai.WithWebSearch(llmopenai.WebSearchOpts{
 				SearchContextSize: llmopenai.SearchContextMedium,
 			}),
@@ -88,10 +88,10 @@ func newLLM() (llm.LLM, string) {
 		), provider
 
 	case "xai-responses":
-		return llmxai.NewResponsesLLM(
-			llmxai.WithResponsesAPIKey(requiredEnv("XAI_API_KEY")),
-			llmxai.WithResponsesModel(xai.Models[xai.Grok46]),
-			llmxai.WithResponsesMaxTokens(1024),
+		return llmxai.NewLLM(
+			llmxai.WithAPIKey(requiredEnv("XAI_API_KEY")),
+			llmxai.WithModel(xai.Models[xai.Grok46]),
+			llmxai.WithMaxTokens(1024),
 			llmxai.WithWebSearch(),
 		), provider
 

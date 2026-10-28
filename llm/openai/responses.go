@@ -1,19 +1,18 @@
-// Package openai responses.go provides the OpenAI Responses API client. The
-// Responses API is a separate surface from Chat Completions and is the only
-// place OpenAI exposes server-side built-in tools (web_search, file_search,
-// code_interpreter). Construct with [NewResponsesLLM]; the Chat Completions
-// client ([NewLLM]) remains untouched and is the right choice for
-// OpenAI-compatible wrappers.
+// Package openai responses.go provides the OpenAI Responses API client behind
+// [NewLLM]. The Responses API accepts function tools on every OpenAI model and
+// is the only place OpenAI exposes server-side built-in tools (web_search,
+// file_search, code_interpreter). The Chat Completions client
+// ([NewChatCompletionsLLM]) is kept for OpenAI-compatible endpoints.
 package openai
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/joakimcarlsson/ai/llm"
 	"github.com/joakimcarlsson/ai/message"
@@ -61,36 +60,7 @@ type WebSearchPreviewOpts struct {
 	UserLocation       *UserLocation
 }
 
-// ResponsesOptions configures the OpenAI Responses LLM client.
-type ResponsesOptions struct {
-	apiKey          string
-	model           llm.Model
-	maxOutputTokens int64
-	temperature     *float64
-	topP            *float64
-	timeout         *time.Duration
-	baseURL         string
-	extraHeaders    map[string]string
-	reasoningEffort *ReasoningEffort
-	builtinTools    []responses.ToolUnionParam
-	httpClient      *http.Client
-	store           *bool
-}
-
-// ResponsesOption configures [ResponsesOptions].
-type ResponsesOption func(*ResponsesOptions)
-
-// WithResponsesAPIKey sets the API key used to authenticate.
-func WithResponsesAPIKey(k string) ResponsesOption {
-	return func(o *ResponsesOptions) { o.apiKey = k }
-}
-
-// WithResponsesModel selects the LLM model.
-func WithResponsesModel(m llm.Model) ResponsesOption {
-	return func(o *ResponsesOptions) { o.model = m }
-}
-
-// WithResponsesStore sets response storage; when unset the API default applies.
+// WithStore sets response storage; when unset the API default applies.
 // False requests encrypted reasoning for reasoning-capable models and replays
 // it from message history. Items without encrypted content are dropped rather
 // than fetched by ID; previous_response_id is never used.
@@ -98,56 +68,8 @@ func WithResponsesModel(m llm.Model) ResponsesOption {
 // without an api-version query parameter. Dated previews through
 // 2025-04-01-preview do not support it. See
 // https://learn.microsoft.com/en-us/azure/foundry/openai/api-version-lifecycle.
-func WithResponsesStore(store bool) ResponsesOption {
-	return func(o *ResponsesOptions) { o.store = &store }
-}
-
-// WithResponsesMaxTokens sets the maximum number of output tokens.
-func WithResponsesMaxTokens(n int64) ResponsesOption {
-	return func(o *ResponsesOptions) { o.maxOutputTokens = n }
-}
-
-// WithResponsesTemperature controls randomness.
-func WithResponsesTemperature(t float64) ResponsesOption {
-	return func(o *ResponsesOptions) { o.temperature = &t }
-}
-
-// WithResponsesTopP sets nucleus sampling probability mass.
-func WithResponsesTopP(p float64) ResponsesOption {
-	return func(o *ResponsesOptions) { o.topP = &p }
-}
-
-// WithResponsesTimeout sets the maximum duration to wait for API responses.
-func WithResponsesTimeout(d time.Duration) ResponsesOption {
-	return func(o *ResponsesOptions) { o.timeout = &d }
-}
-
-// WithResponsesBaseURL sets a custom API endpoint.
-func WithResponsesBaseURL(u string) ResponsesOption {
-	return func(o *ResponsesOptions) { o.baseURL = u }
-}
-
-// WithResponsesExtraHeaders adds custom HTTP headers to API requests.
-func WithResponsesExtraHeaders(h map[string]string) ResponsesOption {
-	return func(o *ResponsesOptions) { o.extraHeaders = h }
-}
-
-// WithResponsesHTTPClient injects a custom *http.Client, threaded into the
-// OpenAI SDK via option.WithHTTPClient. Use it for outbound proxies, custom TLS
-// (private CAs, mTLS), connection-pool tuning, or transport-level
-// instrumentation. A nil client is a no-op, leaving the SDK default client in
-// place. The per-request context timeout from WithResponsesTimeout still
-// applies on top of the injected client's transport: the two compose and the
-// shorter deadline wins.
-func WithResponsesHTTPClient(c *http.Client) ResponsesOption {
-	return func(o *ResponsesOptions) { o.httpClient = c }
-}
-
-// WithResponsesReasoningEffort sets effort for reasoning models. None disables
-// reasoning on models that accept it. Unset uses the provider default, and
-// models without CanReason ignore this option.
-func WithResponsesReasoningEffort(e ReasoningEffort) ResponsesOption {
-	return func(o *ResponsesOptions) { o.reasoningEffort = &e }
+func WithStore(store bool) Option {
+	return func(o *Options) { o.store = &store }
 }
 
 // WithWebSearch enables the web_search built-in tool. Pass a [WebSearchOpts]
@@ -155,8 +77,8 @@ func WithResponsesReasoningEffort(e ReasoningEffort) ResponsesOption {
 // location is always sent with type "approximate": the API requires the field
 // and accepts no other value, and leaving it unset would drop the key entirely
 // and get the request refused.
-func WithWebSearch(opts ...WebSearchOpts) ResponsesOption {
-	return func(o *ResponsesOptions) {
+func WithWebSearch(opts ...WebSearchOpts) Option {
+	return func(o *Options) {
 		p := responses.WebSearchToolParam{
 			Type: responses.WebSearchToolTypeWebSearch,
 		}
@@ -191,8 +113,8 @@ func WithWebSearch(opts ...WebSearchOpts) ResponsesOption {
 
 // WithWebSearchPreview enables the legacy web_search_preview built-in tool for
 // models that don't yet support [WithWebSearch].
-func WithWebSearchPreview(opts ...WebSearchPreviewOpts) ResponsesOption {
-	return func(o *ResponsesOptions) {
+func WithWebSearchPreview(opts ...WebSearchPreviewOpts) Option {
+	return func(o *Options) {
 		p := responses.WebSearchPreviewToolParam{
 			Type: responses.WebSearchPreviewToolTypeWebSearchPreview,
 		}
@@ -224,8 +146,8 @@ func WithWebSearchPreview(opts ...WebSearchPreviewOpts) ResponsesOption {
 
 // WithFileSearch enables the file_search built-in tool against the given
 // vector store IDs.
-func WithFileSearch(vectorStoreIDs ...string) ResponsesOption {
-	return func(o *ResponsesOptions) {
+func WithFileSearch(vectorStoreIDs ...string) Option {
+	return func(o *Options) {
 		o.builtinTools = append(o.builtinTools, responses.ToolUnionParam{
 			OfFileSearch: &responses.FileSearchToolParam{
 				VectorStoreIDs: vectorStoreIDs,
@@ -236,8 +158,8 @@ func WithFileSearch(vectorStoreIDs ...string) ResponsesOption {
 
 // WithCodeInterpreter enables the code_interpreter built-in tool with an
 // auto-provisioned ephemeral container.
-func WithCodeInterpreter() ResponsesOption {
-	return func(o *ResponsesOptions) {
+func WithCodeInterpreter() Option {
+	return func(o *Options) {
 		o.builtinTools = append(o.builtinTools, responses.ToolUnionParam{
 			OfCodeInterpreter: &responses.ToolCodeInterpreterParam{
 				Container: responses.ToolCodeInterpreterContainerUnionParam{
@@ -258,15 +180,23 @@ func optString(s string) param.Opt[string] {
 
 // ResponsesClient implements [llm.LLM] against the OpenAI Responses API.
 type ResponsesClient struct {
-	options ResponsesOptions
+	options Options
 	client  openaisdk.Client
 }
 
-// NewResponsesLLM constructs an OpenAI client targeting the Responses API.
-// Unlike [NewLLM] (Chat Completions), this client supports server-side
-// built-in tools: [WithWebSearch], [WithFileSearch], [WithCodeInterpreter].
-func NewResponsesLLM(opts ...ResponsesOption) llm.LLM {
-	options := ResponsesOptions{}
+// NewLLM constructs an OpenAI LLM client. It targets the Responses API, which
+// accepts function tools on every OpenAI model and is the only place OpenAI
+// exposes server-side built-in tools: [WithWebSearch], [WithFileSearch] and
+// [WithCodeInterpreter]. The returned [llm.LLM] is wrapped with
+// [llm.WithTracing], so callers always get tracing spans and metrics.
+//
+// Options that exist only on Chat Completions (stop sequences, seed, penalties,
+// logit bias, n and logprobs) are not accepted by the Responses API. Setting
+// one makes every request fail with an error naming it, rather than being
+// silently ignored. Use [NewChatCompletionsLLM] for OpenAI-compatible endpoints
+// that need the Chat Completions API.
+func NewLLM(opts ...Option) llm.LLM {
+	options := Options{}
 	for _, o := range opts {
 		o(&options)
 	}
@@ -294,7 +224,7 @@ func NewResponsesLLM(opts ...ResponsesOption) llm.LLM {
 			openaisdk.NewClient(clientOpts...),
 		),
 		llm.TracingAttrs{
-			MaxTokens:   options.maxOutputTokens,
+			MaxTokens:   options.maxTokens,
 			Temperature: options.temperature,
 			TopP:        options.topP,
 		},
@@ -306,7 +236,7 @@ func NewResponsesLLM(opts ...ResponsesOption) llm.LLM {
 // endpoint routing while sharing request building and response handling.
 // The caller is responsible for wrapping it with llm.WithTracing.
 func NewResponsesWithExistingClient(
-	options ResponsesOptions,
+	options Options,
 	client openaisdk.Client,
 ) *ResponsesClient {
 	return &ResponsesClient{options: options, client: client}
@@ -490,8 +420,18 @@ func (c *ResponsesClient) preparedParams(
 			}
 		}
 	}
-	if c.options.maxOutputTokens > 0 {
-		params.MaxOutputTokens = openaisdk.Int(c.options.maxOutputTokens)
+	if len(tools) > 0 {
+		if c.options.parallelToolCalls != nil {
+			params.ParallelToolCalls = openaisdk.Bool(
+				*c.options.parallelToolCalls,
+			)
+		}
+		if c.options.toolChoice != nil {
+			params.ToolChoice = responsesToolChoice(*c.options.toolChoice)
+		}
+	}
+	if c.options.maxTokens > 0 {
+		params.MaxOutputTokens = openaisdk.Int(c.options.maxTokens)
 	}
 	if c.options.temperature != nil {
 		params.Temperature = openaisdk.Float(*c.options.temperature)
@@ -732,6 +672,9 @@ func (c *ResponsesClient) SendMessages(
 	messages []message.Message,
 	tools []tool.BaseTool,
 ) (*llm.Response, error) {
+	if err := c.validate(); err != nil {
+		return nil, err
+	}
 	params := c.preparedParams(
 		c.convertMessages(messages),
 		c.convertTools(tools),
@@ -746,7 +689,7 @@ func (c *ResponsesClient) SendMessages(
 		func() (*llm.Response, error) {
 			var raw *http.Response
 			resp, err := c.client.Responses.New(
-				ctx, params, option.WithResponseInto(&raw),
+				ctx, params, append(c.requestOptions(), option.WithResponseInto(&raw))...,
 			)
 			if err != nil {
 				return nil, wrapError(err)
@@ -789,7 +732,7 @@ func (c *ResponsesClient) SendMessagesWithStructuredOutput(
 		func() (*llm.Response, error) {
 			var raw *http.Response
 			resp, err := c.client.Responses.New(
-				ctx, params, option.WithResponseInto(&raw),
+				ctx, params, append(c.requestOptions(), option.WithResponseInto(&raw))...,
 			)
 			if err != nil {
 				return nil, wrapError(err)
@@ -841,6 +784,9 @@ func (c *ResponsesClient) StreamResponse(
 	messages []message.Message,
 	tools []tool.BaseTool,
 ) <-chan llm.Event {
+	if err := c.validate(); err != nil {
+		return errorEvent(err)
+	}
 	params := c.preparedParams(
 		c.convertMessages(messages),
 		c.convertTools(tools),
@@ -855,6 +801,9 @@ func (c *ResponsesClient) StreamResponseWithStructuredOutput(
 	tools []tool.BaseTool,
 	outputSchema *schema.StructuredOutputInfo,
 ) <-chan llm.Event {
+	if err := c.validate(); err != nil {
+		return errorEvent(err)
+	}
 	params := c.preparedParams(
 		c.convertMessages(messages),
 		c.convertTools(tools),
@@ -879,7 +828,7 @@ func (c *ResponsesClient) runStream(
 		llm.ExecuteStreamWithRetry(ctx, RetryConfig(), func() error {
 			var raw *http.Response
 			stream := c.client.Responses.NewStreaming(
-				ctx, params, option.WithResponseInto(&raw),
+				ctx, params, append(c.requestOptions(), option.WithResponseInto(&raw))...,
 			)
 			var content strings.Builder
 			var citations []map[string]any
@@ -1037,4 +986,98 @@ func urlCitationFromAnnotation(a any) (map[string]any, bool) {
 		"start_index": raw.StartIndex,
 		"end_index":   raw.EndIndex,
 	}, true
+}
+
+// responsesToolChoice maps a vendor-neutral [llm.ToolChoice] onto the Responses
+// API tool_choice union.
+func responsesToolChoice(
+	choice llm.ToolChoice,
+) responses.ResponseNewParamsToolChoiceUnion {
+	switch choice.Mode {
+	case llm.ToolChoiceNone:
+		return responses.ResponseNewParamsToolChoiceUnion{
+			OfToolChoiceMode: openaisdk.Opt(responses.ToolChoiceOptionsNone),
+		}
+	case llm.ToolChoiceRequired:
+		return responses.ResponseNewParamsToolChoiceUnion{
+			OfToolChoiceMode: openaisdk.Opt(
+				responses.ToolChoiceOptionsRequired,
+			),
+		}
+	case llm.ToolChoiceSpecific:
+		return responses.ResponseNewParamsToolChoiceUnion{
+			OfFunctionTool: &responses.ToolChoiceFunctionParam{
+				Name: choice.Name,
+			},
+		}
+	default:
+		return responses.ResponseNewParamsToolChoiceUnion{
+			OfToolChoiceMode: openaisdk.Opt(responses.ToolChoiceOptionsAuto),
+		}
+	}
+}
+
+// validate rejects a request whose options the Responses API has no field for,
+// so they fail loudly instead of being dropped.
+func (c *ResponsesClient) validate() error {
+	o := c.options
+	if o.toolChoice != nil {
+		if err := o.toolChoice.Validate(); err != nil {
+			return err
+		}
+	}
+	var unsupported []string
+	if len(o.stopSequences) > 0 {
+		unsupported = append(unsupported, "WithStopSequences")
+	}
+	if o.seed != nil {
+		unsupported = append(unsupported, "WithSeed")
+	}
+	if o.frequencyPenalty != nil {
+		unsupported = append(unsupported, "WithFrequencyPenalty")
+	}
+	if o.presencePenalty != nil {
+		unsupported = append(unsupported, "WithPresencePenalty")
+	}
+	if len(o.logitBias) > 0 {
+		unsupported = append(unsupported, "WithLogitBias")
+	}
+	if o.n != nil {
+		unsupported = append(unsupported, "WithN")
+	}
+	if o.topLogprobs != nil {
+		unsupported = append(unsupported, "WithLogprobs")
+	}
+	if len(unsupported) > 0 {
+		return fmt.Errorf(
+			"openai: %s not supported by the Responses API; "+
+				"use NewChatCompletionsLLM for Chat Completions-only options",
+			strings.Join(unsupported, ", "),
+		)
+	}
+	return nil
+}
+
+// requestOptions returns per-call SDK options that inject request body fields
+// the SDK has no typed parameter for. top_k is only sent to a custom base URL,
+// because OpenAI's own API rejects it.
+func (c *ResponsesClient) requestOptions() []option.RequestOption {
+	var opts []option.RequestOption
+	if c.options.topK != nil && c.options.baseURL != "" {
+		opts = append(opts, option.WithJSONSet("top_k", *c.options.topK))
+	}
+	for k, v := range c.options.extraBodyFields {
+		opts = append(opts, option.WithJSONSet(k, v))
+	}
+	if c.options.model.CanReason {
+		for k, v := range c.options.reasoningBodyFields {
+			opts = append(opts, option.WithJSONSet(k, v))
+		}
+	}
+	for _, f := range c.options.modelBodyFields {
+		if f.matches(c.options.model) {
+			opts = append(opts, option.WithJSONSet(f.key, f.value))
+		}
+	}
+	return opts
 }

@@ -134,9 +134,9 @@ gemini := llmgemini.NewLLM(
 )
 
 // OpenAI Responses API: web_search, file_search, code_interpreter
-openaiR := llmopenai.NewResponsesLLM(
-    llmopenai.WithResponsesAPIKey(os.Getenv("OPENAI_API_KEY")),
-    llmopenai.WithResponsesModel(openai.Models[openai.GPT5]),
+openaiR := llmopenai.NewLLM(
+    llmopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+    llmopenai.WithModel(openai.Models[openai.GPT5]),
     llmopenai.WithWebSearch(llmopenai.WebSearchOpts{
         SearchContextSize: llmopenai.SearchContextMedium,
     }),
@@ -150,9 +150,9 @@ groq := llmgroq.NewCompoundLLM(
 )
 
 // xAI Responses API: web_search, x_search, code_execution
-xai := llmxai.NewResponsesLLM(
-    llmxai.WithResponsesAPIKey(os.Getenv("XAI_API_KEY")),
-    llmxai.WithResponsesModel(xai.Models[xai.Grok4]),
+xai := llmxai.NewLLM(
+    llmxai.WithAPIKey(os.Getenv("XAI_API_KEY")),
+    llmxai.WithModel(xai.Models[xai.Grok4]),
     llmxai.WithWebSearch(),
     llmxai.WithXSearch(),
 )

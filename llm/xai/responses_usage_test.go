@@ -36,10 +36,10 @@ func newUsageServer(
 
 // newUsageClient returns a Responses client pointed at the given base URL.
 func newUsageClient(baseURL string) llm.LLM {
-	return NewResponsesLLM(
-		WithResponsesAPIKey("test-key"),
-		WithResponsesBaseURL(baseURL),
-		WithResponsesModel(llm.Model{APIModel: "grok-4"}),
+	return NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(baseURL),
+		WithModel(llm.Model{APIModel: "grok-4"}),
 	)
 }
 

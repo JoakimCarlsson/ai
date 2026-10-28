@@ -77,7 +77,7 @@ func newLLM() (llm.LLM, string) {
 			llmgemini.WithTimeout(timeout),
 		), provider
 	case "openai":
-		return llmopenai.NewLLM(
+		return llmopenai.NewChatCompletionsLLM(
 			llmopenai.WithAPIKey(requiredEnv("OPENAI_API_KEY")),
 			llmopenai.WithModel(openai.Models[openai.GPT54Nano]),
 			llmopenai.WithMaxTokens(256),

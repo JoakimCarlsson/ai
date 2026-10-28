@@ -32,5 +32,5 @@ func NewLLM(opts ...Option) llm.LLM {
 		llmopenai.WithBaseURL(DefaultBaseURL),
 		llmopenai.WithAPIKey(""),
 	}
-	return llmopenai.NewLLM(append(defaults, opts...)...)
+	return llmopenai.NewChatCompletionsLLM(append(defaults, opts...)...)
 }

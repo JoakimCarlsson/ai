@@ -50,7 +50,7 @@ func NewLLM(opts ...Option) llm.LLM {
 		llmopenai.WithResponseMetadataField(
 			"search_results", MetadataKeySearchResults),
 	}
-	return llmopenai.NewLLM(append(base, opts...)...)
+	return llmopenai.NewChatCompletionsLLM(append(base, opts...)...)
 }
 
 // WithSearchDomainFilter restricts (or, with a leading "-", excludes) the

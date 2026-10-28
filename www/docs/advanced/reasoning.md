@@ -31,17 +31,11 @@ Each LLM vendor module exports its own `WithReasoningEffort` (or
     | High | `llmopenai.ReasoningEffortHigh` |
     | Xhigh | `llmopenai.ReasoningEffortXhigh` |
 
-    The same levels apply to the Responses API client through
-    `llmopenai.WithResponsesReasoningEffort`. Which levels a model accepts
-    depends on the model; the level is sent only when the model can reason.
-
-    Several models, including the `gpt-5.6` and `gpt-6` families, reject
-    function tools on Chat Completions at their default reasoning effort and
-    answer with a 400. When you use tools with them, use
-    `llmopenai.NewResponsesLLM`. Setting
-    `llmopenai.WithReasoningEffort(llmopenai.ReasoningEffortNone)` also works
-    on most, but not on models that do not accept `none`, such as
-    `gpt-6-astra` and `gpt-6.1-sol`.
+    Which levels a model accepts depends on the model; the level is sent
+    only when the model can reason. `llmopenai.NewLLM` uses the Responses API,
+    which accepts function tools on every OpenAI model. A model can still
+    refuse a specific level, for example `gpt-6-astra` and `gpt-6.1-sol` do not
+    accept `none`; the API's message is returned in the error.
 
     OpenAI's Chat Completions API does not expose thinking content. The
     model reasons internally but `EventThinkingDelta` events are not emitted.
