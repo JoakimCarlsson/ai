@@ -26,7 +26,7 @@ type Option = llmopenai.Option
 // reasoning_content, through tool loops and preserved thinking;
 // [llmopenai.WithReasoningContentReplay] overrides this.
 func NewLLM(opts ...Option) llm.LLM {
-	return llmopenai.NewLLM(
+	return llmopenai.NewChatCompletionsLLM(
 		append([]Option{
 			llmopenai.WithBaseURL(DefaultBaseURL),
 			llmopenai.WithReasoningReplayDefault(canReason),

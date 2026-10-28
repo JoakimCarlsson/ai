@@ -10,68 +10,36 @@ import (
 	"github.com/openai/openai-go/v3/option"
 )
 
-// ResponsesClient delegates Responses requests to the OpenAI implementation.
-type ResponsesClient struct {
+// Client delegates Responses requests to the OpenAI implementation.
+type Client struct {
 	*llmopenai.ResponsesClient
 }
 
-// WithResponsesOptions configures Responses-specific features, including
-// built-in tools and reasoning, using the OpenAI Responses options.
+// WithOpenAIOptions passes [llmopenai] options through to the underlying
+// client, for example built-in tools such as [llmopenai.WithWebSearch].
 // Set authentication, endpoint, deployment and HTTP transport with Azure options.
-func WithResponsesOptions(opts ...llmopenai.ResponsesOption) Option {
+func WithOpenAIOptions(opts ...llmopenai.Option) Option {
 	return func(o *Options) {
-		o.responsesOptions = append(o.responsesOptions, opts...)
+		o.openaiOptions = append(o.openaiOptions, opts...)
 	}
 }
 
-// WithResponsesStore sets storage for the Responses client. False preserves
+// WithStore sets storage for the Responses client. False preserves
 // encrypted reasoning in message history; unencrypted items are dropped.
 // Azure encrypted reasoning requires api-version v1 (/openai/v1/responses,
 // without an api-version query); dated previews through 2025-04-01-preview
-// lack support. See [llmopenai.WithResponsesStore] and
+// lack support. See [llmopenai.WithStore] and
 // https://learn.microsoft.com/en-us/azure/foundry/openai/api-version-lifecycle.
-func WithResponsesStore(store bool) Option {
-	return WithResponsesOptions(llmopenai.WithResponsesStore(store))
+func WithStore(store bool) Option {
+	return WithOpenAIOptions(llmopenai.WithStore(store))
 }
 
-// NewResponsesLLM constructs an Azure Responses client using deployment-based
-// model resolution and Azure API-key or DefaultAzureCredential authentication.
-// An endpoint ending in /openai/v1 uses v1 without an api-version query.
-// A resource endpoint also defaults to v1 when WithAPIVersion is unset or v1;
-// an explicit dated version uses /openai/responses?api-version=<version>.
-// Responses-specific options can be passed with WithResponsesOptions.
-func NewResponsesLLM(opts ...Option) llm.LLM {
-	options := Options{}
-	for _, opt := range opts {
-		opt(&options)
-	}
-
-	var responsesOptions llmopenai.ResponsesOptions
-	llmopenai.WithResponsesMaxTokens(options.maxTokens)(&responsesOptions)
-	if options.temperature != nil {
-		llmopenai.WithResponsesTemperature(
-			*options.temperature,
-		)(
-			&responsesOptions,
-		)
-	}
-	if options.topP != nil {
-		llmopenai.WithResponsesTopP(*options.topP)(&responsesOptions)
-	}
-	if options.timeout != nil {
-		llmopenai.WithResponsesTimeout(*options.timeout)(&responsesOptions)
-	}
-	if options.reasoningEffort != nil {
-		llmopenai.WithResponsesReasoningEffort(
-			*options.reasoningEffort,
-		)(
-			&responsesOptions,
-		)
-	}
-	for _, opt := range options.responsesOptions {
+// newResponsesClient builds the Azure Responses client from resolved options.
+func newResponsesClient(options Options) llm.LLM {
+	var responsesOptions llmopenai.Options
+	for _, opt := range openAIOptionList(options) {
 		opt(&responsesOptions)
 	}
-	llmopenai.WithResponsesModel(modelFromOptions(options))(&responsesOptions)
 
 	v1 := strings.HasSuffix(
 		strings.TrimRight(options.endpoint, "/"),
@@ -95,7 +63,7 @@ func NewResponsesLLM(opts ...Option) llm.LLM {
 		openaisdk.NewClient(reqOpts...),
 	)
 	return llm.WithTracing(
-		&ResponsesClient{ResponsesClient: bare},
+		&Client{ResponsesClient: bare},
 		llm.TracingAttrs{
 			MaxTokens:   options.maxTokens,
 			Temperature: options.temperature,
@@ -114,4 +82,16 @@ func azureResponsesV1(
 	query.Del("api-version")
 	req.URL.RawQuery = query.Encode()
 	return next(req)
+}
+
+// WithToolChoice controls whether and which tool the model may call. See
+// [llmopenai.WithToolChoice].
+func WithToolChoice(choice llm.ToolChoice) Option {
+	return WithOpenAIOptions(llmopenai.WithToolChoice(choice))
+}
+
+// WithParallelToolCalls toggles whether the model may return several tool calls
+// in one response. See [llmopenai.WithParallelToolCalls].
+func WithParallelToolCalls(enabled bool) Option {
+	return WithOpenAIOptions(llmopenai.WithParallelToolCalls(enabled))
 }

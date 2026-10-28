@@ -31,7 +31,7 @@ func (c countingRT) RoundTrip(r *http.Request) (*http.Response, error) {
 }
 
 // TestResponsesWithHTTPClientTransportUsed confirms a client injected via
-// WithResponsesHTTPClient handles outgoing requests: the wrapped transport's
+// WithHTTPClient handles outgoing requests: the wrapped transport's
 // counter increments, proving the SDK default client was replaced.
 func TestResponsesWithHTTPClientTransportUsed(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(
@@ -42,11 +42,11 @@ func TestResponsesWithHTTPClientTransportUsed(t *testing.T) {
 	defer srv.Close()
 
 	var n int
-	client := NewResponsesLLM(
-		WithResponsesAPIKey("test-key"),
-		WithResponsesBaseURL(srv.URL),
-		WithResponsesModel(llm.Model{APIModel: "grok-4"}),
-		WithResponsesHTTPClient(&http.Client{
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(llm.Model{APIModel: "grok-4"}),
+		WithHTTPClient(&http.Client{
 			Transport: countingRT{RoundTripper: http.DefaultTransport, n: &n},
 		}),
 	)

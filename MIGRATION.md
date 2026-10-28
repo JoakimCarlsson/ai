@@ -1,14 +1,33 @@
 # Migration Guide
 
-This document covers three migrations. Each section is self-contained.
+This document covers four migrations. Each section is self-contained.
 
+- **[One `NewLLM` per provider](#one-newllm-per-provider-on-the-responses-api)** — `NewResponsesLLM` removed; `NewLLM` targets the Responses API
 - **[The `model` module dissolved](#the-model-module-dissolved)** — `model` module removed; every catalog moved into the provider module that calls its API.
 - **[v0.1.x → v0.2.0](#v01x--v020--memory-and-session-lifted)** — `memory` and `session` lifted out of `agent/` to top-level modules.
 - **[v0.18.x → v0.1.0](#v018x--v010--multi-module-split)** — single Go module split into ~50 per-vendor modules.
 
-If you're on v0.18.x and want the latest, apply all three in order: the multi-module split first, then the lift, then the model dissolve. The path tables in the split section already show the final post-lift destinations, so those two can be done in a single pass; the model dissolve is independent of both and can be applied on its own.
+If you're on v0.18.x and want the latest, apply all four in order: the multi-module split first, then the lift, then the model dissolve. The path tables in the split section already show the final post-lift destinations, so those two can be done in a single pass; the model dissolve is independent of both and can be applied on its own.
 
 ---
+
+## One `NewLLM` per provider on the Responses API
+
+`llm/openai`, `llm/azure`, `llm/xai` and `llm/openrouter` each expose a single `NewLLM`, and it now targets the vendor's Responses API. `NewResponsesLLM` and the `WithResponses…` options are removed. Several OpenAI models (the gpt-5.6 and gpt-6 families) reject function tools on Chat Completions, so the Responses API is the one that works for every model.
+
+| Before | After |
+| --- | --- |
+| `llmopenai.NewResponsesLLM(...)` | `llmopenai.NewLLM(...)` |
+| `llmopenai.WithResponsesAPIKey` / `WithResponsesModel` / `WithResponsesMaxTokens` / `WithResponsesTemperature` / `WithResponsesTopP` / `WithResponsesTimeout` / `WithResponsesBaseURL` / `WithResponsesExtraHeaders` / `WithResponsesHTTPClient` / `WithResponsesReasoningEffort` | the same option without `Responses`: `WithAPIKey`, `WithModel`, `WithMaxTokens`, ... |
+| `llmopenai.WithResponsesStore` | `llmopenai.WithStore` |
+| `llmopenai.NewLLM(...)` (Chat Completions) against OpenAI | `llmopenai.NewLLM(...)` (now Responses) |
+| `llmopenai.NewLLM(...)` against an OpenAI-compatible endpoint (Groq, Ollama, a proxy, ...) | `llmopenai.NewChatCompletionsLLM(...)` |
+| `llmazure.NewResponsesLLM(...)` | `llmazure.NewLLM(...)` |
+| `llmazure.WithResponsesStore` / `WithResponsesOptions` | `llmazure.WithStore` / `llmazure.WithOpenAIOptions` |
+| `llmxai.NewResponsesLLM(...)` and `llmxai.WithResponses…` | `llmxai.NewLLM(...)` and `llmxai.With…` |
+| `llmopenrouter.NewResponsesLLM(...)` | `llmopenrouter.NewLLM(...)` |
+
+`WithToolChoice` and `WithParallelToolCalls` work on every one of these constructors. Options that exist only on Chat Completions (`WithStopSequences`, `WithSeed`, `WithFrequencyPenalty`, `WithPresencePenalty`, `WithLogitBias`, `WithN`, `WithLogprobs`) are not accepted by the Responses API; setting one makes requests fail with an error naming it instead of being ignored. Use `llmopenai.NewChatCompletionsLLM` if you need them against an endpoint that supports Chat Completions. The xAI and OpenRouter `NewLLM` no longer use Chat Completions, so `openai.WithReasoningDetailsReplay` has no effect there; reasoning is replayed through encrypted items (`WithStore(false)`, the default for OpenRouter).
 
 ## The `model` module dissolved
 

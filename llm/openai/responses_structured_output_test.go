@@ -60,17 +60,17 @@ func TestResponsesStructuredOutputClosesSchema(t *testing.T) {
 				}),
 			)
 			defer srv.Close()
-			client := NewResponsesLLM(
-				WithResponsesAPIKey("test"),
-				WithResponsesBaseURL(srv.URL),
-				WithResponsesModel(
+			client := NewLLM(
+				WithAPIKey("test"),
+				WithBaseURL(srv.URL),
+				WithModel(
 					llm.Model{
 						APIModel:              "gpt-6.1-sol",
 						CanReason:             true,
 						SupportsStructuredOut: true,
 					},
 				),
-				WithResponsesReasoningEffort(ReasoningEffortLow),
+				WithReasoningEffort(ReasoningEffortLow),
 			)
 			output := schema.NewStructuredOutputInfo(
 				"answer",

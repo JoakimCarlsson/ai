@@ -27,7 +27,7 @@ type Option = llmopenai.Option
 // which their historical-thinking behavior uses; other model families receive
 // no reasoning history. [llmopenai.WithReasoningContentReplay] overrides this.
 func NewLLM(opts ...Option) llm.LLM {
-	return llmopenai.NewLLM(
+	return llmopenai.NewChatCompletionsLLM(
 		append([]Option{
 			llmopenai.WithBaseURL(DefaultBaseURL),
 			llmopenai.WithReasoningReplayDefault(isQwen),

@@ -28,7 +28,7 @@ func TestExtractReasoningSendMessages(t *testing.T) {
 			srv := newCompletionServer(t, nil, responseJSON)
 			defer srv.Close()
 
-			client := NewLLM(
+			client := NewChatCompletionsLLM(
 				WithAPIKey("test-key"),
 				WithBaseURL(srv.URL),
 				WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -69,7 +69,7 @@ func TestExtractReasoningStructuredOutput(t *testing.T) {
 	srv := newCompletionServer(t, nil, responseJSON)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -129,7 +129,7 @@ func TestAccumulateReasoningStream(t *testing.T) {
 		}))
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -191,7 +191,7 @@ func TestReplayReasoningContent(t *testing.T) {
 	srv := newCompletionServer(t, &body, completionOK)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -250,7 +250,7 @@ func TestNoReplayReasoningContent(t *testing.T) {
 	srv := newCompletionServer(t, &body, completionOK)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),

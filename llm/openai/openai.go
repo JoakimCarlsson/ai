@@ -23,6 +23,7 @@ import (
 	openaisdk "github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/packages/respjson"
+	"github.com/openai/openai-go/v3/responses"
 	"github.com/openai/openai-go/v3/shared"
 )
 
@@ -73,6 +74,8 @@ type Options struct {
 	reasoningDetailsReplay bool
 	modelBodyFields        []modelBodyField
 	separateReasoningUsage bool
+	store                  *bool
+	builtinTools           []responses.ToolUnionParam
 }
 
 // modelBodyField is a request body field sent only for matching models.
@@ -198,10 +201,8 @@ func WithDisableCache() Option { return func(o *Options) { o.disableCache = true
 // on models that accept it; supported values vary by model. Unset uses the
 // provider default, and models without CanReason ignore this option.
 //
-// Several models (the gpt-5.6 and gpt-6 families) reject function tools on Chat
-// Completions at their default effort. Use [NewResponsesLLM] for tools with
-// them. [ReasoningEffortNone] also works on most, but not on models that do not
-// accept it, such as gpt-6-astra and gpt-6.1-sol.
+// Which levels a model accepts varies: gpt-6-astra and gpt-6.1-sol do not accept
+// [ReasoningEffortNone]. The API's message is returned in the error.
 func WithReasoningEffort(effort ReasoningEffort) Option {
 	return func(o *Options) { o.reasoningEffort = &effort }
 }
@@ -403,9 +404,12 @@ type Client struct {
 	client  openaisdk.Client
 }
 
-// NewLLM constructs an OpenAI LLM client. The returned [llm.LLM] is wrapped
-// with [llm.WithTracing], so callers always get tracing spans and metrics.
-func NewLLM(opts ...Option) llm.LLM {
+// NewChatCompletionsLLM constructs a client for the Chat Completions API. It
+// exists for OpenAI-compatible endpoints (xAI, Groq, Together and others) that
+// implement Chat Completions but not the Responses API. For OpenAI itself use
+// [NewLLM]: several OpenAI models reject function tools on Chat Completions.
+// The returned [llm.LLM] is wrapped with [llm.WithTracing].
+func NewChatCompletionsLLM(opts ...Option) llm.LLM {
 	options := Options{}
 	for _, o := range opts {
 		o(&options)

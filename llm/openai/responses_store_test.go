@@ -38,16 +38,16 @@ func TestResponsesStoreWire(t *testing.T) {
 			var body map[string]any
 			server := newResponsesServer(t, &body, responsesOK)
 			defer server.Close()
-			opts := []ResponsesOption{
-				WithResponsesAPIKey("test"), WithResponsesBaseURL(server.URL),
-				WithResponsesModel(
+			opts := []Option{
+				WithAPIKey("test"), WithBaseURL(server.URL),
+				WithModel(
 					llm.Model{APIModel: "model", CanReason: tc.canReason},
 				),
 			}
 			if tc.store != nil {
-				opts = append(opts, WithResponsesStore(*tc.store))
+				opts = append(opts, WithStore(*tc.store))
 			}
-			if _, err := NewResponsesLLM(opts...).SendMessages(context.Background(), nil, nil); err != nil {
+			if _, err := NewLLM(opts...).SendMessages(context.Background(), nil, nil); err != nil {
 				t.Fatal(err)
 			}
 			value, present := body["store"]
@@ -135,13 +135,13 @@ func TestResponsesReasoningReplay(t *testing.T) {
 				}),
 			)
 			defer server.Close()
-			client := NewResponsesLLM(
-				WithResponsesAPIKey("test"),
-				WithResponsesBaseURL(server.URL),
-				WithResponsesModel(
+			client := NewLLM(
+				WithAPIKey("test"),
+				WithBaseURL(server.URL),
+				WithModel(
 					llm.Model{APIModel: "reasoner", CanReason: true},
 				),
-				WithResponsesStore(false),
+				WithStore(false),
 			)
 			history := []message.Message{message.NewUserMessage("hello")}
 			var response *llm.Response
@@ -260,10 +260,10 @@ func TestResponsesUnencryptedReasoningIsDropped(t *testing.T) {
 	var body map[string]any
 	server := newResponsesServer(t, &body, responsesOK)
 	defer server.Close()
-	client := NewResponsesLLM(
-		WithResponsesAPIKey("test"),
-		WithResponsesBaseURL(server.URL),
-		WithResponsesStore(false),
+	client := NewLLM(
+		WithAPIKey("test"),
+		WithBaseURL(server.URL),
+		WithStore(false),
 	)
 	assistant := message.NewAssistantMessage()
 	assistant.Parts = append(
@@ -286,10 +286,10 @@ func TestResponsesReplayEmptySummary(t *testing.T) {
 	var body map[string]any
 	server := newResponsesServer(t, &body, responsesOK)
 	defer server.Close()
-	client := NewResponsesLLM(
-		WithResponsesAPIKey("test"),
-		WithResponsesBaseURL(server.URL),
-		WithResponsesStore(false),
+	client := NewLLM(
+		WithAPIKey("test"),
+		WithBaseURL(server.URL),
+		WithStore(false),
 	)
 	assistant := message.NewAssistantMessage()
 	assistant.Parts = append(assistant.Parts, message.ReasoningContent{
@@ -331,10 +331,10 @@ func TestResponsesStructuredSchemaRejectsExtraProperties(t *testing.T) {
 				}),
 			)
 			defer server.Close()
-			client := NewResponsesLLM(
-				WithResponsesAPIKey("test"),
-				WithResponsesBaseURL(server.URL),
-				WithResponsesStore(false),
+			client := NewLLM(
+				WithAPIKey("test"),
+				WithBaseURL(server.URL),
+				WithStore(false),
 			)
 			outputSchema := schema.NewStructuredOutputFromStruct(
 				"answer",

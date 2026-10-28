@@ -35,10 +35,10 @@ func TestResponsesEffort(t *testing.T) {
 						),
 					)
 					defer srv.Close()
-					opts := []ResponsesOption{
-						WithResponsesAPIKey("test"),
-						WithResponsesBaseURL(srv.URL),
-						WithResponsesModel(
+					opts := []Option{
+						WithAPIKey("test"),
+						WithBaseURL(srv.URL),
+						WithModel(
 							llm.Model{
 								APIModel:  "grok-4.7",
 								CanReason: canReason,
@@ -48,10 +48,10 @@ func TestResponsesEffort(t *testing.T) {
 					if effort != "" {
 						opts = append(
 							opts,
-							WithResponsesReasoningEffort(effort),
+							WithReasoningEffort(effort),
 						)
 					}
-					resp, err := NewResponsesLLM(
+					resp, err := NewLLM(
 						opts...).SendMessages(context.Background(), []message.Message{message.NewUserMessage("hi")}, nil)
 					if err != nil {
 						t.Fatal(err)

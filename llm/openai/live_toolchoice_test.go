@@ -37,7 +37,7 @@ func liveOpenAI(t *testing.T, tc llm.ToolChoice) llm.LLM {
 	if key == "" {
 		t.Skip("OPENAI_API_KEY not set")
 	}
-	return NewLLM(
+	return NewChatCompletionsLLM(
 		WithAPIKey(key),
 		WithModel(Models[GPT54Nano]),
 		WithMaxTokens(256),

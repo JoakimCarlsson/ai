@@ -42,7 +42,7 @@ func TestReasoningUsage(t *testing.T) {
 					),
 				)
 				defer srv.Close()
-				client := NewLLM(
+				client := NewChatCompletionsLLM(
 					WithAPIKey("test"),
 					WithSeparateReasoningUsage(),
 					WithBaseURL(srv.URL),

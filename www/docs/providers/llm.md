@@ -19,6 +19,12 @@ client := llmopenai.NewLLM(
 )
 ```
 
+`llmopenai.NewLLM` uses the Responses API, which accepts function tools on every
+OpenAI model. Options that exist only on Chat Completions (`WithStopSequences`,
+`WithSeed`, `WithFrequencyPenalty`, `WithPresencePenalty`, `WithLogitBias`,
+`WithN`, `WithLogprobs`) are rejected with an error rather than ignored; use
+`llmopenai.NewChatCompletionsLLM` for OpenAI-compatible endpoints that need them.
+
 For Anthropic instead:
 
 ```go
@@ -220,15 +226,14 @@ llmgemini.WithCodeExecution()
 llmgemini.WithURLContext()
 ```
 
-OpenAI (Responses API) — `web_search`, `file_search`, `code_interpreter`. The
-Responses API is a separate surface from Chat Completions; use
-`NewResponsesLLM` instead of `NewLLM`:
+OpenAI — `web_search`, `file_search`, `code_interpreter`. `NewLLM` uses the
+Responses API, which is where OpenAI exposes server-side built-in tools:
 
 ```go
-client := llmopenai.NewResponsesLLM(
-    llmopenai.WithResponsesAPIKey(os.Getenv("OPENAI_API_KEY")),
-    llmopenai.WithResponsesModel(openai.Models[openai.GPT5]),
-    llmopenai.WithResponsesMaxTokens(1024),
+client := llmopenai.NewLLM(
+    llmopenai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+    llmopenai.WithModel(openai.Models[openai.GPT5]),
+    llmopenai.WithMaxTokens(1024),
     llmopenai.WithWebSearch(llmopenai.WebSearchOpts{
         SearchContextSize: llmopenai.SearchContextMedium,
     }),
@@ -263,7 +268,7 @@ chat without built-ins.
 
 ### Stateless Responses and Azure
 
-Set `llmopenai.WithResponsesStore(false)` on an OpenAI Responses client to
+Set `llmopenai.WithStore(false)` on an OpenAI client to
 request encrypted reasoning for reasoning models. Storage is omitted by default.
 Keep `response.ReasoningItems` in the assistant message's parts when resending
 history, including after tool results; streaming exposes the same items on the
@@ -280,14 +285,14 @@ import (
     llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 )
 
-client := llmazure.NewResponsesLLM(
+client := llmazure.NewLLM(
     llmazure.WithEndpoint(os.Getenv("AZURE_OPENAI_ENDPOINT")),
     llmazure.WithAPIKey(os.Getenv("AZURE_OPENAI_API_KEY")),
     llmazure.WithDeployment("gpt-6.1-sol-prod"),
-    llmazure.WithResponsesStore(false),
+    llmazure.WithStore(false),
     llmazure.WithMaxTokens(1024),
-    llmazure.WithResponsesOptions(
-        llmopenai.WithResponsesReasoningEffort(llmopenai.ReasoningEffortMedium),
+    llmazure.WithOpenAIOptions(
+        llmopenai.WithReasoningEffort(llmopenai.ReasoningEffortMedium),
     ),
 )
 ```
@@ -313,15 +318,14 @@ messages = append(messages, assistant)
 
 ### xAI built-in tools
 
-xAI — `web_search`, `x_search`, `code_execution` via the Responses API (use
-`NewResponsesLLM` instead of `NewLLM`):
+xAI — `web_search`, `x_search`, `code_execution` via the Responses API:
 
 ```go
 import llmxai "github.com/joakimcarlsson/ai/llm/xai"
 
-client := llmxai.NewResponsesLLM(
-    llmxai.WithResponsesAPIKey(os.Getenv("XAI_API_KEY")),
-    llmxai.WithResponsesModel(xai.Models[xai.Grok4]),
+client := llmxai.NewLLM(
+    llmxai.WithAPIKey(os.Getenv("XAI_API_KEY")),
+    llmxai.WithModel(xai.Models[xai.Grok4]),
     llmxai.WithWebSearch(llmxai.WebSearchOpts{
         SearchContextSize: llmxai.SearchContextMedium,
     }),
@@ -332,9 +336,6 @@ client := llmxai.NewResponsesLLM(
     llmxai.WithCodeExecution(),
 )
 ```
-
-The thin `llmxai.NewLLM` wrapper remains available for OpenAI-compatible
-chat without built-ins.
 
 ## Cross-vendor wrappers
 
@@ -380,11 +381,12 @@ client := llmvertex.NewLLM(
 
 ## OpenAI-compatible providers (BYOM)
 
-OpenRouter, Mistral, Ollama, LocalAI, etc. — point `llm/openai` at the right
-base URL:
+Mistral, Ollama, LocalAI and any other endpoint that implements Chat Completions
+but not the Responses API — point `NewChatCompletionsLLM` at the right base URL.
+`NewLLM` is for OpenAI itself and uses the Responses API:
 
 ```go
-openrouter := llmopenai.NewLLM(
+compatible := llmopenai.NewChatCompletionsLLM(
     llmopenai.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
     llmopenai.WithBaseURL("https://openrouter.ai/api/v1"),
     llmopenai.WithModel(openai.Models[openai.GPT5]),
@@ -393,8 +395,8 @@ openrouter := llmopenai.NewLLM(
 
 Groq and xAI are published as their own modules (`llm/groq`, `llm/xai`) so
 they can expose vendor-specific built-in tools on top of the OpenAI-compatible
-surface. Use the thin `NewLLM` constructor in each for plain chat, or the
-dedicated `NewCompoundLLM` / `NewResponsesLLM` for built-in tools.
+surface. Groq's `NewLLM` is a thin Chat Completions wrapper and `NewCompoundLLM`
+exposes its built-in tools; xAI's `NewLLM` targets the Responses API with its built-in tools.
 
 Berget AI (Swedish, EU-hosted; open-weight models) ships as `llm/berget`, a
 thin wrapper pinned to `https://api.berget.ai/v1`. Pricing in the `model`
@@ -436,9 +438,8 @@ plaintext Chat replay are separate capabilities.
 
 | Provider | Mechanism | Configuration |
 | --- | --- | --- |
-| xAI Responses | Encrypted items, `store: false` plus `include: ["reasoning.encrypted_content"]`, replayed before the matching output and function calls | `xai.WithResponsesStore(false)`; built-in tools are unaffected |
-| OpenRouter Responses | Same encrypted replay on the shared OpenAI Responses client | `openrouter.NewResponsesLLM`; storage defaults to false and `previous_response_id` is never sent. The API is stateless-only and rejects `store: true` |
-| OpenRouter Chat | The complete, ordered `reasoning_details` array, including signatures and encrypted data, replayed unchanged instead of plain reasoning | On by default; `openai.WithReasoningDetailsReplay(false)` disables it |
+| xAI Responses | Encrypted items, `store: false` plus `include: ["reasoning.encrypted_content"]`, replayed before the matching output and function calls | `xai.WithStore(false)`; built-in tools are unaffected |
+| OpenRouter Responses | Same encrypted replay on the shared OpenAI Responses client | `openrouter.NewLLM`; storage defaults to false and `previous_response_id` is never sent. The API is stateless-only and rejects `store: true` |
 | DeepSeek | `reasoning_content` on every assistant turn of tool-enabled thinking conversations, with content and tool calls | On for models with `CanReason` |
 | Fireworks | `reasoning_content` for interleaved or preserved thinking; encrypted reasoning is never sent | On for models with `CanReason`; `fireworks.WithReasoningHistory(fireworks.ReasoningHistoryPreserved)` |
 | Together | Reasoning under the field the model returned it in, `reasoning` or `reasoning_content` | On for models with `CanReason`; `together.WithPreservedThinking(true)` sends `chat_template_kwargs.clear_thinking=false` |
@@ -466,9 +467,9 @@ output tokens at the model's one output rate.
 
 | Provider | Control and lowest/off setting | Reasoning-token count |
 | --- | --- | --- |
-| [OpenAI](https://github.com/openai/openai-go/blob/main/responses/response.go) | `WithReasoningEffort` / `WithResponsesReasoningEffort`; `ReasoningEffortNone` disables reasoning where supported | Chat `completion_tokens_details.reasoning_tokens`; Responses `output_tokens_details.reasoning_tokens` |
+| [OpenAI](https://github.com/openai/openai-go/blob/main/responses/response.go) | `WithReasoningEffort`; `ReasoningEffortNone` disables reasoning where supported | Chat `completion_tokens_details.reasoning_tokens`; Responses `output_tokens_details.reasoning_tokens` |
 | [Azure](https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/reasoning) | `WithReasoningEffort(openai.ReasoningEffortNone)`; inferred deployment capabilities or `WithReasoning(true)` gate it | Inherits OpenAI Chat usage |
-| [xAI](https://docs.x.ai/developers/model-capabilities/text/reasoning) | Chat uses OpenAI effort; Responses uses `WithResponsesReasoningEffort(xai.ReasoningEffortLow)`. Supports medium/high/xhigh where accepted; reasoning cannot be disabled | Inherits Chat details; Responses `output_tokens_details.reasoning_tokens` |
+| [xAI](https://docs.x.ai/developers/model-capabilities/text/reasoning) | `WithReasoningEffort(xai.ReasoningEffortLow)`. Supports medium/high/xhigh where accepted; reasoning cannot be disabled | Inherits Chat details; Responses `output_tokens_details.reasoning_tokens` |
 | [Anthropic](https://github.com/anthropics/anthropic-sdk-go/blob/main/message.go) | `WithReasoningEffort(ReasoningEffortLow)` minimizes adaptive thinking; `WithThinkingBudget(0)` explicitly disables it. Positive budgets enable manual thinking on supported models and override adaptive effort | `output_tokens_details.thinking_tokens`, including the final streaming message delta |
 | [Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/claude-messages-extended-thinking.html) | Claude forwards `WithReasoningEffort` and `WithThinkingBudget` to Anthropic; budget zero disables thinking | Inherits Claude's thinking count when Bedrock supplies it. Other catalog vendors are not implemented by this client |
 | [Gemini](https://ai.google.dev/gemini-api/docs/thinking) | `WithThinkingLevel(ThinkingLevelMinimal)` is the lowest level; `WithThinkingBudget(0)` disables thinking on supported models (not 2.5 Pro). Budget `-1` is dynamic | `thoughtsTokenCount`; output combines candidates and thoughts |

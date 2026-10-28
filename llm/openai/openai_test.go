@@ -42,7 +42,7 @@ func TestWireToolChoiceRequired(t *testing.T) {
 	srv := newCompletionServer(t, &body, completionOK)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -67,7 +67,7 @@ func TestWireToolChoiceSpecific(t *testing.T) {
 	srv := newCompletionServer(t, &body, completionOK)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -107,7 +107,7 @@ func TestWireToolChoiceOmittedWithoutTools(t *testing.T) {
 	srv := newCompletionServer(t, &body, completionOK)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -128,7 +128,7 @@ func TestWireToolChoiceOmittedWithoutTools(t *testing.T) {
 // TestToolChoiceSpecificEmptyNameRejected confirms a Specific choice with no
 // name is rejected before any request is sent.
 func TestToolChoiceSpecificEmptyNameRejected(t *testing.T) {
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 		WithToolChoice(llm.ToolChoice{Mode: llm.ToolChoiceSpecific}),
@@ -234,7 +234,7 @@ func TestWireTopKAndStop(t *testing.T) {
 		}))
 	defer srv.Close()
 
-	llm := NewLLM(
+	llm := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -287,7 +287,7 @@ func TestWireRequestJSONField(t *testing.T) {
 	)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "x"}),
@@ -328,7 +328,7 @@ func TestResponseMetadataField(t *testing.T) {
 		`"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}`)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "x"}),
@@ -359,7 +359,7 @@ func TestUsageReasoningAndDeepSeekCache(t *testing.T) {
 		`"completion_tokens_details":{"reasoning_tokens":12}}}`)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "deepseek-chat"}),
@@ -397,7 +397,7 @@ func TestResponseRequestIDAndHeaders(t *testing.T) {
 		}))
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -446,7 +446,7 @@ func TestWithHTTPClientTransportUsed(t *testing.T) {
 	defer srv.Close()
 
 	var n int
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -472,7 +472,7 @@ func TestWireLogitBias(t *testing.T) {
 	srv := newCompletionServer(t, &body, completionOK)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -504,7 +504,7 @@ func TestWireLogitBiasOmitted(t *testing.T) {
 	srv := newCompletionServer(t, &body, completionOK)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -528,7 +528,7 @@ func TestWireLogprobs(t *testing.T) {
 	srv := newCompletionServer(t, &body, completionOK)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -555,7 +555,7 @@ func TestWireLogprobsOmitted(t *testing.T) {
 	srv := newCompletionServer(t, &body, completionOK)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -590,7 +590,7 @@ func TestResponseLogProbs(t *testing.T) {
 	srv := newCompletionServer(t, nil, resp)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -625,7 +625,7 @@ func TestResponseLogProbsNilWhenAbsent(t *testing.T) {
 	srv := newCompletionServer(t, nil, completionOK)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -649,7 +649,7 @@ func TestWireN(t *testing.T) {
 	srv := newCompletionServer(t, &body, completionOK)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -672,7 +672,7 @@ func TestWireNOmitted(t *testing.T) {
 	srv := newCompletionServer(t, &body, completionOK)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -703,7 +703,7 @@ func TestResponseChoices(t *testing.T) {
 	srv := newCompletionServer(t, nil, resp)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -742,7 +742,7 @@ func TestResponseChoicesEmptyForSingleChoice(t *testing.T) {
 	srv := newCompletionServer(t, nil, completionOK)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
@@ -791,7 +791,7 @@ func TestUsageMetadataField(t *testing.T) {
 		`"cost":0.00031,"cost_details":{"upstream_inference_cost":0.00029}}}`)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "x"}),
@@ -841,7 +841,7 @@ func TestWireReasoningEffortLevels(t *testing.T) {
 			srv := newCompletionServer(t, &body, completionOK)
 			defer srv.Close()
 
-			client := NewLLM(
+			client := NewChatCompletionsLLM(
 				WithAPIKey("test-key"),
 				WithBaseURL(srv.URL),
 				WithModel(llm.Model{APIModel: "gpt-5", CanReason: true}),
@@ -883,7 +883,7 @@ func TestWireReasoningEffortOmittedWhenModelCannotReason(t *testing.T) {
 			srv := newCompletionServer(t, &body, completionOK)
 			defer srv.Close()
 
-			client := NewLLM(
+			client := NewChatCompletionsLLM(
 				WithAPIKey("test-key"),
 				WithBaseURL(srv.URL),
 				WithModel(llm.Model{APIModel: "gpt-4o-mini", CanReason: false}),
@@ -918,7 +918,7 @@ func TestWireReasoningEffortOmittedWhenUnset(t *testing.T) {
 	srv := newCompletionServer(t, &body, completionOK)
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-5", CanReason: true}),

@@ -30,7 +30,7 @@ func TestStreamNoChoicesEmitsSingleError(t *testing.T) {
 		}))
 	defer srv.Close()
 
-	client := NewLLM(
+	client := NewChatCompletionsLLM(
 		WithAPIKey("test-key"),
 		WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),

@@ -113,7 +113,7 @@ func TestChatReasoningReplay(t *testing.T) {
 	for name, opts := range cases {
 		t.Run(name, func(t *testing.T) {
 			srv, bodies := captureServer(t, "application/json", toolReply)
-			client := NewLLM(append([]Option{
+			client := NewChatCompletionsLLM(append([]Option{
 				WithAPIKey("k"), WithBaseURL(srv.URL),
 				WithModel(llm.Model{APIModel: "m", CanReason: true}),
 			}, opts...)...)
@@ -169,7 +169,7 @@ func TestChatStreamReasoningDetails(t *testing.T) {
 		"data: " + `{"id":"1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"hi"},"finish_reason":"stop"}]}` + "\n\n" +
 		"data: [DONE]\n\n"
 	srv, _ := captureServer(t, "text/event-stream", sse)
-	client := NewLLM(WithAPIKey("k"), WithBaseURL(srv.URL),
+	client := NewChatCompletionsLLM(WithAPIKey("k"), WithBaseURL(srv.URL),
 		WithModel(llm.Model{APIModel: "m"}))
 	var final *llm.Response
 	for ev := range client.StreamResponse(

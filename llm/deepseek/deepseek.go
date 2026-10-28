@@ -28,7 +28,7 @@ type Option = llmopenai.Option
 // reasoning_content unchanged, as thinking-mode conversations with tools
 // require; [llmopenai.WithReasoningContentReplay] overrides this.
 func NewLLM(opts ...Option) llm.LLM {
-	return llmopenai.NewLLM(
+	return llmopenai.NewChatCompletionsLLM(
 		append([]Option{
 			llmopenai.WithBaseURL(DefaultBaseURL),
 			llmopenai.WithReasoningReplayDefault(canReason),

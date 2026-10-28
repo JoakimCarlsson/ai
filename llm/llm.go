@@ -13,7 +13,7 @@
 //
 //	import llmopenai "github.com/joakimcarlsson/ai/llm/openai"
 //
-//	groq := llmopenai.NewLLM(
+//	groq := llmopenai.NewChatCompletionsLLM(
 //		llmopenai.WithAPIKey(os.Getenv("GROQ_API_KEY")),
 //		llmopenai.WithBaseURL("https://api.groq.com/openai/v1"),
 //		llmopenai.WithModel(groq.Models[model.LLaMA3_70B]),
@@ -58,7 +58,7 @@ var customProvidersMu sync.RWMutex
 //	})
 //
 //	cfg, _ := llm.GetCustomProvider(ollama)
-//	client := llmopenai.NewLLM(
+//	client := llmopenai.NewChatCompletionsLLM(
 //	    llmopenai.WithBaseURL(cfg.BaseURL),
 //	    llmopenai.WithExtraHeaders(cfg.ExtraHeaders),
 //	    llmopenai.WithModel(cfg.DefaultModel),

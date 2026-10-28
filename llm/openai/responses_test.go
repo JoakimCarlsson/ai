@@ -20,7 +20,7 @@ const responsesOK = `{"id":"resp_1","object":"response","status":"completed",` +
 	`"usage":{"input_tokens":1,"output_tokens":1}}`
 
 // TestResponsesWithHTTPClientTransportUsed confirms a client injected via
-// WithResponsesHTTPClient handles outgoing requests: the wrapped transport's
+// WithHTTPClient handles outgoing requests: the wrapped transport's
 // counter increments, proving the SDK default client was replaced.
 func TestResponsesWithHTTPClientTransportUsed(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(
@@ -31,11 +31,11 @@ func TestResponsesWithHTTPClientTransportUsed(t *testing.T) {
 	defer srv.Close()
 
 	var n int
-	client := NewResponsesLLM(
-		WithResponsesAPIKey("test-key"),
-		WithResponsesBaseURL(srv.URL),
-		WithResponsesModel(llm.Model{APIModel: "gpt-4o-mini"}),
-		WithResponsesHTTPClient(&http.Client{
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
+		WithHTTPClient(&http.Client{
 			Transport: countingRT{RoundTripper: http.DefaultTransport, n: &n},
 		}),
 	)
@@ -73,10 +73,10 @@ func TestWireWebSearchUserLocationCarriesItsType_Responses(t *testing.T) {
 	srv := captureResponsesBody(&body)
 	defer srv.Close()
 
-	client := NewResponsesLLM(
-		WithResponsesAPIKey("test-key"),
-		WithResponsesBaseURL(srv.URL),
-		WithResponsesModel(llm.Model{APIModel: "gpt-4o-mini"}),
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 		WithWebSearch(WebSearchOpts{
 			UserLocation: &UserLocation{Timezone: "Europe/Bucharest"},
 		}),
@@ -122,10 +122,10 @@ func TestWireWebSearchWithNoUserLocationSendsNone_Responses(t *testing.T) {
 	srv := captureResponsesBody(&body)
 	defer srv.Close()
 
-	client := NewResponsesLLM(
-		WithResponsesAPIKey("test-key"),
-		WithResponsesBaseURL(srv.URL),
-		WithResponsesModel(llm.Model{APIModel: "gpt-4o-mini"}),
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(llm.Model{APIModel: "gpt-4o-mini"}),
 		WithWebSearch(),
 	)
 
@@ -191,13 +191,13 @@ func TestWireReasoningEffortLevels_Responses(t *testing.T) {
 			srv := newResponsesServer(t, &body, responsesOK)
 			defer srv.Close()
 
-			client := NewResponsesLLM(
-				WithResponsesAPIKey("test-key"),
-				WithResponsesBaseURL(srv.URL),
-				WithResponsesModel(
+			client := NewLLM(
+				WithAPIKey("test-key"),
+				WithBaseURL(srv.URL),
+				WithModel(
 					llm.Model{APIModel: "gpt-5", CanReason: true},
 				),
-				WithResponsesReasoningEffort(tt.effort),
+				WithReasoningEffort(tt.effort),
 			)
 
 			if _, err := client.SendMessages(
@@ -241,13 +241,13 @@ func TestWireReasoningEffortOmittedWhenModelCannotReason_Responses(
 			srv := newResponsesServer(t, &body, responsesOK)
 			defer srv.Close()
 
-			client := NewResponsesLLM(
-				WithResponsesAPIKey("test-key"),
-				WithResponsesBaseURL(srv.URL),
-				WithResponsesModel(
+			client := NewLLM(
+				WithAPIKey("test-key"),
+				WithBaseURL(srv.URL),
+				WithModel(
 					llm.Model{APIModel: "gpt-4o-mini", CanReason: false},
 				),
-				WithResponsesReasoningEffort(effort),
+				WithReasoningEffort(effort),
 			)
 
 			if _, err := client.SendMessages(
@@ -271,7 +271,7 @@ func TestWireReasoningEffortOmittedWhenModelCannotReason_Responses(
 }
 
 // TestWireReasoningEffortOmittedWhenUnset_Responses confirms that a
-// reasoning-capable model with no WithResponsesReasoningEffort call sends no
+// reasoning-capable model with no WithReasoningEffort call sends no
 // reasoning object on the Responses path -- there is no default effort level
 // applied on the caller's behalf.
 func TestWireReasoningEffortOmittedWhenUnset_Responses(t *testing.T) {
@@ -279,10 +279,10 @@ func TestWireReasoningEffortOmittedWhenUnset_Responses(t *testing.T) {
 	srv := newResponsesServer(t, &body, responsesOK)
 	defer srv.Close()
 
-	client := NewResponsesLLM(
-		WithResponsesAPIKey("test-key"),
-		WithResponsesBaseURL(srv.URL),
-		WithResponsesModel(llm.Model{APIModel: "gpt-5", CanReason: true}),
+	client := NewLLM(
+		WithAPIKey("test-key"),
+		WithBaseURL(srv.URL),
+		WithModel(llm.Model{APIModel: "gpt-5", CanReason: true}),
 	)
 
 	if _, err := client.SendMessages(context.Background(),

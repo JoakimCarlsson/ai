@@ -68,11 +68,11 @@ func TestStatelessReasoningReplay(t *testing.T) {
 		name := map[bool]string{false: "send", true: "stream"}[stream]
 		t.Run(name, func(t *testing.T) {
 			srv, bodies := replayServer(t)
-			client := NewResponsesLLM(
-				WithResponsesAPIKey("k"),
-				WithResponsesBaseURL(srv.URL),
-				WithResponsesModel(llm.Model{APIModel: "grok", CanReason: true}),
-				WithResponsesStore(false),
+			client := NewLLM(
+				WithAPIKey("k"),
+				WithBaseURL(srv.URL),
+				WithModel(llm.Model{APIModel: "grok", CanReason: true}),
+				WithStore(false),
 				WithWebSearch(),
 			)
 			history := []message.Message{message.NewUserMessage("go")}
@@ -152,10 +152,10 @@ func TestStatelessReasoningReplay(t *testing.T) {
 // TestStoreUnsetSendsNothing verifies the default request is unchanged.
 func TestStoreUnsetSendsNothing(t *testing.T) {
 	srv, bodies := replayServer(t)
-	client := NewResponsesLLM(
-		WithResponsesAPIKey("k"),
-		WithResponsesBaseURL(srv.URL),
-		WithResponsesModel(llm.Model{APIModel: "grok", CanReason: true}),
+	client := NewLLM(
+		WithAPIKey("k"),
+		WithBaseURL(srv.URL),
+		WithModel(llm.Model{APIModel: "grok", CanReason: true}),
 	)
 	resp, err := client.SendMessages(
 		context.Background(),

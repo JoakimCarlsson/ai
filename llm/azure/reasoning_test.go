@@ -27,7 +27,7 @@ func TestReasoningEffort(t *testing.T) {
 							w.Header().Set("Content-Type", "application/json")
 							_, _ = io.WriteString(
 								w,
-								`{"id":"x","object":"chat.completion","choices":[{"index":0,"message":{"role":"assistant","content":"hi"},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":20,"completion_tokens_details":{"reasoning_tokens":12}}}`,
+								`{"id":"x","object":"response","status":"completed","output":[{"type":"message","id":"m","role":"assistant","status":"completed","content":[{"type":"output_text","text":"hi","annotations":[]}]}],"usage":{"input_tokens":1,"output_tokens":20,"total_tokens":21,"input_tokens_details":{"cached_tokens":0},"output_tokens_details":{"reasoning_tokens":12}}}`,
 							)
 						},
 					),
@@ -52,7 +52,8 @@ func TestReasoningEffort(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				effort, present := body["reasoning_effort"]
+				reasoning, _ := body["reasoning"].(map[string]any)
+				effort, present := reasoning["effort"]
 				if state == "enabled" {
 					if effort != "none" {
 						t.Errorf("effort = %v, want none", effort)
