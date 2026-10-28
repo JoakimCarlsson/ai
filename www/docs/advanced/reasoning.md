@@ -35,6 +35,12 @@ Each LLM vendor module exports its own `WithReasoningEffort` (or
     `llmopenai.WithResponsesReasoningEffort`. Which levels a model accepts
     depends on the model; the level is sent only when the model can reason.
 
+    Some models, such as `gpt-6-luna`, reject function tools on Chat
+    Completions at their default reasoning effort and answer with a 400.
+    When you use tools with them, either set
+    `llmopenai.WithReasoningEffort(llmopenai.ReasoningEffortNone)` or use
+    `llmopenai.NewResponsesLLM`.
+
     OpenAI's Chat Completions API does not expose thinking content. The
     model reasons internally but `EventThinkingDelta` events are not emitted.
 

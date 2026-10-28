@@ -197,6 +197,9 @@ func WithDisableCache() Option { return func(o *Options) { o.disableCache = true
 // WithReasoningEffort sets effort for reasoning models. None disables reasoning
 // on models that accept it; supported values vary by model. Unset uses the
 // provider default, and models without CanReason ignore this option.
+//
+// Some models, such as gpt-6-luna, reject function tools on Chat Completions
+// unless the effort is [ReasoningEffortNone]. Set it, or use [NewResponsesLLM].
 func WithReasoningEffort(effort ReasoningEffort) Option {
 	return func(o *Options) { o.reasoningEffort = &effort }
 }
@@ -329,9 +332,32 @@ type retryableError struct {
 	err *openaisdk.Error
 }
 
-func (e retryableError) Error() string      { return e.err.Error() }
 func (e retryableError) Unwrap() error      { return e.err }
 func (e retryableError) GetStatusCode() int { return e.err.StatusCode }
+
+// Error returns the SDK's status summary followed by the API's own message,
+// param and code. The SDK omits these on purpose, but without them a 400 such
+// as "function tools are not supported with this reasoning effort" reaches the
+// caller as a bare "400 Bad Request".
+func (e retryableError) Error() string {
+	msg := e.err.Error()
+	if e.err.Message == "" {
+		return msg
+	}
+	msg += ": " + e.err.Message
+	var details []string
+	if e.err.Param != "" {
+		details = append(details, "param="+e.err.Param)
+	}
+	if e.err.Code != "" {
+		details = append(details, "code="+e.err.Code)
+	}
+	if len(details) > 0 {
+		msg += " (" + strings.Join(details, ", ") + ")"
+	}
+	return msg
+}
+
 func (e retryableError) GetRetryAfter() string {
 	if e.err.Response != nil {
 		v := e.err.Response.Header.Values("Retry-After")
