@@ -54,6 +54,7 @@ nav:
     - Audio: providers/audio.md
     - Speech-to-Text: providers/speech-to-text.md
     - Rerankers: providers/rerankers.md
+    - Decision Models: providers/decision.md
     - Fill-in-the-Middle: providers/fim.md
     - Vision: providers/vision.md
   - Agent Framework:

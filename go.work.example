@@ -35,6 +35,9 @@ use (
 	./rerankers/cohere
 	./rerankers/berget
 
+	./decision
+	./decision/jev
+
 	./fim
 	./fim/mistral
 	./fim/deepseek
