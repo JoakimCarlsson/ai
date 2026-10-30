@@ -71,6 +71,7 @@ Each native decision-model vendor under `decision/`:
 | Module | Provider |
 |---|---|
 | `decision/jev` | TypeSafe AI (Jev, System One) |
+| `decision/openrouter` | OpenRouter (wraps `decision/jev`) — Jev via an OpenRouter key |
 
 ## Image Generation Providers
 

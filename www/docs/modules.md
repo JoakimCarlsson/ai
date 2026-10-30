@@ -112,6 +112,7 @@ Each carries exactly one vendor SDK.
 | Module | Vendor SDK |
 |---|---|
 | `decision/jev` | `net/http` |
+| `decision/openrouter` | `net/http` (thin wrapper over `decision/jev`) |
 
 ### Fill-in-the-middle
 

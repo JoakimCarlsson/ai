@@ -37,6 +37,7 @@ use (
 
 	./decision
 	./decision/jev
+	./decision/openrouter
 
 	./fim
 	./fim/mistral

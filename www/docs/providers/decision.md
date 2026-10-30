@@ -52,6 +52,22 @@ fmt.Println(resp.Usage.Cost(decider.Model()))
 Options: `WithAPIKey`, `WithModel`, `WithBaseURL`, `WithHTTPClient`,
 `WithTimeout`. Input is billed at $0.042 per 1M tokens; output is free.
 
+## OpenRouter
+
+OpenRouter serves Jev over the same System One wire format, billed to an
+OpenRouter key. `decision/openrouter` wraps `decision/jev` with that base URL.
+
+```go
+import "github.com/joakimcarlsson/ai/decision/openrouter"
+
+decider := openrouter.NewDecider() // default key: OPENROUTER_API_KEY
+```
+
+It takes the same options as `jev.NewDecider`. Models are
+`openrouter.Models[openrouter.JevLatest]` (default) and
+`openrouter.Jev113`; `openrouter.WithModelID("...")` selects any other
+OpenRouter id. Pricing is the same as TypeSafe's.
+
 Rate-limit (429) and overload (529) responses are returned as
 `*decision.APIError`, which satisfies `llm.RetryableError`, so
 `llm.ShouldRetry` treats 429 as retryable.

@@ -98,7 +98,7 @@ func main() {
 | Azure Speech | | | | ✅ | | | | |
 | Vertex AI | ✅ | | | | | | | |
 | Groq | ✅ | | | | | | | |
-| OpenRouter | ✅ | | | | | | | |
+| OpenRouter | ✅ | | | | | | | ✅ |
 | xAI | ✅ | | ✅ | | | | | |
 | Voyage AI | | ✅ | | | | ✅ | | |
 | Cohere | ✅ | ✅ | | | | ✅ | | |
