@@ -101,7 +101,7 @@ type Usage struct {
 
 // Cost returns the cost of the usage under the given model's pricing, in the
 // model's currency.
-func (u Usage) Cost(m DecisionModel) float64 {
+func (u Usage) Cost(m Model) float64 {
 	return float64(u.InputTokens)/1e6*m.CostPer1MInputTokens +
 		float64(u.OutputTokens)/1e6*m.CostPer1MOutputTokens
 }

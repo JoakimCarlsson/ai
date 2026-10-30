@@ -21,7 +21,7 @@ const (
 // Options configures the Jev decider client.
 type Options struct {
 	apiKey     string
-	model      decision.DecisionModel
+	model      decision.Model
 	baseURL    string
 	httpClient *http.Client
 	timeout    *time.Duration
@@ -40,7 +40,7 @@ func WithAPIKey(apiKey string) Option {
 
 // WithModel selects the decision model. It defaults to
 // Models[JevLatest].
-func WithModel(m decision.DecisionModel) Option {
+func WithModel(m decision.Model) Option {
 	return func(o *Options) {
 		o.model = m
 	}
@@ -103,7 +103,7 @@ func NewDecider(opts ...Option) decision.Decider {
 }
 
 // Model returns the configured decision model.
-func (c *Client) Model() decision.DecisionModel {
+func (c *Client) Model() decision.Model {
 	return c.options.model
 }
 

@@ -1,11 +1,11 @@
 package decision
 
-// DecisionModel represents a decision model with its configuration and pricing.
+// Model represents a decision model with its configuration and pricing.
 //
 // Each decision provider package publishes its own catalog of these under the
 // name Models, so a configuration is selected as, for example,
 // jev.Models[jev.JevLatest].
-type DecisionModel struct {
+type Model struct {
 	// ID is the unique identifier for this decision model.
 	ID string `json:"id"`
 	// Name is the human-readable name of the decision model.

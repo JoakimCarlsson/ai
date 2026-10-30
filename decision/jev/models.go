@@ -11,7 +11,7 @@ const (
 
 // Models maps model IDs to their configurations. Input is billed at $0.042
 // per 1M tokens; output is free.
-var Models = map[string]decision.DecisionModel{
+var Models = map[string]decision.Model{
 	JevLatest: {
 		ID:                   JevLatest,
 		Name:                 "Jev (latest)",

@@ -48,7 +48,7 @@ type Decider interface {
 		questions map[string]Question,
 	) (*Response, error)
 	// Model returns the decision model configuration being used.
-	Model() DecisionModel
+	Model() Model
 }
 
 // WithTracing wraps a Decider so every call records OpenTelemetry spans and
@@ -61,7 +61,7 @@ type tracingDecider struct {
 	inner Decider
 }
 
-func (t *tracingDecider) Model() DecisionModel {
+func (t *tracingDecider) Model() Model {
 	return t.inner.Model()
 }
 
