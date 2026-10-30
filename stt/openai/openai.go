@@ -226,6 +226,7 @@ func (c *Client) Translate(
 		params.Temperature = openaisdk.Float(*opts.Temperature)
 	}
 
+	//nolint:staticcheck // deprecated but supported
 	response, err := c.client.Audio.Translations.New(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to translate audio: %w", err)
