@@ -35,6 +35,7 @@ implement these.
 | `stt` | Speech-to-text interface (transcribe + translate, streaming) |
 | `image` | Image generation interface |
 | `rerankers` | Document reranking interface |
+| `decision` | Decision model interface (typed choice / score / yes-no answers) |
 | `fim` | Fill-in-the-middle code completion interface |
 
 ## Tier 2 — Vendor implementations
@@ -105,6 +106,13 @@ Each carries exactly one vendor SDK.
 | `rerankers/voyage` | `net/http` |
 | `rerankers/cohere` | `net/http` |
 | `rerankers/berget` | `net/http` |
+
+### Decision models
+
+| Module | Vendor SDK |
+|---|---|
+| `decision/jev` | `net/http` |
+| `decision/openrouter` | `net/http` (thin wrapper over `decision/jev`) |
 
 ### Fill-in-the-middle
 

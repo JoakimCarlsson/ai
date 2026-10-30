@@ -64,6 +64,15 @@ Each native reranker vendor under `rerankers/`:
 | `rerankers/cohere` | Cohere |
 | `rerankers/berget` | Berget AI (EU-hosted, EUR pricing) |
 
+## Decision Providers
+
+Each native decision-model vendor under `decision/`:
+
+| Module | Provider |
+|---|---|
+| `decision/jev` | TypeSafe AI (Jev, System One) |
+| `decision/openrouter` | OpenRouter (wraps `decision/jev`) — Jev via an OpenRouter key |
+
 ## Image Generation Providers
 
 Under `image/`:
@@ -120,6 +129,7 @@ generic code:
 - `llm` — `llm.LLM` interface, request/response types, retry helpers
 - `embeddings` — `embeddings.Embedding` interface
 - `rerankers` — `rerankers.Reranker` interface
+- `decision` — `decision.Decider` interface
 - `image` — `image.ImageGeneration` interface
 - `tts` — `tts.Generation` interface (+ optional `tts.ForcedAlignmentProvider`)
 - `stt` — `stt.SpeechToText` interface

@@ -6,8 +6,8 @@
 
 A multi-provider Go library for interacting with AI models through unified
 interfaces. Each capability — LLMs, embeddings, TTS, STT, image generation,
-rerankers, fill-in-the-middle — is published as its own modality module, and
-each vendor implementation is published as its own sub-module. You only pull
+rerankers, decision models, fill-in-the-middle — is published as its own
+modality module, and each vendor implementation is published as its own sub-module. You only pull
 the SDK you actually use.
 
 Supported providers: Anthropic, OpenAI, Google (Gemini & Vertex AI), AWS
@@ -20,7 +20,7 @@ OpenAI-compatible endpoint via [BYOM](advanced/byom.md).
 The library is published as ~50 independent Go modules. The core split:
 
 - **Modality interfaces** define the contract for each capability:
-  `llm`, `embeddings`, `tts`, `stt`, `image`, `rerankers`, `fim`. These pull
+  `llm`, `embeddings`, `tts`, `stt`, `image`, `rerankers`, `fim`, `decision`. These pull
   no vendor SDKs.
 - **Vendor sub-modules** under each modality carry the SDK and the
   implementation: `llm/anthropic`, `llm/openai`, `embeddings/voyage`,

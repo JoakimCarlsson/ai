@@ -23,6 +23,7 @@ SDKs you actually use.
 - **Image generation** — OpenAI, Gemini, xAI
 - **Audio** — TTS (ElevenLabs, OpenAI, Google Cloud, Azure Speech) and STT (OpenAI Whisper, ElevenLabs Scribe, Deepgram, AssemblyAI, Google Cloud)
 - **Rerankers** — Voyage AI, Cohere
+- **Decision models** — TypeSafe Jev (System One): typed choice, score and yes/no answers without text generation
 - **Fill-in-the-middle** — Mistral, DeepSeek
 - **Batch processing** — Native batch APIs (OpenAI, Anthropic, Gemini) or bounded concurrency for any provider
 - **MCP integration** — Model Context Protocol tooling
@@ -34,7 +35,7 @@ SDKs you actually use.
 The library is published as ~50 independent Go modules organised by tier:
 
 - **Tier 0 leaves** — `model`, `message`, `tool`, `schema`, `tracing`, `prompt`, `types` (no vendor SDKs)
-- **Tier 1 modality interfaces** — `llm`, `embeddings`, `tts`, `stt`, `image`, `rerankers`, `fim` (no vendor SDKs)
+- **Tier 1 modality interfaces** — `llm`, `embeddings`, `tts`, `stt`, `image`, `rerankers`, `fim`, `decision` (no vendor SDKs)
 - **Tier 2 vendor implementations** — `llm/openai`, `llm/anthropic`, `embeddings/voyage`, `tts/elevenlabs`, etc. (carry the vendor SDK)
 - **Tier 3 utilities** — `tokens/{sliding,truncate,summarize}`, `batch/{openai,anthropic,gemini,concurrent}`
 - **Tier 4 agent runtime** — `agent`, `agent/team`, `session`, `memory`, `voice`
@@ -86,26 +87,27 @@ func main() {
 
 ## Supported providers
 
-| Provider | LLM | Embeddings | Images | TTS | STT | Rerankers | FIM |
-|----------|-----|------------|--------|-----|-----|-----------|-----|
-| OpenAI | ✅ | ✅ | ✅ | ✅ | ✅ | | |
-| Anthropic | ✅ | | | | | | |
-| Google Gemini | ✅ | ✅ | ✅ | | | | |
-| Google Cloud | | | | ✅ | ✅ | | |
-| AWS Bedrock | ✅ | ✅ | | | | | |
-| Azure OpenAI | ✅ | | | | | | |
-| Azure Speech | | | | ✅ | | | |
-| Vertex AI | ✅ | | | | | | |
-| Groq | ✅ | | | | | | |
-| OpenRouter | ✅ | | | | | | |
-| xAI | ✅ | | ✅ | | | | |
-| Voyage AI | | ✅ | | | | ✅ | |
-| Cohere | ✅ | ✅ | | | | ✅ | |
-| Mistral | ✅ | ✅ | | | | | ✅ |
-| DeepSeek | ✅ | | | | | | ✅ |
-| ElevenLabs | | | | ✅ | ✅ | | |
-| Deepgram | | | | | ✅ | | |
-| AssemblyAI | | | | | ✅ | | |
+| Provider | LLM | Embeddings | Images | TTS | STT | Rerankers | FIM | Decision |
+|----------|-----|------------|--------|-----|-----|-----------|-----|----------|
+| OpenAI | ✅ | ✅ | ✅ | ✅ | ✅ | | | |
+| Anthropic | ✅ | | | | | | | |
+| Google Gemini | ✅ | ✅ | ✅ | | | | | |
+| Google Cloud | | | | ✅ | ✅ | | | |
+| AWS Bedrock | ✅ | ✅ | | | | | | |
+| Azure OpenAI | ✅ | | | | | | | |
+| Azure Speech | | | | ✅ | | | | |
+| Vertex AI | ✅ | | | | | | | |
+| Groq | ✅ | | | | | | | |
+| OpenRouter | ✅ | | | | | | | ✅ |
+| xAI | ✅ | | ✅ | | | | | |
+| Voyage AI | | ✅ | | | | ✅ | | |
+| Cohere | ✅ | ✅ | | | | ✅ | | |
+| Mistral | ✅ | ✅ | | | | | ✅ | |
+| DeepSeek | ✅ | | | | | | ✅ | |
+| ElevenLabs | | | | ✅ | ✅ | | | |
+| Deepgram | | | | | ✅ | | | |
+| AssemblyAI | | | | | ✅ | | | |
+| TypeSafe (Jev) | | | | | | | | ✅ |
 
 Plus any OpenAI-compatible endpoint via [BYOM](https://joakimcarlsson.github.io/ai/advanced/byom/).
 
