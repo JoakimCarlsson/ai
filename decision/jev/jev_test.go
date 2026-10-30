@@ -135,7 +135,7 @@ func TestDecideRejectsBadInput(t *testing.T) {
 
 func TestDecideReturnsAPIError(t *testing.T) {
 	srv := httptest.NewServer(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Retry-After", "3")
 			w.WriteHeader(http.StatusTooManyRequests)
 		}),

@@ -4,12 +4,12 @@ go 1.26.0
 
 require (
 	github.com/joakimcarlsson/ai/message v0.7.0
-	github.com/joakimcarlsson/ai/tokens v0.2.10
+	github.com/joakimcarlsson/ai/tokens v0.2.11
 )
 
 require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
-	github.com/joakimcarlsson/ai/tool v0.1.4 // indirect
+	github.com/joakimcarlsson/ai/tool v0.1.5 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect

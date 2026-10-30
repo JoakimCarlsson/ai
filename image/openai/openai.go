@@ -268,6 +268,7 @@ func (c *Client) buildParams(prompt string) openaisdk.ImageGenerateParams {
 		)
 	}
 	if c.options.user != "" {
+		//nolint:staticcheck // no safety_identifier option
 		params.User = openaisdk.String(c.options.user)
 	}
 
