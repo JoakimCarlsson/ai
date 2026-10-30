@@ -6,12 +6,16 @@
 // thin wrapper over [decision/jev] that fixes the base URL, the API key
 // environment variable and the model catalog.
 //
-// OpenRouter also has an alpha /api/alpha/decisions endpoint; it is not used
-// here.
+// OpenRouter lists decision models from several vendors; this package has only
+// been exercised with Jev. Pass any other id with [WithModelID]. OpenRouter also
+// has an alpha /api/alpha/decisions endpoint, which is not used here.
 package openrouter
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
+	"time"
 
 	"github.com/joakimcarlsson/ai/decision"
 	"github.com/joakimcarlsson/ai/decision/jev"
@@ -41,11 +45,39 @@ func WithModelID(id string) Option {
 // NewDecider constructs a Jev decider client that talks to OpenRouter. The
 // API key defaults to the OPENROUTER_API_KEY environment variable and the
 // model to Models[JevLatest]; pass options to override either. The returned
-// [decision.Decider] is wrapped with [decision.WithTracing].
+// [decision.Decider] is wrapped with [decision.WithTracing] and is also a
+// [decision.ModelLister], which lists the decision models OpenRouter serves.
+// Responses carry OpenRouter's billed cost in [decision.Usage.ReportedCost].
 func NewDecider(opts ...Option) decision.Decider {
-	return jev.NewDecider(append([]Option{
+	return decision.WithTracing(jev.NewClient(append([]Option{
 		jev.WithBaseURL(DefaultBaseURL),
 		jev.WithAPIKey(os.Getenv(apiKeyEnv)),
 		jev.WithModel(Models[JevLatest]),
-	}, opts...)...)
+		jev.WithModelsEndpoint(
+			"/v1/models?output_modalities=decisions",
+			decodeModels,
+		),
+	}, opts...)...))
+}
+
+func decodeModels(body []byte) ([]decision.ModelInfo, error) {
+	var r struct {
+		Data []struct {
+			ID          string `json:"id"`
+			Description string `json:"description"`
+			Created     int64  `json:"created"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(body, &r); err != nil {
+		return nil, fmt.Errorf("failed to decode models: %w", err)
+	}
+	out := make([]decision.ModelInfo, 0, len(r.Data))
+	for _, m := range r.Data {
+		info := decision.ModelInfo{Name: m.ID, Description: m.Description}
+		if m.Created > 0 {
+			info.ReleaseDate = time.Unix(m.Created, 0).UTC()
+		}
+		out = append(out, info)
+	}
+	return out, nil
 }

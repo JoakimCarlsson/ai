@@ -36,32 +36,58 @@ func (e *APIError) GetStatusCode() int { return e.StatusCode }
 // GetRetryAfter returns the Retry-After header of the failed response.
 func (e *APIError) GetRetryAfter() string { return e.RetryAfter }
 
-// PostJSON sends reqBody as JSON to url with bearer authentication and decodes
-// a 200 response into out. A non-200 response is returned as an [*APIError].
-// It is the shared HTTP transport for vendor Decider implementations, which
-// differ only in their request/response shapes.
+// PostJSON sends reqBody as JSON to url with bearer authentication and the
+// given extra headers, and decodes a 200 response into out. A non-200
+// response is returned as an [*APIError]. It is the shared HTTP transport for
+// vendor Decider implementations, which differ only in their request/response
+// shapes.
 func PostJSON(
 	ctx context.Context,
 	httpClient *http.Client,
 	url, apiKey string,
+	headers map[string]string,
 	reqBody, out any,
 ) error {
 	jsonBody, err := json.Marshal(reqBody)
 	if err != nil {
 		return fmt.Errorf("failed to marshal decision request: %w", err)
 	}
-
-	req, err := http.NewRequestWithContext(
-		ctx,
-		http.MethodPost,
-		url,
-		bytes.NewReader(jsonBody),
+	return doJSON(
+		ctx, httpClient, http.MethodPost, url, apiKey, headers,
+		bytes.NewReader(jsonBody), out,
 	)
+}
+
+// GetJSON sends a GET to url with bearer authentication and decodes a 200
+// response into out. A non-200 response is returned as an [*APIError].
+func GetJSON(
+	ctx context.Context,
+	httpClient *http.Client,
+	url, apiKey string,
+	out any,
+) error {
+	return doJSON(ctx, httpClient, http.MethodGet, url, apiKey, nil, nil, out)
+}
+
+func doJSON(
+	ctx context.Context,
+	httpClient *http.Client,
+	method, url, apiKey string,
+	headers map[string]string,
+	body io.Reader,
+	out any,
+) error {
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return fmt.Errorf("failed to create decision request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	req.Header.Set("Authorization", "Bearer "+apiKey)
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -69,7 +95,7 @@ func PostJSON(
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read decision response body: %w", err)
 	}
@@ -78,11 +104,11 @@ func PostJSON(
 		return &APIError{
 			StatusCode: resp.StatusCode,
 			RetryAfter: resp.Header.Get("Retry-After"),
-			Body:       string(body),
+			Body:       string(respBody),
 		}
 	}
 
-	if err := json.Unmarshal(body, out); err != nil {
+	if err := json.Unmarshal(respBody, out); err != nil {
 		return fmt.Errorf("failed to unmarshal decision response: %w", err)
 	}
 	return nil

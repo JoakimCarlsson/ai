@@ -6,6 +6,7 @@ import "github.com/joakimcarlsson/ai/decision"
 const (
 	JevLatest string = "~typesafe/jev-latest"
 	Jev113    string = "typesafe/jev-1.13"
+	Jev114    string = "typesafe/jev-1.14"
 )
 
 // Models maps OpenRouter's Jev model IDs to their configurations. OpenRouter
@@ -16,6 +17,14 @@ var Models = map[string]decision.Model{
 		Name:                 "OpenRouter – Jev (latest)",
 		Provider:             "openrouter",
 		APIModel:             "~typesafe/jev-latest",
+		Currency:             "USD",
+		CostPer1MInputTokens: 0.042,
+	},
+	Jev114: {
+		ID:                   Jev114,
+		Name:                 "OpenRouter – Jev 1.14",
+		Provider:             "openrouter",
+		APIModel:             "typesafe/jev-1.14",
 		Currency:             "USD",
 		CostPer1MInputTokens: 0.042,
 	},

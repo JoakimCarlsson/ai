@@ -4,7 +4,9 @@
 // answers (a choice, a score or a probability) in a single pass, which suits
 // routing, tool-call gating, classification and guardrails inside agent loops.
 // This package defines the [Decider] interface and the question and answer
-// types that flow through it. Concrete vendor implementations live in
+// types that flow through it. Questions can be accompanied by images (see
+// [WithImages]), and a provider that can list its models also implements
+// [ModelLister]. Concrete vendor implementations live in
 // subpackages (decision/jev); each subpackage exports its own NewDecider
 // constructor that returns a tracing-wrapped client implementing the interface.
 //
@@ -46,6 +48,7 @@ type Decider interface {
 		ctx context.Context,
 		state any,
 		questions map[string]Question,
+		opts ...CallOption,
 	) (*Response, error)
 	// Model returns the decision model configuration being used.
 	Model() Model
@@ -53,8 +56,24 @@ type Decider interface {
 
 // WithTracing wraps a Decider so every call records OpenTelemetry spans and
 // metrics.
+// If inner is also a [ModelLister], so is the returned Decider.
 func WithTracing(inner Decider) Decider {
-	return &tracingDecider{inner: inner}
+	t := &tracingDecider{inner: inner}
+	if l, ok := inner.(ModelLister); ok {
+		return &tracingListerDecider{tracingDecider: t, lister: l}
+	}
+	return t
+}
+
+type tracingListerDecider struct {
+	*tracingDecider
+	lister ModelLister
+}
+
+func (t *tracingListerDecider) ListModels(
+	ctx context.Context,
+) ([]ModelInfo, error) {
+	return t.lister.ListModels(ctx)
 }
 
 type tracingDecider struct {
@@ -69,6 +88,7 @@ func (t *tracingDecider) Decide(
 	ctx context.Context,
 	state any,
 	questions map[string]Question,
+	opts ...CallOption,
 ) (*Response, error) {
 	m := t.inner.Model()
 	start := time.Now()
@@ -82,7 +102,7 @@ func (t *tracingDecider) Decide(
 	defer span.End()
 	span.SetAttributes(tracing.AttrResultCount.Int(len(questions)))
 
-	resp, err := t.inner.Decide(ctx, state, questions)
+	resp, err := t.inner.Decide(ctx, state, questions, opts...)
 	if err != nil {
 		tracing.SetError(span, err)
 		tracing.RecordMetrics(
