@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/joakimcarlsson/ai/llm v0.8.1
-	github.com/joakimcarlsson/ai/llm/gemini v0.11.1
+	github.com/joakimcarlsson/ai/llm/gemini v0.11.2
 	github.com/joakimcarlsson/ai/message v0.7.0
 	github.com/joakimcarlsson/ai/types v0.2.1
 	google.golang.org/genai v1.77.0
