@@ -45,8 +45,9 @@ client := llmopenai.NewLLM(
 `WithLogitBias` biases or bans tokens by tokenizer id (-100 to 100).
 `WithLogprobs(n)` surfaces per-token log probabilities with up to `n`
 alternatives on `Response.LogProbs`. `WithN(n)` requests `n` completions on
-`Response.Choices`, with the top-level fields mirroring choice 0 (streaming with
-`n > 1` is unsupported). `logit_bias` is rejected by reasoning-tier models (the
+`Response.Choices`, with the top-level fields mirroring choice 0 (when
+streaming, deltas cover choice 0 only and the rest arrive on the final
+response). `logit_bias` is rejected by reasoning-tier models (the
 gpt-5 family); use a classic chat model such as `gpt-4o-mini` for it.
 
 `WithToolChoice` controls whether and which tool the model may call. It takes
