@@ -147,8 +147,9 @@ llmopenai.WithN(3)                                                 // n completi
     - `WithN(n)` requests `n` completions; all land on `Response.Choices`
       (`[]llm.Choice`). The top-level `Content` / `FinishReason` / `ToolCalls` /
       `LogProbs` mirror choice 0, so single-completion callers are unaffected
-      (`Choices` is empty when `n` is unset or `1`). Streaming with `n > 1` is not
-      supported — use the non-streaming `SendMessages` path.
+      (`Choices` is empty when `n` is unset or `1`). When streaming with `n > 1`,
+      content and thinking deltas are emitted for choice 0 only; every choice is
+      delivered on `Response.Choices` of the final `EventComplete` response.
 
     `logit_bias` is rejected by reasoning-tier models (the gpt-5 family) with an
     HTTP 400; use a classic chat model such as `gpt-4o-mini` when you need it.

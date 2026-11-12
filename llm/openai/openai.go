@@ -246,9 +246,10 @@ func WithLogprobs(topLogprobs int) Option {
 // WithN requests n completions for a single prompt, emitted as n on the
 // request. All completions are surfaced on [llm.Response].Choices, while the
 // top-level Content / FinishReason / ToolCalls / LogProbs mirror the first
-// choice. Streaming with n > 1 is not supported. OpenAI-only — Gemini's
-// candidateCount and other providers are out of scope; they never receive the
-// field.
+// choice. When streaming with n > 1, content and thinking deltas are emitted
+// for the first choice only; every choice is delivered on the Choices of the
+// final response. OpenAI-only — Gemini's candidateCount and other providers
+// are out of scope; they never receive the field.
 func WithN(n int) Option {
 	return func(o *Options) { v := int64(n); o.n = &v }
 }
@@ -939,7 +940,9 @@ func errorEvent(err error) <-chan llm.Event {
 // runStream performs one streaming chat-completions attempt, emitting events
 // on eventChan. The top-level and usage extra fields are collected from the
 // chunks themselves because the SDK's accumulator discards them; see
-// providerMetadataFrom.
+// providerMetadataFrom. Deltas are emitted for the primary choice (index 0)
+// only, so a request for several completions (WithN) never interleaves them;
+// the other choices reach the caller on the Choices of the final response.
 func (c *Client) runStream(
 	ctx context.Context,
 	params openaisdk.ChatCompletionNewParams,
@@ -975,6 +978,9 @@ func (c *Client) runStream(
 		usageExtras = mergeExtras(usageExtras, chunk.Usage.JSON.ExtraFields)
 
 		for _, choice := range chunk.Choices {
+			if choice.Index != 0 {
+				continue
+			}
 			if field, ok := choice.Delta.JSON.ExtraFields["reasoning_details"]; ok {
 				var items []json.RawMessage
 				if json.Unmarshal([]byte(field.Raw()), &items) == nil {
@@ -1039,6 +1045,7 @@ func (c *Client) runStream(
 			Usage:            c.usage(acc.ChatCompletion),
 			FinishReason:     finishReason,
 			ProviderMetadata: c.providerMetadataFrom(topExtras, usageExtras),
+			Choices:          c.buildChoices(acc.ChatCompletion),
 		}
 		applyResponseHeaders(resp, raw)
 		if structured {
