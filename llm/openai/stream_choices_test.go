@@ -81,9 +81,18 @@ func collectStream(
 // choice 0, while Response.Choices holds every choice with its own content,
 // finish reason and tool calls.
 func TestStreamMultipleChoicesIsolated(t *testing.T) {
-	srv := newChunkServer(t,
-		choiceChunk("0", `{"role":"assistant","reasoning_content":"think0 "}`, ""),
-		choiceChunk("1", `{"role":"assistant","reasoning_content":"think1 "}`, ""),
+	srv := newChunkServer(
+		t,
+		choiceChunk(
+			"0",
+			`{"role":"assistant","reasoning_content":"think0 "}`,
+			"",
+		),
+		choiceChunk(
+			"1",
+			`{"role":"assistant","reasoning_content":"think1 "}`,
+			"",
+		),
 		choiceChunk("0", `{"content":"first "}`, ""),
 		choiceChunk("1", `{"content":"second "}`, ""),
 		choiceChunk("1", `{"tool_calls":[{"index":0,"id":"call_1",`+
@@ -140,8 +149,10 @@ func TestStreamMultipleChoicesIsolated(t *testing.T) {
 	}
 	if second.ToolCalls[0].Name != "lookup" ||
 		second.ToolCalls[0].Input != `{"q":"x"}` {
-		t.Errorf("Choices[1].ToolCalls[0] = %+v, want lookup with {\"q\":\"x\"}",
-			second.ToolCalls[0])
+		t.Errorf(
+			"Choices[1].ToolCalls[0] = %+v, want lookup with {\"q\":\"x\"}",
+			second.ToolCalls[0],
+		)
 	}
 }
 
