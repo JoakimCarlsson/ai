@@ -259,7 +259,7 @@ func (c *Client) StreamAudio(
 		chunks, _, err := c.streamRealtime(ctx, text, opts)
 		return chunks, err
 	}
-	resp, err := c.client.Audio.Speech.New(
+	resp, err := c.client.Audio.Speech.New( //nolint:bodyclose // closed by the streaming goroutine below
 		ctx, c.newParams(text, opts), c.requestOptions()...,
 	)
 	if err != nil {
