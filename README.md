@@ -20,9 +20,9 @@ SDKs you actually use.
 - **Agent framework** — Sub-agents, handoffs, fan-out, sessions, persistent memory, context strategies
 - **Voice agent** — Low-latency streaming STT → LLM → TTS pipeline with barge-in, filler audio, tool-call sounds, sessions, hooks, handoffs, toolsets, and memory
 - **Embeddings** — Text, multimodal, and contextualized
-- **Image generation** — OpenAI, Gemini, xAI
-- **Audio** — TTS (ElevenLabs, OpenAI, Google Cloud, Azure Speech) and STT (OpenAI Whisper, ElevenLabs Scribe, Deepgram, AssemblyAI, Google Cloud)
-- **Rerankers** — Voyage AI, Cohere
+- **Image generation** — OpenAI, Gemini, xAI, Azure OpenAI, OpenRouter
+- **Audio** — TTS (ElevenLabs incl. multi-speaker dialogue and Eleven v4, OpenAI incl. Realtime, Google Cloud incl. Gemini-TTS, Azure Speech, Deepgram Aura and Flux, OpenRouter) and STT (OpenAI, ElevenLabs Scribe, Deepgram, AssemblyAI, Google Cloud, Azure Speech, Berget, OpenRouter)
+- **Rerankers** — Voyage AI, Cohere, Berget
 - **Decision models** — TypeSafe Jev (System One): typed choice, score and yes/no answers without text generation
 - **Fill-in-the-middle** — Mistral, DeepSeek
 - **Batch processing** — Native batch APIs (OpenAI, Anthropic, Gemini) or bounded concurrency for any provider
@@ -94,18 +94,24 @@ func main() {
 | Google Gemini | ✅ | ✅ | ✅ | | | | | |
 | Google Cloud | | | | ✅ | ✅ | | | |
 | AWS Bedrock | ✅ | ✅ | | | | | | |
-| Azure OpenAI | ✅ | | | | | | | |
-| Azure Speech | | | | ✅ | | | | |
+| Azure OpenAI | ✅ | | ✅ | | | | | |
+| Azure Speech | | | | ✅ | ✅ | | | |
 | Vertex AI | ✅ | | | | | | | |
 | Groq | ✅ | | | | | | | |
-| OpenRouter | ✅ | | | | | | | ✅ |
+| OpenRouter | ✅ | | ✅ | ✅ | ✅ | | | ✅ |
 | xAI | ✅ | | ✅ | | | | | |
 | Voyage AI | | ✅ | | | | ✅ | | |
-| Cohere | ✅ | ✅ | | | | ✅ | | |
+| Cohere | | ✅ | | | | ✅ | | |
 | Mistral | ✅ | ✅ | | | | | ✅ | |
 | DeepSeek | ✅ | | | | | | ✅ | |
+| Cerebras | ✅ | | | | | | | |
+| Fireworks | ✅ | | | | | | | |
+| Together | ✅ | | | | | | | |
+| Perplexity | ✅ | | | | | | | |
+| Ollama | ✅ | | | | | | | |
+| Berget | ✅ | ✅ | | | ✅ | ✅ | | |
 | ElevenLabs | | | | ✅ | ✅ | | | |
-| Deepgram | | | | | ✅ | | | |
+| Deepgram | | | | ✅ | ✅ | | | |
 | AssemblyAI | | | | | ✅ | | | |
 | TypeSafe (Jev) | | | | | | | | ✅ |
 
