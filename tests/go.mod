@@ -13,7 +13,7 @@ require (
 	github.com/joakimcarlsson/ai/session v0.1.9
 	github.com/joakimcarlsson/ai/stt v0.3.3
 	github.com/joakimcarlsson/ai/tokens v0.2.12
-	github.com/joakimcarlsson/ai/tokens/summarize v0.1.17
+	github.com/joakimcarlsson/ai/tokens/summarize v0.1.18
 	github.com/joakimcarlsson/ai/tool v0.1.6
 	github.com/joakimcarlsson/ai/tracing v0.2.4
 	github.com/joakimcarlsson/ai/tts v0.4.0
