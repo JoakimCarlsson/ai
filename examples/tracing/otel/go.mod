@@ -3,9 +3,9 @@ module github.com/joakimcarlsson/ai/examples/tracing/otel
 go 1.26.0
 
 require (
-	github.com/joakimcarlsson/ai/llm/openai v0.15.0
+	github.com/joakimcarlsson/ai/llm/openai v0.15.1
 	github.com/joakimcarlsson/ai/message v0.7.0
-	github.com/joakimcarlsson/ai/tracing v0.2.2
+	github.com/joakimcarlsson/ai/tracing v0.2.3
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.47.0
 	go.opentelemetry.io/otel/sdk v1.47.0
 )
@@ -19,20 +19,20 @@ require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0 // indirect
-	github.com/joakimcarlsson/ai/llm v0.8.0 // indirect
+	github.com/joakimcarlsson/ai/llm v0.8.1 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.2 // indirect
-	github.com/joakimcarlsson/ai/tool v0.1.4 // indirect
+	github.com/joakimcarlsson/ai/tool v0.1.5 // indirect
 	github.com/joakimcarlsson/ai/types v0.2.1 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
 	github.com/openai/openai-go/v3 v3.90.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
-	github.com/tidwall/gjson v1.20.0 // indirect
+	github.com/tidwall/gjson v1.20.6 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
-	github.com/tidwall/pretty v1.2.2 // indirect
-	github.com/tidwall/sjson v1.2.5 // indirect
+	github.com/tidwall/pretty v1.3.1 // indirect
+	github.com/tidwall/sjson v1.2.11 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
-	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.2 // indirect
 	go.opentelemetry.io/otel v1.47.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.23.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.47.0 // indirect
@@ -50,8 +50,8 @@ require (
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 	golang.org/x/time v0.16.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20261026165753-2ffab32bce7e // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20261026165753-2ffab32bce7e // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20261123191846-1e707ab9fbc2 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20261123191846-1e707ab9fbc2 // indirect
 	google.golang.org/grpc v1.85.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 )

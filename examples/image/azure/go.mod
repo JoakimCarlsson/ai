@@ -3,9 +3,9 @@ module github.com/joakimcarlsson/ai/examples/image/azure
 go 1.26.0
 
 require (
-	github.com/joakimcarlsson/ai/image v0.3.1
+	github.com/joakimcarlsson/ai/image v0.3.2
 	github.com/joakimcarlsson/ai/image/azure v0.6.0
-	github.com/joakimcarlsson/ai/image/openai v0.6.0
+	github.com/joakimcarlsson/ai/image/openai v0.6.2
 )
 
 require (
@@ -21,7 +21,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.2.2 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.3 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/openai/openai-go/v3 v3.90.0 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect

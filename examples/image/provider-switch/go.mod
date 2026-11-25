@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/examples/image/provider-switch
 go 1.26.0
 
 require (
-	github.com/joakimcarlsson/ai/image v0.3.1
+	github.com/joakimcarlsson/ai/image v0.3.2
 	github.com/joakimcarlsson/ai/image/gemini v0.4.2
 	github.com/joakimcarlsson/ai/image/openai v0.6.0
 	github.com/joakimcarlsson/ai/image/xai v0.3.3
@@ -26,7 +26,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.27.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.2.2 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.3 // indirect
 	github.com/openai/openai-go/v3 v3.90.0 // indirect
 	github.com/tidwall/gjson v1.20.0 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
