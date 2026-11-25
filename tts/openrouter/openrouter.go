@@ -11,13 +11,18 @@
 // catalogues; pass any OpenRouter speech model id via [ttsopenai.WithModel]
 // even without a registered entry in [model].
 //
-// Two behavioural differences from OpenAI proper are worth knowing:
+// A few behavioural differences from OpenAI proper are worth knowing:
 //
 //   - response_format defaults to pcm, not mp3. Pass
 //     [ttsopenai.WithOutputFormat]("mp3") for MP3; the only two documented
 //     values are "mp3" and "pcm".
 //   - speed is honored only by upstreams that support it (OpenAI does) and is
 //     silently ignored by the rest.
+//   - voice is sent only when set with [ttsopenai.WithVoice], since most
+//     upstreams reject OpenAI's alloy default and some (Seed Audio, HeyGen,
+//     Fish, Speechify) need no voice at all.
+//   - [ttsopenai.WithInstructions] is the documented way to steer delivery
+//     on Gemini TTS, Fish Audio and gpt-4o-mini-tts.
 package openrouter
 
 import (
@@ -69,9 +74,35 @@ func WithModelID(id string) Option {
 // do not know — so sending models would look like it worked while doing
 // nothing. Fall back in caller code by constructing a second client instead.
 func WithProviderRouting(order []string, allowFallbacks bool) Option {
-	provider := map[string]any{"allow_fallbacks": allowFallbacks}
-	if len(order) > 0 {
-		provider["order"] = order
-	}
-	return ttsopenai.WithRequestJSONField("provider", provider)
+	return WithProviderPreferences(ProviderPreferences{
+		Order:          order,
+		AllowFallbacks: &allowFallbacks,
+	})
+}
+
+// ProviderPreferences is OpenRouter's provider routing object. Unset fields
+// are left out of the request, so OpenRouter's defaults apply to them.
+type ProviderPreferences struct {
+	// Order lists provider slugs to try, in preference order.
+	Order []string `json:"order,omitempty"`
+	// Only restricts routing to these provider slugs, such as one known to
+	// support the chosen voice or format.
+	Only []string `json:"only,omitempty"`
+	// Ignore excludes these provider slugs.
+	Ignore []string `json:"ignore,omitempty"`
+	// AllowFallbacks lets OpenRouter use providers outside Order when those
+	// are unavailable.
+	AllowFallbacks *bool `json:"allow_fallbacks,omitempty"`
+	// ZDR restricts routing to providers with zero data retention.
+	ZDR *bool `json:"zdr,omitempty"`
+	// DataCollection is "allow" or "deny": whether providers that may store
+	// or train on the data are used.
+	DataCollection string `json:"data_collection,omitempty"`
+}
+
+// WithProviderPreferences sets the whole provider routing object. It replaces
+// anything [WithProviderRouting] set, and the other way round. See
+// https://openrouter.ai/docs/features/provider-routing.
+func WithProviderPreferences(p ProviderPreferences) Option {
+	return ttsopenai.WithRequestJSONField("provider", p)
 }

@@ -1,4 +1,10 @@
 // Package openai provides an OpenAI implementation of the [tts.Generation] interface.
+//
+// OpenAI has deprecated every model /audio/speech serves (tts-1, tts-1-hd and
+// gpt-4o-mini-tts) and shuts them down on 2027-01-06. Its replacement,
+// gpt-realtime-2.1-mini, is served only by the Realtime API: select a
+// gpt-realtime* model and GenerateAudio and StreamAudio speak the text through
+// a Realtime WebSocket session instead, in pcm, pcmu or pcma.
 package openai
 
 import (
@@ -15,13 +21,15 @@ import (
 
 // Options configures the OpenAI TTS client.
 type Options struct {
-	apiKey       string
-	model        tts.AudioModel
-	timeout      *time.Duration
-	baseURL      string
-	speed        *float64
-	voice        string
-	outputFormat string
+	apiKey        string
+	model         tts.AudioModel
+	timeout       *time.Duration
+	baseURL       string
+	speed         *float64
+	voice         string
+	customVoiceID string
+	instructions  string
+	outputFormat  string
 
 	extraBodyFields map[string]any
 }
@@ -64,12 +72,27 @@ func WithSpeed(
 	return func(o *Options) { o.speed = &speed }
 }
 
-// WithVoice sets the voice. Valid values: alloy, ash, ballad, coral, echo, fable,
-// onyx, nova, sage, shimmer, verse.
+// WithVoice sets a built-in voice: alloy, ash, ballad, cedar, coral, echo,
+// fable, marin, nova, onyx, sage, shimmer or verse. tts-1 and tts-1-hd accept
+// only alloy, ash, coral, echo, fable, nova, onyx, sage and shimmer. Without a
+// voice the client sends alloy to OpenAI and no voice to a custom base URL,
+// leaving the choice to that endpoint.
 func WithVoice(
 	name string,
 ) Option {
 	return func(o *Options) { o.voice = name }
+}
+
+// WithCustomVoiceID selects a custom voice by its ID (e.g. "voice_1234").
+// Takes precedence over [WithVoice].
+func WithCustomVoiceID(id string) Option {
+	return func(o *Options) { o.customVoiceID = id }
+}
+
+// WithInstructions steers how the speech is delivered: tone, accent, pacing,
+// emotion. Not supported by tts-1 or tts-1-hd.
+func WithInstructions(instructions string) Option {
+	return func(o *Options) { o.instructions = instructions }
 }
 
 // WithOutputFormat sets the audio response format (e.g. "mp3", "opus", "aac",
@@ -140,27 +163,25 @@ func (c *Client) requestOptions() []option.RequestOption {
 	return opts
 }
 
-// GenerateAudio creates audio from text and returns the complete audio data.
-func (c *Client) GenerateAudio(
-	ctx context.Context,
+// newParams builds the speech request for text from the client options and
+// the per-call opts, returning it with the response format it asks for.
+func (c *Client) newParams(
 	text string,
-	options ...tts.GenerationOption,
-) (*tts.Response, error) {
-	opts := tts.GenerationOptions{}
-	for _, opt := range options {
-		opt(&opts)
-	}
-
-	voice := c.options.voice
-	if voice == "" {
-		voice = "alloy"
-	}
+	opts tts.GenerationOptions,
+) openaisdk.AudioSpeechNewParams {
 	params := openaisdk.AudioSpeechNewParams{
 		Input: text,
 		Model: openaisdk.SpeechModel(c.options.model.APIModel),
-		Voice: openaisdk.AudioSpeechNewParamsVoiceUnion{
-			OfString: param.NewOpt(voice),
-		},
+	}
+	switch {
+	case c.options.customVoiceID != "":
+		params.Voice.OfAudioSpeechNewsVoiceID = &openaisdk.AudioSpeechNewParamsVoiceID{
+			ID: c.options.customVoiceID,
+		}
+	case c.options.voice != "":
+		params.Voice.OfString = param.NewOpt(c.options.voice)
+	case c.options.baseURL == "":
+		params.Voice.OfString = param.NewOpt("alloy")
 	}
 
 	outputFormat := c.options.outputFormat
@@ -175,6 +196,28 @@ func (c *Client) GenerateAudio(
 	if c.options.speed != nil {
 		params.Speed = param.NewOpt(*c.options.speed)
 	}
+	if c.options.instructions != "" {
+		params.Instructions = param.NewOpt(c.options.instructions)
+	}
+	return params
+}
+
+// GenerateAudio creates audio from text and returns the complete audio data.
+// Realtime models (gpt-realtime*) are spoken through the Realtime API.
+func (c *Client) GenerateAudio(
+	ctx context.Context,
+	text string,
+	options ...tts.GenerationOption,
+) (*tts.Response, error) {
+	opts := tts.GenerationOptions{}
+	for _, opt := range options {
+		opt(&opts)
+	}
+
+	if c.usesRealtime() {
+		return c.generateRealtime(ctx, text, opts)
+	}
+	params := c.newParams(text, opts)
 
 	resp, err := c.client.Audio.Speech.New(ctx, params, c.requestOptions()...)
 	if err != nil {
@@ -195,23 +238,63 @@ func (c *Client) GenerateAudio(
 	}, nil
 }
 
-// StreamAudio buffers OpenAI's non-streaming response into a single chunk for
-// API parity with vendors that support real streaming.
+// streamChunkSize is how many bytes of audio StreamAudio reads per chunk.
+const streamChunkSize = 16 * 1024
+
+// StreamAudio sends the speech request and emits the audio as it arrives,
+// before generation has finished; pcm and wav give the lowest latency. A
+// request failure is returned at once, a failure while reading arrives as a
+// chunk error. Realtime models (gpt-realtime*) stream over the Realtime API.
 func (c *Client) StreamAudio(
 	ctx context.Context,
 	text string,
 	options ...tts.GenerationOption,
 ) (<-chan tts.Chunk, error) {
-	resp, err := c.GenerateAudio(ctx, text, options...)
-	if err != nil {
-		return nil, err
+	opts := tts.GenerationOptions{}
+	for _, opt := range options {
+		opt(&opts)
 	}
 
-	ch := make(chan tts.Chunk, 1)
+	if c.usesRealtime() {
+		chunks, _, err := c.streamRealtime(ctx, text, opts)
+		return chunks, err
+	}
+	resp, err := c.client.Audio.Speech.New(
+		ctx, c.newParams(text, opts), c.requestOptions()...,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate audio: %w", err)
+	}
+
+	ch := make(chan tts.Chunk)
 	go func() {
 		defer close(ch)
-		ch <- tts.Chunk{Data: resp.AudioData}
-		ch <- tts.Chunk{Done: true}
+		defer resp.Body.Close()
+		for {
+			buf := make([]byte, streamChunkSize)
+			n, readErr := io.ReadFull(resp.Body, buf)
+			if n > 0 {
+				select {
+				case ch <- tts.Chunk{Data: buf[:n]}:
+				case <-ctx.Done():
+					return
+				}
+			}
+			if readErr == io.EOF || readErr == io.ErrUnexpectedEOF {
+				select {
+				case ch <- tts.Chunk{Done: true}:
+				case <-ctx.Done():
+				}
+				return
+			}
+			if readErr != nil {
+				select {
+				case ch <- tts.Chunk{Error: fmt.Errorf("failed to read audio stream: %w", readErr)}:
+				case <-ctx.Done():
+				}
+				return
+			}
+		}
 	}()
 	return ch, nil
 }
@@ -223,9 +306,11 @@ func (c *Client) ListVoices(_ context.Context) ([]tts.Voice, error) {
 		{VoiceID: "alloy", Name: "Alloy"},
 		{VoiceID: "ash", Name: "Ash"},
 		{VoiceID: "ballad", Name: "Ballad"},
+		{VoiceID: "cedar", Name: "Cedar"},
 		{VoiceID: "coral", Name: "Coral"},
 		{VoiceID: "echo", Name: "Echo"},
 		{VoiceID: "fable", Name: "Fable"},
+		{VoiceID: "marin", Name: "Marin"},
 		{VoiceID: "onyx", Name: "Onyx"},
 		{VoiceID: "nova", Name: "Nova"},
 		{VoiceID: "sage", Name: "Sage"},

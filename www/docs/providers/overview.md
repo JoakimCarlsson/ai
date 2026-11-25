@@ -89,14 +89,14 @@ Under `image/`:
 
 Under `tts/`:
 
-| Module | Provider | Streaming | Forced Alignment |
-|---|---|---|---|
-| `tts/openai` | OpenAI | (buffered) | ❌ |
-| `tts/elevenlabs` | ElevenLabs | ✅ | ✅ |
-| `tts/google` | Google Cloud | (buffered) | ❌ |
-| `tts/azure` | Azure Speech | (buffered) | ❌ |
-| `tts/deepgram` | Deepgram Aura | ✅ | ❌ |
-| `tts/openrouter` | OpenRouter (wraps `tts/openai`) — 18 registered + any routed id | (buffered) | ❌ |
+| Module | Provider | Streaming | Forced Alignment | Dialogue |
+|---|---|---|---|---|
+| `tts/openai` | OpenAI | ✅ | ❌ | ❌ |
+| `tts/elevenlabs` | ElevenLabs | ✅ | ✅ | ✅ |
+| `tts/google` | Google Cloud | (buffered) | ❌ | ❌ |
+| `tts/azure` | Azure Speech | (buffered) | ❌ | ❌ |
+| `tts/deepgram` | Deepgram Aura | ✅ | ❌ | ❌ |
+| `tts/openrouter` | OpenRouter (wraps `tts/openai`) — 18 registered + any routed id | ✅ | ❌ | ❌ |
 
 ## STT (Speech-to-Text) Providers
 
@@ -131,7 +131,7 @@ generic code:
 - `rerankers` — `rerankers.Reranker` interface
 - `decision` — `decision.Decider` interface
 - `image` — `image.ImageGeneration` interface
-- `tts` — `tts.Generation` interface (+ optional `tts.ForcedAlignmentProvider`)
+- `tts` — `tts.Generation` interface (+ optional `tts.ForcedAlignmentProvider`, `tts.StreamingTextProvider`, `tts.DialogueProvider`)
 - `stt` — `stt.SpeechToText` interface
 - `fim` — `fim.FIM` interface
 
