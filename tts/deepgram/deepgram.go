@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,6 +25,15 @@ const (
 	defaultModelStr = "aura-asteria-en"
 )
 
+// modelFamilies maps each catalog model in [Models], which names a family of
+// voices, to the prefix and default voice that make a full Deepgram model
+// string such as "aura-2-thalia-en".
+var modelFamilies = map[string]struct{ prefix, defaultVoice string }{
+	Aura1:   {prefix: "aura-", defaultVoice: "asteria-en"},
+	Aura2:   {prefix: "aura-2-", defaultVoice: "thalia-en"},
+	FluxTTS: {prefix: "flux-", defaultVoice: "haley-en"},
+}
+
 // Options configures the Deepgram TTS client.
 type Options struct {
 	apiKey     string
@@ -31,10 +41,13 @@ type Options struct {
 	timeout    *time.Duration
 	baseURL    string
 	modelName  string
+	voice      string
 	encoding   string
 	container  string
 	sampleRate int
 	bitRate    int
+	speed      *float64
+	mipOptOut  bool
 }
 
 // Option configures Options.
@@ -69,11 +82,29 @@ func WithBaseURL(
 }
 
 // WithModelName overrides the model identifier (e.g. "aura-2-thalia-en"). Takes
-// precedence over [WithModel].
+// precedence over [WithModel] and [WithVoice].
 func WithModelName(
 	name string,
 ) Option {
 	return func(o *Options) { o.modelName = name }
+}
+
+// WithVoice picks the voice within the family [WithModel] selects, as voice
+// and language (e.g. "thalia-en" with [Aura2] gives "aura-2-thalia-en").
+// Without it each family uses a default voice.
+func WithVoice(voice string) Option {
+	return func(o *Options) { o.voice = voice }
+}
+
+// WithSpeed sets the speaking rate, from 0.7 to 1.5 on Aura-2; 1.0 is normal.
+func WithSpeed(speed float64) Option {
+	return func(o *Options) { o.speed = &speed }
+}
+
+// WithMIPOptOut opts the requests out of the Deepgram Model Improvement
+// Program, so the audio is not kept for training.
+func WithMIPOptOut(optOut bool) Option {
+	return func(o *Options) { o.mipOptOut = optOut }
 }
 
 // WithEncoding sets the audio encoding (e.g. "mp3", "linear16", "mulaw", "alaw",
@@ -120,13 +151,7 @@ func NewGeneration(opts ...Option) tts.Generation {
 		timeout = *options.timeout
 	}
 
-	resolved := defaultModelStr
-	if options.model.APIModel != "" {
-		resolved = options.model.APIModel
-	}
-	if options.modelName != "" {
-		resolved = options.modelName
-	}
+	resolved := resolveModelName(options)
 
 	return tts.WithTracing(&Client{
 		options:    options,
@@ -150,20 +175,68 @@ type errorResponse struct {
 	ErrMsg  string `json:"err_msg"`
 }
 
-func (c *Client) buildURL() string {
-	q := url.Values{}
+// resolveModelName returns the full Deepgram model string for options:
+// [WithModelName] if set, else the [WithModel] family joined with the
+// [WithVoice] voice (or the family default), else the model's APIModel as is,
+// else the package default.
+func resolveModelName(options Options) string {
+	if options.modelName != "" {
+		return options.modelName
+	}
+	apiModel := options.model.APIModel
+	if apiModel == "" {
+		return defaultModelStr
+	}
+	family, ok := modelFamilies[apiModel]
+	if !ok {
+		return apiModel
+	}
+	voice := options.voice
+	if voice == "" {
+		voice = family.defaultVoice
+	}
+	return family.prefix + voice
+}
+
+// checkModel fails for Flux TTS models, which Deepgram serves only on
+// /v2/speak with a different protocol this client does not speak.
+func (c *Client) checkModel() error {
+	if strings.HasPrefix(c.resolved, "flux-") {
+		return fmt.Errorf(
+			"deepgram: Flux TTS model %q needs /v2/speak, which is not supported; use an Aura model",
+			c.resolved,
+		)
+	}
+	return nil
+}
+
+// setCommonQuery adds the model and the options shared by the REST and
+// WebSocket endpoints to q.
+func (c *Client) setCommonQuery(q url.Values) {
 	q.Set("model", c.resolved)
-	if c.options.encoding != "" {
-		q.Set("encoding", c.options.encoding)
-	}
-	if c.options.container != "" {
-		q.Set("container", c.options.container)
-	}
 	if c.options.sampleRate != 0 {
 		q.Set("sample_rate", strconv.Itoa(c.options.sampleRate))
 	}
 	if c.options.bitRate != 0 {
 		q.Set("bit_rate", strconv.Itoa(c.options.bitRate))
+	}
+	if c.options.speed != nil {
+		q.Set("speed", strconv.FormatFloat(*c.options.speed, 'f', -1, 64))
+	}
+	if c.options.mipOptOut {
+		q.Set("mip_opt_out", "true")
+	}
+}
+
+// buildURL returns the REST /speak address with the configured query.
+func (c *Client) buildURL() string {
+	q := url.Values{}
+	c.setCommonQuery(q)
+	if c.options.encoding != "" {
+		q.Set("encoding", c.options.encoding)
+	}
+	if c.options.container != "" {
+		q.Set("container", c.options.container)
 	}
 	return fmt.Sprintf("%s/speak?%s", c.options.baseURL, q.Encode())
 }
@@ -191,11 +264,15 @@ func (c *Client) newRequest(
 }
 
 // GenerateAudio creates audio from text and returns the complete audio data.
+// It fails for Flux TTS models; see [Client.checkModel].
 func (c *Client) GenerateAudio(
 	ctx context.Context,
 	text string,
 	_ ...tts.GenerationOption,
 ) (*tts.Response, error) {
+	if err := c.checkModel(); err != nil {
+		return nil, err
+	}
 	req, err := c.newRequest(ctx, text)
 	if err != nil {
 		return nil, err
@@ -273,9 +350,15 @@ func (c *Client) StreamAudio(
 
 // dialStreamWS opens the WS to Deepgram's /v1/speak endpoint and returns the
 // connection along with a goroutine-safe send function.
+// dialStreamWS opens the WS to Deepgram's /v1/speak endpoint and returns the
+// connection along with a goroutine-safe send function. It fails for Flux TTS
+// models.
 func (c *Client) dialStreamWS(
 	ctx context.Context,
 ) (*websocket.Conn, func([]byte) error, error) {
+	if err := c.checkModel(); err != nil {
+		return nil, nil, err
+	}
 	wsURL, err := c.buildStreamURL()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to build ws url: %w", err)
@@ -391,6 +474,8 @@ type serverFrame struct {
 	Description string `json:"description"`
 }
 
+// buildStreamURL returns the WebSocket /speak address with the configured
+// query, defaulting to raw linear16 audio, which the WebSocket requires.
 func (c *Client) buildStreamURL() (string, error) {
 	base, err := url.Parse(c.options.baseURL)
 	if err != nil {
@@ -401,7 +486,7 @@ func (c *Client) buildStreamURL() (string, error) {
 		scheme = "ws"
 	}
 	q := url.Values{}
-	q.Set("model", c.resolved)
+	c.setCommonQuery(q)
 
 	encoding := c.options.encoding
 	if encoding == "" {
@@ -409,13 +494,6 @@ func (c *Client) buildStreamURL() (string, error) {
 	}
 	q.Set("encoding", encoding)
 	q.Set("container", "none")
-
-	if c.options.sampleRate != 0 {
-		q.Set("sample_rate", strconv.Itoa(c.options.sampleRate))
-	}
-	if c.options.bitRate != 0 {
-		q.Set("bit_rate", strconv.Itoa(c.options.bitRate))
-	}
 
 	u := url.URL{
 		Scheme:   scheme,

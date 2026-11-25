@@ -7,16 +7,17 @@
 // its own NewGeneration constructor that returns a tracing-wrapped client
 // implementing the interface.
 //
-// Some vendors also implement [ForcedAlignmentProvider] (currently only ElevenLabs).
-// Type-assert the constructor's return value to detect support:
+// Some vendors also implement the optional [ForcedAlignmentProvider],
+// [StreamingTextProvider] and [DialogueProvider] interfaces. Type-assert the
+// constructor's return value to detect support:
 //
 //	client := elevenlabs.NewGeneration(...)
 //	if fap, ok := client.(tts.ForcedAlignmentProvider); ok {
 //		fap.GenerateForcedAlignment(ctx, audio, transcript)
 //	}
 //
-// The [WithTracing] wrapper preserves [ForcedAlignmentProvider] when the inner
-// client implements it, so the type assertion above succeeds even though the
+// The [WithTracing] wrapper preserves every optional interface the inner
+// client implements, so the type assertion above succeeds even though the
 // returned value is wrapped for tracing.
 package tts
 
@@ -154,6 +155,45 @@ type StreamingTextProvider interface {
 	) (<-chan Chunk, error)
 }
 
+// DialogueTurn is one line of a multi-speaker dialogue: the text one voice
+// speaks.
+type DialogueTurn struct {
+	// Text is what the voice says.
+	Text string
+	// VoiceID is the provider's ID of the voice that speaks Text.
+	VoiceID string
+	// NewTurn marks Text as the start of a new speaker turn when streaming.
+	// A change of VoiceID also starts a new turn. Ignored by GenerateDialogue,
+	// where every DialogueTurn is its own turn.
+	NewTurn bool
+}
+
+// DialogueProvider is an optional sub-interface for providers that render a
+// conversation between several voices as one piece of audio.
+//
+// Detect support via type assertion on the [Generation] returned from a
+// vendor's NewGeneration constructor. The [WithTracing] wrapper preserves this
+// interface when the inner client implements it.
+type DialogueProvider interface {
+	// GenerateDialogue renders turns, in order, as a single audio response.
+	GenerateDialogue(
+		ctx context.Context,
+		turns []DialogueTurn,
+		options ...GenerationOption,
+	) (*Response, error)
+
+	// StreamDialogue registers voiceIDs for the session, then renders turns
+	// as they arrive and emits audio chunks while it does. Every VoiceID sent
+	// on turns must be in voiceIDs. Closing turns ends the input; the chunk
+	// channel closes once the provider has sent the last audio.
+	StreamDialogue(
+		ctx context.Context,
+		voiceIDs []string,
+		turns <-chan DialogueTurn,
+		options ...GenerationOption,
+	) (<-chan Chunk, error)
+}
+
 // GenerationOptions contains parameters for customizing audio generation requests.
 type GenerationOptions struct {
 	OutputFormat             string
@@ -163,6 +203,9 @@ type GenerationOptions struct {
 	SpeakerBoost             *bool
 	OptimizeStreamingLatency *int
 	EnableAlignment          bool
+	LanguageCode             string
+	Seed                     *uint32
+	TextNormalization        string
 }
 
 // GenerationOption configures GenerationOptions.
@@ -203,6 +246,24 @@ func WithAlignmentEnabled(enabled bool) GenerationOption {
 	return func(o *GenerationOptions) { o.EnableAlignment = enabled }
 }
 
+// WithLanguageCode forces the language of the generated speech and of text
+// normalization, as an ISO 639-1 code (or ISO 639-3 where none exists).
+func WithLanguageCode(code string) GenerationOption {
+	return func(o *GenerationOptions) { o.LanguageCode = code }
+}
+
+// WithSeed asks the provider to sample deterministically, so repeated requests
+// with the same seed and parameters return the same audio where it can.
+func WithSeed(seed uint32) GenerationOption {
+	return func(o *GenerationOptions) { o.Seed = &seed }
+}
+
+// WithTextNormalization sets whether numbers, dates and similar text are
+// spelled out before synthesis: "auto", "on" or "off".
+func WithTextNormalization(mode string) GenerationOption {
+	return func(o *GenerationOptions) { o.TextNormalization = mode }
+}
+
 // TracingAttrs are construction-time attributes vendor packages forward to the
 // [WithTracing] wrapper so they appear on every span produced for the wrapped
 // client.
@@ -214,34 +275,68 @@ type TracingAttrs struct {
 	SampleRate   int
 }
 
-// WithTracing wraps a Generation client so every call records OpenTelemetry spans
-// and metrics. If the inner client also implements [ForcedAlignmentProvider] or
-// [StreamingTextProvider], the returned wrapper preserves those interfaces — type
-// assertions on the wrapper succeed and the call is traced and forwarded to the
-// inner client.
+// WithTracing wraps a Generation client so every call records OpenTelemetry
+// spans and metrics. Every optional interface the inner client implements
+// ([ForcedAlignmentProvider], [StreamingTextProvider], [DialogueProvider]) is
+// preserved: type assertions on the wrapper succeed and the call is traced and
+// forwarded to the inner client. Interfaces the inner client lacks are absent
+// from the wrapper too.
 func WithTracing(inner Generation, attrs TracingAttrs) Generation {
 	base := &tracingGeneration{inner: inner, attrs: attrs}
-	fap, hasFAP := inner.(ForcedAlignmentProvider)
-	stp, hasSTP := inner.(StreamingTextProvider)
+	var fa *tracedForcedAlignment
+	if fap, ok := inner.(ForcedAlignmentProvider); ok {
+		fa = &tracedForcedAlignment{t: base, fap: fap}
+	}
+	var st *tracedStreamingText
+	if stp, ok := inner.(StreamingTextProvider); ok {
+		st = &tracedStreamingText{t: base, stp: stp}
+	}
+	var dl *tracedDialogue
+	if dp, ok := inner.(DialogueProvider); ok {
+		dl = &tracedDialogue{t: base, dp: dp}
+	}
+
 	switch {
-	case hasFAP && hasSTP:
-		return &tracingGenerationWithForcedAlignmentAndStreamingText{
-			tracingGenerationWithForcedAlignment: tracingGenerationWithForcedAlignment{
-				tracingGeneration: base,
-				fap:               fap,
-			},
-			stp: stp,
-		}
-	case hasFAP:
-		return &tracingGenerationWithForcedAlignment{
-			tracingGeneration: base,
-			fap:               fap,
-		}
-	case hasSTP:
-		return &tracingGenerationWithStreamingText{
-			tracingGeneration: base,
-			stp:               stp,
-		}
+	case fa != nil && st != nil && dl != nil:
+		return struct {
+			*tracingGeneration
+			*tracedForcedAlignment
+			*tracedStreamingText
+			*tracedDialogue
+		}{base, fa, st, dl}
+	case fa != nil && st != nil:
+		return struct {
+			*tracingGeneration
+			*tracedForcedAlignment
+			*tracedStreamingText
+		}{base, fa, st}
+	case fa != nil && dl != nil:
+		return struct {
+			*tracingGeneration
+			*tracedForcedAlignment
+			*tracedDialogue
+		}{base, fa, dl}
+	case st != nil && dl != nil:
+		return struct {
+			*tracingGeneration
+			*tracedStreamingText
+			*tracedDialogue
+		}{base, st, dl}
+	case fa != nil:
+		return struct {
+			*tracingGeneration
+			*tracedForcedAlignment
+		}{base, fa}
+	case st != nil:
+		return struct {
+			*tracingGeneration
+			*tracedStreamingText
+		}{base, st}
+	case dl != nil:
+		return struct {
+			*tracingGeneration
+			*tracedDialogue
+		}{base, dl}
 	}
 	return base
 }
@@ -326,18 +421,40 @@ func (t *tracingGeneration) StreamAudio(
 	text string,
 	options ...GenerationOption,
 ) (<-chan Chunk, error) {
-	m := t.inner.Model()
 	start := time.Now()
-	ctx, span := tracing.StartAudioSpan(
+	ctx, span := t.startSpan(ctx)
+	span.SetAttributes(tracing.AttrInputCount.Int(len(text)))
+	innerCh, err := t.inner.StreamAudio(ctx, text, options...)
+	return t.traceStream(ctx, span, start, "generate_audio", innerCh, err)
+}
+
+// startSpan opens an audio span for the wrapped model, carrying the
+// construction-time attributes.
+func (t *tracingGeneration) startSpan(
+	ctx context.Context,
+) (context.Context, tracing.Span) {
+	m := t.inner.Model()
+	return tracing.StartAudioSpan(
 		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
 	)
-	span.SetAttributes(tracing.AttrInputCount.Int(len(text)))
+}
 
-	innerCh, err := t.inner.StreamAudio(ctx, text, options...)
+// traceStream finishes span and records metrics for operation, timed from
+// start, once innerCh is drained, forwarding every chunk to the returned
+// channel. When err is set it records the failure at once and returns err.
+func (t *tracingGeneration) traceStream(
+	ctx context.Context,
+	span tracing.Span,
+	start time.Time,
+	operation string,
+	innerCh <-chan Chunk,
+	err error,
+) (<-chan Chunk, error) {
+	m := t.inner.Model()
 	if err != nil {
 		tracing.SetError(span, err)
 		tracing.RecordMetrics(
-			ctx, "generate_audio", m.APIModel, string(m.Provider),
+			ctx, operation, m.APIModel, string(m.Provider),
 			time.Since(start), 0, 0, err,
 		)
 		span.End()
@@ -355,113 +472,111 @@ func (t *tracingGeneration) StreamAudio(
 			outCh <- chunk
 		}
 		tracing.RecordMetrics(
-			ctx, "generate_audio", m.APIModel, string(m.Provider),
+			ctx, operation, m.APIModel, string(m.Provider),
 			time.Since(start), 0, 0, nil,
 		)
 	}()
 	return outCh, nil
 }
 
-// tracingGenerationWithForcedAlignment is the tracing wrapper used when the inner
-// Generation client also implements ForcedAlignmentProvider. The type-assertion
-// `c.(tts.ForcedAlignmentProvider)` against the wrapper returned from NewGeneration
-// succeeds for vendors that support forced alignment (currently only ElevenLabs).
-type tracingGenerationWithForcedAlignment struct {
-	*tracingGeneration
+// tracedForcedAlignment adds a traced GenerateForcedAlignment to a tracing
+// wrapper whose inner client implements ForcedAlignmentProvider.
+type tracedForcedAlignment struct {
+	t   *tracingGeneration
 	fap ForcedAlignmentProvider
 }
 
-func (t *tracingGenerationWithForcedAlignment) GenerateForcedAlignment(
+// GenerateForcedAlignment traces and forwards to the inner client's
+// GenerateForcedAlignment.
+func (f *tracedForcedAlignment) GenerateForcedAlignment(
 	ctx context.Context,
 	audioFile []byte,
 	transcript string,
 ) (*ForcedAlignmentData, error) {
-	m := t.inner.Model()
+	m := f.t.inner.Model()
 	start := time.Now()
-	ctx, span := tracing.StartAudioSpan(
-		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
-	)
+	ctx, span := f.t.startSpan(ctx)
 	defer span.End()
 	span.SetAttributes(tracing.AttrInputCount.Int(len(transcript)))
 
-	resp, err := t.fap.GenerateForcedAlignment(ctx, audioFile, transcript)
+	resp, err := f.fap.GenerateForcedAlignment(ctx, audioFile, transcript)
 	if err != nil {
 		tracing.SetError(span, err)
-		tracing.RecordMetrics(
-			ctx, "forced_alignment", m.APIModel, string(m.Provider),
-			time.Since(start), 0, 0, err,
-		)
-		return nil, err
 	}
 	tracing.RecordMetrics(
 		ctx, "forced_alignment", m.APIModel, string(m.Provider),
-		time.Since(start), 0, 0, nil,
+		time.Since(start), 0, 0, err,
 	)
-	return resp, nil
+	return resp, err
 }
 
-// tracingGenerationWithStreamingText is the tracing wrapper used when the inner
-// Generation client also implements StreamingTextProvider.
-type tracingGenerationWithStreamingText struct {
-	*tracingGeneration
+// tracedStreamingText adds a traced StreamAudioFromText to a tracing wrapper
+// whose inner client implements StreamingTextProvider.
+type tracedStreamingText struct {
+	t   *tracingGeneration
 	stp StreamingTextProvider
 }
 
-func (t *tracingGenerationWithStreamingText) StreamAudioFromText(
+// StreamAudioFromText traces and forwards to the inner client's
+// StreamAudioFromText.
+func (s *tracedStreamingText) StreamAudioFromText(
 	ctx context.Context,
 	textIn <-chan string,
 	options ...GenerationOption,
 ) (<-chan Chunk, error) {
-	m := t.inner.Model()
 	start := time.Now()
-	ctx, span := tracing.StartAudioSpan(
-		ctx, m.APIModel, string(m.Provider), t.spanAttrs()...,
-	)
+	ctx, span := s.t.startSpan(ctx)
+	innerCh, err := s.stp.StreamAudioFromText(ctx, textIn, options...)
+	return s.t.traceStream(ctx, span, start, "stream_audio_from_text", innerCh, err)
+}
 
-	innerCh, err := t.stp.StreamAudioFromText(ctx, textIn, options...)
+// tracedDialogue adds traced dialogue methods to a tracing wrapper whose inner
+// client implements DialogueProvider.
+type tracedDialogue struct {
+	t  *tracingGeneration
+	dp DialogueProvider
+}
+
+// GenerateDialogue traces and forwards to the inner client's GenerateDialogue.
+func (d *tracedDialogue) GenerateDialogue(
+	ctx context.Context,
+	turns []DialogueTurn,
+	options ...GenerationOption,
+) (*Response, error) {
+	m := d.t.inner.Model()
+	start := time.Now()
+	ctx, span := d.t.startSpan(ctx)
+	defer span.End()
+	chars := 0
+	for _, turn := range turns {
+		chars += len(turn.Text)
+	}
+	span.SetAttributes(tracing.AttrInputCount.Int(chars))
+
+	resp, err := d.dp.GenerateDialogue(ctx, turns, options...)
 	if err != nil {
 		tracing.SetError(span, err)
-		tracing.RecordMetrics(
-			ctx, "stream_audio_from_text", m.APIModel, string(m.Provider),
-			time.Since(start), 0, 0, err,
+	} else {
+		tracing.SetResponseAttrs(span,
+			tracing.AttrUsageCharacters.Int64(resp.Usage.Characters),
 		)
-		span.End()
-		return nil, err
 	}
-
-	outCh := make(chan Chunk)
-	go func() {
-		defer close(outCh)
-		defer span.End()
-		for chunk := range innerCh {
-			if chunk.Error != nil {
-				tracing.SetError(span, chunk.Error)
-			}
-			outCh <- chunk
-		}
-		tracing.RecordMetrics(
-			ctx, "stream_audio_from_text", m.APIModel, string(m.Provider),
-			time.Since(start), 0, 0, nil,
-		)
-	}()
-	return outCh, nil
+	tracing.RecordMetrics(
+		ctx, "generate_dialogue", m.APIModel, string(m.Provider),
+		time.Since(start), 0, 0, err,
+	)
+	return resp, err
 }
 
-// tracingGenerationWithForcedAlignmentAndStreamingText is the tracing wrapper
-// used when the inner Generation client implements both optional sub-interfaces.
-type tracingGenerationWithForcedAlignmentAndStreamingText struct {
-	tracingGenerationWithForcedAlignment
-	stp StreamingTextProvider
-}
-
-func (t *tracingGenerationWithForcedAlignmentAndStreamingText) StreamAudioFromText(
+// StreamDialogue traces and forwards to the inner client's StreamDialogue.
+func (d *tracedDialogue) StreamDialogue(
 	ctx context.Context,
-	textIn <-chan string,
+	voiceIDs []string,
+	turns <-chan DialogueTurn,
 	options ...GenerationOption,
 ) (<-chan Chunk, error) {
-	wrapper := &tracingGenerationWithStreamingText{
-		tracingGeneration: t.tracingGeneration,
-		stp:               t.stp,
-	}
-	return wrapper.StreamAudioFromText(ctx, textIn, options...)
+	start := time.Now()
+	ctx, span := d.t.startSpan(ctx)
+	innerCh, err := d.dp.StreamDialogue(ctx, voiceIDs, turns, options...)
+	return d.t.traceStream(ctx, span, start, "stream_dialogue", innerCh, err)
 }

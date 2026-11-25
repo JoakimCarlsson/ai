@@ -1,6 +1,11 @@
 // Package elevenlabs provides an ElevenLabs implementation of the [tts.Generation]
 // interface. The concrete [Client] also implements [tts.ForcedAlignmentProvider],
-// reachable via type assertion on the value returned from [NewGeneration].
+// [tts.StreamingTextProvider] and [tts.DialogueProvider], reachable via type
+// assertion on the value returned from [NewGeneration].
+//
+// Eleven v4 models are served only by the Text to Dialogue endpoints; with one
+// of them selected, GenerateAudio, StreamAudio and StreamAudioFromText send
+// the text as a single-voice dialogue in the configured voice.
 package elevenlabs
 
 import (
@@ -84,7 +89,8 @@ func WithOutputFormat(format string) Option {
 	return func(o *Options) { o.outputFormat = format }
 }
 
-// Client implements [tts.Generation] and [tts.ForcedAlignmentProvider] against the
+// Client implements [tts.Generation], [tts.ForcedAlignmentProvider],
+// [tts.StreamingTextProvider] and [tts.DialogueProvider] against the
 // ElevenLabs API.
 type Client struct {
 	apiKey       string
@@ -97,9 +103,10 @@ type Client struct {
 }
 
 // NewGeneration constructs an ElevenLabs TTS client. The returned [tts.Generation]
-// is wrapped with [tts.WithTracing]; the wrapper preserves [tts.ForcedAlignmentProvider]
-// and [tts.StreamingTextProvider] support so type assertions against the returned
-// value succeed.
+// is wrapped with [tts.WithTracing]; the wrapper preserves
+// [tts.ForcedAlignmentProvider], [tts.StreamingTextProvider] and
+// [tts.DialogueProvider] support so type assertions against the returned value
+// succeed.
 func NewGeneration(opts ...Option) tts.Generation {
 	options := Options{}
 	for _, o := range opts {
@@ -145,11 +152,31 @@ func NewGeneration(opts ...Option) tts.Generation {
 // Model returns the configured TTS model.
 func (c *Client) Model() tts.AudioModel { return c.model }
 
+// ttsRequest is the JSON body of POST /text-to-speech/{voice_id} and its
+// /with-timestamps variant.
 type ttsRequest struct {
-	Text          string         `json:"text"`
-	ModelID       string         `json:"model_id"`
-	VoiceSettings *voiceSettings `json:"voice_settings,omitempty"`
-	OutputFormat  string         `json:"output_format,omitempty"`
+	Text                   string         `json:"text"`
+	ModelID                string         `json:"model_id"`
+	VoiceSettings          *voiceSettings `json:"voice_settings,omitempty"`
+	OutputFormat           string         `json:"output_format,omitempty"`
+	LanguageCode           string         `json:"language_code,omitempty"`
+	Seed                   *uint32        `json:"seed,omitempty"`
+	ApplyTextNormalization string         `json:"apply_text_normalization,omitempty"`
+}
+
+// newTTSRequest builds the text-to-speech request body for text from opts.
+func (c *Client) newTTSRequest(
+	text string,
+	opts *tts.GenerationOptions,
+) ttsRequest {
+	return ttsRequest{
+		Text:                   text,
+		ModelID:                c.modelID,
+		VoiceSettings:          c.buildVoiceSettings(opts),
+		LanguageCode:           opts.LanguageCode,
+		Seed:                   opts.Seed,
+		ApplyTextNormalization: opts.TextNormalization,
+	}
 }
 
 type voiceSettings struct {
@@ -236,6 +263,8 @@ func (c *Client) buildVoiceSettings(
 
 // GenerateAudio creates audio from text. If alignment is enabled, calls the
 // /with-timestamps endpoint and populates the Alignment fields in the response.
+// Eleven v4 models go through Text to Dialogue as one turn in the configured
+// voice.
 func (c *Client) GenerateAudio(
 	ctx context.Context,
 	text string,
@@ -246,12 +275,21 @@ func (c *Client) GenerateAudio(
 		opt(opts)
 	}
 
+	if usesDialogueEndpoint(c.modelID) {
+		return c.generateDialogue(
+			ctx,
+			[]tts.DialogueTurn{{Text: text, VoiceID: c.voiceID}},
+			opts,
+		)
+	}
 	if opts.EnableAlignment {
 		return c.generateWithTimestamps(ctx, text, opts)
 	}
 	return c.generateStandard(ctx, text, opts)
 }
 
+// generateStandard posts text to /text-to-speech/{voice_id} and returns the
+// raw audio with the character count the API reports.
 func (c *Client) generateStandard(
 	ctx context.Context,
 	text string,
@@ -262,11 +300,7 @@ func (c *Client) generateStandard(
 		outputFormat = opts.OutputFormat
 	}
 
-	reqBody := ttsRequest{
-		Text:          text,
-		ModelID:       c.modelID,
-		VoiceSettings: c.buildVoiceSettings(opts),
-	}
+	reqBody := c.newTTSRequest(text, opts)
 
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
@@ -332,6 +366,8 @@ func (c *Client) generateStandard(
 	}, nil
 }
 
+// generateWithTimestamps posts text to /text-to-speech/{voice_id}/with-timestamps
+// and returns the decoded audio with its character alignment.
 func (c *Client) generateWithTimestamps(
 	ctx context.Context,
 	text string,
@@ -342,11 +378,7 @@ func (c *Client) generateWithTimestamps(
 		outputFormat = opts.OutputFormat
 	}
 
-	reqBody := ttsRequest{
-		Text:          text,
-		ModelID:       c.modelID,
-		VoiceSettings: c.buildVoiceSettings(opts),
-	}
+	reqBody := c.newTTSRequest(text, opts)
 
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
@@ -415,7 +447,8 @@ func (c *Client) generateWithTimestamps(
 // StreamAudio opens a WebSocket to ElevenLabs' stream-input endpoint and
 // emits audio chunks (and alignment data when [tts.WithAlignmentEnabled] is set)
 // as the server produces them. Lower TTFB than the HTTP streaming path; the
-// caller-facing semantics are unchanged.
+// caller-facing semantics are unchanged. Eleven v4 models use the Text to
+// Dialogue WebSocket with the configured voice.
 //
 // Note: [tts.WithOptimizeStreamingLatency] is documented for ElevenLabs' HTTP
 // endpoint only and has no effect on the WS path.
@@ -427,6 +460,12 @@ func (c *Client) StreamAudio(
 	opts := &tts.GenerationOptions{}
 	for _, opt := range options {
 		opt(opts)
+	}
+	if usesDialogueEndpoint(c.modelID) {
+		turns := make(chan tts.DialogueTurn, 1)
+		turns <- tts.DialogueTurn{Text: text, VoiceID: c.voiceID}
+		close(turns)
+		return c.streamDialogue(ctx, []string{c.voiceID}, turns, opts)
 	}
 	return c.streamWS(ctx, text, opts)
 }
@@ -447,14 +486,34 @@ type wsTextMessage struct {
 	Flush bool   `json:"flush,omitempty"`
 }
 
+// wsServerMessage is a frame from either the text-to-speech WebSocket, which
+// uses camelCase field names, or the Text to Dialogue WebSocket, which uses
+// snake_case.
 type wsServerMessage struct {
-	Audio               string             `json:"audio"`
-	IsFinal             *bool              `json:"isFinal"`
-	Alignment           *alignmentResponse `json:"alignment"`
-	NormalizedAlignment *alignmentResponse `json:"normalizedAlignment"`
-	Error               string             `json:"error"`
-	Message             string             `json:"message"`
-	Code                int                `json:"code"`
+	Audio                    string             `json:"audio"`
+	IsFinal                  *bool              `json:"isFinal"`
+	IsFinalSnake             *bool              `json:"is_final"`
+	Alignment                *alignmentResponse `json:"alignment"`
+	NormalizedAlignment      *alignmentResponse `json:"normalizedAlignment"`
+	NormalizedAlignmentSnake *alignmentResponse `json:"normalized_alignment"`
+	Error                    string             `json:"error"`
+	Message                  string             `json:"message"`
+	Code                     int                `json:"code"`
+}
+
+// isFinal reports whether the frame is the last one of the session.
+func (m *wsServerMessage) isFinal() bool {
+	return (m.IsFinal != nil && *m.IsFinal) ||
+		(m.IsFinalSnake != nil && *m.IsFinalSnake)
+}
+
+// normalizedAlignment returns the frame's normalized alignment under either
+// naming, or nil.
+func (m *wsServerMessage) normalizedAlignment() *alignmentResponse {
+	if m.NormalizedAlignment != nil {
+		return m.NormalizedAlignment
+	}
+	return m.NormalizedAlignmentSnake
 }
 
 func (c *Client) streamWS(
@@ -558,7 +617,9 @@ func (c *Client) dialStreamWS(
 // they arrive on textIn. Closing textIn signals end-of-input; the WS sends an
 // EOS frame and the audio channel closes once the server returns the final
 // frame. This is the streaming-text path used to forward LLM deltas with low
-// time-to-first-byte. Implements [tts.StreamingTextProvider].
+// time-to-first-byte. Eleven v4 models stream through the Text to Dialogue
+// WebSocket as one turn in the configured voice. Implements
+// [tts.StreamingTextProvider].
 func (c *Client) StreamAudioFromText(
 	ctx context.Context,
 	textIn <-chan string,
@@ -567,6 +628,15 @@ func (c *Client) StreamAudioFromText(
 	opts := &tts.GenerationOptions{}
 	for _, opt := range options {
 		opt(opts)
+	}
+
+	if usesDialogueEndpoint(c.modelID) {
+		return c.streamDialogue(
+			ctx,
+			[]string{c.voiceID},
+			c.textToTurns(ctx, textIn),
+			opts,
+		)
 	}
 
 	conn, send, err := c.dialStreamWS(ctx, opts)
@@ -619,6 +689,35 @@ func (c *Client) StreamAudioFromText(
 	return chunkChan, nil
 }
 
+// textToTurns forwards every piece of text from textIn as a dialogue turn in
+// the configured voice, continuing the same speaker turn. The returned channel
+// closes when textIn closes or ctx is done.
+func (c *Client) textToTurns(
+	ctx context.Context,
+	textIn <-chan string,
+) <-chan tts.DialogueTurn {
+	turns := make(chan tts.DialogueTurn)
+	go func() {
+		defer close(turns)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case piece, ok := <-textIn:
+				if !ok {
+					return
+				}
+				select {
+				case turns <- tts.DialogueTurn{Text: piece, VoiceID: c.voiceID}:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+	return turns
+}
+
 func (c *Client) buildStreamURL(
 	outputFormat string,
 	syncAlignment bool,
@@ -650,6 +749,9 @@ func (c *Client) buildStreamURL(
 	return u.String(), nil
 }
 
+// runStreamReader decodes frames from either ElevenLabs WebSocket into chunks
+// on out until the final frame, an error, or ctx is done, then closes out and
+// conn.
 func runStreamReader(
 	ctx context.Context,
 	conn *websocket.Conn,
@@ -708,10 +810,8 @@ func runStreamReader(
 				if srv.Alignment != nil {
 					chunk.Alignment = toAlignmentData(*srv.Alignment)
 				}
-				if srv.NormalizedAlignment != nil {
-					chunk.NormalizedAlignment = toAlignmentData(
-						*srv.NormalizedAlignment,
-					)
+				if na := srv.normalizedAlignment(); na != nil {
+					chunk.NormalizedAlignment = toAlignmentData(*na)
 				}
 				select {
 				case out <- chunk:
@@ -720,7 +820,7 @@ func runStreamReader(
 				}
 			}
 
-			if srv.IsFinal != nil && *srv.IsFinal {
+			if srv.isFinal() {
 				select {
 				case out <- tts.Chunk{Done: true}:
 				case <-ctx.Done():

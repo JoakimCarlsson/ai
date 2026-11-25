@@ -26,6 +26,11 @@ type Options struct {
 	ssmlGender   string
 	voiceName    string
 	outputFormat string
+	baseURL      string
+	prompt       string
+	speakingRate *float64
+	pitch        *float64
+	sampleRate   int
 }
 
 // Option configures Options.
@@ -79,6 +84,33 @@ func WithOutputFormat(format string) Option {
 	return func(o *Options) { o.outputFormat = format }
 }
 
+// WithBaseURL sets the API address, such as a regional endpoint
+// ("https://eu-texttospeech.googleapis.com/v1") for data residency.
+func WithBaseURL(baseURL string) Option {
+	return func(o *Options) { o.baseURL = baseURL }
+}
+
+// WithPrompt sets the style instructions Gemini-TTS models follow, such as
+// "Say this in a calm, warm tone". Other voices ignore it.
+func WithPrompt(prompt string) Option {
+	return func(o *Options) { o.prompt = prompt }
+}
+
+// WithSpeakingRate sets the speaking rate, from 0.25 to 4.0; 1.0 is normal.
+func WithSpeakingRate(rate float64) Option {
+	return func(o *Options) { o.speakingRate = &rate }
+}
+
+// WithPitch sets the pitch shift in semitones, from -20.0 to 20.0.
+func WithPitch(pitch float64) Option {
+	return func(o *Options) { o.pitch = &pitch }
+}
+
+// WithSampleRate sets the output sample rate in Hz.
+func WithSampleRate(hz int) Option {
+	return func(o *Options) { o.sampleRate = hz }
+}
+
 // Client implements [tts.Generation] against the Google Cloud TTS API.
 type Client struct {
 	options    Options
@@ -98,10 +130,15 @@ func NewGeneration(opts ...Option) tts.Generation {
 		timeout = *options.timeout
 	}
 
+	baseURL := defaultBaseURL
+	if options.baseURL != "" {
+		baseURL = options.baseURL
+	}
+
 	return tts.WithTracing(&Client{
 		options:    options,
 		httpClient: &http.Client{Timeout: timeout},
-		baseURL:    defaultBaseURL,
+		baseURL:    baseURL,
 	}, tts.TracingAttrs{
 		Voice:        options.voiceName,
 		OutputFormat: options.outputFormat,
@@ -119,17 +156,39 @@ type ttsRequest struct {
 }
 
 type ttsInput struct {
-	Text string `json:"text"`
+	Text   string `json:"text"`
+	Prompt string `json:"prompt,omitempty"`
 }
 
 type ttsVoice struct {
 	LanguageCode string `json:"languageCode"`
 	Name         string `json:"name,omitempty"`
 	SSMLGender   string `json:"ssmlGender,omitempty"`
+	ModelName    string `json:"modelName,omitempty"`
 }
 
 type ttsAudioConfig struct {
-	AudioEncoding string `json:"audioEncoding"`
+	AudioEncoding   string   `json:"audioEncoding"`
+	SpeakingRate    *float64 `json:"speakingRate,omitempty"`
+	Pitch           *float64 `json:"pitch,omitempty"`
+	SampleRateHertz int      `json:"sampleRateHertz,omitempty"`
+}
+
+// cloudModelNames maps catalog model IDs that use the Gemini API's preview
+// names to the names Cloud Text-to-Speech accepts in voice.modelName.
+var cloudModelNames = map[string]string{
+	Gemini25FlashPreviewTTS: "gemini-2.5-flash-tts",
+	Gemini25ProPreviewTTS:   "gemini-2.5-pro-tts",
+}
+
+// modelName returns the voice.modelName to send for the configured model, or
+// "" for classic voices picked by name alone.
+func (c *Client) modelName() string {
+	apiModel := c.options.model.APIModel
+	if name, ok := cloudModelNames[apiModel]; ok {
+		return name
+	}
+	return apiModel
 }
 
 type synthesizeResponse struct {
@@ -164,18 +223,26 @@ func (c *Client) GenerateAudio(
 		encoding = opts.OutputFormat
 	}
 
-	voice := ttsVoice{LanguageCode: c.options.languageCode}
-	if c.options.voiceName != "" {
-		voice.Name = c.options.voiceName
+	languageCode := c.options.languageCode
+	if opts.LanguageCode != "" {
+		languageCode = opts.LanguageCode
 	}
-	if c.options.ssmlGender != "" {
-		voice.SSMLGender = c.options.ssmlGender
+	voice := ttsVoice{
+		LanguageCode: languageCode,
+		Name:         c.options.voiceName,
+		SSMLGender:   c.options.ssmlGender,
+		ModelName:    c.modelName(),
 	}
 
 	reqBody := ttsRequest{
-		Input:       ttsInput{Text: text},
-		Voice:       voice,
-		AudioConfig: ttsAudioConfig{AudioEncoding: encoding},
+		Input: ttsInput{Text: text, Prompt: c.options.prompt},
+		Voice: voice,
+		AudioConfig: ttsAudioConfig{
+			AudioEncoding:   encoding,
+			SpeakingRate:    c.options.speakingRate,
+			Pitch:           c.options.pitch,
+			SampleRateHertz: c.options.sampleRate,
+		},
 	}
 
 	jsonBody, err := json.Marshal(reqBody)
@@ -232,7 +299,7 @@ func (c *Client) GenerateAudio(
 		AudioData:   audioData,
 		ContentType: contentTypeForEncoding(encoding),
 		Usage:       tts.Usage{Characters: int64(len(text))},
-		Model:       c.options.model.APIModel,
+		Model:       voice.ModelName,
 	}, nil
 }
 
