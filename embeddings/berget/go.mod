@@ -3,8 +3,8 @@ module github.com/joakimcarlsson/ai/embeddings/berget
 go 1.26.0
 
 require (
-	github.com/joakimcarlsson/ai/embeddings v0.3.2
-	github.com/joakimcarlsson/ai/embeddings/openai v0.2.6
+	github.com/joakimcarlsson/ai/embeddings v0.3.3
+	github.com/joakimcarlsson/ai/embeddings/openai v0.2.7
 )
 
 require (
@@ -15,7 +15,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.2.3 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.4 // indirect
 	github.com/openai/openai-go/v3 v3.107.0 // indirect
 	github.com/tidwall/gjson v1.20.6 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
