@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/examples/llm/openai-compatible
 go 1.26.0
 
 require (
-	github.com/joakimcarlsson/ai/llm v0.8.0
+	github.com/joakimcarlsson/ai/llm v0.8.1
 	github.com/joakimcarlsson/ai/llm/groq v0.9.1
 	github.com/joakimcarlsson/ai/llm/ollama v0.9.1
 	github.com/joakimcarlsson/ai/llm/openai v0.15.0
@@ -21,8 +21,8 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.2 // indirect
-	github.com/joakimcarlsson/ai/tool v0.1.4 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.2.2 // indirect
+	github.com/joakimcarlsson/ai/tool v0.1.5 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.3 // indirect
 	github.com/joakimcarlsson/ai/types v0.2.1 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
 	github.com/openai/openai-go/v3 v3.90.0 // indirect

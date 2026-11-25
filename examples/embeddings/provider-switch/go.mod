@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/examples/embeddings/provider-switch
 go 1.26.0
 
 require (
-	github.com/joakimcarlsson/ai/embeddings v0.3.1
+	github.com/joakimcarlsson/ai/embeddings v0.3.2
 	github.com/joakimcarlsson/ai/embeddings/cohere v0.4.0
 	github.com/joakimcarlsson/ai/embeddings/openai v0.2.4
 	github.com/joakimcarlsson/ai/embeddings/voyage v0.3.4
@@ -17,13 +17,13 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.2.2 // indirect
-	github.com/openai/openai-go/v3 v3.90.0 // indirect
-	github.com/tidwall/gjson v1.20.0 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.3 // indirect
+	github.com/openai/openai-go/v3 v3.107.0 // indirect
+	github.com/tidwall/gjson v1.20.6 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
-	github.com/tidwall/pretty v1.2.2 // indirect
-	github.com/tidwall/sjson v1.2.5 // indirect
-	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
+	github.com/tidwall/pretty v1.3.1 // indirect
+	github.com/tidwall/sjson v1.2.11 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.2 // indirect
 	go.opentelemetry.io/otel v1.47.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.23.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.47.0 // indirect
@@ -39,8 +39,8 @@ require (
 	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20261026165753-2ffab32bce7e // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20261026165753-2ffab32bce7e // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20261123191846-1e707ab9fbc2 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20261123191846-1e707ab9fbc2 // indirect
 	google.golang.org/grpc v1.85.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 )

@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/examples/stt/deepgram
 go 1.26.0
 
 require (
-	github.com/joakimcarlsson/ai/stt v0.3.1
+	github.com/joakimcarlsson/ai/stt v0.3.2
 	github.com/joakimcarlsson/ai/stt/deepgram v0.4.3
 )
 
@@ -15,7 +15,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.2.2 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.3 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel v1.47.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.23.0 // indirect

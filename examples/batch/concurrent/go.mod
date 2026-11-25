@@ -3,7 +3,7 @@ module github.com/joakimcarlsson/ai/examples/batch/concurrent
 go 1.26.0
 
 require (
-	github.com/joakimcarlsson/ai/batch v0.1.14
+	github.com/joakimcarlsson/ai/batch v0.1.15
 	github.com/joakimcarlsson/ai/batch/concurrent v0.1.14
 	github.com/joakimcarlsson/ai/llm/gemini v0.11.0
 	github.com/joakimcarlsson/ai/message v0.7.0
@@ -26,11 +26,11 @@ require (
 	github.com/googleapis/gax-go/v2 v2.27.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0 // indirect
-	github.com/joakimcarlsson/ai/embeddings v0.3.1 // indirect
-	github.com/joakimcarlsson/ai/llm v0.8.0 // indirect
+	github.com/joakimcarlsson/ai/embeddings v0.3.2 // indirect
+	github.com/joakimcarlsson/ai/llm v0.8.1 // indirect
 	github.com/joakimcarlsson/ai/schema v0.2.2 // indirect
-	github.com/joakimcarlsson/ai/tool v0.1.4 // indirect
-	github.com/joakimcarlsson/ai/tracing v0.2.2 // indirect
+	github.com/joakimcarlsson/ai/tool v0.1.5 // indirect
+	github.com/joakimcarlsson/ai/tracing v0.2.3 // indirect
 	github.com/joakimcarlsson/ai/types v0.2.1 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
