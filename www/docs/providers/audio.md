@@ -42,7 +42,9 @@ specifics:
 - `tts/openai`: `WithInstructions` steers tone and delivery (not on tts-1),
   `WithCustomVoiceID` picks a custom voice, and `StreamAudio` streams the
   audio as it is generated. OpenAI shuts down tts-1, tts-1-hd and
-  gpt-4o-mini-tts on 2027-01-06.
+  gpt-4o-mini-tts on 2027-01-06; with a Realtime model such as
+  `tts.AudioModel{APIModel: "gpt-realtime-2.1-mini"}` the client speaks the
+  text over the Realtime API instead (pcm, pcmu or pcma output).
 - `tts/google`: `WithModel` selects Gemini-TTS (sent as `voice.modelName`;
   pair it with a Gemini voice such as `WithVoiceName("Kore")`), `WithPrompt`
   sets its style instructions, and `WithSpeakingRate`, `WithPitch`,

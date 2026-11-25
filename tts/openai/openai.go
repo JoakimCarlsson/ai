@@ -1,9 +1,10 @@
 // Package openai provides an OpenAI implementation of the [tts.Generation] interface.
 //
-// OpenAI has deprecated every model this endpoint serves (tts-1, tts-1-hd and
-// gpt-4o-mini-tts) and shuts them down on 2027-01-06; its replacement,
-// gpt-realtime-2.1-mini, is served only by the Realtime API, which this
-// package does not cover.
+// OpenAI has deprecated every model /audio/speech serves (tts-1, tts-1-hd and
+// gpt-4o-mini-tts) and shuts them down on 2027-01-06. Its replacement,
+// gpt-realtime-2.1-mini, is served only by the Realtime API: select a
+// gpt-realtime* model and GenerateAudio and StreamAudio speak the text through
+// a Realtime WebSocket session instead, in pcm, pcmu or pcma.
 package openai
 
 import (
@@ -202,6 +203,7 @@ func (c *Client) newParams(
 }
 
 // GenerateAudio creates audio from text and returns the complete audio data.
+// Realtime models (gpt-realtime*) are spoken through the Realtime API.
 func (c *Client) GenerateAudio(
 	ctx context.Context,
 	text string,
@@ -212,6 +214,9 @@ func (c *Client) GenerateAudio(
 		opt(&opts)
 	}
 
+	if c.usesRealtime() {
+		return c.generateRealtime(ctx, text, opts)
+	}
 	params := c.newParams(text, opts)
 
 	resp, err := c.client.Audio.Speech.New(ctx, params, c.requestOptions()...)
@@ -239,7 +244,7 @@ const streamChunkSize = 16 * 1024
 // StreamAudio sends the speech request and emits the audio as it arrives,
 // before generation has finished; pcm and wav give the lowest latency. A
 // request failure is returned at once, a failure while reading arrives as a
-// chunk error.
+// chunk error. Realtime models (gpt-realtime*) stream over the Realtime API.
 func (c *Client) StreamAudio(
 	ctx context.Context,
 	text string,
@@ -250,6 +255,10 @@ func (c *Client) StreamAudio(
 		opt(&opts)
 	}
 
+	if c.usesRealtime() {
+		chunks, _, err := c.streamRealtime(ctx, text, opts)
+		return chunks, err
+	}
 	resp, err := c.client.Audio.Speech.New(
 		ctx, c.newParams(text, opts), c.requestOptions()...,
 	)
