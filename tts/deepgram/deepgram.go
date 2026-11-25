@@ -1,4 +1,6 @@
-// Package deepgram provides a Deepgram Aura implementation of the [tts.Generation] interface.
+// Package deepgram provides a Deepgram Aura and Flux TTS implementation of the
+// [tts.Generation] interface. Aura models use /v1/speak and Flux models
+// /v2/speak.
 package deepgram
 
 import (
@@ -198,16 +200,19 @@ func resolveModelName(options Options) string {
 	return family.prefix + voice
 }
 
-// checkModel fails for Flux TTS models, which Deepgram serves only on
-// /v2/speak with a different protocol this client does not speak.
-func (c *Client) checkModel() error {
-	if strings.HasPrefix(c.resolved, "flux-") {
-		return fmt.Errorf(
-			"deepgram: Flux TTS model %q needs /v2/speak, which is not supported; use an Aura model",
-			c.resolved,
-		)
+// isFlux reports whether the resolved model is a Flux TTS model, which
+// Deepgram serves on /v2/speak rather than /v1/speak.
+func (c *Client) isFlux() bool {
+	return strings.HasPrefix(c.resolved, "flux-")
+}
+
+// speakBase returns the API base for the resolved model: the configured base
+// URL, with its /v1 version swapped for /v2 (or /v2 appended) for Flux.
+func (c *Client) speakBase() string {
+	if !c.isFlux() {
+		return c.options.baseURL
 	}
-	return nil
+	return strings.TrimSuffix(c.options.baseURL, "/v1") + "/v2"
 }
 
 // setCommonQuery adds the model and the options shared by the REST and
@@ -217,7 +222,7 @@ func (c *Client) setCommonQuery(q url.Values) {
 	if c.options.sampleRate != 0 {
 		q.Set("sample_rate", strconv.Itoa(c.options.sampleRate))
 	}
-	if c.options.bitRate != 0 {
+	if c.options.bitRate != 0 && !c.isFlux() {
 		q.Set("bit_rate", strconv.Itoa(c.options.bitRate))
 	}
 	if c.options.speed != nil {
@@ -232,13 +237,16 @@ func (c *Client) setCommonQuery(q url.Values) {
 func (c *Client) buildURL() string {
 	q := url.Values{}
 	c.setCommonQuery(q)
+	if c.options.bitRate != 0 && c.isFlux() {
+		q.Set("bit_rate", strconv.Itoa(c.options.bitRate))
+	}
 	if c.options.encoding != "" {
 		q.Set("encoding", c.options.encoding)
 	}
 	if c.options.container != "" {
 		q.Set("container", c.options.container)
 	}
-	return fmt.Sprintf("%s/speak?%s", c.options.baseURL, q.Encode())
+	return fmt.Sprintf("%s/speak?%s", c.speakBase(), q.Encode())
 }
 
 func (c *Client) newRequest(
@@ -263,16 +271,13 @@ func (c *Client) newRequest(
 	return req, nil
 }
 
-// GenerateAudio creates audio from text and returns the complete audio data.
-// It fails for Flux TTS models; see [Client.checkModel].
+// GenerateAudio creates audio from text and returns the complete audio data,
+// from /v1/speak for Aura or /v2/speak for Flux.
 func (c *Client) GenerateAudio(
 	ctx context.Context,
 	text string,
 	_ ...tts.GenerationOption,
 ) (*tts.Response, error) {
-	if err := c.checkModel(); err != nil {
-		return nil, err
-	}
 	req, err := c.newRequest(ctx, text)
 	if err != nil {
 		return nil, err
@@ -313,8 +318,9 @@ func (c *Client) GenerateAudio(
 	}, nil
 }
 
-// StreamAudio opens a WebSocket to Deepgram's /v1/speak endpoint, sends a
-// Speak/Flush sequence, and emits audio chunks as binary frames arrive.
+// StreamAudio opens a WebSocket to Deepgram's /speak endpoint (/v2/speak for
+// Flux), sends a Speak/Flush sequence, and emits audio chunks as binary frames
+// arrive, ending with a Done chunk once the turn's audio is complete.
 //
 // WS streaming requires a raw audio encoding (linear16, mulaw, alaw); if no
 // encoding is configured the implementation defaults to linear16 for the WS
@@ -343,22 +349,20 @@ func (c *Client) StreamAudio(
 		return nil, fmt.Errorf("failed to send flush: %w", err)
 	}
 
+	finalFrame := "Flushed"
+	if c.isFlux() {
+		finalFrame = "SpeechMetadata"
+	}
 	chunkChan := make(chan tts.Chunk, 10)
-	go runStreamReader(ctx, conn, chunkChan, send, true)
+	go runStreamReader(ctx, conn, chunkChan, send, finalFrame)
 	return chunkChan, nil
 }
 
-// dialStreamWS opens the WS to Deepgram's /v1/speak endpoint and returns the
-// connection along with a goroutine-safe send function.
-// dialStreamWS opens the WS to Deepgram's /v1/speak endpoint and returns the
-// connection along with a goroutine-safe send function. It fails for Flux TTS
-// models.
+// dialStreamWS opens the WS to Deepgram's /speak endpoint (/v2/speak for
+// Flux) and returns the connection along with a goroutine-safe send function.
 func (c *Client) dialStreamWS(
 	ctx context.Context,
 ) (*websocket.Conn, func([]byte) error, error) {
-	if err := c.checkModel(); err != nil {
-		return nil, nil, err
-	}
 	wsURL, err := c.buildStreamURL()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to build ws url: %w", err)
@@ -392,9 +396,12 @@ func (c *Client) dialStreamWS(
 }
 
 // StreamAudioFromText opens a WebSocket to Deepgram and sends a Speak frame for
-// each piece received on textIn (with an immediate Flush so audio for that piece
-// starts generating). Closing textIn sends Close, which triggers a final Flushed
-// frame before the connection terminates. Implements [tts.StreamingTextProvider].
+// each piece received on textIn. On Aura each piece is flushed at once so its
+// audio starts generating, and closing textIn sends Close. On Flux the server
+// streams audio as text arrives, so the pieces form one turn; closing textIn
+// sends Flush to end it and Close, and the stream ends with a Done chunk once
+// the server reports the session totals. Implements
+// [tts.StreamingTextProvider].
 //
 // Like [StreamAudio], this requires a raw audio encoding (linear16, mulaw, alaw);
 // the WS endpoint does not accept compressed encodings.
@@ -408,7 +415,14 @@ func (c *Client) StreamAudioFromText(
 		return nil, err
 	}
 
+	flux := c.isFlux()
 	chunkChan := make(chan tts.Chunk, 10)
+	fail := func(err error) {
+		select {
+		case chunkChan <- tts.Chunk{Error: err}:
+		case <-ctx.Done():
+		}
+	}
 
 	go func() {
 		for {
@@ -418,6 +432,9 @@ func (c *Client) StreamAudioFromText(
 				return
 			case piece, ok := <-textIn:
 				if !ok {
+					if flux {
+						_ = send([]byte(`{"type":"Flush"}`))
+					}
 					_ = send([]byte(`{"type":"Close"}`))
 					return
 				}
@@ -428,32 +445,30 @@ func (c *Client) StreamAudioFromText(
 					speakMessage{Type: "Speak", Text: piece},
 				)
 				if mErr != nil {
-					select {
-					case chunkChan <- tts.Chunk{Error: fmt.Errorf("failed to marshal speak: %w", mErr)}:
-					case <-ctx.Done():
-					}
+					fail(fmt.Errorf("failed to marshal speak: %w", mErr))
 					_ = send([]byte(`{"type":"Close"}`))
 					return
 				}
 				if sErr := send(speak); sErr != nil {
-					select {
-					case chunkChan <- tts.Chunk{Error: fmt.Errorf("failed to send speak: %w", sErr)}:
-					case <-ctx.Done():
-					}
+					fail(fmt.Errorf("failed to send speak: %w", sErr))
 					return
 				}
+				if flux {
+					continue
+				}
 				if fErr := send([]byte(`{"type":"Flush"}`)); fErr != nil {
-					select {
-					case chunkChan <- tts.Chunk{Error: fmt.Errorf("failed to send flush: %w", fErr)}:
-					case <-ctx.Done():
-					}
+					fail(fmt.Errorf("failed to send flush: %w", fErr))
 					return
 				}
 			}
 		}
 	}()
 
-	go runStreamReader(ctx, conn, chunkChan, send, false)
+	finalFrame := ""
+	if flux {
+		finalFrame = "SessionMetadata"
+	}
+	go runStreamReader(ctx, conn, chunkChan, send, finalFrame)
 	return chunkChan, nil
 }
 
@@ -476,8 +491,9 @@ type serverFrame struct {
 
 // buildStreamURL returns the WebSocket /speak address with the configured
 // query, defaulting to raw linear16 audio, which the WebSocket requires.
+// Flux rejects the container parameter, so it is sent to Aura only.
 func (c *Client) buildStreamURL() (string, error) {
-	base, err := url.Parse(c.options.baseURL)
+	base, err := url.Parse(c.speakBase())
 	if err != nil {
 		return "", err
 	}
@@ -493,7 +509,9 @@ func (c *Client) buildStreamURL() (string, error) {
 		encoding = "linear16"
 	}
 	q.Set("encoding", encoding)
-	q.Set("container", "none")
+	if !c.isFlux() {
+		q.Set("container", "none")
+	}
 
 	u := url.URL{
 		Scheme:   scheme,
@@ -504,12 +522,16 @@ func (c *Client) buildStreamURL() (string, error) {
 	return u.String(), nil
 }
 
+// runStreamReader forwards binary audio frames from conn to out until the
+// connection closes, an Error frame arrives, or ctx is done, then closes out
+// and conn. When a text frame of type finalFrame arrives it sends a Done chunk
+// and closes the session; an empty finalFrame waits for the server to close.
 func runStreamReader(
 	ctx context.Context,
 	conn *websocket.Conn,
 	out chan<- tts.Chunk,
 	send func([]byte) error,
-	closeOnFlushed bool,
+	finalFrame string,
 ) {
 	defer close(out)
 	defer func() { _ = conn.Close() }()
@@ -544,14 +566,14 @@ func runStreamReader(
 				if err := json.Unmarshal(msg, &srv); err != nil {
 					continue
 				}
-				switch srv.Type {
-				case "Flushed":
-					if !closeOnFlushed {
-						// streaming-text path: each Flushed is just a per-chunk
-						// boundary. Keep the connection open until the caller
-						// closes textIn (which sends a Close frame).
-						continue
+				switch {
+				case srv.Type == "Error":
+					select {
+					case out <- tts.Chunk{Error: fmt.Errorf("deepgram: %s: %s", srv.Code, srv.Description)}:
+					case <-ctx.Done():
 					}
+					return
+				case finalFrame != "" && srv.Type == finalFrame:
 					select {
 					case out <- tts.Chunk{Done: true}:
 					case <-ctx.Done():
@@ -566,8 +588,6 @@ func runStreamReader(
 						time.Now().Add(2*time.Second),
 					)
 					return
-				case "Warning":
-					// non-fatal; continue receiving audio
 				}
 			}
 		}

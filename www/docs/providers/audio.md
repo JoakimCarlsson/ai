@@ -49,8 +49,10 @@ specifics:
   `WithSampleRate` and `WithBaseURL` (regional endpoints) tune the rest.
 - `tts/deepgram`: `WithModel(deepgram.Models[deepgram.Aura2])` plus
   `WithVoice("thalia-en")` makes `aura-2-thalia-en`; `WithSpeed` and
-  `WithMIPOptOut` map to Deepgram's query parameters. Flux TTS (`/v2/speak`)
-  is not supported yet and returns an error.
+  `WithMIPOptOut` map to Deepgram's query parameters. Flux TTS models
+  (`deepgram.FluxTTS`, e.g. `WithVoice("haley-en")`) go to `/v2/speak`; with
+  `StreamAudioFromText` the streamed text forms one turn, which is flushed when
+  the channel closes.
 
 OpenRouter is a thin wrapper over `tts/openai` that fixes the base URL, so one
 key reaches OpenAI, Google, Mistral, Microsoft and Deepgram voices:
